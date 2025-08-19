@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首页 - Dev Debug Platform</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Dev Debug Platform</h1>
+        <h2>欢迎, <span th:text="${username}">用户名</span>!</h2>
+        <p>这是您的个人工作区。</p>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="btn-secondary">退出登录</button>
+        </form>
+    </div>
+</body>
+</html>

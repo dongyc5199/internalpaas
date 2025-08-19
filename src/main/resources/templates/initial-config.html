@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首次配置 - Dev Debug Platform</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Dev Debug Platform</h1>
+        <h2>首次配置</h2>
+        <p>请设置您的工作目录，所有资源将保存在该目录下。</p>
+        <form th:action="@{/initial-config}" method="post">
+            <div class="form-group">
+                <label for="workspacePath">工作目录路径</label>
+                <input type="text" id="workspacePath" name="workspacePath" required
+                       placeholder="例如: /home/your_username/debug_space">
+                <small>请提供服务器上已存在的绝对路径，且平台运行用户有读写权限。</small>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn-primary">保存配置</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
