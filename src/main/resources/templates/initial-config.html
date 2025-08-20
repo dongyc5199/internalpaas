@@ -3,25 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>首次配置 - Dev Debug Platform</title>
+    <title>初始配置 - Dev Debug Platform</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Dev Debug Platform</h1>
-        <h2>首次配置</h2>
-        <p>请设置您的工作目录，所有资源将保存在该目录下。</p>
-        <form th:action="@{/initial-config}" method="post">
-            <div class="form-group">
-                <label for="workspacePath">工作目录路径</label>
-                <input type="text" id="workspacePath" name="workspacePath" required
-                       placeholder="例如: /home/your_username/debug_space">
-                <small>请提供服务器上已存在的绝对路径，且平台运行用户有读写权限。</small>
+        <h1 th:text="${isFirstTime} ? '欢迎首次使用！' : '工作目录配置'">初始配置</h1>
+        
+        <div th:if="${isFirstTime}" style="background: #e8f5e8; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+            <h3>配置说明</h3>
+            <p>作为一般用户，系统将在超级管理员设置的基础工作目录下为您创建个人工作空间。</p>
+            <p>您无需手动选择目录，系统将自动为您创建合适的目录结构。</p>
+        </div>
+        
+        <form th:action="@{/initial-config}" method="post" th:object="${config}">
+            <div class="form-group" style="display: none;">
+                <label for="workDirectory">工作目录：</label>
+                <input type="text" id="workDirectory" th:field="*{workDirectory}" 
+                       placeholder="系统将自动创建" readonly>
             </div>
-            <div class="form-group">
-                <button type="submit" class="btn-primary">保存配置</button>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 4px; margin-bottom: 20px;">
+                <h4>即将为您创建的工作目录：</h4>
+                <p style="font-family: monospace; color: #666; margin: 10px 0;">
+                    ./workspaces/[您的用户名]/
+                </p>
+                <small style="color: #888;">
+                    系统将在此目录下存储您的所有应用文件
+                </small>
             </div>
+            
+            <button type="submit" class="btn">确认并开始使用</button>
         </form>
+        
+        <a href="/" class="btn-secondary">返回首页</a>
     </div>
 </body>
 </html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务器管理 - Dev Debug Platform</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .admin-nav {
+            background: #2c3e50;
+            color: white;
+            padding: 10px 0;
+            margin-bottom: 20px;
+        }
+        
+        .admin-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            gap: 20px;
+        }
+        
+        .admin-nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .admin-nav a:hover,
+        .admin-nav a.active {
+            background-color: #34495e;
+        }
+        
+        .server-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .server-table th,
+        .server-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .server-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .status-active {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .status-inactive {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>超级管理员控制台 - 服务器管理</h1>
+        
+        <nav class="admin-nav">
+            <ul>
+                <li><a href="/admin/servers" class="active">服务器管理</a></li>
+                <li><a href="/admin/users">用户管理</a></li>
+                <li><a href="/">返回首页</a></li>
+            </ul>
+        </nav>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>服务器列表</h2>
+            <a href="/admin/servers/new" class="btn-primary">添加新服务器</a>
+        </div>
+
+        <div th:if="${#lists.isEmpty(servers)}" style="text-align: center; color: #666; padding: 40px;">
+            <p>暂无服务器配置，请添加第一个服务器</p>
+        </div>
+
+        <table class="server-table" th:unless="${#lists.isEmpty(servers)}">
+            <thead>
+                <tr>
+                    <th>名称</th>
+                    <th>主机名</th>
+                    <th>端口</th>
+                    <th>工作目录</th>
+                    <th>描述</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="server : ${servers}">
+                    <td th:text="${server.name}">本地服务器</td>
+                    <td th:text="${server.hostname}">localhost</td>
+                    <td th:text="${server.port}">8080</td>
+                    <td th:text="${server.baseWorkDirectory}">./workspaces</td>
+                    <td th:text="${server.description}">本地开发环境</td>
+                    <td>
+                        <span th:class="${server.active} ? 'status-active' : 'status-inactive'"
+                              th:text="${server.active} ? '启用' : '禁用'">启用</span>
+                    </td>
+                    <td>
+                        <a th:href="@{/admin/servers/{id}/edit(id=${server.id})}" class="btn-secondary">编辑</a>
+                        <form th:action="@{/admin/servers/{id}/delete(id=${server.id})}" method="post" 
+                              style="display: inline;" onsubmit="return confirm('确定要删除这个服务器吗？')">
+                            <button type="submit" class="btn-danger">删除</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

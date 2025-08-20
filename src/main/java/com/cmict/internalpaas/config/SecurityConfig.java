@@ -7,28 +7,42 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import com.cmict.internalpaas.service.UserService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import com.cmict.internalpaas.repository.UserRepository;
-import java.util.Collections;
-
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, UserDetailsService userDetailsService)
+            throws Exception {
         http
-            .authorizeRequests()
-                .antMatchers("/css/**", "/js/**", "/register").permitAll() // 允许访问静态资源和注册页面
+            .authorizeRequests(authorize -> authorize
+                .antMatchers("/css/**", "/js/**", "/register", "/debug/**", "/h2-console/**").permitAll() // 允许访问静态资源、注册页面和H2控制台
+                .antMatchers("/admin/**").hasRole("SUPER_ADMIN") // 超级管理员才能访问管理页面
                 .anyRequest().authenticated() // 其他所有请求都需要认证
-                .and()
-            .formLogin()
+            )
+            .formLogin(form -> form
                 .loginPage("/login").permitAll() // 自定义登录页面
                 .defaultSuccessUrl("/", true) // 登录成功后跳转到主页
-                .and()
-            .logout().permitAll();
+                .failureUrl("/login?error") // 登录失败时返回登录页面并显示错误
+            )
+            .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/login?logout")
+                .permitAll()
+            )
+            .csrf(csrf -> csrf
+                .ignoringAntMatchers("/h2-console/**") // 禁用H2控制台的CSRF保护
+            )
+            .headers(headers -> headers
+                .frameOptions().disable() // 禁用frame限制，允许H2控制台在iframe中运行
+            )
+            .userDetailsService(userDetailsService); // 设置UserDetailsService
 
         return http.build();
     }
@@ -38,14 +52,9 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder(); // 使用BCrypt进行密码加密
     }
 
+    // 使用UserService作为UserDetailsService
     @Bean
-    public UserDetailsService userDetailsService(UserRepository userRepository) {
-        return username -> userRepository.findByUsername(username)
-            .map(user -> new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
-                user.getPassword(),
-                Collections.emptyList() // 暂时不使用角色
-            ))
-            .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    public UserDetailsService userDetailsService(UserService userService) {
+        return userService;
     }
 }

@@ -29,8 +29,20 @@ public class UserController {
     @PostMapping("/register")
     public String processRegistration(@ModelAttribute("user") UserRegistrationDto registrationDto, RedirectAttributes redirectAttributes) {
         try {
+            // 验证密码和确认密码是否匹配
+            if (!registrationDto.getPassword().equals(registrationDto.getConfirmPassword())) {
+                redirectAttributes.addFlashAttribute("errorMessage", "两次输入的密码不一致！");
+                return "redirect:/register";
+            }
+            
+            // 验证邮箱格式
+            if (registrationDto.getEmail() == null || !registrationDto.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                redirectAttributes.addFlashAttribute("errorMessage", "请输入有效的邮箱地址！");
+                return "redirect:/register";
+            }
+            
             userService.registerNewUser(registrationDto);
-            redirectAttributes.addFlashAttribute("successMessage", "Registration successful! Please login.");
+            redirectAttributes.addFlashAttribute("successMessage", "注册成功！请登录。");
             return "redirect:/login"; // 注册成功后重定向到登录页面
         } catch (IllegalStateException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
