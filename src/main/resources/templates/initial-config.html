@@ -5,38 +5,692 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>初始配置 - Dev Debug Platform</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/initial-config.css">
 </head>
-<body>
-    <div class="container">
-        <h1 th:text="${isFirstTime} ? '欢迎首次使用！' : '工作目录配置'">初始配置</h1>
-        
-        <div th:if="${isFirstTime}" style="background: #e8f5e8; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
-            <h3>配置说明</h3>
-            <p>作为一般用户，系统将在超级管理员设置的基础工作目录下为您创建个人工作空间。</p>
-            <p>您无需手动选择目录，系统将自动为您创建合适的目录结构。</p>
-        </div>
-        
-        <form th:action="@{/initial-config}" method="post" th:object="${config}">
-            <div class="form-group" style="display: none;">
-                <label for="workDirectory">工作目录：</label>
-                <input type="text" id="workDirectory" th:field="*{workDirectory}" 
-                       placeholder="系统将自动创建" readonly>
-            </div>
-            
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 4px; margin-bottom: 20px;">
-                <h4>即将为您创建的工作目录：</h4>
-                <p style="font-family: monospace; color: #666; margin: 10px 0;">
-                    ./workspaces/[您的用户名]/
-                </p>
-                <small style="color: #888;">
-                    系统将在此目录下存储您的所有应用文件
-                </small>
-            </div>
-            
-            <button type="submit" class="btn">确认并开始使用</button>
-        </form>
-        
-        <a href="/" class="btn-secondary">返回首页</a>
+<body class="config-body">
+    <!-- 背景动画 -->
+    <div class="background-gradient">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
     </div>
+
+    <div class="container">
+        <!-- 页面头部 -->
+        <header class="config-header">
+            <div class="header-content">
+                <div class="brand-section">
+                    <div class="brand-icon">🚀</div>
+                    <div class="brand-info">
+                        <h1 class="brand-title">Dev Debug Platform</h1>
+                        <p class="brand-subtitle">开发调试平台配置向导</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="/" class="back-btn">
+                        <span class="btn-icon">🏠</span>
+                        <span class="btn-text">返回首页</span>
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- 配置向导 -->
+        <div class="config-wizard">
+            <!-- 进度指示器 -->
+            <div class="progress-section">
+                <div class="progress-header">
+                    <h2 th:text="${isFirstTime} ? '🎉 欢迎首次使用！' : '⚙️ 工作目录配置'">配置向导</h2>
+                    <div class="progress-indicator">
+                        <div class="step-indicator active">
+                            <div class="step-number">1</div>
+                            <span class="step-label">配置说明</span>
+                        </div>
+                        <div class="progress-line"></div>
+                        <div class="step-indicator">
+                            <div class="step-number">2</div>
+                            <span class="step-label">确认配置</span>
+                        </div>
+                        <div class="progress-line"></div>
+                        <div class="step-indicator">
+                            <div class="step-number">3</div>
+                            <span class="step-label">开始使用</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 配置内容 -->
+            <div class="config-content">
+                <!-- 欢迎信息 -->
+                <div th:if="${isFirstTime}" class="welcome-card">
+                    <div class="welcome-icon">👋</div>
+                    <div class="welcome-content">
+                        <h3>欢迎使用 Dev Debug Platform！</h3>
+                        <p>我们将为您快速配置个人开发环境，让您能够立即开始使用平台的所有功能。</p>
+                        <div class="welcome-features">
+                            <div class="feature-item">
+                                <span class="feature-icon">📁</span>
+                                <span class="feature-text">自动创建工作目录</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">🔧</span>
+                                <span class="feature-text">配置开发环境</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">🚀</span>
+                                <span class="feature-text">一键启动应用</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 配置说明卡片 -->
+                <div class="info-card">
+                    <div class="info-header">
+                        <div class="info-icon">ℹ️</div>
+                        <h3>配置说明</h3>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-section">
+                            <h4>📋 系统将为您执行以下操作：</h4>
+                            <ul class="info-list">
+                                <li class="info-item">
+                                    <span class="item-icon">✅</span>
+                                    <div class="item-content">
+                                        <strong>创建个人工作空间</strong>
+                                        <small>在超级管理员指定的基础目录下创建您的专属工作目录</small>
+                                    </div>
+                                </li>
+                                <li class="info-item">
+                                    <span class="item-icon">✅</span>
+                                    <div class="item-content">
+                                        <strong>设置目录权限</strong>
+                                        <small>确保您对工作目录拥有完整的读写权限</small>
+                                    </div>
+                                </li>
+                                <li class="info-item">
+                                    <span class="item-icon">✅</span>
+                                    <div class="item-content">
+                                        <strong>初始化环境配置</strong>
+                                        <small>创建必要的配置文件和目录结构</small>
+                                    </div>
+                                </li>
+                                <li class="info-item">
+                                    <span class="item-icon">✅</span>
+                                    <div class="item-content">
+                                        <strong>启用功能模块</strong>
+                                        <small>激活应用管理、日志查看等核心功能</small>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="info-section">
+                            <h4>🔒 安全与隐私：</h4>
+                            <div class="security-grid">
+                                <div class="security-item">
+                                    <span class="security-icon">🛡️</span>
+                                    <div class="security-text">
+                                        <strong>隔离保护</strong>
+                                        <small>您的工作目录与其他用户完全隔离</small>
+                                    </div>
+                                </div>
+                                <div class="security-item">
+                                    <span class="security-icon">🔐</span>
+                                    <div class="security-text">
+                                        <strong>权限控制</strong>
+                                        <small>严格的访问权限管理</small>
+                                    </div>
+                                </div>
+                                <div class="security-item">
+                                    <span class="security-icon">💾</span>
+                                    <div class="security-text">
+                                        <strong>数据安全</strong>
+                                        <small>定期自动备份重要配置</small>
+                                    </div>
+                                </div>
+                                <div class="security-item">
+                                    <span class="security-icon">🔍</span>
+                                    <div class="security-text">
+                                        <strong>审计日志</strong>
+                                        <small>完整的操作记录追踪</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 工作目录预览 -->
+                <div class="directory-preview">
+                    <div class="preview-header">
+                        <div class="preview-icon">📁</div>
+                        <h3>工作目录预览</h3>
+                        <div class="preview-badge">自动生成</div>
+                    </div>
+                    <div class="directory-structure">
+                        <div class="directory-tree">
+                            <div class="tree-node root-node">
+                                <span class="node-icon">📂</span>
+                                <span class="node-name">workspaces</span>
+                                <div class="tree-children">
+                                    <div class="tree-node user-node highlighted">
+                                        <span class="node-icon">👤</span>
+                                        <span class="node-name" th:text="${username}">您的用户名</span>
+                                        <div class="tree-children">
+                                            <div class="tree-node">
+                                                <span class="node-icon">📄</span>
+                                                <span class="node-name">applications/</span>
+                                                <span class="node-desc">应用文件目录</span>
+                                            </div>
+                                            <div class="tree-node">
+                                                <span class="node-icon">📋</span>
+                                                <span class="node-name">logs/</span>
+                                                <span class="node-desc">日志文件目录</span>
+                                            </div>
+                                            <div class="tree-node">
+                                                <span class="node-icon">⚙️</span>
+                                                <span class="node-name">config/</span>
+                                                <span class="node-desc">配置文件目录</span>
+                                            </div>
+                                            <div class="tree-node">
+                                                <span class="node-icon">🗄️</span>
+                                                <span class="node-name">temp/</span>
+                                                <span class="node-desc">临时文件目录</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="directory-info">
+                            <div class="info-box">
+                                <div class="info-label">完整路径</div>
+                                <div class="info-value directory-path">
+                                    <span class="path-text">./workspaces/<span th:text="${username}">username</span>/</span>
+                                    <button class="copy-btn" onclick="copyPath()" title="复制路径">
+                                        <span class="copy-icon">📋</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="info-box">
+                                <div class="info-label">预计占用</div>
+                                <div class="info-value">约 10-50 MB</div>
+                            </div>
+                            <div class="info-box">
+                                <div class="info-label">权限级别</div>
+                                <div class="info-value">完全控制</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 配置表单 -->
+                <div class="config-form-container">
+                    <form th:action="@{/initial-config}" method="post" th:object="${config}" class="config-form">
+                        <!-- 隐藏字段 -->
+                        <input type="hidden" th:field="*{workDirectory}" id="workDirectoryInput">
+                        
+                        <!-- 确认配置 -->
+                        <div class="confirmation-section">
+                            <div class="confirmation-header">
+                                <div class="confirmation-icon">✅</div>
+                                <h3>确认配置信息</h3>
+                            </div>
+                            <div class="confirmation-content">
+                                <div class="confirmation-item">
+                                    <div class="item-label">用户身份</div>
+                                    <div class="item-value">
+                                        <span class="user-badge" th:text="${username}">开发者</span>
+                                        <span class="role-badge">普通用户</span>
+                                    </div>
+                                </div>
+                                <div class="confirmation-item">
+                                    <div class="item-label">工作目录</div>
+                                    <div class="item-value directory-display">
+                                        ./workspaces/<span th:text="${username}">username</span>/
+                                    </div>
+                                </div>
+                                <div class="confirmation-item">
+                                    <div class="item-label">配置时间</div>
+                                    <div class="item-value" id="configTime">
+                                        正在获取...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 可选配置 -->
+                        <div class="optional-config">
+                            <div class="optional-header">
+                                <div class="optional-icon">🔧</div>
+                                <h4>可选配置 <span class="optional-badge">高级</span></h4>
+                                <button type="button" class="toggle-optional" onclick="toggleOptionalConfig()">
+                                    <span class="toggle-text">展开选项</span>
+                                    <span class="toggle-arrow">▼</span>
+                                </button>
+                            </div>
+                            <div class="optional-content" id="optionalContent">
+                                <div class="config-option">
+                                    <label class="option-label">
+                                        <input type="checkbox" id="enableNotifications" checked>
+                                        <span class="checkbox-custom"></span>
+                                        <div class="option-info">
+                                            <span class="option-title">启用通知提醒</span>
+                                            <span class="option-desc">接收应用状态变更和系统消息通知</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="config-option">
+                                    <label class="option-label">
+                                        <input type="checkbox" id="autoBackup" checked>
+                                        <span class="checkbox-custom"></span>
+                                        <div class="option-info">
+                                            <span class="option-title">自动备份配置</span>
+                                            <span class="option-desc">定期备份重要的配置文件和应用数据</span>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="config-option">
+                                    <label class="option-label">
+                                        <input type="checkbox" id="enableMetrics">
+                                        <span class="checkbox-custom"></span>
+                                        <div class="option-info">
+                                            <span class="option-title">性能监控</span>
+                                            <span class="option-desc">收集应用性能指标用于优化建议</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 用户协议 -->
+                        <div class="agreement-section">
+                            <label class="agreement-label">
+                                <input type="checkbox" id="agreeTerms" required>
+                                <span class="checkbox-custom"></span>
+                                <div class="agreement-text">
+                                    我已阅读并同意
+                                    <a href="#" onclick="showTerms()" class="terms-link">《用户协议》</a>
+                                    和
+                                    <a href="#" onclick="showPrivacy()" class="privacy-link">《隐私政策》</a>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- 提交按钮 -->
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="showPreview()">
+                                <span class="btn-icon">👁️</span>
+                                <span class="btn-text">预览配置</span>
+                            </button>
+                            <button type="submit" class="btn-primary submit-btn">
+                                <span class="btn-icon">🚀</span>
+                                <span class="btn-text">确认并开始使用</span>
+                                <div class="btn-loading">
+                                    <div class="loading-spinner"></div>
+                                    <span class="loading-text">正在配置...</span>
+                                </div>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 帮助侧边栏 -->
+        <div class="help-sidebar" id="helpSidebar">
+            <div class="help-header">
+                <div class="help-icon">❓</div>
+                <h4>需要帮助？</h4>
+                <button class="close-help" onclick="toggleHelp()">✖️</button>
+            </div>
+            <div class="help-content">
+                <div class="help-section">
+                    <h5>常见问题</h5>
+                    <div class="faq-item">
+                        <div class="faq-question">工作目录可以修改吗？</div>
+                        <div class="faq-answer">配置完成后，工作目录路径将无法修改，但您可以联系管理员重新配置。</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">配置失败怎么办？</div>
+                        <div class="faq-answer">请检查网络连接或联系技术支持，我们会协助您完成配置。</div>
+                    </div>
+                </div>
+                <div class="help-section">
+                    <h5>技术支持</h5>
+                    <div class="support-contact">
+                        <div class="contact-item">
+                            <span class="contact-icon">📧</span>
+                            <span class="contact-text">support@devdebug.com</span>
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-icon">📞</span>
+                            <span class="contact-text">400-123-4567</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 帮助按钮 -->
+        <button class="help-toggle" onclick="toggleHelp()" title="获取帮助">
+            <span class="help-toggle-icon">❓</span>
+        </button>
+    </div>
+
+    <!-- 模态框 -->
+    <div id="modalOverlay" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalTitle">标题</h3>
+                <button class="modal-close" onclick="closeModal()">✖️</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                内容
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let optionalExpanded = false;
+        let helpVisible = false;
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePage();
+            updateConfigTime();
+            animateProgressSteps();
+            setWorkDirectory();
+        });
+
+        // 初始化页面
+        function initializePage() {
+            // 目录树动画
+            setTimeout(() => {
+                const treeNodes = document.querySelectorAll('.tree-node');
+                treeNodes.forEach((node, index) => {
+                    setTimeout(() => {
+                        node.style.opacity = '1';
+                        node.style.transform = 'translateX(0)';
+                    }, index * 100);
+                });
+            }, 500);
+
+            // 欢迎卡片动画
+            const welcomeCard = document.querySelector('.welcome-card');
+            if (welcomeCard) {
+                welcomeCard.style.animation = 'slideInUp 0.8s ease forwards';
+            }
+        }
+
+        // 设置工作目录
+        function setWorkDirectory() {
+            const username = document.querySelector('[th\\:text="${username}"]')?.textContent || 'user';
+            const workDirectory = `./workspaces/${username}/`;
+            document.getElementById('workDirectoryInput').value = workDirectory;
+        }
+
+        // 更新配置时间
+        function updateConfigTime() {
+            const now = new Date();
+            const timeString = now.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('configTime').textContent = timeString;
+        }
+
+        // 进度步骤动画
+        function animateProgressSteps() {
+            const steps = document.querySelectorAll('.step-indicator');
+            steps.forEach((step, index) => {
+                setTimeout(() => {
+                    if (index === 0) {
+                        step.classList.add('active');
+                    }
+                }, index * 200);
+            });
+        }
+
+        // 切换可选配置
+        function toggleOptionalConfig() {
+            const content = document.getElementById('optionalContent');
+            const toggleText = document.querySelector('.toggle-text');
+            const toggleArrow = document.querySelector('.toggle-arrow');
+            
+            optionalExpanded = !optionalExpanded;
+            
+            if (optionalExpanded) {
+                content.style.display = 'block';
+                content.style.animation = 'slideDown 0.3s ease forwards';
+                toggleText.textContent = '收起选项';
+                toggleArrow.textContent = '▲';
+            } else {
+                content.style.animation = 'slideUp 0.3s ease forwards';
+                setTimeout(() => {
+                    content.style.display = 'none';
+                }, 300);
+                toggleText.textContent = '展开选项';
+                toggleArrow.textContent = '▼';
+            }
+        }
+
+        // 切换帮助侧边栏
+        function toggleHelp() {
+            const sidebar = document.getElementById('helpSidebar');
+            const toggleBtn = document.querySelector('.help-toggle');
+            
+            helpVisible = !helpVisible;
+            
+            if (helpVisible) {
+                sidebar.classList.add('visible');
+                toggleBtn.classList.add('active');
+            } else {
+                sidebar.classList.remove('visible');
+                toggleBtn.classList.remove('active');
+            }
+        }
+
+        // 复制路径
+        function copyPath() {
+            const username = document.querySelector('[th\\:text="${username}"]')?.textContent || 'user';
+            const path = `./workspaces/${username}/`;
+            
+            navigator.clipboard.writeText(path).then(() => {
+                showToast('路径已复制到剪贴板', 'success');
+                
+                // 按钮动画
+                const copyBtn = document.querySelector('.copy-btn');
+                copyBtn.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    copyBtn.style.transform = 'scale(1)';
+                }, 150);
+            }).catch(() => {
+                showToast('复制失败，请手动复制', 'error');
+            });
+        }
+
+        // 显示预览
+        function showPreview() {
+            const username = document.querySelector('[th\\:text="${username}"]')?.textContent || 'user';
+            const notifications = document.getElementById('enableNotifications').checked;
+            const backup = document.getElementById('autoBackup').checked;
+            const metrics = document.getElementById('enableMetrics').checked;
+            
+            const content = `
+                <div class="config-preview">
+                    <div class="preview-section">
+                        <h4>📁 工作目录配置</h4>
+                        <div class="preview-item">
+                            <strong>用户:</strong> ${username}
+                        </div>
+                        <div class="preview-item">
+                            <strong>路径:</strong> ./workspaces/${username}/
+                        </div>
+                    </div>
+                    <div class="preview-section">
+                        <h4>🔧 功能选项</h4>
+                        <div class="preview-item">
+                            <strong>通知提醒:</strong> ${notifications ? '启用' : '禁用'}
+                        </div>
+                        <div class="preview-item">
+                            <strong>自动备份:</strong> ${backup ? '启用' : '禁用'}
+                        </div>
+                        <div class="preview-item">
+                            <strong>性能监控:</strong> ${metrics ? '启用' : '禁用'}
+                        </div>
+                    </div>
+                    <div class="preview-actions">
+                        <button class="btn-primary" onclick="closeModal()">确认配置</button>
+                    </div>
+                </div>
+            `;
+            showModal('配置预览', content);
+        }
+
+        // 显示用户协议
+        function showTerms() {
+            const content = `
+                <div class="terms-content">
+                    <h4>用户协议</h4>
+                    <div class="terms-text">
+                        <p>1. 服务说明：Dev Debug Platform 提供Java应用开发调试服务。</p>
+                        <p>2. 使用规范：用户应合法合规使用平台服务，不得进行恶意操作。</p>
+                        <p>3. 数据安全：平台承诺保护用户数据安全，不会泄露用户信息。</p>
+                        <p>4. 服务变更：平台有权根据需要调整服务内容，会提前通知用户。</p>
+                        <p>5. 免责声明：用户因违规使用造成的损失，平台不承担责任。</p>
+                    </div>
+                </div>
+            `;
+            showModal('用户协议', content);
+        }
+
+        // 显示隐私政策
+        function showPrivacy() {
+            const content = `
+                <div class="privacy-content">
+                    <h4>隐私政策</h4>
+                    <div class="privacy-text">
+                        <p>1. 信息收集：我们仅收集必要的用户信息用于提供服务。</p>
+                        <p>2. 信息使用：用户信息仅用于改善服务体验，不会用于其他目的。</p>
+                        <p>3. 信息保护：采用先进的加密技术保护用户数据安全。</p>
+                        <p>4. 信息共享：未经用户同意，不会向第三方共享用户信息。</p>
+                        <p>5. 用户权利：用户有权查看、修改或删除个人信息。</p>
+                    </div>
+                </div>
+            `;
+            showModal('隐私政策', content);
+        }
+
+        // 显示模态框
+        function showModal(title, content) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalBody').innerHTML = content;
+            document.getElementById('modalOverlay').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        // 显示提示
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <div class="toast-content">
+                    <span class="toast-icon">${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span>
+                    <span class="toast-message">${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 100);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        // 表单提交处理
+        document.querySelector('.config-form').addEventListener('submit', function(e) {
+            const submitBtn = document.querySelector('.submit-btn');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const btnIcon = submitBtn.querySelector('.btn-icon');
+            const btnLoading = submitBtn.querySelector('.btn-loading');
+            
+            // 检查协议同意
+            if (!document.getElementById('agreeTerms').checked) {
+                e.preventDefault();
+                showToast('请先同意用户协议和隐私政策', 'error');
+                return;
+            }
+            
+            // 显示加载状态
+            submitBtn.classList.add('loading');
+            btnText.style.opacity = '0';
+            btnIcon.style.opacity = '0';
+            btnLoading.style.display = 'flex';
+            
+            // 更新进度指示器
+            updateProgressStep(2);
+            
+            setTimeout(() => {
+                updateProgressStep(3);
+            }, 2000);
+        });
+
+        // 更新进度步骤
+        function updateProgressStep(step) {
+            const steps = document.querySelectorAll('.step-indicator');
+            steps.forEach((stepEl, index) => {
+                if (index < step) {
+                    stepEl.classList.add('completed');
+                    stepEl.classList.remove('active');
+                }
+                if (index === step - 1) {
+                    stepEl.classList.add('active');
+                }
+            });
+        }
+
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+                if (helpVisible) {
+                    toggleHelp();
+                }
+            }
+            if (e.key === 'F1') {
+                e.preventDefault();
+                toggleHelp();
+            }
+        });
+
+        // 页面离开提示
+        window.addEventListener('beforeunload', function(e) {
+            if (!document.querySelector('.submit-btn').classList.contains('loading')) {
+                e.preventDefault();
+                e.returnValue = '确定要离开吗？您的配置将会丢失。';
+            }
+        });
+    </script>
 </body>
 </html>

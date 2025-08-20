@@ -5,132 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>用户管理 - Dev Debug Platform</title>
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        .admin-nav {
-            background: #2c3e50;
-            color: white;
-            padding: 10px 0;
-            margin-bottom: 20px;
-        }
-        
-        .admin-nav ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            gap: 20px;
-        }
-        
-        .admin-nav a {
-            color: white;
-            text-decoration: none;
-            padding: 10px 15px;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-        
-        .admin-nav a:hover,
-        .admin-nav a.active {
-            background-color: #34495e;
-        }
-        
-        .user-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        
-        .user-table th,
-        .user-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .user-table th {
-            background-color: #f8f9fa;
-            font-weight: bold;
-        }
-        
-        .role-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
-            margin-right: 5px;
-        }
-        
-        .role-super-admin {
-            background-color: #e74c3c;
-            color: white;
-        }
-        
-        .role-admin {
-            background-color: #f39c12;
-            color: white;
-        }
-        
-        .role-user {
-            background-color: #3498db;
-            color: white;
-        }
-        
-        .work-directory {
-            font-family: monospace;
-            font-size: 12px;
-            color: #666;
-        }
-        
-        .btn-danger {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        
-        .btn-danger:hover {
-            background-color: #c0392b;
-        }
-        
-        .btn-danger:disabled {
-            background-color: #95a5a6;
-            cursor: not-allowed;
-        }
-        
-        .btn-secondary:disabled {
-            background-color: #95a5a6;
-            cursor: not-allowed;
-        }
-    </style>
-    
-    <style>
-        .alert {
-            padding: 15px;
-            margin-bottom: 20px;
-            border: 1px solid transparent;
-            border-radius: 4px;
-        }
-        
-        .alert-success {
-            color: #3c763d;
-            background-color: #dff0d8;
-            border-color: #d6e9c6;
-        }
-        
-        .alert-error {
-            color: #a94442;
-            background-color: #f2dede;
-            border-color: #ebccd1;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
-        <h1>超级管理员控制台 - 用户管理</h1>
+        <h1>🚀 超级管理员控制台</h1>
         
         <!-- 消息显示 -->
         <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
@@ -138,37 +16,42 @@
         
         <nav class="admin-nav">
             <ul>
-                <li><a href="/admin/servers">服务器管理</a></li>
-                <li><a href="/admin/users" class="active">用户管理</a></li>
-                <li><a href="/">返回首页</a></li>
+                <li><a href="/admin/servers">🖥️ 服务器管理</a></li>
+                <li><a href="/admin/users" class="active">👥 用户管理</a></li>
+                <li><a href="/">🏠 返回首页</a></li>
             </ul>
         </nav>
-
-        <h2>用户列表</h2>
-
-        <div th:if="${#lists.isEmpty(users)}" style="text-align: center; color: #666; padding: 40px;">
-            <p>暂无用户</p>
+        
+        <div class="page-header">
+            <h2>👥 用户列表</h2>
         </div>
-
+        
+        <div th:if="${#lists.isEmpty(users)}" class="empty-state">
+            <p>🎭 暂无用户数据</p>
+            <small>系统中还没有注册的用户，等待用户注册后在此显示</small>
+        </div>
+        
         <table class="user-table" th:unless="${#lists.isEmpty(users)}">
             <thead>
                 <tr>
-                    <th>用户名</th>
-                    <th>邮箱</th>
-                    <th>角色</th>
-                    <th>工作目录</th>
-                    <th>注册时间</th>
-                    <th>首次登录</th>
-                    <th>操作</th>
+                    <th>👤 用户名</th>
+                    <th>📧 邮箱</th>
+                    <th>🎭 角色</th>
+                    <th>📁 工作目录</th>
+                    <th>📅 注册时间</th>
+                    <th>🆕 首次登录</th>
+                    <th>⚙️ 操作</th>
                 </tr>
             </thead>
             <tbody>
                 <tr th:each="user : ${users}">
-                    <td th:text="${user.username}">username</td>
+                    <td>
+                        <strong th:text="${user.username}">username</strong>
+                    </td>
                     <td th:text="${user.email}">user@example.com</td>
                     <td>
                         <span th:each="role : ${user.roles}" 
-                              th:class="${'role-badge role-' + #strings.toLowerCase(#strings.replace(role.name(), '_', '-'))}"
+                              th:class="${'role-badge role-' + #strings.toLowerCase(#strings.replace(role.name(), '_', '-'))}" 
                               th:text="${role.name()}">USER</span>
                     </td>
                     <td>
@@ -176,41 +59,38 @@
                     </td>
                     <td th:text="${#temporals.format(user.createdAt, 'yyyy-MM-dd HH:mm')}">2024-01-01 12:00</td>
                     <td>
-                        <span th:class="${user.isFirstLogin} ? 'status-active' : 'status-inactive'"
+                        <span th:class="${user.isFirstLogin} ? 'status-active' : 'status-inactive'" 
                               th:text="${user.isFirstLogin} ? '是' : '否'">是</span>
                     </td>
                     <td>
-                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                        <div class="action-buttons">
                             <!-- 超级管理员操作 -->
-                            <form th:action="@{/admin/users/{id}/toggle-super-admin(id=${user.id})}" method="post" 
-                                  style="display: inline;" sec:authorize="hasRole('SUPER_ADMIN')">
+                            <form th:action="@{/admin/users/{id}/toggle-super-admin(id=${user.id})}" 
+                                  method="post" style="display: inline;" sec:authorize="hasRole('SUPER_ADMIN')">
                                 <button type="submit" class="btn-secondary"
                                         th:classappend="${#lists.contains(user.roles, T(com.cmict.internalpaas.model.User$Role).SUPER_ADMIN)} ? 'role-super-admin' : ''"
-                                        th:text="${#lists.contains(user.roles, T(com.cmict.internalpaas.model.User$Role).SUPER_ADMIN)} ? '取消超管' : '设为超管'"
-                                        onclick="return confirm('确定要修改此用户的超级管理员权限吗？')"
-                                        th:disabled="${user.username == 'root'}">
-                                    设为超管
+                                        th:text="${#lists.contains(user.roles, T(com.cmict.internalpaas.model.User$Role).SUPER_ADMIN)} ? '👑 取消超管' : '👑 设为超管'">
+                                    👑 设为超管
                                 </button>
                             </form>
                             
                             <!-- 管理员操作 -->
-                            <form th:action="@{/admin/users/{id}/toggle-admin(id=${user.id})}" method="post" 
-                                  style="display: inline;" sec:authorize="hasRole('SUPER_ADMIN') or hasRole('ADMIN')">
+                            <form th:action="@{/admin/users/{id}/toggle-admin(id=${user.id})}" 
+                                  method="post" style="display: inline;">
                                 <button type="submit" class="btn-secondary"
                                         th:classappend="${#lists.contains(user.roles, T(com.cmict.internalpaas.model.User$Role).ADMIN)} ? 'role-admin' : ''"
-                                        th:text="${#lists.contains(user.roles, T(com.cmict.internalpaas.model.User$Role).ADMIN)} ? '取消管理员' : '设为管理员'"
-                                        onclick="return confirm('确定要修改此用户的管理员权限吗？')">
-                                    设为管理员
+                                        th:text="${#lists.contains(user.roles, T(com.cmict.internalpaas.model.User$Role).ADMIN)} ? '🛡️ 取消管理员' : '🛡️ 设为管理员'">
+                                    🛡️ 设为管理员
                                 </button>
                             </form>
                             
                             <!-- 删除用户 -->
-                            <form th:action="@{/admin/users/{id}/delete(id=${user.id})}" method="post" 
-                                  style="display: inline;" sec:authorize="hasRole('SUPER_ADMIN')">
+                            <form th:action="@{/admin/users/{id}/delete(id=${user.id})}" 
+                                  method="post" style="display: inline;" 
+                                  onsubmit="return confirm('⚠️ 确定要删除用户 ' + '[[${user.username}]]' + ' 吗？ \n 此操作不可恢复，请谨慎操作！')">
                                 <button type="submit" class="btn-danger"
-                                        onclick="return confirm('确定要删除此用户吗？此操作不可恢复！')"
-                                        th:disabled="${user.username == 'root'}">
-                                    删除
+                                        th:disabled="${#lists.contains(user.roles, T(com.cmict.internalpaas.model.User$Role).SUPER_ADMIN)}">
+                                    🗑️ 删除
                                 </button>
                             </form>
                         </div>
