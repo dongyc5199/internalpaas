@@ -115,6 +115,32 @@ public class UserServiceImpl implements UserService {
         user.setRoles(roles);
         userRepository.save(user);
     }
+    
+    @Override
+    public void toggleSuperAdminRole(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        
+        Set<User.Role> roles = user.getRoles();
+        if (roles.contains(User.Role.SUPER_ADMIN)) {
+            roles.remove(User.Role.SUPER_ADMIN);
+        } else {
+            roles.add(User.Role.SUPER_ADMIN);
+        }
+        
+        user.setRoles(roles);
+        userRepository.save(user);
+    }
+    
+    @Override
+    public void deleteUser(Long userId) {
+        // 防止删除最后一个超级管理员
+        if (userRepository.countByRolesContaining(User.Role.SUPER_ADMIN) <= 1) {
+            throw new RuntimeException("不能删除最后一个超级管理员");
+        }
+        
+        userRepository.deleteById(userId);
+    }
 
     @Override
     public boolean hasRole(User user, User.Role role) {

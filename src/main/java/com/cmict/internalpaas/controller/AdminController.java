@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -73,6 +74,23 @@ public class AdminController {
     @PostMapping("/users/{id}/toggle-admin")
     public String toggleAdminRole(@PathVariable Long id) {
         userService.toggleAdminRole(id);
+        return "redirect:/admin/users";
+    }
+    
+    @PostMapping("/users/{id}/toggle-super-admin")
+    public String toggleSuperAdminRole(@PathVariable Long id) {
+        userService.toggleSuperAdminRole(id);
+        return "redirect:/admin/users";
+    }
+    
+    @PostMapping("/users/{id}/delete")
+    public String deleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            userService.deleteUser(id);
+            redirectAttributes.addFlashAttribute("successMessage", "用户删除成功");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
         return "redirect:/admin/users";
     }
 }

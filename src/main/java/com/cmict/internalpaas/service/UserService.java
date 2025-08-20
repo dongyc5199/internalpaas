@@ -41,6 +41,18 @@ public interface UserService extends UserDetailsService {
      * @param userId 用户ID
      */
     void toggleAdminRole(Long userId);
+    
+    /**
+     * 切换用户的超级管理员角色
+     * @param userId 用户ID
+     */
+    void toggleSuperAdminRole(Long userId);
+    
+    /**
+     * 删除用户（仅超级管理员可执行）
+     * @param userId 用户ID
+     */
+    void deleteUser(Long userId);
 
     /**
      * 判断用户是否拥有指定角色

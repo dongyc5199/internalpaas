@@ -81,11 +81,60 @@
             font-size: 12px;
             color: #666;
         }
+        
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .btn-danger:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+    </style>
+    
+    <style>
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        
+        .alert-success {
+            color: #3c763d;
+            background-color: #dff0d8;
+            border-color: #d6e9c6;
+        }
+        
+        .alert-error {
+            color: #a94442;
+            background-color: #f2dede;
+            border-color: #ebccd1;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>超级管理员控制台 - 用户管理</h1>
+        
+        <!-- 消息显示 -->
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
         
         <nav class="admin-nav">
             <ul>
@@ -131,14 +180,40 @@
                               th:text="${user.isFirstLogin} ? '是' : '否'">是</span>
                     </td>
                     <td>
-                        <form th:action="@{/admin/users/{id}/toggle-admin(id=${user.id})}" method="post" 
-                              style="display: inline;">
-                            <button type="submit" class="btn-secondary"
-                                    th:text="${#lists.contains(user.roles, T(com.cmict.internalpaas.model.User$Role).ADMIN)} ? '取消管理员' : '设为管理员'"
-                                    onclick="return confirm('确定要修改此用户的权限吗？')">
-                                设为管理员
-                            </button>
-                        </form>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <!-- 超级管理员操作 -->
+                            <form th:action="@{/admin/users/{id}/toggle-super-admin(id=${user.id})}" method="post" 
+                                  style="display: inline;" sec:authorize="hasRole('SUPER_ADMIN')">
+                                <button type="submit" class="btn-secondary"
+                                        th:classappend="${#lists.contains(user.roles, T(com.cmict.internalpaas.model.User$Role).SUPER_ADMIN)} ? 'role-super-admin' : ''"
+                                        th:text="${#lists.contains(user.roles, T(com.cmict.internalpaas.model.User$Role).SUPER_ADMIN)} ? '取消超管' : '设为超管'"
+                                        onclick="return confirm('确定要修改此用户的超级管理员权限吗？')"
+                                        th:disabled="${user.username == 'root'}">
+                                    设为超管
+                                </button>
+                            </form>
+                            
+                            <!-- 管理员操作 -->
+                            <form th:action="@{/admin/users/{id}/toggle-admin(id=${user.id})}" method="post" 
+                                  style="display: inline;" sec:authorize="hasRole('SUPER_ADMIN') or hasRole('ADMIN')">
+                                <button type="submit" class="btn-secondary"
+                                        th:classappend="${#lists.contains(user.roles, T(com.cmict.internalpaas.model.User$Role).ADMIN)} ? 'role-admin' : ''"
+                                        th:text="${#lists.contains(user.roles, T(com.cmict.internalpaas.model.User$Role).ADMIN)} ? '取消管理员' : '设为管理员'"
+                                        onclick="return confirm('确定要修改此用户的管理员权限吗？')">
+                                    设为管理员
+                                </button>
+                            </form>
+                            
+                            <!-- 删除用户 -->
+                            <form th:action="@{/admin/users/{id}/delete(id=${user.id})}" method="post" 
+                                  style="display: inline;" sec:authorize="hasRole('SUPER_ADMIN')">
+                                <button type="submit" class="btn-danger"
+                                        onclick="return confirm('确定要删除此用户吗？此操作不可恢复！')"
+                                        th:disabled="${user.username == 'root'}">
+                                    删除
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
             </tbody>
