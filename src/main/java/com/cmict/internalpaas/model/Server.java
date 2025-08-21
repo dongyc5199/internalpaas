@@ -28,6 +28,30 @@ public class Server {
     @Column(nullable = false)
     private Boolean active = true;
     
+    // SSH连接配置
+    @Column
+    private Integer sshPort = 22;
+    
+    @Column
+    private String sshUsername;
+    
+    @Column
+    private String sshPassword;
+    
+    @Column
+    private String sshKeyPath;
+    
+    @Column
+    private String sshKeyPassphrase;
+    
+    // 连接状态缓存
+    @Column
+    @Enumerated(EnumType.STRING)
+    private ConnectionStatus connectionStatus = ConnectionStatus.UNKNOWN;
+    
+    @Column
+    private LocalDateTime lastConnectionCheck;
+    
     @Column(nullable = false)
     private LocalDateTime createdAt;
     
@@ -43,6 +67,15 @@ public class Server {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    // 连接状态枚举
+    public enum ConnectionStatus {
+        CONNECTED,      // 连接成功
+        FAILED,         // 连接失败
+        TIMEOUT,        // 连接超时
+        AUTH_FAILED,    // 认证失败
+        UNKNOWN         // 未知状态
     }
 
     // Getters and Setters
@@ -66,6 +99,27 @@ public class Server {
     
     public Boolean getActive() { return active; }
     public void setActive(Boolean active) { this.active = active; }
+    
+    public Integer getSshPort() { return sshPort; }
+    public void setSshPort(Integer sshPort) { this.sshPort = sshPort; }
+    
+    public String getSshUsername() { return sshUsername; }
+    public void setSshUsername(String sshUsername) { this.sshUsername = sshUsername; }
+    
+    public String getSshPassword() { return sshPassword; }
+    public void setSshPassword(String sshPassword) { this.sshPassword = sshPassword; }
+    
+    public String getSshKeyPath() { return sshKeyPath; }
+    public void setSshKeyPath(String sshKeyPath) { this.sshKeyPath = sshKeyPath; }
+    
+    public String getSshKeyPassphrase() { return sshKeyPassphrase; }
+    public void setSshKeyPassphrase(String sshKeyPassphrase) { this.sshKeyPassphrase = sshKeyPassphrase; }
+    
+    public ConnectionStatus getConnectionStatus() { return connectionStatus; }
+    public void setConnectionStatus(ConnectionStatus connectionStatus) { this.connectionStatus = connectionStatus; }
+    
+    public LocalDateTime getLastConnectionCheck() { return lastConnectionCheck; }
+    public void setLastConnectionCheck(LocalDateTime lastConnectionCheck) { this.lastConnectionCheck = lastConnectionCheck; }
     
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

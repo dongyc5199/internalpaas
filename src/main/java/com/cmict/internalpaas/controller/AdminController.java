@@ -62,6 +62,30 @@ public class AdminController {
         serverService.deleteServer(id);
         return "redirect:/admin/servers";
     }
+    
+    @PostMapping("/servers/{id}/check-connection")
+    public String checkServerConnection(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            Server server = serverService.checkServerConnection(id);
+            String statusDesc = serverService.getConnectionStatusDescription(server.getConnectionStatus());
+            redirectAttributes.addFlashAttribute("successMessage", 
+                String.format("服务器 '%s' 连接状态: %s", server.getName(), statusDesc));
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "检查连接失败: " + e.getMessage());
+        }
+        return "redirect:/admin/servers";
+    }
+    
+    @PostMapping("/servers/check-all-connections")
+    public String checkAllServerConnections(RedirectAttributes redirectAttributes) {
+        try {
+            serverService.checkAllServerConnections();
+            redirectAttributes.addFlashAttribute("successMessage", "已启动所有服务器的连接检查");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "批量检查失败: " + e.getMessage());
+        }
+        return "redirect:/admin/servers";
+    }
 
     @GetMapping("/users")
     public String userManagement(Model model) {

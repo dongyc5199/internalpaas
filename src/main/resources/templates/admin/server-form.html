@@ -27,17 +27,23 @@
                        placeholder="例如：本地开发服务器">
             </div>
 
-            <div class="form-group">
-                <label for="hostname">主机名/IP地址 *</label>
-                <input type="text" id="hostname" th:field="*{hostname}" required 
-                       placeholder="例如：localhost 或 192.168.1.100">
-            </div>
+            <fieldset>
+                <legend>应用服务配置</legend>
+                
+                <div class="form-group">
+                    <label for="hostname">应用主机名/IP地址 *</label>
+                    <input type="text" id="hostname" th:field="*{hostname}" required 
+                           placeholder="例如：localhost 或 192.168.1.100">
+                    <small>用户访问此服务器的应用地址</small>
+                </div>
 
-            <div class="form-group">
-                <label for="port">端口号 *</label>
-                <input type="number" id="port" th:field="*{port}" required 
-                       min="1" max="65535" placeholder="8080">
-            </div>
+                <div class="form-group">
+                    <label for="port">应用端口号 *</label>
+                    <input type="number" id="port" th:field="*{port}" required 
+                           min="1" max="65535" placeholder="8080">
+                    <small>应用服务运行的端口号</small>
+                </div>
+            </fieldset>
 
             <div class="form-group">
                 <label for="baseWorkDirectory">基础工作目录 *</label>
@@ -51,6 +57,44 @@
                 <textarea id="description" th:field="*{description}" rows="3" 
                           placeholder="服务器的详细描述信息..."></textarea>
             </div>
+
+            <!-- SSH连接配置 -->
+            <fieldset>
+                <legend>SSH连接配置</legend>
+                
+                <div class="form-group">
+                    <label for="sshPort">SSH端口</label>
+                    <input type="number" id="sshPort" th:field="*{sshPort}" 
+                           min="1" max="65535" placeholder="22">
+                </div>
+
+                <div class="form-group">
+                    <label for="sshUsername">SSH用户名</label>
+                    <input type="text" id="sshUsername" th:field="*{sshUsername}" 
+                           placeholder="root">
+                </div>
+
+                <div class="form-group">
+                    <label for="sshPassword">SSH密码</label>
+                    <input type="password" id="sshPassword" th:field="*{sshPassword}" 
+                           placeholder="可选：密码认证">
+                    <small>如果配置了SSH密钥，可以留空</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="sshKeyPath">SSH密钥路径</label>
+                    <input type="text" id="sshKeyPath" th:field="*{sshKeyPath}" 
+                           placeholder="例如：~/.ssh/id_rsa">
+                    <small>可选：使用SSH密钥文件认证</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="sshKeyPassphrase">SSH密钥密码</label>
+                    <input type="password" id="sshKeyPassphrase" th:field="*{sshKeyPassphrase}" 
+                           placeholder="可选：密钥密码">
+                    <small>如果密钥有密码保护，请填写</small>
+                </div>
+            </fieldset>
 
             <div class="form-group">
                 <label>
