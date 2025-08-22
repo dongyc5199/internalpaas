@@ -30,6 +30,29 @@ public class ServerService {
         return serverRepository.findById(id);
     }
     
+    public Optional<Server> findById(Long id) {
+        return serverRepository.findById(id);
+    }
+    
+    /**
+     * 检查服务器的SSH连接状态
+     */
+    public String checkConnectionStatus(Long id) {
+        Server server = serverRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Server not found"));
+        
+        if (!server.getActive()) {
+            return "FAILED";
+        }
+        
+        Server.ConnectionStatus status = sshConnectionService.checkConnection(server);
+        server.setConnectionStatus(status);
+        server.setLastConnectionCheck(LocalDateTime.now());
+        serverRepository.save(server);
+        
+        return status.name();
+    }
+    
     public Server saveServer(Server server) {
         // 设置默认值
         if (server.getSshPort() == null) {

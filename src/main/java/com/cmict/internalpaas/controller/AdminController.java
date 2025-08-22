@@ -37,6 +37,22 @@ public class AdminController {
         return "admin/server-form";
     }
 
+    @GetMapping("/servers/{id}")
+    public String serverDetail(@PathVariable Long id, Model model) {
+        Server server = serverService.findById(id)
+            .orElseThrow(() -> new RuntimeException("服务器未找到"));
+        
+        String connectionStatus = serverService.checkConnectionStatus(id);
+        String connectionDescription = serverService.getConnectionStatusDescription(
+            Server.ConnectionStatus.valueOf(connectionStatus));
+        
+        model.addAttribute("server", server);
+        model.addAttribute("connectionStatus", connectionStatus);
+        model.addAttribute("connectionDescription", connectionDescription);
+        
+        return "admin/server-detail";
+    }
+
     @PostMapping("/servers")
     public String saveServer(@ModelAttribute Server server) {
         serverService.saveServer(server);
