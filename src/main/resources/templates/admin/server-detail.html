@@ -333,8 +333,8 @@
                     <span class="info-value" th:text="${server.sshUsername}">root</span>
                 </div>
                 <div class="info-row">
-                    <span class="info-label">SSH密钥：</span>
-                    <span class="info-value" th:text="${server.sshKeyPath}">~/.ssh/id_rsa</span>
+                    <span class="info-label">认证方式：</span>
+                    <span class="info-value">密码认证</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">连接状态：</span>
@@ -434,7 +434,7 @@
             commandOutput.style.display = 'none';
 
             try {
-                const response = await fetch(`/api/remote-command/execute/${[[${server.id}]]}`, {
+                const response = await fetch(`/api/remote-command/execute/${server.id}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -465,7 +465,7 @@
 
         async function checkConnection() {
             try {
-                const response = await fetch(`/api/remote-command/check-connection/${[[${server.id}]]}`);
+                const response = await fetch(`/api/remote-command/check-connection/${server.id}`);
                 const result = await response.json();
                 
                 if (result.success) {

@@ -2,13 +2,18 @@ package com.cmict.internalpaas.controller;
 
 import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerMetrics;
+import com.cmict.internalpaas.model.UserActivity;
 import com.cmict.internalpaas.service.MonitoringService;
+import com.cmict.internalpaas.service.MonitoringSchedulerService;
 import com.cmict.internalpaas.service.ServerService;
+import com.cmict.internalpaas.service.UserActivityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,19 +28,98 @@ public class MonitoringController {
     @Autowired
     private ServerService serverService;
     
+    @Autowired
+    private UserActivityService userActivityService;
+    
+    @Autowired
+    private MonitoringSchedulerService schedulerService;
+    
     /**
-     * 获取单个服务器指标
+     * 监控主页面
+     */
+    @GetMapping("/dashboard")
+    public String dashboard(Model model) {
+        try {
+            List<Server> servers = serverService.getActiveServers();
+            model.addAttribute("servers", servers);
+            
+            // 添加服务器状态统计
+            Map<Server.ConnectionStatus, Long> statusStats = new HashMap<>();
+            for (Server server : servers) {
+                statusStats.merge(server.getConnectionStatus(), 1L, Long::sum);
+            }
+            model.addAttribute("statusStats", statusStats);
+            
+            return "monitoring/dashboard";
+        } catch (Exception e) {
+            model.addAttribute("error", "加载监控数据失败: " + e.getMessage());
+            return "monitoring/dashboard";
+        }
+    }
+    
+    /**
+     * 服务器详细监控页面
+     */
+    @GetMapping("/server/{id}")
+    public String serverDetails(@PathVariable Long id, Model model) {
+        try {
+            Server server = serverService.findById(id).orElse(null);
+            if (server == null) {
+                model.addAttribute("error", "服务器不存在");
+                return "monitoring/server-details";
+            }
+            
+            model.addAttribute("server", server);
+            
+            // 获取最新监控数据
+            ServerMetrics latestMetrics = serverService.getServerLatestMetrics(id);
+            model.addAttribute("metrics", latestMetrics);
+            
+            // 获取用户活跃信息
+            UserActivityService.UserActivitySummary activitySummary = userActivityService.getUserActivitySummary(id);
+            model.addAttribute("activitySummary", activitySummary);
+            
+            return "monitoring/server-details";
+        } catch (Exception e) {
+            model.addAttribute("error", "加载服务器详情失败: " + e.getMessage());
+            return "monitoring/server-details";
+        }
+    }
+    
+    /**
+     * 获取服务器最新监控数据
      */
     @GetMapping("/server/{id}/metrics")
     @ResponseBody
     public ResponseEntity<ServerMetrics> getServerMetrics(@PathVariable Long id) {
         try {
-            Server server = serverService.getServerById(id).orElse(null);
-            if (server == null) {
+            ServerMetrics metrics = serverService.getServerLatestMetrics(id);
+            if (metrics == null) {
+                // 如果没有数据，尝试刷新
+                metrics = serverService.refreshServerMetrics(id);
+            }
+            
+            if (metrics == null) {
                 return ResponseEntity.notFound().build();
             }
             
-            ServerMetrics metrics = monitoringService.getServerMetrics(server);
+            return ResponseEntity.ok(metrics);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
+    /**
+     * 刷新服务器监控数据
+     */
+    @PostMapping("/server/{id}/refresh")
+    @ResponseBody
+    public ResponseEntity<ServerMetrics> refreshServerMetrics(@PathVariable Long id) {
+        try {
+            ServerMetrics metrics = serverService.refreshServerMetrics(id);
+            if (metrics == null) {
+                return ResponseEntity.notFound().build();
+            }
             return ResponseEntity.ok(metrics);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
@@ -54,12 +138,12 @@ public class MonitoringController {
             
             for (Server server : servers) {
                 try {
-                    ServerMetrics metrics = monitoringService.getServerMetrics(server);
-                    metricsMap.put(server.getName(), metrics);
+                    ServerMetrics metrics = serverService.getServerLatestMetrics(server.getId());
+                    if (metrics != null) {
+                        metricsMap.put(server.getName(), metrics);
+                    }
                 } catch (Exception e) {
                     // 单个服务器失败不影响其他服务器
-                    ServerMetrics errorMetrics = new ServerMetrics(server.getName(), server.getHostname());
-                    metricsMap.put(server.getName(), errorMetrics);
                 }
             }
             
@@ -76,29 +160,36 @@ public class MonitoringController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> getServerHealth(@PathVariable Long id) {
         try {
-            Server server = serverService.getServerById(id).orElse(null);
+            Server server = serverService.findById(id).orElse(null);
             if (server == null) {
                 return ResponseEntity.notFound().build();
             }
             
-            ServerMetrics metrics = monitoringService.getServerMetrics(server);
+            ServerMetrics metrics = serverService.getServerLatestMetrics(id);
             Map<String, Object> health = new HashMap<>();
             
             health.put("serverName", server.getName());
             health.put("hostname", server.getHostname());
+            health.put("connectionStatus", server.getConnectionStatus());
             health.put("status", "UP");
-            health.put("metrics", metrics);
             
-            // 简单健康检查逻辑
-            if (metrics.getCpuUsage() != null && metrics.getCpuUsage() > 90) {
-                health.put("status", "WARNING");
-                health.put("message", "CPU使用率过高");
-            } else if (metrics.getMemoryUsage() != null && metrics.getMemoryUsage() > 90) {
-                health.put("status", "WARNING");
-                health.put("message", "内存使用率过高");
-            } else if (metrics.getDiskUsage() != null && metrics.getDiskUsage() > 90) {
-                health.put("status", "WARNING");
-                health.put("message", "磁盘使用率过高");
+            if (metrics != null) {
+                health.put("metrics", metrics);
+                
+                // 简单健康检查逻辑
+                if (metrics.getCpuUsage() != null && metrics.getCpuUsage() > 90) {
+                    health.put("status", "WARNING");
+                    health.put("message", "CPU使用率过高");
+                } else if (metrics.getMemoryUsage() != null && metrics.getMemoryUsage() > 90) {
+                    health.put("status", "WARNING");
+                    health.put("message", "内存使用率过高");
+                } else if (metrics.getDiskUsage() != null && metrics.getDiskUsage() > 90) {
+                    health.put("status", "WARNING");
+                    health.put("message", "磁盘使用率过高");
+                }
+            } else {
+                health.put("status", "DOWN");
+                health.put("message", "无监控数据");
             }
             
             return ResponseEntity.ok(health);
@@ -107,6 +198,54 @@ public class MonitoringController {
             error.put("status", "DOWN");
             error.put("error", e.getMessage());
             return ResponseEntity.ok(error);
+        }
+    }
+    
+    /**
+     * 获取服务器用户活跃信息
+     */
+    @GetMapping("/server/{id}/users")
+    @ResponseBody
+    public ResponseEntity<List<UserActivity>> getServerActiveUsers(@PathVariable Long id) {
+        try {
+            List<UserActivity> activeUsers = userActivityService.getActiveUsers(id);
+            return ResponseEntity.ok(activeUsers);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
+    /**
+     * 获取服务器用户活动摘要
+     */
+    @GetMapping("/server/{id}/activity-summary")
+    @ResponseBody
+    public ResponseEntity<UserActivityService.UserActivitySummary> getServerActivitySummary(@PathVariable Long id) {
+        try {
+            UserActivityService.UserActivitySummary summary = userActivityService.getUserActivitySummary(id);
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
+    /**
+     * 手动触发全量健康检查
+     */
+    @PostMapping("/trigger-health-check")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> triggerHealthCheck() {
+        try {
+            schedulerService.triggerFullHealthCheck();
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "健康检查已触发");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
         }
     }
 }

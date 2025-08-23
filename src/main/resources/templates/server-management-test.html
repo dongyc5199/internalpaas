@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务器管理功能测试 - InternalPaaS</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .test-container {
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #1e293b;
+        }
+        
+        .test-output {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            margin-left: 10px;
+        }
+        
+        .status-success {
+            background: #dcfce7;
+            color: #15803d;
+        }
+        
+        .status-error {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🧪 服务器管理功能测试</h1>
+            <p>测试InternalPaaS平台的服务器添加、查询、更新功能</p>
+        </div>
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+            <button class="btn btn-primary" onclick="runTest()">🚀 开始测试</button>
+            <span id="statusIndicator"></span>
+        </div>
+        
+        <div class="test-output" id="testOutput">
+            点击"开始测试"按钮来运行服务器管理功能测试...
+        </div>
+        
+        <div style="margin-top: 20px; text-align: center;">
+            <a href="/test/ssh" class="btn btn-primary">🔗 SSH连接测试</a>
+            <a href="/" class="btn btn-primary">🏠 返回首页</a>
+        </div>
+    </div>
+    
+    <script>
+        function runTest() {
+            const outputDiv = document.getElementById('testOutput');
+            const statusDiv = document.getElementById('statusIndicator');
+            const button = document.querySelector('.btn-primary');
+            
+            // 设置加载状态
+            button.classList.add('loading');
+            button.textContent = '⏳ 测试中...';
+            statusDiv.innerHTML = '<span class="status-indicator">🔄 测试执行中...</span>';
+            outputDiv.textContent = '正在执行服务器管理功能测试，请稍候...\n';
+            
+            fetch('/test/server-management')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        statusDiv.innerHTML = '<span class="status-indicator status-success">✅ 测试完成</span>';
+                        outputDiv.textContent = data.testOutput || '测试完成，但没有输出内容。';
+                    } else {
+                        statusDiv.innerHTML = '<span class="status-indicator status-error">❌ 测试失败</span>';
+                        outputDiv.textContent = '测试失败：' + (data.message || '未知错误') + '\n\n' + (data.error || '');
+                    }
+                })
+                .catch(error => {
+                    statusDiv.innerHTML = '<span class="status-indicator status-error">❌ 请求失败</span>';
+                    outputDiv.textContent = '请求失败：' + error.message;
+                })
+                .finally(() => {
+                    // 恢复按钮状态
+                    button.classList.remove('loading');
+                    button.textContent = '🚀 重新测试';
+                });
+        }
+    </script>
+</body>
+</html>

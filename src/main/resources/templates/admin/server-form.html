@@ -77,22 +77,8 @@
                 <div class="form-group">
                     <label for="sshPassword">SSH密码</label>
                     <input type="password" id="sshPassword" th:field="*{sshPassword}" 
-                           placeholder="可选：密码认证">
-                    <small>如果配置了SSH密钥，可以留空</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="sshKeyPath">SSH密钥路径</label>
-                    <input type="text" id="sshKeyPath" th:field="*{sshKeyPath}" 
-                           placeholder="例如：~/.ssh/id_rsa">
-                    <small>可选：使用SSH密钥文件认证</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="sshKeyPassphrase">SSH密钥密码</label>
-                    <input type="password" id="sshKeyPassphrase" th:field="*{sshKeyPassphrase}" 
-                           placeholder="可选：密钥密码">
-                    <small>如果密钥有密码保护，请填写</small>
+                           placeholder="必填：密码认证" required>
+                    <small>仅支持密码认证，请填写SSH密码</small>
                 </div>
             </fieldset>
 

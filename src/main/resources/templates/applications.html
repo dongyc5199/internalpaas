@@ -6,6 +6,121 @@
     <title>应用管理 - Dev Debug Platform</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/applications.css">
+    <!-- WebSocket 支持库 -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        /* 通知样式 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            max-width: 300px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideInRight 0.3s ease-out;
+        }
+        .notification-success {
+            border-left: 4px solid #10b981;
+        }
+        .notification-error {
+            border-left: 4px solid #ef4444;
+        }
+        .notification-info {
+            border-left: 4px solid #3b82f6;
+        }
+        .notification-icon {
+            font-size: 18px;
+        }
+        .notification-message {
+            flex: 1;
+            font-size: 14px;
+            color: #374151;
+        }
+        .notification-close {
+            background: none;
+            border: none;
+            font-size: 16px;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .notification-close:hover {
+            color: #374151;
+        }
+        
+        /* 操作状态指示器样式 */
+        .operation-status {
+            max-width: 350px;
+            padding: 20px;
+        }
+        .operation-status .notification-message {
+            margin-bottom: 8px;
+        }
+        .operation-progress {
+            width: 100%;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #1d4ed8, #3b82f6);
+            background-size: 200% 100%;
+            animation: progressAnimation 2s linear infinite;
+        }
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+        
+        /* 加载按钮状态 */
+        .action-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .action-btn:disabled::before {
+            display: none;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes progressAnimation {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -189,7 +304,8 @@
             <!-- 应用网格视图 -->
             <div class="applications-grid" th:unless="${applications.empty}" id="appsGrid">
                 <div th:each="app : ${applications}" class="application-card" 
-                     th:classappend="${app.status == 'RUNNING'} ? 'status-running' : (${app.status == 'STOPPED'} ? 'status-stopped' : 'status-error')">
+                     th:classappend="${app.status == 'RUNNING'} ? 'status-running' : (${app.status == 'STOPPED'} ? 'status-stopped' : 'status-error')"
+                     th:attr="data-app-id=${app.id}">
                     
                     <!-- 卡片头部 -->
                     <div class="card-header">
@@ -248,6 +364,16 @@
                             </button>
                         </form>
                         
+                        <form th:action="@{/apps/{id}/restart(id=${app.id})}" method="post" style="display: inline;">
+                            <button type="submit" class="action-btn warning" 
+                                    th:disabled="${app.status == 'ERROR'}"
+                                    onclick="return confirm('⚠️ 确定要重启应用「' + '[[${app.name}]]' + '」吗？\n 应用将停止然后重新启动！')"
+                                    title="重启应用">
+                                <span class="btn-icon">🔄</span>
+                                <span class="btn-text">重启</span>
+                            </button>
+                        </form>
+                        
                         <button class="action-btn info" onclick="toggleLogs(this)" title="查看日志">
                             <span class="btn-icon">📄</span>
                             <span class="btn-text">日志</span>
@@ -287,16 +413,276 @@
         let autoRefreshIntervals = new Map();
         let uploadFormVisible = false;
         let advancedVisible = false;
+        let stompClient = null;
+        let isConnected = false;
+        let activeLogSubscriptions = new Map(); // 应用ID -> 订阅对象
 
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', function() {
             initializeFileUpload();
             initializeViewToggle();
             loadAllLogs();
+            initializeWebSocket();
+            enhanceFormSubmission();
+            checkUrlParameters();
             
             // 每30秒刷新应用状态
             setInterval(refreshAppStatus, 30000);
         });
+        
+        // 检查URL参数中的错误信息
+        function checkUrlParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const error = urlParams.get('error');
+            const success = urlParams.get('success');
+            
+            if (error) {
+                showNotification(decodeURIComponent(error), 'error');
+                // 清除URL参数
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            
+            if (success) {
+                showNotification(decodeURIComponent(success), 'success');
+                // 清除URL参数
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+        // 初始化WebSocket连接
+        function initializeWebSocket() {
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            
+            stompClient.connect({}, function(frame) {
+                console.log('已连接到WebSocket服务器: ' + frame);
+                isConnected = true;
+                
+                // 订阅系统状态更新
+                stompClient.subscribe('/topic/app-status', function(message) {
+                    const data = JSON.parse(message.body);
+                    handleApplicationStatusUpdate(data);
+                });
+                
+                // 发送连接消息
+                stompClient.send('/app/connect', {}, JSON.stringify({
+                    type: 'connect',
+                    timestamp: new Date().toISOString()
+                }));
+                
+            }, function(error) {
+                console.error('WebSocket连接错误: ', error);
+                isConnected = false;
+                // 5秒后重试连接
+                setTimeout(initializeWebSocket, 5000);
+            });
+        }
+
+        // 处理应用状态更新
+        function handleApplicationStatusUpdate(data) {
+            if (data.type === 'app_status') {
+                const appCard = document.querySelector(`[data-app-id="${data.applicationId}"]`);
+                if (appCard) {
+                    const statusIndicator = appCard.querySelector('.status-indicator');
+                    if (statusIndicator) {
+                        statusIndicator.textContent = data.status;
+                        statusIndicator.className = 'status-indicator ' + data.status.toLowerCase();
+                    }
+                    
+                    // 显示状态更新消息
+                    showNotification(data.message || `应用状态已更新: ${data.status}`, 'info');
+                }
+            }
+        }
+
+        // 订阅应用日志
+        function subscribeToAppLogs(appId) {
+            if (!isConnected || activeLogSubscriptions.has(appId)) {
+                return;
+            }
+            
+            const subscription = stompClient.subscribe(`/user/logs/${appId}`, function(message) {
+                const data = JSON.parse(message.body);
+                if (data.type === 'log') {
+                    appendLogContent(appId, data.content);
+                }
+            });
+            
+            activeLogSubscriptions.set(appId, subscription);
+            
+            // 发送开始监控请求
+            fetch(`/api/logs/${appId}/start-monitoring`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      console.log(`已开始监控应用 ${appId} 的日志`);
+                      showNotification('日志监控已开始', 'success');
+                  } else {
+                      console.error('开始日志监控失败:', data.message);
+                      showNotification('开始日志监控失败: ' + data.message, 'error');
+                  }
+              })
+              .catch(error => {
+                  console.error('开始日志监控失败:', error);
+                  showNotification('开始日志监控失败', 'error');
+              });
+        }
+
+        // 取消订阅应用日志
+        function unsubscribeFromAppLogs(appId) {
+            const subscription = activeLogSubscriptions.get(appId);
+            if (subscription) {
+                subscription.unsubscribe();
+                activeLogSubscriptions.delete(appId);
+                
+                // 发送停止监控请求
+                fetch(`/api/logs/${appId}/stop-monitoring`, {
+                    method: 'POST'
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.success) {
+                          console.log(`已停止监控应用 ${appId} 的日志`);
+                      }
+                  });
+            }
+        }
+
+        // 附加日志内容
+        function appendLogContent(appId, content) {
+            const logsElement = document.getElementById(`logs-${appId}`);
+            if (logsElement) {
+                const currentContent = logsElement.textContent;
+                logsElement.textContent = currentContent + content;
+                
+                // 自动滚动到底部
+                logsElement.scrollTop = logsElement.scrollHeight;
+            }
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <span class="notification-icon">${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span>
+                <span class="notification-message">${message}</span>
+                <button class="notification-close" onclick="this.parentElement.remove()">×</button>
+            `;
+            
+            // 添加到页面
+            document.body.appendChild(notification);
+            
+            // 3秒后自动消失
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 3000);
+        }
+        
+        // 操作状态指示器
+        function showOperationStatus(operation, appName, status = 'loading') {
+            const statusId = `status-${operation}-${Date.now()}`;
+            let message = '';
+            let type = 'info';
+            
+            switch(status) {
+                case 'loading':
+                    message = `正在${operation}应用 "${appName}"...`;
+                    type = 'info';
+                    break;
+                case 'success':
+                    message = `应用 "${appName}" ${operation}成功！`;
+                    type = 'success';
+                    break;
+                case 'error':
+                    message = `应用 "${appName}" ${operation}失败！`;
+                    type = 'error';
+                    break;
+            }
+            
+            if (status === 'loading') {
+                const notification = document.createElement('div');
+                notification.id = statusId;
+                notification.className = `notification notification-${type} operation-status`;
+                notification.innerHTML = `
+                    <span class="notification-icon loading-spinner">⏳</span>
+                    <span class="notification-message">${message}</span>
+                    <div class="operation-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill"></div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(notification);
+                return statusId;
+            } else {
+                showNotification(message, type);
+                return null;
+            }
+        }
+        
+        // 更新操作状态
+        function updateOperationStatus(statusId, status, message = '') {
+            const notification = document.getElementById(statusId);
+            if (!notification) return;
+            
+            if (status === 'success' || status === 'error') {
+                notification.remove();
+                if (message) {
+                    showNotification(message, status);
+                }
+            }
+        }
+        
+        // 增强的表单提交处理
+        function enhanceFormSubmission() {
+            // 为所有应用操作表单添加状态指示
+            document.querySelectorAll('form[action*="/apps/"]').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    const action = form.action;
+                    const appCard = form.closest('.application-card');
+                    const appName = appCard ? appCard.querySelector('.app-name').textContent : '未知应用';
+                    
+                    let operation = '';
+                    if (action.includes('/start')) {
+                        operation = '启动';
+                    } else if (action.includes('/stop')) {
+                        operation = '停止';
+                    } else if (action.includes('/restart')) {
+                        operation = '重启';
+                    } else if (action.includes('/delete')) {
+                        operation = '删除';
+                    }
+                    
+                    if (operation) {
+                        const statusId = showOperationStatus(operation, appName, 'loading');
+                        
+                        // 禁用按钮防止重复提交
+                        const submitBtn = form.querySelector('button[type="submit"]');
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            const originalText = submitBtn.querySelector('.btn-text').textContent;
+                            submitBtn.querySelector('.btn-text').textContent = '处理中...';
+                            
+                            // 恢复按钮状态的定时器
+                            setTimeout(() => {
+                                if (submitBtn) {
+                                    submitBtn.disabled = false;
+                                    submitBtn.querySelector('.btn-text').textContent = originalText;
+                                }
+                            }, 3000);
+                        }
+                    }
+                });
+            });
+        }
 
         // 切换上传表单显示
         function toggleUploadForm() {
@@ -424,15 +810,19 @@
             
             if (!logsSection) return;
             
+            const appId = card.querySelector('[id^="logs-"]').id.split('-')[1];
+            
             if (logsSection.style.display === 'none' || !logsSection.style.display) {
                 logsSection.style.display = 'block';
                 logsSection.style.animation = 'slideDown 0.3s ease forwards';
                 icon.textContent = '📄';
                 button.classList.add('active');
                 
-                // 加载日志
-                const appId = card.querySelector('[id^="logs-"]').id.split('-')[1];
-                loadLogs(appId);
+                // 加载历史日志
+                loadHistoryLogs(appId);
+                
+                // 订阅实时日志
+                subscribeToAppLogs(appId);
             } else {
                 logsSection.style.animation = 'slideUp 0.3s ease forwards';
                 setTimeout(() => {
@@ -440,21 +830,39 @@
                 }, 300);
                 icon.textContent = '📄';
                 button.classList.remove('active');
+                
+                // 取消订阅实时日志
+                unsubscribeFromAppLogs(appId);
             }
         }
 
-        // 加载日志
-        function loadLogs(appId) {
+        // 加载历史日志
+        function loadHistoryLogs(appId) {
             const logsElement = document.getElementById(`logs-${appId}`);
             if (!logsElement) return;
             
-            // 这里可以添加AJAX请求获取日志
-            // 暂时使用模拟数据
-            setTimeout(() => {
-                logsElement.textContent = `[${new Date().toLocaleTimeString()}] 应用启动中...
-[${new Date().toLocaleTimeString()}] 服务器启动完成
-[${new Date().toLocaleTimeString()}] 应用运行正常`;
-            }, 500);
+            logsElement.textContent = '正在加载历史日志...';
+            
+            fetch(`/api/logs/${appId}/tail?lines=100`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        logsElement.textContent = data.content || '暂无日志内容';
+                        // 滚动到底部
+                        logsElement.scrollTop = logsElement.scrollHeight;
+                    } else {
+                        logsElement.textContent = '加载失败: ' + data.message;
+                    }
+                })
+                .catch(error => {
+                    console.error('加载历史日志失败:', error);
+                    logsElement.textContent = '加载失败: ' + error.message;
+                });
+        }
+
+        // 加载日志(旧版本，保留兼容性)
+        function loadLogs(appId) {
+            loadHistoryLogs(appId);
         }
 
         // 加载所有日志

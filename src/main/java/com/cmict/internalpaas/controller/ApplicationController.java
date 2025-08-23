@@ -78,12 +78,8 @@ public class ApplicationController {
      * 启动应用
      */
     @PostMapping("/{id}/start")
-    public String startApplication(@PathVariable Long id, Authentication authentication) {
-        try {
-            applicationService.startApplication(id);
-        } catch (IOException e) {
-            // 错误处理将通过AJAX处理
-        }
+    public String startApplication(@PathVariable Long id, Authentication authentication) throws IOException {
+        applicationService.startApplication(id);
         return "redirect:/apps";
     }
     
@@ -97,15 +93,20 @@ public class ApplicationController {
     }
     
     /**
+     * 重启应用
+     */
+    @PostMapping("/{id}/restart")
+    public String restartApplication(@PathVariable Long id, Authentication authentication) throws IOException {
+        applicationService.restartApplication(id);
+        return "redirect:/apps";
+    }
+    
+    /**
      * 删除应用
      */
     @PostMapping("/{id}/delete")
-    public String deleteApplication(@PathVariable Long id, Authentication authentication) {
-        try {
-            applicationService.deleteApplication(id);
-        } catch (IOException e) {
-            // 错误处理将通过AJAX处理
-        }
+    public String deleteApplication(@PathVariable Long id, Authentication authentication) throws IOException {
+        applicationService.deleteApplication(id);
         return "redirect:/apps";
     }
     

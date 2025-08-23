@@ -54,8 +54,15 @@ public class AdminController {
     }
 
     @PostMapping("/servers")
-    public String saveServer(@ModelAttribute Server server) {
-        serverService.saveServer(server);
+    public String saveServer(@ModelAttribute Server server, RedirectAttributes redirectAttributes) {
+        try {
+            // 使用自动检测功能
+            Server savedServer = serverService.saveServerWithAutoCheck(server);
+            redirectAttributes.addFlashAttribute("successMessage", 
+                String.format("服务器 '%s' 已保存，正在后台检测连接状态", savedServer.getName()));
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "保存失败: " + e.getMessage());
+        }
         return "redirect:/admin/servers";
     }
 
@@ -82,8 +89,9 @@ public class AdminController {
     @PostMapping("/servers/{id}/check-connection")
     public String checkServerConnection(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            Server server = serverService.checkServerConnection(id);
+            Server server = serverService.checkServerConnectionAndMetrics(id);
             String statusDesc = serverService.getConnectionStatusDescription(server.getConnectionStatus());
+            
             redirectAttributes.addFlashAttribute("successMessage", 
                 String.format("服务器 '%s' 连接状态: %s", server.getName(), statusDesc));
         } catch (Exception e) {
@@ -95,8 +103,8 @@ public class AdminController {
     @PostMapping("/servers/check-all-connections")
     public String checkAllServerConnections(RedirectAttributes redirectAttributes) {
         try {
-            serverService.checkAllServerConnections();
-            redirectAttributes.addFlashAttribute("successMessage", "已启动所有服务器的连接检查");
+            serverService.checkAllServerConnectionsAndMetrics();
+            redirectAttributes.addFlashAttribute("successMessage", "已启动所有服务器的连接检查和监控数据更新");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "批量检查失败: " + e.getMessage());
         }

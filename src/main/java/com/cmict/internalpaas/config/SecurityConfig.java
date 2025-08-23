@@ -4,11 +4,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import com.cmict.internalpaas.service.UserService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 @Configuration
 @EnableWebSecurity
@@ -17,8 +20,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, UserDetailsService userDetailsService)
             throws Exception {
         http
-            .authorizeRequests(authorize -> authorize
-                .antMatchers("/css/**", "/js/**", "/register", "/debug/**", "/h2-console/**").permitAll() // 允许访问静态资源、注册页面和H2控制台
+            .authorizeHttpRequests(authorize -> authorize
+                .antMatchers("/css/**", "/js/**", "/register", "/debug/**", "/h2-console/**", "/ws/**", "/test/**").permitAll() // 允许访问静态资源、注册页面、H2控制台、WebSocket端点和测试页面
                 .antMatchers("/admin/**").hasRole("SUPER_ADMIN") // 超级管理员才能访问管理页面
                 .anyRequest().authenticated() // 其他所有请求都需要认证
             )
@@ -33,10 +36,15 @@ public class SecurityConfig {
                 .permitAll()
             )
             .csrf(csrf -> csrf
-                .ignoringAntMatchers("/h2-console/**") // 禁用H2控制台的CSRF保护
+                .ignoringAntMatchers("/h2-console/**", "/ws/**", "/test/**") // 禁用H2控制台、WebSocket和测试接口的CSRF保护
             )
             .headers(headers -> headers
                 .frameOptions().disable() // 禁用frame限制，允许H2控制台在iframe中运行
+            )
+            .sessionManagement(session -> session
+                .maximumSessions(10) // 允许每个用户最多10个并发会话
+                .sessionRegistry(sessionRegistry()) // 设置会话注册表
+                .maxSessionsPreventsLogin(false) // 允许新登录挑出旧会话
             )
             .userDetailsService(userDetailsService); // 设置UserDetailsService
 
@@ -52,5 +60,15 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService(UserService userService) {
         return userService;
+    }
+    
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+    
+    @Bean
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
     }
 }

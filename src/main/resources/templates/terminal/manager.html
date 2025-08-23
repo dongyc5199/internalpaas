@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSH终端管理器 - 内部平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/xterm@4.19.0/css/xterm.css" rel="stylesheet">
+    <style>
+        .terminal-container {
+            height: calc(100vh - 120px);
+            background: #000;
+            overflow: hidden;
+        }
+        .terminal-tabs {
+            background: #2d2d30;
+            border-bottom: 1px solid #3e3e42;
+            padding: 0;
+            margin: 0;
+        }
+        .terminal-tab {
+            background: #2d2d30;
+            color: #cccccc;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            border-right: 1px solid #3e3e42;
+        }
+        .terminal-tab.active {
+            background: #1e1e1e;
+            color: #ffffff;
+        }
+        .terminal-tab:hover {
+            background: #3e3e42;
+        }
+        .terminal-tab .close-btn {
+            margin-left: 8px;
+            background: none;
+            border: none;
+            color: #cccccc;
+            cursor: pointer;
+            padding: 0;
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+            font-size: 12px;
+        }
+        .terminal-tab .close-btn:hover {
+            background: #e81123;
+            color: white;
+        }
+        .terminal-content {
+            height: calc(100% - 40px);
+            background: #1e1e1e;
+        }
+        .terminal-pane {
+            display: none;
+            height: 100%;
+            padding: 0;
+        }
+        .terminal-pane.active {
+            display: block;
+        }
+        .terminal-toolbar {
+            background: #3c3c3c;
+            padding: 8px 16px;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #cccccc;
+        }
+        .server-selector {
+            background: #2d2d30;
+            color: #cccccc;
+            border: 1px solid #3e3e42;
+            padding: 4px 8px;
+            border-radius: 3px;
+        }
+        .btn-terminal {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .btn-terminal:hover {
+            background: #1177bb;
+            color: white;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .status-connected { background: #4CAF50; }
+        .status-connecting { background: #FF9800; }
+        .status-disconnected { background: #F44336; }
+        .connection-info {
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/"><i class="fas fa-terminal"></i> SSH终端管理器</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/applications">应用管理</a>
+                <a class="nav-link" href="/monitoring/dashboard">监控面板</a>
+                <a class="nav-link" href="/admin/servers">服务器管理</a>
+                <a class="nav-link" href="/logout">退出</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="terminal-container">
+        <!-- 工具栏 -->
+        <div class="terminal-toolbar">
+            <div class="d-flex align-items-center">
+                <select id="serverSelector" class="server-selector me-3">
+                    <option value="">选择服务器...</option>
+                    <option th:each="server : ${servers}" 
+                            th:value="${server.id}" 
+                            th:text="${server.name + ' (' + server.hostname + ')'}">
+                    </option>
+                </select>
+                <button id="connectBtn" class="btn btn-terminal">
+                    <i class="fas fa-plus"></i> 新建连接
+                </button>
+            </div>
+            <div class="connection-info">
+                <span id="sessionCount">0</span> 个活跃会话
+            </div>
+        </div>
+
+        <!-- 标签页 -->
+        <div class="terminal-tabs" id="terminalTabs">
+            <!-- 动态生成的标签页 -->
+        </div>
+
+        <!-- 终端内容区域 -->
+        <div class="terminal-content" id="terminalContent">
+            <div class="d-flex align-items-center justify-content-center h-100 text-muted" id="welcomeMessage">
+                <div class="text-center">
+                    <i class="fas fa-terminal fa-3x mb-3"></i>
+                    <h5>欢迎使用SSH终端管理器</h5>
+                    <p>选择服务器并点击"新建连接"开始</p>
+                </div>
+            </div>
+            <!-- 动态生成的终端面板 -->
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@4.19.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.5.0/lib/xterm-addon-fit.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.6.0/lib/xterm-addon-web-links.js"></script>
+    <script>
+        class SSHTerminalManager {
+            constructor() {
+                this.terminals = new Map();
+                this.activeTerminalId = null;
+                this.sessionCounter = 0;
+                this.init();
+            }
+            
+            init() {
+                this.bindEvents();
+                this.updateSessionCount();
+            }
+            
+            bindEvents() {
+                document.getElementById('connectBtn').addEventListener('click', () => {
+                    this.createNewTerminal();
+                });
+                
+                // 定期更新会话统计
+                setInterval(() => {
+                    this.updateSessionCount();
+                }, 5000);
+            }
+            
+            createNewTerminal() {
+                const serverSelector = document.getElementById('serverSelector');
+                const serverId = serverSelector.value;
+                
+                if (!serverId) {
+                    alert('请先选择一个服务器');
+                    return;
+                }
+                
+                const serverName = serverSelector.options[serverSelector.selectedIndex].text;
+                const terminalId = 'terminal-' + (++this.sessionCounter);
+                
+                // 创建标签页
+                this.createTab(terminalId, serverName);
+                
+                // 创建终端面板
+                this.createTerminalPane(terminalId, serverId, serverName);
+                
+                // 切换到新终端
+                this.switchToTerminal(terminalId);
+                
+                // 隐藏欢迎消息
+                document.getElementById('welcomeMessage').style.display = 'none';
+            }
+            
+            createTab(terminalId, serverName) {
+                const tabsContainer = document.getElementById('terminalTabs');
+                
+                const tab = document.createElement('div');
+                tab.className = 'terminal-tab';
+                tab.id = 'tab-' + terminalId;
+                tab.innerHTML = `
+                    <span class="status-indicator status-connecting"></span>
+                    <span class="tab-title">${serverName}</span>
+                    <button class="close-btn" onclick="terminalManager.closeTerminal('${terminalId}')">×</button>
+                `;
+                
+                tab.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('close-btn')) {
+                        this.switchToTerminal(terminalId);
+                    }
+                });
+                
+                tabsContainer.appendChild(tab);
+            }
+            
+            createTerminalPane(terminalId, serverId, serverName) {
+                const contentContainer = document.getElementById('terminalContent');
+                
+                const pane = document.createElement('div');
+                pane.className = 'terminal-pane';
+                pane.id = terminalId;
+                
+                contentContainer.appendChild(pane);
+                
+                // 创建xterm终端
+                const terminal = new Terminal({
+                    theme: {
+                        background: '#1e1e1e',
+                        foreground: '#d4d4d4',
+                        cursor: '#d4d4d4',
+                        selection: '#264f78'
+                    },
+                    fontSize: 14,
+                    fontFamily: 'Consolas, "Courier New", monospace',
+                    cursorBlink: true,
+                    scrollback: 1000
+                });
+                
+                // 添加适配插件
+                const fitAddon = new FitAddon.FitAddon();
+                terminal.loadAddon(fitAddon);
+                
+                // 添加链接插件
+                const webLinksAddon = new WebLinksAddon.WebLinksAddon();
+                terminal.loadAddon(webLinksAddon);
+                
+                terminal.open(pane);
+                fitAddon.fit();
+                
+                // 创建WebSocket连接
+                const ws = new WebSocket('/ws/ssh-terminal');
+                
+                const terminalSession = {
+                    terminal: terminal,
+                    ws: ws,
+                    fitAddon: fitAddon,
+                    serverId: serverId,
+                    serverName: serverName,
+                    connected: false
+                };
+                
+                this.terminals.set(terminalId, terminalSession);
+                
+                // WebSocket事件处理
+                ws.onopen = () => {
+                    console.log('WebSocket连接已建立');
+                    this.connectToServer(terminalId, serverId);
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        this.handleWebSocketMessage(terminalId, data);
+                    } catch (e) {
+                        // 普通终端输出
+                        terminal.write(event.data);
+                    }
+                };
+                
+                ws.onclose = () => {
+                    console.log('WebSocket连接已关闭');
+                    this.updateTabStatus(terminalId, 'disconnected');
+                    terminalSession.connected = false;
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('WebSocket错误:', error);
+                    this.updateTabStatus(terminalId, 'disconnected');
+                    terminal.write('\r\n连接错误，请检查网络连接\r\n');
+                };
+                
+                // 终端输入处理
+                terminal.onData((data) => {
+                    if (terminalSession.connected && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({
+                            type: 'input',
+                            data: data
+                        }));
+                    }
+                });
+                
+                // 窗口大小调整
+                terminal.onResize((size) => {
+                    if (terminalSession.connected && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({
+                            type: 'resize',
+                            cols: size.cols,
+                            rows: size.rows
+                        }));
+                    }
+                });
+                
+                // 监听窗口大小变化
+                window.addEventListener('resize', () => {
+                    if (this.activeTerminalId === terminalId) {
+                        fitAddon.fit();
+                    }
+                });
+            }
+            
+            connectToServer(terminalId, serverId) {
+                const session = this.terminals.get(terminalId);
+                if (!session || session.ws.readyState !== WebSocket.OPEN) {
+                    return;
+                }
+                
+                session.ws.send(JSON.stringify({
+                    type: 'connect',
+                    serverId: parseInt(serverId),
+                    terminalType: 'xterm-256color',
+                    windowSize: session.terminal.cols + 'x' + session.terminal.rows
+                }));
+            }
+            
+            handleWebSocketMessage(terminalId, data) {
+                const session = this.terminals.get(terminalId);
+                if (!session) return;
+                
+                switch (data.type) {
+                    case 'connected':
+                        session.connected = true;
+                        this.updateTabStatus(terminalId, 'connected');
+                        session.terminal.write('连接到服务器: ' + data.serverName + '\r\n');
+                        break;
+                        
+                    case 'error':
+                        this.updateTabStatus(terminalId, 'disconnected');
+                        session.terminal.write('\r\n错误: ' + data.message + '\r\n');
+                        break;
+                        
+                    case 'pong':
+                        // 心跳响应，保持连接
+                        break;
+                        
+                    default:
+                        session.terminal.write(data.message || '');
+                }
+            }
+            
+            switchToTerminal(terminalId) {
+                // 隐藏所有终端
+                document.querySelectorAll('.terminal-pane').forEach(pane => {
+                    pane.classList.remove('active');
+                });
+                
+                // 移除所有标签的活跃状态
+                document.querySelectorAll('.terminal-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                
+                // 显示指定终端
+                const pane = document.getElementById(terminalId);
+                if (pane) {
+                    pane.classList.add('active');
+                    
+                    // 激活对应标签
+                    const tab = document.getElementById('tab-' + terminalId);
+                    if (tab) {
+                        tab.classList.add('active');
+                    }
+                    
+                    // 调整终端大小
+                    const session = this.terminals.get(terminalId);
+                    if (session) {
+                        setTimeout(() => {
+                            session.fitAddon.fit();
+                            session.terminal.focus();
+                        }, 100);
+                    }
+                    
+                    this.activeTerminalId = terminalId;
+                }
+            }
+            
+            closeTerminal(terminalId) {
+                const session = this.terminals.get(terminalId);
+                if (session) {
+                    // 关闭WebSocket连接
+                    if (session.ws.readyState === WebSocket.OPEN) {
+                        session.ws.close();
+                    }
+                    
+                    // 销毁终端
+                    session.terminal.dispose();
+                    
+                    // 从映射中移除
+                    this.terminals.delete(terminalId);
+                }
+                
+                // 移除DOM元素
+                const pane = document.getElementById(terminalId);
+                const tab = document.getElementById('tab-' + terminalId);
+                
+                if (pane) pane.remove();
+                if (tab) tab.remove();
+                
+                // 如果关闭的是当前活跃终端，切换到其他终端
+                if (this.activeTerminalId === terminalId) {
+                    const remainingTerminals = Array.from(this.terminals.keys());
+                    if (remainingTerminals.length > 0) {
+                        this.switchToTerminal(remainingTerminals[0]);
+                    } else {
+                        this.activeTerminalId = null;
+                        document.getElementById('welcomeMessage').style.display = 'flex';
+                    }
+                }
+                
+                this.updateSessionCount();
+            }
+            
+            updateTabStatus(terminalId, status) {
+                const tab = document.getElementById('tab-' + terminalId);
+                if (tab) {
+                    const indicator = tab.querySelector('.status-indicator');
+                    indicator.className = 'status-indicator status-' + status;
+                }
+            }
+            
+            updateSessionCount() {
+                const count = this.terminals.size;
+                document.getElementById('sessionCount').textContent = count;
+            }
+        }
+        
+        // 初始化终端管理器
+        const terminalManager = new SSHTerminalManager();
+        
+        // 页面卸载时清理资源
+        window.addEventListener('beforeunload', () => {
+            terminalManager.terminals.forEach((session, terminalId) => {
+                if (session.ws.readyState === WebSocket.OPEN) {
+                    session.ws.close();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -52,6 +52,15 @@ public class Server {
     @Column
     private LocalDateTime lastConnectionCheck;
     
+    @Column
+    private LocalDateTime lastMetricsUpdate;
+    
+    @Column
+    private Boolean autoMonitorEnabled = true;
+    
+    @Column
+    private Integer monitorIntervalSeconds = 60;
+    
     @Column(nullable = false)
     private LocalDateTime createdAt;
     
@@ -71,11 +80,22 @@ public class Server {
 
     // 连接状态枚举
     public enum ConnectionStatus {
-        CONNECTED,      // 连接成功
-        FAILED,         // 连接失败
-        TIMEOUT,        // 连接超时
-        AUTH_FAILED,    // 认证失败
-        UNKNOWN         // 未知状态
+        UNKNOWN("未知"),
+        CONNECTED("连接成功"), 
+        FAILED("连接失败"),
+        TIMEOUT("连接超时"),
+        AUTH_FAILED("认证失败"),
+        MONITORING("监控中");
+        
+        private final String description;
+        
+        ConnectionStatus(String description) {
+            this.description = description;
+        }
+        
+        public String getDescription() {
+            return description;
+        }
     }
 
     // Getters and Setters
@@ -126,4 +146,13 @@ public class Server {
     
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    
+    public LocalDateTime getLastMetricsUpdate() { return lastMetricsUpdate; }
+    public void setLastMetricsUpdate(LocalDateTime lastMetricsUpdate) { this.lastMetricsUpdate = lastMetricsUpdate; }
+    
+    public Boolean getAutoMonitorEnabled() { return autoMonitorEnabled; }
+    public void setAutoMonitorEnabled(Boolean autoMonitorEnabled) { this.autoMonitorEnabled = autoMonitorEnabled; }
+    
+    public Integer getMonitorIntervalSeconds() { return monitorIntervalSeconds; }
+    public void setMonitorIntervalSeconds(Integer monitorIntervalSeconds) { this.monitorIntervalSeconds = monitorIntervalSeconds; }
 }

@@ -155,6 +155,105 @@ public class ApplicationService {
     }
     
     /**
+     * 重启应用
+     * 原子性操作：先停止应用，然后重新启动
+     */
+    public Application restartApplication(Long appId) throws IOException {
+        Application app = applicationRepository.findById(appId)
+            .orElseThrow(() -> new RuntimeException("Application not found"));
+        
+        // 记录原始状态
+        String originalStatus = app.getStatus();
+        
+        try {
+            // 如果应用正在运行，先停止它
+            if ("RUNNING".equals(app.getStatus())) {
+                app = stopApplication(appId);
+                
+                // 等待进程完全停止（最多等待5秒）
+                int waitTime = 0;
+                while (waitTime < 5000 && isProcessRunning(app.getProcessId())) {
+                    Thread.sleep(500);
+                    waitTime += 500;
+                }
+            }
+            
+            // 重新分配端口
+            PortManagerService.PortAllocation ports = portManagerService.allocatePorts(app.getUser());
+            app.setPort(ports.getApplicationPort());
+            app.setDebugPort(ports.getDebugPort());
+            
+            // 创建新的日志文件（带有重启时间戳）
+            String logFilePath = createRestartLogFile(app);
+            app.setLogFilePath(logFilePath);
+            
+            // 启动进程
+            ProcessBuilder processBuilder = new ProcessBuilder(
+                "java",
+                "-jar",
+                "-Dserver.port=" + ports.getApplicationPort(),
+                "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=" + ports.getDebugPort(),
+                app.getJarFilePath()
+            );
+            
+            processBuilder.redirectErrorStream(true);
+            processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(new java.io.File(logFilePath)));
+            
+            Process process = processBuilder.start();
+            app.setProcessId(String.valueOf(process.pid()));
+            app.setStatus("RUNNING");
+            
+            return applicationRepository.save(app);
+            
+        } catch (Exception e) {
+            app.setStatus("ERROR");
+            applicationRepository.save(app);
+            throw new RuntimeException("Failed to restart application: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 检查进程是否仍在运行
+     */
+    private boolean isProcessRunning(String processId) {
+        if (processId == null || processId.trim().isEmpty()) {
+            return false;
+        }
+        
+        try {
+            return ProcessHandle.of(Long.parseLong(processId))
+                .map(ProcessHandle::isAlive)
+                .orElse(false);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+    
+    /**
+     * 为重启创建新的日志文件
+     */
+    private String createRestartLogFile(Application app) throws IOException {
+        String workDir = app.getUser().getWorkDirectory();
+        Path logsDir = Paths.get(workDir, "logs");
+        
+        if (!Files.exists(logsDir)) {
+            Files.createDirectories(logsDir);
+        }
+        
+        // 使用时间戳区分重启后的日志文件
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String logFilename = app.getName() + "_" + app.getId() + "_restart_" + timestamp + ".log";
+        Path logFile = logsDir.resolve(logFilename);
+        
+        // 添加重启标记到日志文件
+        String restartMarker = "\n=== Application Restarted at " + 
+            java.time.LocalDateTime.now() + " ===\n";
+        Files.writeString(logFile, restartMarker);
+        
+        return logFile.toString();
+    }
+    
+    /**
      * 获取用户的所有应用
      */
     public List<Application> getUserApplications(User user) {

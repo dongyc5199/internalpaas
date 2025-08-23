@@ -120,24 +120,19 @@ public class RemoteCommandService {
         
         Session session = jsch.getSession(username, server.getHostname(), port);
         
-        // 配置SSH参数
+        // 配置SSH参数 - 仅支持密码认证
         Properties config = new Properties();
         config.put("StrictHostKeyChecking", "no");
-        config.put("PreferredAuthentications", "publickey,password,keyboard-interactive");
+        config.put("PreferredAuthentications", "password");
+        config.put("PasswordAuthentication", "yes");
+        config.put("PubkeyAuthentication", "no");
         session.setConfig(config);
         
-        // 设置认证方式
+        // 设置认证方式 - 仅支持密码认证
         if (server.getSshPassword() != null && !server.getSshPassword().isEmpty()) {
             session.setPassword(server.getSshPassword());
-        } else if (server.getSshKeyPath() != null && !server.getSshKeyPath().isEmpty()) {
-            File keyFile = new File(server.getSshKeyPath());
-            if (keyFile.exists()) {
-                if (server.getSshKeyPassphrase() != null && !server.getSshKeyPassphrase().isEmpty()) {
-                    jsch.addIdentity(server.getSshKeyPath(), server.getSshKeyPassphrase());
-                } else {
-                    jsch.addIdentity(server.getSshKeyPath());
-                }
-            }
+        } else {
+            throw new JSchException("未提供密码，无法进行SSH认证");
         }
         
         return session;

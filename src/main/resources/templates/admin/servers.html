@@ -62,7 +62,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr th:each="server : ${servers}">
+                <tr th:each="server : ${servers}" th:attr="data-server-id=${server.id}">
                     <td>
                         <strong>
                             <a th:href="@{/admin/servers/{id}(id=${server.id})}" 
@@ -88,14 +88,16 @@
                         <span th:class="${server.active} ? 'status-active' : 'status-inactive'"
                             th:text="${server.active} ? '运行中' : '已停用'">运行中</span>
                     </td>
-                    <td>
+                    <td class="connection-status">
                         <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                            <span th:class="${@serverService.getConnectionStatusClass(server.connectionStatus)}"
-                                th:text="${@serverService.getConnectionStatusDescription(server.connectionStatus)}">
+                            <span class="status-badge" 
+                                  th:class="${server.connectionStatus != null ? @serverService.getConnectionStatusClass(server.connectionStatus) : 'text-secondary'}"
+                                  th:text="${server.connectionStatus != null ? @serverService.getConnectionStatusDescription(server.connectionStatus) : '未知状态'}">
                                 未知状态
                             </span>
-                            <small th:if="${server.lastConnectionCheck}"
-                                th:text="${#temporals.format(server.lastConnectionCheck, 'MM-dd HH:mm')}">
+                            <small class="last-check-time" 
+                                   th:if="${server.lastConnectionCheck}"
+                                   th:text="${#temporals.format(server.lastConnectionCheck, 'MM-dd HH:mm')}">
                                 未检查
                             </small>
                         </div>
@@ -106,14 +108,18 @@
                             <form th:action="@{/admin/servers/{id}/check-connection(id=${server.id})}" method="post"
                                 style="display: inline;">
                                 <button type="submit" class="btn-info"
-                                    onclick="return confirm('确定要检查服务器 ' + '[[${server.name}]]' + ' 的SSH连接状态吗？')">
+                                    th:data-server-name="${server.name}"
+                                    onclick="return confirmCheckConnection(this)">
                                     🔍 检查连接
                                 </button>
                             </form>
                             <form th:action="@{/admin/servers/{id}/delete(id=${server.id})}" method="post"
-                                style="display: inline;"
-                                onsubmit="return confirm('⚠️ 确定要删除服务器 ' + '[[${server.name}]]' + ' 吗？ \n 此操作将影响所有使用该服务器的用户！')">
-                                <button type="submit" class="btn-danger">🗑️ 删除</button>
+                                style="display: inline;">
+                                <button type="submit" class="btn-danger"
+                                    th:data-server-name="${server.name}"
+                                    onclick="return confirmDeleteServer(this)">
+                                    🗑️ 删除
+                                </button>
                             </form>
                         </div>
                     </td>
@@ -325,6 +331,483 @@
             }
         </style>
     </div>
+
+    <!-- SSH状态自动刷新功能 -->
+    <!-- WebSocket 支持库 -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script>
+        let autoRefreshEnabled = false;
+        let refreshInterval = null;
+        let refreshTimeout = 30000; // 30秒刷新一次
+        
+        // WebSocket相关变量
+        let stompClient = null;
+        let isConnected = false;
+
+        /**
+         * 初始化WebSocket连接
+         */
+        function initializeWebSocket() {
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            
+            stompClient.connect({}, function(frame) {
+                console.log('已连接到WebSocket服务器: ' + frame);
+                isConnected = true;
+                
+                // 订阅服务器状态更新
+                stompClient.subscribe('/topic/server-status', function(message) {
+                    const data = JSON.parse(message.body);
+                    handleServerStatusUpdate(data);
+                });
+                
+                // 发送连接消息
+                stompClient.send('/app/connect', {}, JSON.stringify({
+                    type: 'server-admin-connect',
+                    timestamp: new Date().toISOString()
+                }));
+                
+            }, function(error) {
+                console.error('WebSocket连接错误: ', error);
+                isConnected = false;
+                // 5秒后重试连接
+                setTimeout(initializeWebSocket, 5000);
+            });
+        }
+        
+        /**
+         * 处理服务器状态更新
+         */
+        function handleServerStatusUpdate(data) {
+            console.log('收到服务器状态更新:', data);
+            
+            if (data.type === 'server_connection_status' && data.serverId) {
+                updateServerStatus(data.serverId, {
+                    connectionStatus: data.connectionStatus,
+                    connectionDescription: data.connectionDescription,
+                    lastCheck: data.lastCheck
+                });
+                
+                // 显示通知
+                if (data.connectionStatus === 'CONNECTED') {
+                    showNotification(`服务器 ${data.serverName} SSH连接成功`, 'success');
+                } else if (data.connectionStatus === 'FAILED' || data.connectionStatus === 'TIMEOUT' || data.connectionStatus === 'AUTH_FAILED') {
+                    showNotification(`服务器 ${data.serverName} SSH连接失败: ${data.connectionDescription}`, 'error');
+                }
+            }
+        }
+
+        /**
+         * 切换自动刷新状态
+         */
+        function toggleAutoRefresh() {
+            autoRefreshEnabled = !autoRefreshEnabled;
+            const toggleBtn = document.getElementById('autoRefreshToggle');
+            
+            if (autoRefreshEnabled) {
+                toggleBtn.textContent = '⏸️ 停止自动刷新';
+                toggleBtn.className = 'btn-warning';
+                startAutoRefresh();
+                showNotification('已启用自动刷新SSH状态', 'success');
+            } else {
+                toggleBtn.textContent = '🔄 启用自动刷新';
+                toggleBtn.className = 'btn-info';
+                stopAutoRefresh();
+                showNotification('已停止自动刷新', 'info');
+            }
+        }
+
+        /**
+         * 开始自动刷新
+         */
+        function startAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+            
+            refreshInterval = setInterval(refreshAllConnections, refreshTimeout);
+            updateLastRefreshTime();
+        }
+
+        /**
+         * 停止自动刷新
+         */
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        }
+
+        /**
+         * 刷新所有服务器的SSH连接状态
+         */
+        async function refreshAllConnections() {
+            const servers = document.querySelectorAll('[data-server-id]');
+            const refreshIndicator = document.getElementById('refreshIndicator');
+            
+            if (refreshIndicator) {
+                refreshIndicator.style.display = 'inline-block';
+            }
+            
+            const promises = Array.from(servers).map(async (serverRow) => {
+                const serverId = serverRow.getAttribute('data-server-id');
+                return refreshServerConnection(serverId);
+            });
+            
+            try {
+                await Promise.all(promises);
+                updateLastRefreshTime();
+            } catch (error) {
+                console.error('刷新连接状态时发生错误:', error);
+                showNotification('刷新连接状态时发生错误', 'error');
+            } finally {
+                if (refreshIndicator) {
+                    refreshIndicator.style.display = 'none';
+                }
+            }
+        }
+
+        /**
+         * 刷新单个服务器的SSH连接状态
+         */
+        async function refreshServerConnection(serverId) {
+            try {
+                const response = await fetch(`/terminal/api/test-connection/${serverId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                updateServerStatus(serverId, result);
+                
+            } catch (error) {
+                console.error(`刷新服务器 ${serverId} 连接状态失败:`, error);
+                updateServerStatus(serverId, {
+                    connectionStatus: 'FAILED',
+                    connectionDescription: '检查失败',
+                    lastCheck: new Date().toISOString()
+                });
+            }
+        }
+
+        /**
+         * 更新服务器状态显示
+         */
+        function updateServerStatus(serverId, result) {
+            const serverRow = document.querySelector(`[data-server-id="${serverId}"]`);
+            if (!serverRow) return;
+            
+            const statusCell = serverRow.querySelector('.connection-status');
+            const timeCell = serverRow.querySelector('.last-check-time');
+            
+            if (statusCell) {
+                const statusSpan = statusCell.querySelector('.status-badge');
+                if (statusSpan) {
+                    // 更新状态文本和样式
+                    statusSpan.textContent = result.connectionDescription || getStatusDescription(result.connectionStatus);
+                    statusSpan.className = `status-badge ${getStatusClass(result.connectionStatus)}`;
+                }
+            }
+            
+            if (timeCell && result.lastCheck) {
+                const date = new Date(result.lastCheck);
+                timeCell.textContent = formatTime(date);
+            }
+        }
+
+        /**
+         * 获取状态描述
+         */
+        function getStatusDescription(status) {
+            const statusMap = {
+                'CONNECTED': '连接正常',
+                'FAILED': '连接失败',
+                'TIMEOUT': '连接超时',
+                'AUTH_FAILED': '认证失败',
+                'MONITORING': '监控中',
+                'UNKNOWN': '未知状态'
+            };
+            return statusMap[status] || '未知状态';
+        }
+
+        /**
+         * 获取状态CSS类
+         */
+        function getStatusClass(status) {
+            const classMap = {
+                'CONNECTED': 'status-connected',
+                'MONITORING': 'status-connected',
+                'FAILED': 'status-failed',
+                'TIMEOUT': 'status-timeout',
+                'AUTH_FAILED': 'status-auth-failed',
+                'UNKNOWN': 'status-unknown'
+            };
+            return classMap[status] || 'status-unknown';
+        }
+
+        /**
+         * 格式化时间显示
+         */
+        function formatTime(date) {
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) { // 小于1分钟
+                return '刚刚';
+            } else if (diff < 3600000) { // 小于1小时
+                return Math.floor(diff / 60000) + '分钟前';
+            } else if (diff < 86400000) { // 小于1天
+                return Math.floor(diff / 3600000) + '小时前';
+            } else {
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            }
+        }
+
+        /**
+         * 更新最后刷新时间
+         */
+        function updateLastRefreshTime() {
+            const lastRefreshElement = document.getElementById('lastRefreshTime');
+            if (lastRefreshElement) {
+                lastRefreshElement.textContent = new Date().toLocaleTimeString();
+            }
+        }
+
+        /**
+         * 显示通知消息
+         */
+        function showNotification(message, type = 'info') {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            
+            // 添加到页面
+            document.body.appendChild(notification);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3000);
+        }
+
+        /**
+         * 确认检查服务器连接
+         */
+        function confirmCheckConnection(button) {
+            const serverName = button.getAttribute('data-server-name');
+            return confirm(`确定要检查服务器 ${serverName} 的SSH连接状态吗？`);
+        }
+        
+        /**
+         * 确认删除服务器
+         */
+        function confirmDeleteServer(button) {
+            const serverName = button.getAttribute('data-server-name');
+            return confirm(`⚠️ 确定要删除服务器 ${serverName} 吗？\n此操作将影响所有使用该服务器的用户！`);
+        }
+
+        /**
+         * 手动刷新所有连接
+         */
+        async function manualRefreshAll() {
+            const button = document.getElementById('manualRefreshBtn');
+            const originalText = button.textContent;
+            
+            button.disabled = true;
+            button.textContent = '刷新中...';
+            
+            try {
+                await refreshAllConnections();
+                showNotification('已刷新所有服务器连接状态', 'success');
+            } catch (error) {
+                showNotification('刷新失败：' + error.message, 'error');
+            } finally {
+                button.disabled = false;
+                button.textContent = originalText;
+            }
+        }
+
+        /**
+         * 页面加载完成后初始化
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化WebSocket连接
+            initializeWebSocket();
+            
+            // 添加自动刷新控制按钮
+            addRefreshControls();
+            
+            // 页面可见性变化时处理自动刷新
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden && autoRefreshEnabled) {
+                    stopAutoRefresh();
+                } else if (!document.hidden && autoRefreshEnabled) {
+                    startAutoRefresh();
+                }
+            });
+            
+            // 页面卸载时清理定时器和WebSocket
+            window.addEventListener('beforeunload', function() {
+                stopAutoRefresh();
+                if (stompClient && isConnected) {
+                    stompClient.disconnect();
+                }
+            });
+        });
+
+        /**
+         * 添加刷新控制按钮
+         */
+        function addRefreshControls() {
+            const pageHeader = document.querySelector('.page-header');
+            if (!pageHeader) return;
+            
+            const controlsDiv = pageHeader.querySelector('div');
+            if (!controlsDiv) return;
+            
+            // 创建刷新控制按钮容器
+            const refreshControls = document.createElement('div');
+            refreshControls.style.display = 'flex';
+            refreshControls.style.gap = '10px';
+            refreshControls.style.alignItems = 'center';
+            
+            // 自动刷新切换按钮
+            const autoRefreshBtn = document.createElement('button');
+            autoRefreshBtn.id = 'autoRefreshToggle';
+            autoRefreshBtn.className = 'btn-info';
+            autoRefreshBtn.textContent = '🔄 启用自动刷新';
+            autoRefreshBtn.onclick = toggleAutoRefresh;
+            
+            // 手动刷新按钮
+            const manualRefreshBtn = document.createElement('button');
+            manualRefreshBtn.id = 'manualRefreshBtn';
+            manualRefreshBtn.className = 'btn-secondary';
+            manualRefreshBtn.textContent = '🔍 立即刷新';
+            manualRefreshBtn.onclick = manualRefreshAll;
+            
+            // 刷新指示器
+            const refreshIndicator = document.createElement('span');
+            refreshIndicator.id = 'refreshIndicator';
+            refreshIndicator.className = 'loading-spinner';
+            refreshIndicator.style.display = 'none';
+            
+            // 最后刷新时间
+            const lastRefreshDiv = document.createElement('div');
+            lastRefreshDiv.style.fontSize = '0.85rem';
+            lastRefreshDiv.style.color = '#666';
+            lastRefreshDiv.innerHTML = `最后刷新: <span id="lastRefreshTime">-</span>`;
+            
+            refreshControls.appendChild(autoRefreshBtn);
+            refreshControls.appendChild(manualRefreshBtn);
+            refreshControls.appendChild(refreshIndicator);
+            refreshControls.appendChild(lastRefreshDiv);
+            
+            // 插入到现有按钮之前
+            controlsDiv.insertBefore(refreshControls, controlsDiv.firstChild);
+        }
+    </script>
+
+    <!-- 通知样式 -->
+    <style>
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .notification-success {
+            background-color: #28a745;
+        }
+        
+        .notification-info {
+            background-color: #007bff;
+        }
+        
+        .notification-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        
+        .notification-error {
+            background-color: #dc3545;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* 状态指示器样式 */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .status-connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-failed {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-timeout {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-auth-failed {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-unknown {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </body>
 
 </html>

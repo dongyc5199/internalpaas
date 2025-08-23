@@ -1,13 +1,15 @@
 package com.cmict.internalpaas.service;
 
 import com.cmict.internalpaas.model.Server;
+import com.cmict.internalpaas.model.UserActivity;
 import com.jcraft.jsch.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.util.Properties;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -16,8 +18,9 @@ public class SshConnectionService {
     
     private static final Logger logger = LoggerFactory.getLogger(SshConnectionService.class);
     
-    private static final int CONNECTION_TIMEOUT = 5000; // 5秒连接超时
-    private static final int CHECK_TIMEOUT = 3000; // 3秒检测超时
+    private static final int CONNECTION_TIMEOUT = 8000; // 8秒连接超时
+    private static final int CHECK_TIMEOUT = 10000; // 10秒检测超时
+    private static final int COMMAND_TIMEOUT = 15000; // 15秒命令超时
     
     /**
      * 检查服务器SSH连接状态
@@ -28,11 +31,19 @@ public class SshConnectionService {
         }
         
         try {
+            logger.info("开始SSH连接检查: {}@{}:{}", 
+                server.getSshUsername() != null ? server.getSshUsername() : "root", 
+                server.getHostname(), 
+                server.getSshPort() != null ? server.getSshPort() : 22);
+                
             return CompletableFuture.supplyAsync(() -> performConnectionCheck(server))
                     .get(CHECK_TIMEOUT, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            logger.warn("SSH连接检查超时: {}", server.getHostname(), e);
+        } catch (java.util.concurrent.TimeoutException e) {
+            logger.warn("SSH连接检查超时({}ms): {}", CHECK_TIMEOUT, server.getHostname());
             return Server.ConnectionStatus.TIMEOUT;
+        } catch (Exception e) {
+            logger.warn("SSH连接检查异常: {}", server.getHostname(), e);
+            return Server.ConnectionStatus.FAILED;
         }
     }
     
@@ -42,11 +53,14 @@ public class SshConnectionService {
     private Server.ConnectionStatus performConnectionCheck(Server server) {
         JSch jsch = new JSch();
         Session session = null;
+        ChannelExec channel = null;
         
         try {
             // 设置主机密钥检查为不检查（生产环境应配置已知主机）
             Properties config = new Properties();
             config.put("StrictHostKeyChecking", "no");
+            config.put("PreferredAuthentications", "password");
+            config.put("PasswordAuthentication", "yes");
             
             session = jsch.getSession(
                 server.getSshUsername() != null ? server.getSshUsername() : "root",
@@ -57,35 +71,28 @@ public class SshConnectionService {
             session.setConfig(config);
             session.setTimeout(CONNECTION_TIMEOUT);
             
-            // 设置认证方式
+            // 设置认证方式 - 仅使用密码认证
             if (server.getSshPassword() != null && !server.getSshPassword().isEmpty()) {
                 session.setPassword(server.getSshPassword());
-            } else if (server.getSshKeyPath() != null && !server.getSshKeyPath().isEmpty()) {
-                File keyFile = new File(server.getSshKeyPath());
-                if (keyFile.exists()) {
-                    if (server.getSshKeyPassphrase() != null && !server.getSshKeyPassphrase().isEmpty()) {
-                        jsch.addIdentity(server.getSshKeyPath(), server.getSshKeyPassphrase());
-                    } else {
-                        jsch.addIdentity(server.getSshKeyPath());
-                    }
-                }
+                logger.debug("使用密码认证: 用户名={}, 主机={}, 端口={}", 
+                    session.getUserName(), server.getHostname(), server.getSshPort());
+            } else {
+                logger.warn("未提供密码，无法进行SSH认证: {}", server.getHostname());
+                return Server.ConnectionStatus.AUTH_FAILED;
             }
             
             // 尝试连接
+            logger.debug("开始SSH连接: {}@{}:{}", session.getUserName(), server.getHostname(), server.getSshPort());
+            long startTime = System.currentTimeMillis();
             session.connect(CONNECTION_TIMEOUT);
+            long connectTime = System.currentTimeMillis() - startTime;
             
-            // 测试执行一个简单的命令
-            ChannelExec channel = (ChannelExec) session.openChannel("exec");
-            channel.setCommand("echo 'connection_test'");
-            channel.connect(1000);
-            
-            // 等待命令执行完成
-            Thread.sleep(500);
-            
-            if (channel.isConnected()) {
-                channel.disconnect();
+            // 如果会话连接成功，直接返回成功状态
+            if (session.isConnected()) {
+                logger.info("SSH会话连接成功: {} (耗时: {}ms)", server.getHostname(), connectTime);
                 return Server.ConnectionStatus.CONNECTED;
             } else {
+                logger.warn("SSH会话连接失败: {} (耗时: {}ms)", server.getHostname(), connectTime);
                 return Server.ConnectionStatus.FAILED;
             }
             
@@ -101,6 +108,9 @@ public class SshConnectionService {
             logger.error("SSH连接检查异常: {}", server.getHostname(), e);
             return Server.ConnectionStatus.FAILED;
         } finally {
+            if (channel != null && channel.isConnected()) {
+                channel.disconnect();
+            }
             if (session != null && session.isConnected()) {
                 session.disconnect();
             }
@@ -125,22 +135,188 @@ public class SshConnectionService {
     }
     
     /**
+     * 执行远程命令
+     */
+    public String executeCommand(Server server, String command) throws Exception {
+        return executeCommand(server, command, COMMAND_TIMEOUT);
+    }
+    
+    /**
+     * 执行远程命令（指定超时时间）
+     */
+    public String executeCommand(Server server, String command, int timeoutMs) throws Exception {
+        JSch jsch = new JSch();
+        Session session = null;
+        ChannelExec channel = null;
+        BufferedReader reader = null;
+        
+        try {
+            session = createSession(jsch, server);
+            session.connect(CONNECTION_TIMEOUT);
+            
+            channel = (ChannelExec) session.openChannel("exec");
+            channel.setCommand(command);
+            
+            channel.setInputStream(null);
+            channel.setErrStream(System.err);
+            
+            // 先连接channel，再获取输入流
+            channel.connect(timeoutMs);
+            reader = new BufferedReader(new InputStreamReader(channel.getInputStream()));
+            
+            StringBuilder output = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
+            }
+            
+            // 等待命令执行完成
+            while (!channel.isClosed()) {
+                Thread.sleep(100);
+            }
+            
+            return output.toString().trim();
+            
+        } finally {
+            if (reader != null) try { reader.close(); } catch (Exception ignored) {}
+            if (channel != null && channel.isConnected()) try { channel.disconnect(); } catch (Exception ignored) {}
+            if (session != null && session.isConnected()) try { session.disconnect(); } catch (Exception ignored) {}
+        }
+    }
+    
+    /**
+     * 获取当前登录用户信息
+     */
+    public List<UserActivity> getCurrentUsers(Server server) {
+        List<UserActivity> users = new ArrayList<>();
+        
+        try {
+            // 获取当前登录用户
+            String whoCommand = "who";
+            String result = executeCommand(server, whoCommand);
+            
+            String[] lines = result.split("\n");
+            for (String line : lines) {
+                if (line.trim().isEmpty()) continue;
+                
+                // 解析who命令输出
+                String[] parts = line.trim().split("\\s+");
+                if (parts.length >= 3) {
+                    UserActivity activity = new UserActivity();
+                    activity.setServerId(server.getId());
+                    activity.setUsername(parts[0]);
+                    activity.setTerminalType(parts[1]);
+                    activity.setActivityType(UserActivity.ActivityType.LOGIN);
+                    activity.setIsActive(true);
+                    
+                    // 尝试获取远程IP
+                    if (parts.length >= 4 && parts[3].contains("(") && parts[3].contains(")")) {
+                        String ip = parts[3].substring(parts[3].indexOf("(") + 1, parts[3].indexOf(")"));
+                        activity.setRemoteIp(ip);
+                    }
+                    
+                    users.add(activity);
+                }
+            }
+            
+            // 为每个用户获取更详细的信息
+            for (UserActivity user : users) {
+                try {
+                    // 获取用户最后一次活动时间
+                    String lastCommand = String.format("last -n 1 %s | head -1", user.getUsername());
+                    String lastResult = executeCommand(server, lastCommand, 3000);
+                    
+                    // 获取用户进程数
+                    String psCommand = String.format("ps -u %s | wc -l", user.getUsername());
+                    String psResult = executeCommand(server, psCommand, 3000);
+                    if (!psResult.isEmpty()) {
+                        try {
+                            int processCount = Integer.parseInt(psResult.trim()) - 1; // 减去标题行
+                            user.setCommandCount(Math.max(0, processCount));
+                        } catch (NumberFormatException ignored) {}
+                    }
+                    
+                } catch (Exception e) {
+                    logger.debug("获取用户详细信息失败: {}", user.getUsername(), e);
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.error("获取当前用户失败: {}", server.getHostname(), e);
+        }
+        
+        return users;
+    }
+    
+    /**
+     * 获取系统负载信息
+     */
+    public Map<String, Object> getSystemLoad(Server server) {
+        Map<String, Object> loadInfo = new HashMap<>();
+        
+        try {
+            // 获取负载平均值
+            String uptimeCmd = "uptime";
+            String result = executeCommand(server, uptimeCmd);
+            loadInfo.put("uptime", result.trim());
+            
+            // 解析负载平均值
+            if (result.contains("load average:")) {
+                String loadPart = result.substring(result.indexOf("load average:") + 13).trim();
+                String[] loads = loadPart.split(",");
+                if (loads.length >= 3) {
+                    loadInfo.put("load1m", loads[0].trim());
+                    loadInfo.put("load5m", loads[1].trim());
+                    loadInfo.put("load15m", loads[2].trim());
+                }
+            }
+            
+            // 获取进程数
+            String psCmd = "ps aux | wc -l";
+            String psResult = executeCommand(server, psCmd);
+            loadInfo.put("processCount", psResult.trim());
+            
+        } catch (Exception e) {
+            logger.error("获取系统负载信息失败: {}", server.getHostname(), e);
+        }
+        
+        return loadInfo;
+    }
+    
+    /**
+     * 创建SSH会话
+     */
+    public Session createSession(JSch jsch, Server server) throws JSchException {
+        Properties config = new Properties();
+        config.put("StrictHostKeyChecking", "no");
+        config.put("PreferredAuthentications", "password");
+        config.put("PasswordAuthentication", "yes");
+        config.put("PubkeyAuthentication", "no");
+        
+        Session session = jsch.getSession(
+            server.getSshUsername() != null ? server.getSshUsername() : "root",
+            server.getHostname(),
+            server.getSshPort() != null ? server.getSshPort() : 22
+        );
+        
+        session.setConfig(config);
+        session.setTimeout(CONNECTION_TIMEOUT);
+        
+        // 仅支持密码认证
+        if (server.getSshPassword() != null && !server.getSshPassword().isEmpty()) {
+            session.setPassword(server.getSshPassword());
+        } else {
+            throw new JSchException("未提供密码，无法进行SSH认证");
+        }
+        
+        return session;
+    }
+    
+    /**
      * 获取连接状态的描述信息
      */
     public String getConnectionStatusDescription(Server.ConnectionStatus status) {
-        switch (status) {
-            case CONNECTED:
-                return "连接成功";
-            case FAILED:
-                return "连接失败";
-            case TIMEOUT:
-                return "连接超时";
-            case AUTH_FAILED:
-                return "认证失败";
-            case UNKNOWN:
-                return "未检查";
-            default:
-                return "未知";
-        }
+        if (status == null) return "未知";
+        return status.getDescription();
     }
 }
