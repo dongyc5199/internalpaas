@@ -138,18 +138,18 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr th:each="session : ${activeSessions}">
-                                        <td class="font-monospace" th:text="${session.sessionId}">session-id</td>
-                                        <td th:text="${session.username}">server</td>
-                                        <td th:text="${#temporals.format(session.startTime, 'MM-dd HH:mm')}">start-time</td>
+                                    <tr th:each="sshSession : ${activeSessions}">
+                                        <td class="font-monospace" th:text="${sshSession.sessionId}">session-id</td>
+                                        <td th:text="${sshSession.username}">server</td>
+                                        <td th:text="${#temporals.format(sshSession.startTime, 'MM-dd HH:mm')}">start-time</td>
                                         <td>
-                                            <span class="badge bg-success" th:if="${session.isActive}">活跃</span>
-                                            <span class="badge bg-secondary" th:unless="${session.isActive}">已结束</span>
+                                            <span class="badge bg-success" th:if="${sshSession.isActive}">活跃</span>
+                                            <span class="badge bg-secondary" th:unless="${sshSession.isActive}">已结束</span>
                                         </td>
                                         <td>
                                             <button class="btn btn-outline-danger btn-sm" 
-                                                    th:if="${session.isActive}"
-                                                    th:data-session-id="${session.sessionId}"
+                                                    th:if="${sshSession.isActive}"
+                                                    th:data-session-id="${sshSession.sessionId}"
                                                     onclick="closeSessionFromButton(this)"
                                                     title="关闭会话">
                                                 <i class="fas fa-times"></i>

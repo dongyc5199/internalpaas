@@ -42,10 +42,11 @@ public class SSHTerminalService {
         private final Server server;
         private final User user;
         private final WebSocketSession webSocketSession;
+        private final Object sendLock = new Object(); // 添加发送锁
         private Session jschSession;
         private ChannelShell channelShell;
         private PrintWriter writer;
-        private BufferedReader reader;
+        private InputStream inputStream; // 改为InputStream
         private Thread outputThread;
         private volatile boolean connected = false;
         
@@ -64,15 +65,16 @@ public class SSHTerminalService {
         public Session getJschSession() { return jschSession; }
         public ChannelShell getChannelShell() { return channelShell; }
         public PrintWriter getWriter() { return writer; }
-        public BufferedReader getReader() { return reader; }
+        public InputStream getInputStream() { return inputStream; } // 更新getter
         public Thread getOutputThread() { return outputThread; }
         public boolean isConnected() { return connected; }
+        public Object getSendLock() { return sendLock; } // 获取发送锁
         
         // Setters
         public void setJschSession(Session jschSession) { this.jschSession = jschSession; }
         public void setChannelShell(ChannelShell channelShell) { this.channelShell = channelShell; }
         public void setWriter(PrintWriter writer) { this.writer = writer; }
-        public void setReader(BufferedReader reader) { this.reader = reader; }
+        public void setInputStream(InputStream inputStream) { this.inputStream = inputStream; } // 更新setter
         public void setOutputThread(Thread outputThread) { this.outputThread = outputThread; }
         public void setConnected(boolean connected) { this.connected = connected; }
     }
@@ -116,23 +118,19 @@ public class SSHTerminalService {
                 }
             }
             
-            // 设置输入输出流
-            PipedOutputStream shellInput = new PipedOutputStream();
-            PipedInputStream shellInputPipe = new PipedInputStream(shellInput);
-            channelShell.setInputStream(shellInputPipe);
-            
-            PipedInputStream shellOutput = new PipedInputStream();
-            PipedOutputStream shellOutputPipe = new PipedOutputStream(shellOutput);
-            channelShell.setOutputStream(shellOutputPipe);
+            // 设置输入输出流 - 改用字节流
+            channelShell.setInputStream(null); // 我们会直接发送数据
+            channelShell.setOutputStream(null); // 我们会直接读取数据
             
             // 连接Shell通道
             channelShell.connect(5000);
             
-            // 设置会话属性
+            // 设置会话属性 - 改用字节流
             terminalSession.setJschSession(jschSession);
             terminalSession.setChannelShell(channelShell);
-            terminalSession.setWriter(new PrintWriter(shellInput, true));
-            terminalSession.setReader(new BufferedReader(new InputStreamReader(shellOutput)));
+            terminalSession.setWriter(new PrintWriter(channelShell.getOutputStream(), true));
+            // 使用字节流而不是字符流
+            terminalSession.setInputStream(channelShell.getInputStream());
             terminalSession.setConnected(true);
             
             // 存储会话
@@ -153,6 +151,16 @@ public class SSHTerminalService {
             
             // 启动输出监听线程
             startOutputThread(terminalSession);
+            
+            // 发送初始化命令来激活终端
+            try {
+                Thread.sleep(500); // 等待连接完全建立
+                // 发送回车来获取初始提示符
+                channelShell.getOutputStream().write("\r".getBytes());
+                channelShell.getOutputStream().flush();
+            } catch (Exception e) {
+                logger.debug("发送初始化命令失败，但不影响连接: {}", e.getMessage());
+            }
             
             logger.info("SSH终端会话创建成功: {} -> {}@{}", sessionId, user.getUsername(), server.getHostname());
             return sessionId;
@@ -176,8 +184,12 @@ public class SSHTerminalService {
         }
         
         try {
-            session.getWriter().write(command);
-            session.getWriter().flush();
+            // 直接写入字节流
+            ChannelShell channelShell = session.getChannelShell();
+            if (channelShell != null && channelShell.isConnected()) {
+                channelShell.getOutputStream().write(command.getBytes("UTF-8"));
+                channelShell.getOutputStream().flush();
+            }
             
             // 更新会话心跳和统计
             updateSessionHeartbeat(sessionId);
@@ -299,20 +311,22 @@ public class SSHTerminalService {
     }
     
     /**
-     * 启动输出监听线程
+     * 启动输出监听线程 - 使用字节流
      */
     private void startOutputThread(SSHTerminalSession session) {
         Thread outputThread = new Thread(() -> {
             try {
-                char[] buffer = new char[1024];
+                byte[] buffer = new byte[1024];
                 int bytesRead;
+                InputStream inputStream = session.getInputStream();
                 
                 while (session.isConnected() && !Thread.currentThread().isInterrupted()) {
                     try {
-                        if (session.getReader().ready()) {
-                            bytesRead = session.getReader().read(buffer);
+                        if (inputStream.available() > 0) {
+                            bytesRead = inputStream.read(buffer);
                             if (bytesRead > 0) {
-                                String output = new String(buffer, 0, bytesRead);
+                                // 直接发送字节数据，保持ANSI转义序列
+                                String output = new String(buffer, 0, bytesRead, "UTF-8");
                                 sendOutputToWebSocket(session, output);
                             }
                         } else {
@@ -348,13 +362,46 @@ public class SSHTerminalService {
      * 发送输出到WebSocket
      */
     private void sendOutputToWebSocket(SSHTerminalSession session, String output) {
-        try {
-            if (session.getWebSocketSession().isOpen()) {
-                session.getWebSocketSession().sendMessage(
-                    new org.springframework.web.socket.TextMessage(output));
+        WebSocketSession webSocketSession = session.getWebSocketSession();
+        if (webSocketSession == null || !webSocketSession.isOpen()) {
+            return;
+        }
+        
+        synchronized (session.getSendLock()) {
+            try {
+                if (webSocketSession.isOpen()) {
+                    webSocketSession.sendMessage(new org.springframework.web.socket.TextMessage(output));
+                    logger.debug("成功发送SSH输出到WebSocket: {}", session.getSessionId());
+                } else {
+                    logger.debug("WebSocket会话已关闭，跳过发送输出: {}", session.getSessionId());
+                }
+            } catch (IllegalStateException e) {
+                // 处理WebSocket状态异常
+                if (e.getMessage() != null && e.getMessage().contains("TEXT_PARTIAL_WRITING")) {
+                    logger.warn("WebSocket正在写入中，稍后重试发送SSH输出: {}", session.getSessionId());
+                    // 可以选择重试或者直接丢弃消息
+                    try {
+                        Thread.sleep(10); // 短暂等待
+                        if (webSocketSession.isOpen()) {
+                            webSocketSession.sendMessage(new org.springframework.web.socket.TextMessage(output));
+                            logger.debug("重试发送SSH输出成功: {}", session.getSessionId());
+                        }
+                    } catch (Exception retryException) {
+                        logger.error("重试发送SSH输出失败: {}", session.getSessionId(), retryException);
+                    }
+                } else {
+                    logger.error("WebSocket状态异常: {}", session.getSessionId(), e);
+                }
+            } catch (Exception e) {
+                logger.warn("发送WebSocket消息失败: {}", session.getSessionId(), e);
+                
+                // 如果连续失败，可能需要关闭连接
+                if (session.isConnected() && 
+                    (e instanceof java.io.IOException || e instanceof IllegalStateException)) {
+                    logger.warn("检测到WebSocket连接异常，关闭 SSH 会话: {}", session.getSessionId());
+                    closeSession(session.getSessionId());
+                }
             }
-        } catch (Exception e) {
-            logger.warn("发送WebSocket消息失败: {}", session.getSessionId(), e);
         }
     }
     

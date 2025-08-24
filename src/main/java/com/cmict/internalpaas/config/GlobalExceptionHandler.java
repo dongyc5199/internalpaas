@@ -41,7 +41,7 @@ public class GlobalExceptionHandler {
         } else if (message != null && message.contains("Failed to restart application")) {
             title = "应用重启失败";
             userMessage = "应用重启失败，请尝试手动停止后重新启动";
-        } else if (message != null && message.contains("No available ports")) {
+        } else if (message != null && (message.contains("No available ports") || message.contains("端口范围"))) {
             title = "端口分配失败";
             userMessage = "无可用端口，请停止一些应用后重试或联系管理员扩展端口范围";
         } else if (message != null && message.contains("User not found")) {
@@ -56,9 +56,27 @@ public class GlobalExceptionHandler {
         } else if (message != null && message.contains("Application not found")) {
             title = "应用不存在";
             userMessage = "应用不存在或已被删除";
+        } else if (message != null && message.contains("认证失败")) {
+            title = "SSH认证失败";
+            userMessage = "SSH认证失败，请检查用户名和密码";
+        } else if (message != null && message.contains("连接超时")) {
+            title = "连接超时";
+            userMessage = "SSH连接超时，请检查网络连接和服务器状态";
+        } else if (message != null && message.contains("权限不足")) {
+            title = "权限不足";
+            userMessage = message;
+        } else if (message != null && message.contains("文件上传失败")) {
+            title = "文件上传失败";
+            userMessage = "文件上传失败，请检查文件大小和格式";
+        } else if (message != null && message.contains("端口分配失败")) {
+            title = "端口分配失败";
+            userMessage = message;
+        } else if (message != null && message.contains("数据库")) {
+            title = "数据库错误";
+            userMessage = "数据库操作失败，请稍后重试";
         } else {
             title = "操作失败";
-            userMessage = message != null ? message : "系统发生未知错误";
+            userMessage = message != null && !message.trim().isEmpty() ? message : "系统发生未知错误，请稍后重试";
         }
         
         if (isAjaxRequest(request)) {
@@ -81,6 +99,68 @@ public class GlobalExceptionHandler {
             return handleAjaxException(ex, HttpStatus.INTERNAL_SERVER_ERROR, userMessage);
         } else {
             return handlePageException(ex, "文件操作失败", userMessage, request);
+        }
+    }
+    
+    /**
+     * 处理网络连接异常（SSH、端口检查等）
+     */
+    @ExceptionHandler({java.net.ConnectException.class, java.net.SocketTimeoutException.class})
+    public Object handleNetworkException(Exception ex, HttpServletRequest request) {
+        logger.error("网络连接异常: {}", ex.getMessage(), ex);
+        
+        String userMessage;
+        if (ex instanceof java.net.SocketTimeoutException) {
+            userMessage = "网络连接超时，请检查网络连接或服务器状态";
+        } else {
+            userMessage = "无法连接到目标服务器，请检查网络配置和服务器状态";
+        }
+        
+        if (isAjaxRequest(request)) {
+            return handleAjaxException(ex, HttpStatus.BAD_GATEWAY, userMessage);
+        } else {
+            return handlePageException(ex, "网络连接错误", userMessage, request);
+        }
+    }
+    
+    /**
+     * 处理安全相关异常
+     */
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public Object handleSecurityException(org.springframework.security.access.AccessDeniedException ex, HttpServletRequest request) {
+        logger.warn("访问被拒绝: {}", ex.getMessage());
+        
+        String userMessage = "您没有权限执行此操作，请联系管理员";
+        
+        if (isAjaxRequest(request)) {
+            return handleAjaxException(ex, HttpStatus.FORBIDDEN, userMessage);
+        } else {
+            return "redirect:/login?error=access_denied";
+        }
+    }
+    
+    /**
+     * 处理数据验证异常
+     */
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
+    public Object handleValidationException(RuntimeException ex, HttpServletRequest request) {
+        logger.warn("数据验证错误: {}", ex.getMessage(), ex);
+        
+        String message = ex.getMessage();
+        String userMessage;
+        
+        if (message != null && message.contains("端口")) {
+            userMessage = "端口配置错误: " + message;
+        } else if (message != null && message.contains("应用")) {
+            userMessage = "应用状态错误: " + message;
+        } else {
+            userMessage = "输入参数错误: " + (message != null ? message : "请检查输入内容");
+        }
+        
+        if (isAjaxRequest(request)) {
+            return handleAjaxException(ex, HttpStatus.BAD_REQUEST, userMessage);
+        } else {
+            return handlePageException(ex, "参数错误", userMessage, request);
         }
     }
 

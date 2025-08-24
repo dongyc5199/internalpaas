@@ -7,6 +7,7 @@
     <title>服务器管理 - Dev Debug Platform</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/servers.css">
+    <link rel="stylesheet" href="/css/ux-enhancement.css">
 </head>
 
 <body>
@@ -336,6 +337,7 @@
     <!-- WebSocket 支持库 -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script src="/js/ux-enhancement.js"></script>
     <script>
         let autoRefreshEnabled = false;
         let refreshInterval = null;
@@ -606,7 +608,23 @@
          */
         function confirmCheckConnection(button) {
             const serverName = button.getAttribute('data-server-name');
-            return confirm(`确定要检查服务器 ${serverName} 的SSH连接状态吗？`);
+            
+            ux.showConfirm(
+                `确定要检查服务器 "${serverName}" 的SSH连接状态吗？\n此操作将验证SSH连接配置和网络连通性。`,
+                '确认检查连接',
+                () => {
+                    // 用户确认后，显示加载状态并提交表单
+                    ux.setButtonLoading(button, true, '检查中...');
+                    ux.showOperationFeedback('正在检查SSH连接...', 'processing');
+                    
+                    // 提交表单
+                    setTimeout(() => {
+                        button.closest('form').submit();
+                    }, 100);
+                }
+            );
+            
+            return false; // 阻止默认表单提交
         }
         
         /**
@@ -614,7 +632,23 @@
          */
         function confirmDeleteServer(button) {
             const serverName = button.getAttribute('data-server-name');
-            return confirm(`⚠️ 确定要删除服务器 ${serverName} 吗？\n此操作将影响所有使用该服务器的用户！`);
+            
+            ux.showConfirm(
+                `⚠️ 确定要删除服务器 "${serverName}" 吗？\n\n此操作将：\n• 删除服务器配置信息\n• 影响所有使用该服务器的用户\n• 无法撤销\n\n请谨慎操作！`,
+                '确认删除服务器',
+                () => {
+                    // 用户确认后，显示加载状态并提交表单
+                    ux.setButtonLoading(button, true, '删除中...');
+                    ux.showOperationFeedback('正在删除服务器...', 'processing');
+                    
+                    // 提交表单
+                    setTimeout(() => {
+                        button.closest('form').submit();
+                    }, 100);
+                }
+            );
+            
+            return false; // 阻止默认表单提交
         }
 
         /**

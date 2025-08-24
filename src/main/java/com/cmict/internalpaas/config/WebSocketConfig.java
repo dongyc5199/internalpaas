@@ -62,8 +62,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, WebSoc
      */
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        // 注册SSH终端处理器
+        // 注册SSH终端处理器，添加安全握手拦截器以传递用户认证信息
         registry.addHandler(sshTerminalWebSocketHandler, "/ws/ssh-terminal")
-                .setAllowedOrigins("*");
+                .setAllowedOrigins("*")
+                .addInterceptors(new SecurityWebSocketHandshakeInterceptor());
     }
 }

@@ -39,10 +39,23 @@ public class SshConnectionService {
             return CompletableFuture.supplyAsync(() -> performConnectionCheck(server))
                     .get(CHECK_TIMEOUT, TimeUnit.MILLISECONDS);
         } catch (java.util.concurrent.TimeoutException e) {
-            logger.warn("SSH连接检查超时({}ms): {}", CHECK_TIMEOUT, server.getHostname());
+            logger.warn("SSH连接检查超时({}ms): {} - 建议检查网络连接或增加超时时间", CHECK_TIMEOUT, server.getHostname());
             return Server.ConnectionStatus.TIMEOUT;
+        } catch (java.util.concurrent.ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof JSchException && cause.getMessage() != null && cause.getMessage().contains("Auth fail")) {
+                logger.warn("SSH连接检查失败 - 认证错误: {} (用户名: {}, 端口: {})", 
+                    server.getHostname(), 
+                    server.getSshUsername() != null ? server.getSshUsername() : "root", 
+                    server.getSshPort() != null ? server.getSshPort() : 22);
+                return Server.ConnectionStatus.AUTH_FAILED;
+            } else {
+                logger.warn("SSH连接检查失败: {} - 原因: {}", server.getHostname(), cause != null ? cause.getMessage() : "未知错误");
+                return Server.ConnectionStatus.FAILED;
+            }
         } catch (Exception e) {
-            logger.warn("SSH连接检查异常: {}", server.getHostname(), e);
+            logger.error("SSH连接检查异常: {} - 异常类型: {}, 错误信息: {}", 
+                server.getHostname(), e.getClass().getSimpleName(), e.getMessage(), e);
             return Server.ConnectionStatus.FAILED;
         }
     }
@@ -145,15 +158,22 @@ public class SshConnectionService {
      * 执行远程命令（指定超时时间）
      */
     public String executeCommand(Server server, String command, int timeoutMs) throws Exception {
+        long startTime = System.currentTimeMillis();
         JSch jsch = new JSch();
         Session session = null;
         ChannelExec channel = null;
         BufferedReader reader = null;
         
+        logger.info("开始执行远程命令: {} @ {} (超时: {}ms)", command, server.getHostname(), timeoutMs);
+        
         try {
+            long sessionStartTime = System.currentTimeMillis();
             session = createSession(jsch, server);
             session.connect(CONNECTION_TIMEOUT);
+            long sessionConnectTime = System.currentTimeMillis() - sessionStartTime;
+            logger.debug("SSH会话连接成功: {} (耗时: {}ms)", server.getHostname(), sessionConnectTime);
             
+            long channelStartTime = System.currentTimeMillis();
             channel = (ChannelExec) session.openChannel("exec");
             channel.setCommand(command);
             
@@ -162,10 +182,14 @@ public class SshConnectionService {
             
             // 先连接channel，再获取输入流
             channel.connect(timeoutMs);
+            long channelConnectTime = System.currentTimeMillis() - channelStartTime;
+            logger.debug("命令通道连接成功: {} (耗时: {}ms)", server.getHostname(), channelConnectTime);
+            
             reader = new BufferedReader(new InputStreamReader(channel.getInputStream()));
             
             StringBuilder output = new StringBuilder();
             String line;
+            long readStartTime = System.currentTimeMillis();
             while ((line = reader.readLine()) != null) {
                 output.append(line).append("\n");
             }
@@ -175,12 +199,65 @@ public class SshConnectionService {
                 Thread.sleep(100);
             }
             
+            long executeTime = System.currentTimeMillis() - readStartTime;
+            long totalTime = System.currentTimeMillis() - startTime;
+            int exitStatus = channel.getExitStatus();
+            
+            logger.info("远程命令执行完成: {} @ {} (总耗时: {}ms, 执行耗时: {}ms, 退出码: {}, 输出长度: {})", 
+                command, server.getHostname(), totalTime, executeTime, exitStatus, output.length());
+            
+            if (exitStatus != 0) {
+                logger.warn("远程命令执行错误: {} @ {} (退出码: {})", command, server.getHostname(), exitStatus);
+            }
+            
             return output.toString().trim();
             
+        } catch (JSchException e) {
+            long totalTime = System.currentTimeMillis() - startTime;
+            if (e.getMessage() != null && e.getMessage().contains("Auth fail")) {
+                logger.error("远程命令执行失败 - SSH认证错误: {} @ {} (耗时: {}ms)", command, server.getHostname(), totalTime);
+                throw new Exception("认证失败: " + e.getMessage(), e);
+            } else if (e.getMessage() != null && e.getMessage().contains("timeout")) {
+                logger.error("远程命令执行失败 - 连接超时: {} @ {} (耗时: {}ms)", command, server.getHostname(), totalTime);
+                throw new Exception("连接超时: " + e.getMessage(), e);
+            } else {
+                logger.error("远程命令执行失败 - SSH错误: {} @ {} (耗时: {}ms, 错误: {})", 
+                    command, server.getHostname(), totalTime, e.getMessage());
+                throw new Exception("SSH连接错误: " + e.getMessage(), e);
+            }
+        } catch (java.io.IOException e) {
+            long totalTime = System.currentTimeMillis() - startTime;
+            logger.error("远程命令执行失败 - IO错误: {} @ {} (耗时: {}ms)", command, server.getHostname(), totalTime, e);
+            throw new Exception("IO错误: " + e.getMessage(), e);
+        } catch (InterruptedException e) {
+            long totalTime = System.currentTimeMillis() - startTime;
+            logger.error("远程命令执行被中断: {} @ {} (耗时: {}ms)", command, server.getHostname(), totalTime);
+            Thread.currentThread().interrupt();
+            throw new Exception("命令执行被中断", e);
+        } catch (Exception e) {
+            long totalTime = System.currentTimeMillis() - startTime;
+            logger.error("远程命令执行异常: {} @ {} (耗时: {}ms, 异常类型: {})", 
+                command, server.getHostname(), totalTime, e.getClass().getSimpleName(), e);
+            throw e;
         } finally {
-            if (reader != null) try { reader.close(); } catch (Exception ignored) {}
-            if (channel != null && channel.isConnected()) try { channel.disconnect(); } catch (Exception ignored) {}
-            if (session != null && session.isConnected()) try { session.disconnect(); } catch (Exception ignored) {}
+            long totalTime = System.currentTimeMillis() - startTime;
+            logger.debug("清理远程命令资源: {} @ {} (总耗时: {}ms)", command, server.getHostname(), totalTime);
+            
+            if (reader != null) try { reader.close(); } catch (Exception e) { 
+                logger.debug("关闭输入流异常", e); 
+            }
+            if (channel != null && channel.isConnected()) try { 
+                channel.disconnect(); 
+                logger.debug("关闭命令通道成功"); 
+            } catch (Exception e) { 
+                logger.debug("关闭命令通道异常", e); 
+            }
+            if (session != null && session.isConnected()) try { 
+                session.disconnect(); 
+                logger.debug("SSH会话关闭成功"); 
+            } catch (Exception e) { 
+                logger.debug("SSH会话关闭异常", e); 
+            }
         }
     }
     

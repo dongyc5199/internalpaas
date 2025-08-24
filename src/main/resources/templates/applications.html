@@ -6,9 +6,12 @@
     <title>应用管理 - Dev Debug Platform</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/applications.css">
+    <link rel="stylesheet" href="/css/ux-enhancement.css">
     <!-- WebSocket 支持库 -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <!-- UX 增强脚本 -->
+    <script src="/js/ux-enhancement.js"></script>
     <style>
         /* 通知样式 */
         .notification {
@@ -367,7 +370,8 @@
                         <form th:action="@{/apps/{id}/restart(id=${app.id})}" method="post" style="display: inline;">
                             <button type="submit" class="action-btn warning" 
                                     th:disabled="${app.status == 'ERROR'}"
-                                    onclick="return confirm('⚠️ 确定要重启应用「' + '[[${app.name}]]' + '」吗？\n 应用将停止然后重新启动！')"
+                                    th:attr="data-app-name=${app.name}"
+                                    onclick="return confirmRestart(this)"
                                     title="重启应用">
                                 <span class="btn-icon">🔄</span>
                                 <span class="btn-text">重启</span>
@@ -381,7 +385,8 @@
                         
                         <form th:action="@{/apps/{id}/delete(id=${app.id})}" method="post" style="display: inline;">
                             <button type="submit" class="action-btn danger" 
-                                    onclick="return confirm('⚠️ 确定要删除应用「' + '[[${app.name}]]' + '」吗？\n 此操作不可恢复！')"
+                                    th:attr="data-app-name=${app.name}"
+                                    onclick="return confirmDelete(this)"
                                     title="删除应用">
                                 <span class="btn-icon">🗑️</span>
                                 <span class="btn-text">删除</span>
@@ -649,33 +654,62 @@
                     const action = form.action;
                     const appCard = form.closest('.application-card');
                     const appName = appCard ? appCard.querySelector('.app-name').textContent : '未知应用';
+                    const submitBtn = form.querySelector('button[type="submit"]');
                     
                     let operation = '';
+                    let actionText = '处理中...';
+                    let feedbackText = '正在处理请求...';
+                    
                     if (action.includes('/start')) {
                         operation = '启动';
+                        actionText = '启动中...';
+                        feedbackText = `正在启动应用「${appName}」...`;
                     } else if (action.includes('/stop')) {
                         operation = '停止';
+                        actionText = '停止中...';
+                        feedbackText = `正在停止应用「${appName}」...`;
                     } else if (action.includes('/restart')) {
                         operation = '重启';
+                        actionText = '重启中...';
+                        feedbackText = `正在重启应用「${appName}」...`;
                     } else if (action.includes('/delete')) {
                         operation = '删除';
+                        actionText = '删除中...';
+                        feedbackText = `正在删除应用「${appName}」...`;
                     }
                     
-                    if (operation) {
-                        const statusId = showOperationStatus(operation, appName, 'loading');
+                    if (operation && typeof ux !== 'undefined') {
+                        // 使用新的UX增强功能
+                        if (submitBtn) {
+                            ux.setButtonLoading(submitBtn, true, actionText);
+                        }
+                        ux.showOperationFeedback(feedbackText, 'processing');
                         
-                        // 禁用按钮防止重复提交
-                        const submitBtn = form.querySelector('button[type="submit"]');
+                        // 3秒后恢复按钮状态（以防页面未跳转）
+                        setTimeout(() => {
+                            if (submitBtn) {
+                                ux.setButtonLoading(submitBtn, false);
+                            }
+                        }, 3000);
+                    } else if (operation) {
+                        // 备用方案（如果UX增强未加载）
                         if (submitBtn) {
                             submitBtn.disabled = true;
-                            const originalText = submitBtn.querySelector('.btn-text').textContent;
-                            submitBtn.querySelector('.btn-text').textContent = '处理中...';
+                            const originalText = submitBtn.querySelector('.btn-text')?.textContent || submitBtn.textContent;
+                            if (submitBtn.querySelector('.btn-text')) {
+                                submitBtn.querySelector('.btn-text').textContent = actionText;
+                            } else {
+                                submitBtn.textContent = actionText;
+                            }
                             
-                            // 恢复按钮状态的定时器
                             setTimeout(() => {
                                 if (submitBtn) {
                                     submitBtn.disabled = false;
-                                    submitBtn.querySelector('.btn-text').textContent = originalText;
+                                    if (submitBtn.querySelector('.btn-text')) {
+                                        submitBtn.querySelector('.btn-text').textContent = originalText;
+                                    } else {
+                                        submitBtn.textContent = originalText;
+                                    }
                                 }
                             }, 3000);
                         }
@@ -932,17 +966,61 @@
             // 这里可以添加AJAX请求更新应用状态
             console.log('刷新应用状态...');
         }
+        
+        // 确认重启操作
+        function confirmRestart(button) {
+            const appName = button.getAttribute('data-app-name') || '未知应用';
+            return confirm(`⚠️ 确定要重启应用「${appName}」吗？\n应用将停止然后重新启动！`);
+        }
+        
+        // 确认删除操作
+        function confirmDelete(button) {
+            const appName = button.getAttribute('data-app-name') || '未知应用';
+            return confirm(`⚠️ 确定要删除应用「${appName}」吗？\n此操作不可恢复！`);
+        }
 
         // 表单提交处理
         document.querySelector('.upload-form').addEventListener('submit', function(e) {
             const submitBtn = this.querySelector('.upload-btn');
-            submitBtn.classList.add('loading');
+            const fileInput = this.querySelector('input[type="file"]');
+            const appNameInput = this.querySelector('input[name="appName"]');
             
-            const btnText = submitBtn.querySelector('.btn-text');
-            const btnLoading = submitBtn.querySelector('.btn-loading');
+            // 验证表单
+            if (!fileInput.files.length) {
+                e.preventDefault();
+                ux.showNotification('请选择要上传的JAR文件', 'error');
+                return;
+            }
             
-            btnText.style.opacity = '0';
-            btnLoading.style.display = 'flex';
+            if (!appNameInput.value.trim()) {
+                e.preventDefault();
+                ux.showNotification('请输入应用名称', 'error');
+                appNameInput.focus();
+                return;
+            }
+            
+            // 验证文件类型
+            const file = fileInput.files[0];
+            if (!file.name.toLowerCase().endsWith('.jar')) {
+                e.preventDefault();
+                ux.showNotification('请选择有效的JAR文件', 'error');
+                return;
+            }
+            
+            // 验证文件大小（例如限制100MB）
+            const maxSize = 100 * 1024 * 1024; // 100MB
+            if (file.size > maxSize) {
+                e.preventDefault();
+                ux.showNotification('文件大小不能超过100MB', 'error');
+                return;
+            }
+            
+            // 显示加载状态
+            ux.setButtonLoading(submitBtn, true, '上传中...');
+            ux.showOperationFeedback('正在上传应用...', 'processing');
+            
+            // 为表单添加进度条
+            this.insertAdjacentHTML('beforeend', '<div class="progress-container"><div class="progress-bar indeterminate"></div></div>');
         });
 
         // 端口链接点击处理

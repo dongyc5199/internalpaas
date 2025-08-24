@@ -3,6 +3,10 @@ package com.cmict.internalpaas.service;
 import com.cmict.internalpaas.model.Application;
 import com.cmict.internalpaas.model.User;
 import com.cmict.internalpaas.repository.ApplicationRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,11 +15,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 public class ApplicationService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ApplicationService.class);
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
     private ApplicationRepository applicationRepository;
@@ -103,15 +112,13 @@ public class ApplicationService {
         String logFilePath = createLogFile(app);
         app.setLogFilePath(logFilePath);
         
-        // 启动进程（简化版，实际生产环境需要更复杂的进程管理）
+        // 启动进程（支持JVM参数配置）
         try {
-            ProcessBuilder processBuilder = new ProcessBuilder(
-                "java",
-                "-jar",
-                "-Dserver.port=" + ports.getApplicationPort(),
-                "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=" + ports.getDebugPort(),
-                app.getJarFilePath()
-            );
+            List<String> command = buildJavaCommand(app, ports);
+            ProcessBuilder processBuilder = new ProcessBuilder(command);
+            
+            // 设置环境变量
+            setEnvironmentVariables(processBuilder, app);
             
             processBuilder.redirectErrorStream(true);
             processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(new java.io.File(logFilePath)));
@@ -119,10 +126,15 @@ public class ApplicationService {
             Process process = processBuilder.start();
             app.setProcessId(String.valueOf(process.pid()));
             app.setStatus("RUNNING");
+            app.setLastStartedAt(java.time.LocalDateTime.now());
+            
+            logger.info("应用启动成功: {} (PID: {}, 端口: {}, 调试端口: {})", 
+                app.getName(), app.getProcessId(), app.getPort(), app.getDebugPort());
             
         } catch (Exception e) {
             app.setStatus("ERROR");
-            throw new RuntimeException("Failed to start application", e);
+            logger.error("应用启动失败: {}", app.getName(), e);
+            throw new RuntimeException("Failed to start application: " + e.getMessage(), e);
         }
         
         return applicationRepository.save(app);
@@ -188,13 +200,11 @@ public class ApplicationService {
             app.setLogFilePath(logFilePath);
             
             // 启动进程
-            ProcessBuilder processBuilder = new ProcessBuilder(
-                "java",
-                "-jar",
-                "-Dserver.port=" + ports.getApplicationPort(),
-                "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=" + ports.getDebugPort(),
-                app.getJarFilePath()
-            );
+            List<String> command = buildJavaCommand(app, ports);
+            ProcessBuilder processBuilder = new ProcessBuilder(command);
+            
+            // 设置环境变量
+            setEnvironmentVariables(processBuilder, app);
             
             processBuilder.redirectErrorStream(true);
             processBuilder.redirectOutput(ProcessBuilder.Redirect.appendTo(new java.io.File(logFilePath)));
@@ -202,6 +212,10 @@ public class ApplicationService {
             Process process = processBuilder.start();
             app.setProcessId(String.valueOf(process.pid()));
             app.setStatus("RUNNING");
+            app.setLastStartedAt(java.time.LocalDateTime.now());
+            
+            logger.info("应用重启成功: {} (PID: {}, 端口: {}, 调试端口: {})", 
+                app.getName(), app.getProcessId(), app.getPort(), app.getDebugPort());
             
             return applicationRepository.save(app);
             
@@ -254,10 +268,180 @@ public class ApplicationService {
     }
     
     /**
+     * 构建 Java 启动命令
+     */
+    private List<String> buildJavaCommand(Application app, PortManagerService.PortAllocation ports) {
+        List<String> command = new ArrayList<>();
+        
+        // 基本 Java 命令
+        command.add("java");
+        
+        // 添加 JVM 参数
+        addJvmOptions(command, app);
+        
+        // 添加 GC 参数
+        addGcOptions(command, app);
+        
+        // 添加系统属性
+        addSystemProperties(command, app, ports);
+        
+        // 添加调试参数
+        addDebugOptions(command, app, ports);
+        
+        // 添加 JMX 参数
+        addJmxOptions(command, app);
+        
+        // JAR 文件或主类
+        if (app.getMainClass() != null && !app.getMainClass().trim().isEmpty()) {
+            // 使用主类方式启动
+            command.add("-cp");
+            command.add(app.getJarFilePath());
+            command.add(app.getMainClass());
+        } else {
+            // 使用 JAR 方式启动
+            command.add("-jar");
+            command.add(app.getJarFilePath());
+        }
+        
+        // 添加程序参数
+        addProgramArguments(command, app);
+        
+        logger.info("构建的Java启动命令: {}", String.join(" ", command));
+        return command;
+    }
+    
+    /**
+     * 添加 JVM 参数
+     */
+    private void addJvmOptions(List<String> command, Application app) {
+        if (app.getJvmOptions() != null && !app.getJvmOptions().trim().isEmpty()) {
+            String[] options = app.getJvmOptions().trim().split("\\s+");
+            for (String option : options) {
+                if (!option.trim().isEmpty()) {
+                    command.add(option.trim());
+                }
+            }
+            logger.debug("添加JVM参数: {}", app.getJvmOptions());
+        } else {
+            // 默认 JVM 参数
+            command.add("-Xms256m");
+            command.add("-Xmx512m");
+            logger.debug("使用默认JVM参数: -Xms256m -Xmx512m");
+        }
+    }
+    
+    /**
+     * 添加 GC 参数
+     */
+    private void addGcOptions(List<String> command, Application app) {
+        if (app.getGcOptions() != null && !app.getGcOptions().trim().isEmpty()) {
+            String[] options = app.getGcOptions().trim().split("\\s+");
+            for (String option : options) {
+                if (!option.trim().isEmpty()) {
+                    command.add(option.trim());
+                }
+            }
+            logger.debug("添加GC参数: {}", app.getGcOptions());
+        }
+    }
+    
+    /**
+     * 添加系统属性
+     */
+    private void addSystemProperties(List<String> command, Application app, PortManagerService.PortAllocation ports) {
+        // 服务端口
+        command.add("-Dserver.port=" + ports.getApplicationPort());
+        
+        // 添加环境变量作为系统属性
+        if (app.getEnvironmentVariables() != null && !app.getEnvironmentVariables().trim().isEmpty()) {
+            try {
+                Map<String, String> envVars = objectMapper.readValue(
+                    app.getEnvironmentVariables(), 
+                    new TypeReference<Map<String, String>>() {}
+                );
+                
+                for (Map.Entry<String, String> entry : envVars.entrySet()) {
+                    command.add("-D" + entry.getKey() + "=" + entry.getValue());
+                }
+                logger.debug("添加环境变量: {}", app.getEnvironmentVariables());
+            } catch (Exception e) {
+                logger.warn("解析环境变量失败: {}", app.getEnvironmentVariables(), e);
+            }
+        }
+    }
+    
+    /**
+     * 添加调试参数
+     */
+    private void addDebugOptions(List<String> command, Application app, PortManagerService.PortAllocation ports) {
+        command.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=" + ports.getDebugPort());
+        logger.debug("添加调试参数: 端口{}", ports.getDebugPort());
+    }
+    
+    /**
+     * 添加 JMX 参数
+     */
+    private void addJmxOptions(List<String> command, Application app) {
+        if (app.getEnableJmx() != null && app.getEnableJmx()) {
+            int jmxPort = app.getJmxPort() != null ? app.getJmxPort() : 9999;
+            
+            command.add("-Dcom.sun.management.jmxremote");
+            command.add("-Dcom.sun.management.jmxremote.port=" + jmxPort);
+            command.add("-Dcom.sun.management.jmxremote.authenticate=false");
+            command.add("-Dcom.sun.management.jmxremote.ssl=false");
+            
+            logger.debug("启用JMX监控: 端口{}", jmxPort);
+        }
+    }
+    
+    /**
+     * 添加程序参数
+     */
+    private void addProgramArguments(List<String> command, Application app) {
+        if (app.getProgramArguments() != null && !app.getProgramArguments().trim().isEmpty()) {
+            String[] args = app.getProgramArguments().trim().split("\\s+");
+            for (String arg : args) {
+                if (!arg.trim().isEmpty()) {
+                    command.add(arg.trim());
+                }
+            }
+            logger.debug("添加程序参数: {}", app.getProgramArguments());
+        }
+    }
+    
+    /**
+     * 设置环境变量
+     */
+    private void setEnvironmentVariables(ProcessBuilder processBuilder, Application app) {
+        if (app.getEnvironmentVariables() != null && !app.getEnvironmentVariables().trim().isEmpty()) {
+            try {
+                Map<String, String> envVars = objectMapper.readValue(
+                    app.getEnvironmentVariables(), 
+                    new TypeReference<Map<String, String>>() {}
+                );
+                
+                Map<String, String> env = processBuilder.environment();
+                env.putAll(envVars);
+                
+                logger.debug("设置环境变量: {}", envVars.keySet());
+            } catch (Exception e) {
+                logger.warn("设置环境变量失败: {}", app.getEnvironmentVariables(), e);
+            }
+        }
+    }
+    
+    /**
      * 获取用户的所有应用
      */
     public List<Application> getUserApplications(User user) {
         return applicationRepository.findByUserOrderByCreatedAtDesc(user);
+    }
+    
+    /**
+     * 根据ID获取应用
+     */
+    public Application getApplicationById(Long id) {
+        return applicationRepository.findById(id).orElse(null);
     }
     
     /**

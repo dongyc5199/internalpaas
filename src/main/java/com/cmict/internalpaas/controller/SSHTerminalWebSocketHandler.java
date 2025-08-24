@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
@@ -35,9 +37,14 @@ public class SSHTerminalWebSocketHandler implements WebSocketHandler {
     // 存储WebSocket会话与SSH会话的映射
     private final Map<String, String> webSocketToSSHMapping = new ConcurrentHashMap<>();
     
+    // 存储WebSocket会话的发送锁，防止并发发送消息
+    private final Map<String, Object> sessionSendLocks = new ConcurrentHashMap<>();
+    
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         logger.info("WebSocket连接建立: {}", session.getId());
+        // 为每个会话创建发送锁
+        sessionSendLocks.put(session.getId(), new Object());
     }
     
     @Override
@@ -84,8 +91,12 @@ public class SSHTerminalWebSocketHandler implements WebSocketHandler {
             String terminalType = jsonNode.has("terminalType") ? jsonNode.get("terminalType").asText() : "xterm-256color";
             String windowSize = jsonNode.has("windowSize") ? jsonNode.get("windowSize").asText() : "80x24";
             
-            // 获取当前用户
-            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            // 获取当前用户（多种方式尝试）
+            String username = getCurrentUsername(session, jsonNode);
+            if (username == null) {
+                throw new RuntimeException("无法获取用户认证信息，请确保已登录");
+            }
+            
             User user = userService.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("用户不存在: " + username));
             
@@ -105,6 +116,7 @@ public class SSHTerminalWebSocketHandler implements WebSocketHandler {
                 "sessionId", sshSessionId,
                 "serverId", serverId,
                 "serverName", server.getName(),
+                "username", username,
                 "message", "SSH连接建立成功"
             ));
             
@@ -173,6 +185,8 @@ public class SSHTerminalWebSocketHandler implements WebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
         logger.info("WebSocket连接关闭: {}, 状态: {}", session.getId(), closeStatus);
         closeSSHSession(session);
+        // 清理发送锁
+        sessionSendLocks.remove(session.getId());
     }
     
     @Override
@@ -180,6 +194,82 @@ public class SSHTerminalWebSocketHandler implements WebSocketHandler {
         return false;
     }
     
+    /**
+     * 获取当前用户名（多种方式尝试）
+     */
+    private String getCurrentUsername(WebSocketSession session, JsonNode jsonNode) {
+        // 方式1：从 SecurityContext 获取
+        try {
+            SecurityContext securityContext = SecurityContextHolder.getContext();
+            if (securityContext != null && securityContext.getAuthentication() != null) {
+                Authentication auth = securityContext.getAuthentication();
+                if (auth.getName() != null && !"anonymousUser".equals(auth.getName())) {
+                    logger.debug("从SecurityContext获取用户名: {}", auth.getName());
+                    return auth.getName();
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("从SecurityContext获取用户名失败", e);
+        }
+        
+        // 方式2：从WebSocket会话属性获取（通过HttpSessionHandshakeInterceptor传递）
+        try {
+            Object principal = session.getAttributes().get("SPRING_SECURITY_CONTEXT");
+            if (principal instanceof SecurityContext) {
+                SecurityContext ctx = (SecurityContext) principal;
+                if (ctx.getAuthentication() != null) {
+                    String username = ctx.getAuthentication().getName();
+                    if (username != null && !"anonymousUser".equals(username)) {
+                        logger.debug("从WebSocket会话属性获取用户名: {}", username);
+                        return username;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("从WebSocket会话属性获取用户名失败", e);
+        }
+        
+        // 方式3：从消息体中获取（前端可以传递username参数）
+        try {
+            if (jsonNode.has("username")) {
+                String username = jsonNode.get("username").asText();
+                if (username != null && !username.trim().isEmpty()) {
+                    // 验证用户是否存在（安全检查）
+                    if (userService.existsByUsername(username)) {
+                        logger.debug("从消息体获取用户名: {}", username);
+                        return username;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("从消息体获取用户名失败", e);
+        }
+        
+        // 方式4：从HTTP会话中获取
+        try {
+            Object httpSessionObj = session.getAttributes().get("HTTP_SESSION");
+            if (httpSessionObj instanceof javax.servlet.http.HttpSession) {
+                javax.servlet.http.HttpSession httpSession = (javax.servlet.http.HttpSession) httpSessionObj;
+                Object authObj = httpSession.getAttribute("SPRING_SECURITY_CONTEXT");
+                if (authObj instanceof SecurityContext) {
+                    SecurityContext ctx = (SecurityContext) authObj;
+                    if (ctx.getAuthentication() != null) {
+                        String username = ctx.getAuthentication().getName();
+                        if (username != null && !"anonymousUser".equals(username)) {
+                            logger.debug("从HTTP会话获取用户名: {}", username);
+                            return username;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("从HTTP会话获取用户名失败", e);
+        }
+        
+        logger.warn("无法获取用户认证信息，WebSocket会话 ID: {}", session.getId());
+        return null;
+    }
+
     /**
      * 关闭SSH会话
      */
@@ -198,13 +288,46 @@ public class SSHTerminalWebSocketHandler implements WebSocketHandler {
      * 发送消息到WebSocket
      */
     private void sendMessage(WebSocketSession session, Object message) {
-        try {
-            if (session.isOpen()) {
-                String jsonMessage = objectMapper.writeValueAsString(message);
-                session.sendMessage(new TextMessage(jsonMessage));
+        if (session == null || !session.isOpen()) {
+            return;
+        }
+        
+        Object lock = sessionSendLocks.get(session.getId());
+        if (lock == null) {
+            logger.warn("未找到会话发送锁: {}", session.getId());
+            return;
+        }
+        
+        synchronized (lock) {
+            try {
+                if (session.isOpen()) {
+                    String jsonMessage = objectMapper.writeValueAsString(message);
+                    session.sendMessage(new TextMessage(jsonMessage));
+                    logger.debug("成功发送WebSocket消息到会话: {}", session.getId());
+                } else {
+                    logger.debug("WebSocket会话已关闭，跳过发送消息: {}", session.getId());
+                }
+            } catch (IllegalStateException e) {
+                // 处理WebSocket状态异常
+                if (e.getMessage() != null && e.getMessage().contains("TEXT_PARTIAL_WRITING")) {
+                    logger.warn("WebSocket正在写入中，稍后重试发送消息: {}", session.getId());
+                    // 可以选择重试或者直接丢弃消息
+                    try {
+                        Thread.sleep(10); // 短暂等待
+                        if (session.isOpen()) {
+                            String jsonMessage = objectMapper.writeValueAsString(message);
+                            session.sendMessage(new TextMessage(jsonMessage));
+                            logger.debug("重试发送WebSocket消息成功: {}", session.getId());
+                        }
+                    } catch (Exception retryException) {
+                        logger.error("重试发送WebSocket消息失败: {}", session.getId(), retryException);
+                    }
+                } else {
+                    logger.error("WebSocket状态异常: {}", session.getId(), e);
+                }
+            } catch (Exception e) {
+                logger.error("发送WebSocket消息失败: {}", session.getId(), e);
             }
-        } catch (Exception e) {
-            logger.error("发送WebSocket消息失败", e);
         }
     }
     

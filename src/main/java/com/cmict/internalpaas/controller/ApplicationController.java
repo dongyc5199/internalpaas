@@ -78,8 +78,13 @@ public class ApplicationController {
      * 启动应用
      */
     @PostMapping("/{id}/start")
-    public String startApplication(@PathVariable Long id, Authentication authentication) throws IOException {
-        applicationService.startApplication(id);
+    public String startApplication(@PathVariable Long id, Authentication authentication, Model model) {
+        try {
+            applicationService.startApplication(id);
+            model.addAttribute("success", "应用启动成功");
+        } catch (Exception e) {
+            model.addAttribute("error", "应用启动失败: " + e.getMessage());
+        }
         return "redirect:/apps";
     }
     
@@ -87,8 +92,13 @@ public class ApplicationController {
      * 停止应用
      */
     @PostMapping("/{id}/stop")
-    public String stopApplication(@PathVariable Long id, Authentication authentication) {
-        applicationService.stopApplication(id);
+    public String stopApplication(@PathVariable Long id, Authentication authentication, Model model) {
+        try {
+            applicationService.stopApplication(id);
+            model.addAttribute("success", "应用停止成功");
+        } catch (Exception e) {
+            model.addAttribute("error", "应用停止失败: " + e.getMessage());
+        }
         return "redirect:/apps";
     }
     
@@ -96,8 +106,50 @@ public class ApplicationController {
      * 重启应用
      */
     @PostMapping("/{id}/restart")
-    public String restartApplication(@PathVariable Long id, Authentication authentication) throws IOException {
-        applicationService.restartApplication(id);
+    public String restartApplication(@PathVariable Long id, Authentication authentication, Model model) {
+        try {
+            User user = userService.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("用户未找到"));
+            
+            // 检查应用是否存在
+            Application app = applicationService.getApplicationById(id);
+            if (app == null) {
+                model.addAttribute("error", "应用不存在");
+                return "redirect:/apps";
+            }
+            
+            // 检查权限 - 确保用户只能重启自己的应用
+            if (!app.getUser().getId().equals(user.getId())) {
+                model.addAttribute("error", "权限不足：您只能重启自己的应用");
+                return "redirect:/apps";
+            }
+            
+            // 执行重启操作
+            Application restartedApp = applicationService.restartApplication(id);
+            
+            if ("RUNNING".equals(restartedApp.getStatus())) {
+                model.addAttribute("success", 
+                    String.format("应用 '%s' 重启成功 (端口: %d, 调试端口: %d)", 
+                        restartedApp.getName(), 
+                        restartedApp.getPort(), 
+                        restartedApp.getDebugPort()));
+            } else {
+                model.addAttribute("warning", 
+                    String.format("应用 '%s' 重启完成，但状态为: %s", 
+                        restartedApp.getName(), 
+                        restartedApp.getStatus()));
+            }
+            
+        } catch (IllegalStateException e) {
+            model.addAttribute("error", "应用状态错误: " + e.getMessage());
+        } catch (IOException e) {
+            model.addAttribute("error", "重启过程中发生IO错误: " + e.getMessage());
+        } catch (RuntimeException e) {
+            model.addAttribute("error", "重启失败: " + e.getMessage());
+        } catch (Exception e) {
+            model.addAttribute("error", "重启过程中发生未知错误: " + e.getMessage());
+        }
+        
         return "redirect:/apps";
     }
     

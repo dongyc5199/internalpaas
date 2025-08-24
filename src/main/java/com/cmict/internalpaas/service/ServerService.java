@@ -37,6 +37,9 @@ public class ServerService {
     @Autowired
     private ApplicationEventPublisher eventPublisher;
     
+    @Autowired
+    private UserSessionService userSessionService;
+    
     public List<Server> getAllServers() {
         return serverRepository.findAll();
     }
@@ -123,6 +126,14 @@ public class ServerService {
         // 异步执行连接检测和监控
         CompletableFuture.runAsync(() -> {
             try {
+                // 检查是否有活跃用户，只有在有用户登录时才执行自动检测
+                if (!userSessionService.hasActiveUsers()) {
+                    logger.debug("当前系统没有活跃用户，跳过服务器 {} 的自动连接检测", savedServer.getName());
+                    return;
+                }
+                
+                logger.debug("开始自动检测服务器 {} 的连接状态", savedServer.getName());
+                
                 // 检测SSH连接
                 Server.ConnectionStatus status = sshConnectionService.checkConnection(savedServer);
                 savedServer.setConnectionStatus(status);
@@ -237,6 +248,12 @@ public class ServerService {
      * 检查所有活动服务器的连接状态和监控数据
      */
     public void checkAllServerConnectionsAndMetrics() {
+        // 检查是否有活跃用户，只有在有用户登录时才执行批量检查
+        if (!userSessionService.hasActiveUsers()) {
+            logger.debug("当前系统没有活跃用户，跳过批量服务器检查");
+            return;
+        }
+        
         List<Server> activeServers = getActiveServers();
         for (Server server : activeServers) {
             if (server.getAutoMonitorEnabled() != null && server.getAutoMonitorEnabled()) {
