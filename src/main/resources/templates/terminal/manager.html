@@ -666,7 +666,13 @@
                         session.terminal.focus();
                         this.updateCurrentSessionInfo();
                         break;
-
+                    case 'output':  // ← 添加这个case
+                        if (session && session.terminal) {
+                            session.terminal.write(data.data);
+                        } else {
+                            console.error('终端会话无效:', terminalId);
+                        }
+                        break;
                     case 'error':
                         this.updateTabStatus(terminalId, 'disconnected');
                         session.terminal.write('\r\n\x1b[31m错误: ' + data.message + '\x1b[0m\r\n');
@@ -678,13 +684,12 @@
                         break;
 
                     default:
-                        // 所有其他数据都直接发送到终端
+                        // 兜底处理
+                        console.log('未知消息类型:', data.type, data);
                         if (data.data) {
                             session.terminal.write(data.data);
                         } else if (data.message) {
                             session.terminal.write(data.message);
-                        } else if (typeof data === 'string') {
-                            session.terminal.write(data);
                         }
                         break;
                 }
