@@ -28,6 +28,21 @@ public class AdminController {
     public String serverManagement(Model model) {
         List<Server> servers = serverService.getAllServers();
         model.addAttribute("servers", servers);
+        
+        // 计算统计数据
+        long totalServers = servers.size();
+        long activeServers = servers.stream().filter(Server::getActive).count();
+        long inactiveServers = totalServers - activeServers;
+        long monitoringServers = servers.stream()
+            .filter(server -> server.getConnectionStatus() != null && 
+                             server.getConnectionStatus() == Server.ConnectionStatus.MONITORING)
+            .count();
+        
+        model.addAttribute("totalServers", totalServers);
+        model.addAttribute("activeServers", activeServers);
+        model.addAttribute("inactiveServers", inactiveServers);
+        model.addAttribute("monitoringServers", monitoringServers);
+        
         return "admin/servers";
     }
 
@@ -115,6 +130,23 @@ public class AdminController {
     public String userManagement(Model model) {
         List<User> users = userService.findAllUsers();
         model.addAttribute("users", users);
+        
+        // 计算统计数据
+        long totalUsers = users.size();
+        long adminUsers = users.stream().filter(user -> 
+            user.getRoles().contains(User.Role.ADMIN) || 
+            user.getRoles().contains(User.Role.SUPER_ADMIN)).count();
+        long regularUsers = users.stream().filter(user -> 
+            user.getRoles().contains(User.Role.USER) && 
+            !user.getRoles().contains(User.Role.ADMIN) && 
+            !user.getRoles().contains(User.Role.SUPER_ADMIN)).count();
+        long firstLoginUsers = users.stream().filter(User::getIsFirstLogin).count();
+        
+        model.addAttribute("totalUsers", totalUsers);
+        model.addAttribute("adminUsers", adminUsers);
+        model.addAttribute("regularUsers", regularUsers);
+        model.addAttribute("firstLoginUsers", firstLoginUsers);
+        
         return "admin/users";
     }
 

@@ -1,411 +1,172 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>应用管理 - Dev Debug Platform</title>
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/applications.css">
-    <link rel="stylesheet" href="/css/ux-enhancement.css">
-    <!-- WebSocket 支持库 -->
-    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
-    <!-- UX 增强脚本 -->
-    <script src="/js/ux-enhancement.js"></script>
+    <title>应用管理 - 内部平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* 通知样式 */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: white;
-            border-radius: 8px;
-            padding: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 10000;
-            max-width: 300px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            animation: slideInRight 0.3s ease-out;
-        }
-        .notification-success {
-            border-left: 4px solid #10b981;
-        }
-        .notification-error {
-            border-left: 4px solid #ef4444;
-        }
-        .notification-info {
-            border-left: 4px solid #3b82f6;
-        }
-        .notification-icon {
-            font-size: 18px;
-        }
-        .notification-message {
-            flex: 1;
-            font-size: 14px;
-            color: #374151;
-        }
-        .notification-close {
-            background: none;
-            border: none;
-            font-size: 16px;
-            color: #9ca3af;
-            cursor: pointer;
-            padding: 0;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .notification-close:hover {
-            color: #374151;
-        }
-        
-        /* 操作状态指示器样式 */
-        .operation-status {
-            max-width: 350px;
-            padding: 20px;
-        }
-        .operation-status .notification-message {
-            margin-bottom: 8px;
-        }
-        .operation-progress {
-            width: 100%;
-        }
-        .progress-bar {
-            width: 100%;
-            height: 4px;
-            background-color: #e5e7eb;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #3b82f6, #1d4ed8, #3b82f6);
-            background-size: 200% 100%;
-            animation: progressAnimation 2s linear infinite;
-        }
-        .loading-spinner {
-            animation: spin 1s linear infinite;
-        }
-        
-        /* 加载按钮状态 */
-        .action-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-        .action-btn:disabled::before {
-            display: none;
-        }
-        
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        @keyframes progressAnimation {
-            0% {
-                background-position: 200% 0;
-            }
-            100% {
-                background-position: -200% 0;
-            }
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
+        .metric-card { transition: transform 0.2s; }
+        .metric-card:hover { transform: translateY(-2px); }
+        .app-card { border-left: 4px solid #dee2e6; }
+        .app-card.running { border-left-color: #28a745; }
+        .app-card.stopped { border-left-color: #dc3545; }
+        .app-card.starting { border-left-color: #007bff; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- 页面头部 -->
-        <div class="page-header">
-            <div class="header-left">
-                <h1>🚀 Dev Debug Platform</h1>
-                <p class="header-subtitle">应用管理与调试中心</p>
-            </div>
-            <div class="header-right">
-                <div class="user-info">
-                    <div class="user-avatar">
-                        <span th:text="${#strings.substring(username, 0, 1)}">U</span>
-                    </div>
-                    <div class="user-details">
-                        <span class="user-name" th:text="${username}">用户名</span>
-                        <span class="user-role">开发者</span>
-                    </div>
-                </div>
-                <div class="header-actions">
-                    <a href="/" class="btn-secondary">🏠 返回首页</a>
-                    <form th:action="@{/logout}" method="post" style="display: inline;">
-                        <button type="submit" class="btn-secondary">🚪 退出登录</button>
-                    </form>
-                </div>
+    <!-- 顶部导航 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/"><i class="fas fa-server"></i> 内部平台</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link active" href="/applications">应用管理</a>
+                <a class="nav-link" href="/admin/servers">服务器管理</a>
+                <a class="nav-link" href="/admin/users">用户管理</a>
+                <a class="nav-link" href="/monitoring/dashboard">监控面板</a>
+                <a class="nav-link" href="/logout">退出</a>
             </div>
         </div>
+    </nav>
 
-        <!-- 错误/成功消息 -->
-        <div th:if="${error}" class="alert alert-error">
-            <div class="alert-icon">⚠️</div>
-            <div class="alert-content">
-                <strong>操作失败</strong>
-                <p th:text="${error}">错误信息</p>
-            </div>
-        </div>
-
-        <div th:if="${success}" class="alert alert-success">
-            <div class="alert-icon">✅</div>
-            <div class="alert-content">
-                <strong>操作成功</strong>
-                <p th:text="${success}">成功信息</p>
-            </div>
-        </div>
-
-        <!-- 工作目录信息 -->
-        <div class="workspace-info">
-            <div class="info-card">
-                <div class="info-icon">📁</div>
-                <div class="info-content">
-                    <h3>工作目录</h3>
-                    <p class="directory-path" th:text="${userWorkDirectory}">./workspaces/username</p>
-                    <small>您的应用将部署在此目录下运行</small>
-                </div>
-            </div>
-            <div class="info-card">
-                <div class="info-icon">📊</div>
-                <div class="info-content">
-                    <h3>应用统计</h3>
-                    <p class="stats-number">
-                        <span class="running-count" th:text="${#lists.size(applications.?[status == 'RUNNING'])}">0</span> 运行中 / 
-                        <span class="total-count" th:text="${#lists.size(applications)}">0</span> 总计
-                    </p>
-                    <small>实时状态监控</small>
-                </div>
-            </div>
-        </div>
-
-        <!-- 上传新应用区域 -->
-        <div class="upload-section">
-            <div class="section-header">
-                <h2>📤 上传新应用</h2>
-                <button class="toggle-upload" onclick="toggleUploadForm()">
-                    <span id="toggle-text">展开</span>
-                    <span id="toggle-icon">▼</span>
-                </button>
-            </div>
-            
-            <div class="upload-form-container" id="uploadForm">
-                <form th:action="@{/apps/upload}" method="post" enctype="multipart/form-data" class="upload-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="appName">
-                                <span class="label-icon">🏷️</span>
-                                应用名称
-                            </label>
-                            <input type="text" id="appName" name="appName" required 
-                                   placeholder="例如: my-awesome-service">
-                        </div>
-                        <div class="form-group">
-                            <label for="port">
-                                <span class="label-icon">🔌</span>
-                                端口号
-                            </label>
-                            <input type="number" id="port" name="port" min="1024" max="65535" 
-                                   placeholder="留空自动分配">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="file">
-                            <span class="label-icon">📦</span>
-                            JAR文件
-                        </label>
-                        <div class="file-upload-wrapper">
-                            <input type="file" id="file" name="file" accept=".jar" required>
-                            <div class="file-upload-display">
-                                <div class="upload-icon">📁</div>
-                                <div class="upload-text">
-                                    <span class="upload-title">点击选择JAR文件</span>
-                                    <span class="upload-subtitle">或拖拽文件到此处</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="advanced-options">
-                        <button type="button" class="advanced-toggle" onclick="toggleAdvanced()">
-                            <span>⚙️ 高级选项</span>
-                            <span class="advanced-icon">▼</span>
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-rocket"></i> 应用管理控制面板</h2>
+                    <div>
+                        <button class="btn btn-outline-primary" onclick="refreshApps()">
+                            <i class="fas fa-sync-alt"></i> 刷新数据
                         </button>
-                        <div class="advanced-content" id="advancedOptions">
-                            <div class="form-group">
-                                <label for="vmOptions">
-                                    <span class="label-icon">⚡</span>
-                                    JVM参数
-                                </label>
-                                <input type="text" id="vmOptions" name="vmOptions" 
-                                       placeholder="例如: -Xmx512m -Xms256m -server">
-                                <small>设置Java虚拟机启动参数</small>
+                        <button class="btn btn-outline-success" onclick="checkHealth()">
+                            <i class="fas fa-heartbeat"></i> 健康检查
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 应用状态统计 -->
+        <div class="row mb-4">
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card metric-card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 th:text="${#lists.size(applications.?[status == 'RUNNING'])}">0</h4>
+                                <p>运行中</p>
                             </div>
-                            <div class="form-group">
-                                <label for="args">
-                                    <span class="label-icon">🔧</span>
-                                    程序参数
-                                </label>
-                                <input type="text" id="args" name="args" 
-                                       placeholder="例如: --spring.profiles.active=dev --debug">
-                                <small>传递给应用程序的启动参数</small>
-                            </div>
+                            <i class="fas fa-check-circle fa-2x align-self-center"></i>
                         </div>
                     </div>
-
-                    <button type="submit" class="btn-primary upload-btn">
-                        <span class="btn-icon">🚀</span>
-                        <span class="btn-text">上传并启动</span>
-                        <div class="btn-loading">
-                            <div class="loading-spinner"></div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card metric-card bg-danger text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 th:text="${#lists.size(applications.?[status == 'STOPPED'])}">0</h4>
+                                <p>已停止</p>
+                            </div>
+                            <i class="fas fa-times-circle fa-2x align-self-center"></i>
                         </div>
-                    </button>
-                </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card metric-card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 th:text="${#lists.size(applications.?[status == 'STARTING'])}">0</h4>
+                                <p>启动中</p>
+                            </div>
+                            <i class="fas fa-spinner fa-2x align-self-center"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card metric-card bg-secondary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 th:text="${#lists.size(applications)}">0</h4>
+                                <p>总应用数</p>
+                            </div>
+                            <i class="fas fa-rocket fa-2x align-self-center"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- 应用列表 -->
-        <div class="applications-section">
-            <div class="section-header">
-                <h2>📱 我的应用</h2>
-                <div class="section-actions">
-                    <button class="btn-secondary" onclick="refreshApps()">
-                        <span class="refresh-icon">🔄</span>
-                        刷新
-                    </button>
-                    <div class="view-toggle">
-                        <button class="view-btn active" data-view="grid">⊞</button>
-                        <button class="view-btn" data-view="list">☰</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 空状态 -->
-            <div th:if="${applications.empty}" class="empty-state">
-                <div class="empty-icon">📱</div>
-                <h3>还没有应用</h3>
-                <p>上传您的第一个JAR文件开始使用应用管理功能</p>
-                <button class="btn-primary" onclick="toggleUploadForm()">
-                    📤 立即上传
-                </button>
-            </div>
-
-            <!-- 应用网格视图 -->
-            <div class="applications-grid" th:unless="${applications.empty}" id="appsGrid">
-                <div th:each="app : ${applications}" class="application-card" 
-                     th:classappend="${app.status == 'RUNNING'} ? 'status-running' : (${app.status == 'STOPPED'} ? 'status-stopped' : 'status-error')"
-                     th:attr="data-app-id=${app.id}">
-                    
-                    <!-- 卡片头部 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
                     <div class="card-header">
-                        <div class="app-info">
-                            <h3 class="app-name" th:text="${app.name}">应用名称</h3>
-                            <div class="app-meta">
-                                <span class="app-file" th:text="${app.jarFileName}">app.jar</span>
-                                <span class="status-indicator" th:classappend="${#strings.toLowerCase(app.status)}" 
-                                      th:text="${app.status}">RUNNING</span>
+                        <h5 class="mb-0"><i class="fas fa-list"></i> 应用状态</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- 空状态 -->
+                        <div class="row" th:if="${applications.empty}">
+                            <div class="col-12 text-center py-4">
+                                <i class="fas fa-rocket fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">还没有应用，上传您的第一个应用开始使用管理功能</p>
+                                <button class="btn btn-primary" onclick="uploadApp()">
+                                    <i class="fas fa-plus"></i> 上传应用
+                                </button>
                             </div>
                         </div>
-                        <div class="card-actions">
-                            <button class="action-btn" onclick="toggleAppDetails(this)" title="详情">
-                                <span class="details-icon">ℹ️</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 应用详情 -->
-                    <div class="app-details">
-                        <div th:if="${app.port != null}" class="detail-row">
-                            <span class="detail-label">🌐 应用端口:</span>
-                            <span class="detail-value port-link" th:text="${app.port}">8080</span>
-                        </div>
-                        <div th:if="${app.debugPort != null}" class="detail-row">
-                            <span class="detail-label">🐛 调试端口:</span>
-                            <span class="detail-value" th:text="${app.debugPort}">5005</span>
-                        </div>
-                        <div th:if="${app.processId != null}" class="detail-row">
-                            <span class="detail-label">⚡ 进程ID:</span>
-                            <span class="detail-value" th:text="${app.processId}">1234</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">📅 创建时间:</span>
-                            <span class="detail-value" th:text="${#temporals.format(app.createdAt, 'MM-dd HH:mm')}">01-01 12:00</span>
-                        </div>
-                    </div>
-
-                    <!-- 操作按钮组 -->
-                    <div class="app-actions">
-                        <form th:action="@{/apps/{id}/start(id=${app.id})}" method="post" style="display: inline;">
-                            <button type="submit" class="action-btn primary" 
-                                    th:disabled="${app.status == 'RUNNING'}"
-                                    title="启动应用">
-                                <span class="btn-icon">▶️</span>
-                                <span class="btn-text">启动</span>
-                            </button>
-                        </form>
                         
-                        <form th:action="@{/apps/{id}/stop(id=${app.id})}" method="post" style="display: inline;">
-                            <button type="submit" class="action-btn secondary" 
-                                    th:disabled="${app.status != 'RUNNING'}"
-                                    title="停止应用">
-                                <span class="btn-icon">⏹️</span>
-                                <span class="btn-text">停止</span>
-                            </button>
-                        </form>
-                        
-                        <form th:action="@{/apps/{id}/restart(id=${app.id})}" method="post" style="display: inline;">
-                            <button type="submit" class="action-btn warning" 
-                                    th:disabled="${app.status == 'ERROR'}"
-                                    th:attr="data-app-name=${app.name}"
-                                    onclick="return confirmRestart(this)"
-                                    title="重启应用">
-                                <span class="btn-icon">🔄</span>
-                                <span class="btn-text">重启</span>
-                            </button>
-                        </form>
-                        
-                        <button class="action-btn info" onclick="toggleLogs(this)" title="查看日志">
-                            <span class="btn-icon">📄</span>
-                            <span class="btn-text">日志</span>
-                        </button>
-                        
-                        <form th:action="@{/apps/{id}/delete(id=${app.id})}" method="post" style="display: inline;">
-                            <button type="submit" class="action-btn danger" 
-                                    th:attr="data-app-name=${app.name}"
-                                    onclick="return confirmDelete(this)"
-                                    title="删除应用">
-                                <span class="btn-icon">🗑️</span>
-                                <span class="btn-text">删除</span>
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- 日志区域 -->
-                    <div class="logs-section" th:if="${app.logFilePath != null}">
-                        <div class="logs-header">
-                            <span class="logs-title">📋 应用日志</span>
-                            <div class="logs-controls">
-                                <button class="log-btn" onclick="clearLogs(this)" title="清空日志">🗑️</button>
-                                <button class="log-btn" onclick="downloadLogs(this)" title="下载日志">💾</button>
-                                <button class="log-btn auto-refresh" onclick="toggleAutoRefresh(this)" title="自动刷新">🔄</button>
+                        <!-- 应用卡片列表 -->
+                        <div class="row" th:each="app : ${applications}">
+                            <div class="col-lg-6 col-xl-4 mb-3">
+                                <div class="card app-card" 
+                                     th:classappend="${app.status?.toLowerCase()}">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="card-title mb-0" th:text="${app.name}">应用名称</h6>
+                                            <span class="badge" 
+                                                  th:classappend="${app.status == 'RUNNING'} ? 'bg-success' : 
+                                                                 (${app.status == 'STOPPED'} ? 'bg-danger' : 'bg-primary')"
+                                                  th:text="${app.status == 'RUNNING'} ? '运行中' : 
+                                                          (${app.status == 'STOPPED'} ? '已停止' : '启动中')">状态</span>
+                                        </div>
+                                        <p class="card-text small text-muted mb-2">
+                                            <i class="fas fa-plug"></i> 端口: <span th:text="${app.port ?: 'N/A'}">8080</span>
+                                        </p>
+                                        <p class="card-text small text-muted mb-3" th:if="${app.startTime}">
+                                            <i class="fas fa-clock"></i> 
+                                            最后启动: <span th:text="${#temporals.format(app.startTime, 'MM-dd HH:mm')}">08-24 06:15</span>
+                                        </p>
+                                        
+                                        <!-- 应用指标区域 -->
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-6 text-center">
+                                                <div class="small text-muted">CPU</div>
+                                                <div class="fw-bold">5%</div>
+                                            </div>
+                                            <div class="col-6 text-center">
+                                                <div class="small text-muted">内存</div>
+                                                <div class="fw-bold">82%</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mt-3">
+                                            <button class="btn btn-sm btn-outline-primary" th:onclick="'viewDetails(\'' + ${app.id} + '\')'">
+                                                <i class="fas fa-info-circle"></i> 详细信息
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-success" th:onclick="'refreshApp(\'' + ${app.id} + '\')'">
+                                                <i class="fas fa-sync-alt"></i> 刷新
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="logs-content">
-                            <pre class="logs-text" th:id="'logs-' + ${app.id}">正在加载日志...</pre>
                         </div>
                     </div>
                 </div>
@@ -413,624 +174,31 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // 全局变量
-        let autoRefreshIntervals = new Map();
-        let uploadFormVisible = false;
-        let advancedVisible = false;
-        let stompClient = null;
-        let isConnected = false;
-        let activeLogSubscriptions = new Map(); // 应用ID -> 订阅对象
-
-        // 页面加载完成后初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeFileUpload();
-            initializeViewToggle();
-            loadAllLogs();
-            initializeWebSocket();
-            enhanceFormSubmission();
-            checkUrlParameters();
-            
-            // 每30秒刷新应用状态
-            setInterval(refreshAppStatus, 30000);
-        });
-        
-        // 检查URL参数中的错误信息
-        function checkUrlParameters() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const error = urlParams.get('error');
-            const success = urlParams.get('success');
-            
-            if (error) {
-                showNotification(decodeURIComponent(error), 'error');
-                // 清除URL参数
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
-            
-            if (success) {
-                showNotification(decodeURIComponent(success), 'success');
-                // 清除URL参数
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
-        }
-
-        // 初始化WebSocket连接
-        function initializeWebSocket() {
-            const socket = new SockJS('/ws');
-            stompClient = Stomp.over(socket);
-            
-            stompClient.connect({}, function(frame) {
-                console.log('已连接到WebSocket服务器: ' + frame);
-                isConnected = true;
-                
-                // 订阅系统状态更新
-                stompClient.subscribe('/topic/app-status', function(message) {
-                    const data = JSON.parse(message.body);
-                    handleApplicationStatusUpdate(data);
-                });
-                
-                // 发送连接消息
-                stompClient.send('/app/connect', {}, JSON.stringify({
-                    type: 'connect',
-                    timestamp: new Date().toISOString()
-                }));
-                
-            }, function(error) {
-                console.error('WebSocket连接错误: ', error);
-                isConnected = false;
-                // 5秒后重试连接
-                setTimeout(initializeWebSocket, 5000);
-            });
-        }
-
-        // 处理应用状态更新
-        function handleApplicationStatusUpdate(data) {
-            if (data.type === 'app_status') {
-                const appCard = document.querySelector(`[data-app-id="${data.applicationId}"]`);
-                if (appCard) {
-                    const statusIndicator = appCard.querySelector('.status-indicator');
-                    if (statusIndicator) {
-                        statusIndicator.textContent = data.status;
-                        statusIndicator.className = 'status-indicator ' + data.status.toLowerCase();
-                    }
-                    
-                    // 显示状态更新消息
-                    showNotification(data.message || `应用状态已更新: ${data.status}`, 'info');
-                }
-            }
-        }
-
-        // 订阅应用日志
-        function subscribeToAppLogs(appId) {
-            if (!isConnected || activeLogSubscriptions.has(appId)) {
-                return;
-            }
-            
-            const subscription = stompClient.subscribe(`/user/logs/${appId}`, function(message) {
-                const data = JSON.parse(message.body);
-                if (data.type === 'log') {
-                    appendLogContent(appId, data.content);
-                }
-            });
-            
-            activeLogSubscriptions.set(appId, subscription);
-            
-            // 发送开始监控请求
-            fetch(`/api/logs/${appId}/start-monitoring`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).then(response => response.json())
-              .then(data => {
-                  if (data.success) {
-                      console.log(`已开始监控应用 ${appId} 的日志`);
-                      showNotification('日志监控已开始', 'success');
-                  } else {
-                      console.error('开始日志监控失败:', data.message);
-                      showNotification('开始日志监控失败: ' + data.message, 'error');
-                  }
-              })
-              .catch(error => {
-                  console.error('开始日志监控失败:', error);
-                  showNotification('开始日志监控失败', 'error');
-              });
-        }
-
-        // 取消订阅应用日志
-        function unsubscribeFromAppLogs(appId) {
-            const subscription = activeLogSubscriptions.get(appId);
-            if (subscription) {
-                subscription.unsubscribe();
-                activeLogSubscriptions.delete(appId);
-                
-                // 发送停止监控请求
-                fetch(`/api/logs/${appId}/stop-monitoring`, {
-                    method: 'POST'
-                }).then(response => response.json())
-                  .then(data => {
-                      if (data.success) {
-                          console.log(`已停止监控应用 ${appId} 的日志`);
-                      }
-                  });
-            }
-        }
-
-        // 附加日志内容
-        function appendLogContent(appId, content) {
-            const logsElement = document.getElementById(`logs-${appId}`);
-            if (logsElement) {
-                const currentContent = logsElement.textContent;
-                logsElement.textContent = currentContent + content;
-                
-                // 自动滚动到底部
-                logsElement.scrollTop = logsElement.scrollHeight;
-            }
-        }
-
-        // 显示通知
-        function showNotification(message, type = 'info') {
-            // 创建通知元素
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
-            notification.innerHTML = `
-                <span class="notification-icon">${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span>
-                <span class="notification-message">${message}</span>
-                <button class="notification-close" onclick="this.parentElement.remove()">×</button>
-            `;
-            
-            // 添加到页面
-            document.body.appendChild(notification);
-            
-            // 3秒后自动消失
-            setTimeout(() => {
-                if (notification.parentElement) {
-                    notification.remove();
-                }
-            }, 3000);
-        }
-        
-        // 操作状态指示器
-        function showOperationStatus(operation, appName, status = 'loading') {
-            const statusId = `status-${operation}-${Date.now()}`;
-            let message = '';
-            let type = 'info';
-            
-            switch(status) {
-                case 'loading':
-                    message = `正在${operation}应用 "${appName}"...`;
-                    type = 'info';
-                    break;
-                case 'success':
-                    message = `应用 "${appName}" ${operation}成功！`;
-                    type = 'success';
-                    break;
-                case 'error':
-                    message = `应用 "${appName}" ${operation}失败！`;
-                    type = 'error';
-                    break;
-            }
-            
-            if (status === 'loading') {
-                const notification = document.createElement('div');
-                notification.id = statusId;
-                notification.className = `notification notification-${type} operation-status`;
-                notification.innerHTML = `
-                    <span class="notification-icon loading-spinner">⏳</span>
-                    <span class="notification-message">${message}</span>
-                    <div class="operation-progress">
-                        <div class="progress-bar">
-                            <div class="progress-fill"></div>
-                        </div>
-                    </div>
-                `;
-                
-                document.body.appendChild(notification);
-                return statusId;
-            } else {
-                showNotification(message, type);
-                return null;
-            }
-        }
-        
-        // 更新操作状态
-        function updateOperationStatus(statusId, status, message = '') {
-            const notification = document.getElementById(statusId);
-            if (!notification) return;
-            
-            if (status === 'success' || status === 'error') {
-                notification.remove();
-                if (message) {
-                    showNotification(message, status);
-                }
-            }
-        }
-        
-        // 增强的表单提交处理
-        function enhanceFormSubmission() {
-            // 为所有应用操作表单添加状态指示
-            document.querySelectorAll('form[action*="/apps/"]').forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    const action = form.action;
-                    const appCard = form.closest('.application-card');
-                    const appName = appCard ? appCard.querySelector('.app-name').textContent : '未知应用';
-                    const submitBtn = form.querySelector('button[type="submit"]');
-                    
-                    let operation = '';
-                    let actionText = '处理中...';
-                    let feedbackText = '正在处理请求...';
-                    
-                    if (action.includes('/start')) {
-                        operation = '启动';
-                        actionText = '启动中...';
-                        feedbackText = `正在启动应用「${appName}」...`;
-                    } else if (action.includes('/stop')) {
-                        operation = '停止';
-                        actionText = '停止中...';
-                        feedbackText = `正在停止应用「${appName}」...`;
-                    } else if (action.includes('/restart')) {
-                        operation = '重启';
-                        actionText = '重启中...';
-                        feedbackText = `正在重启应用「${appName}」...`;
-                    } else if (action.includes('/delete')) {
-                        operation = '删除';
-                        actionText = '删除中...';
-                        feedbackText = `正在删除应用「${appName}」...`;
-                    }
-                    
-                    if (operation && typeof ux !== 'undefined') {
-                        // 使用新的UX增强功能
-                        if (submitBtn) {
-                            ux.setButtonLoading(submitBtn, true, actionText);
-                        }
-                        ux.showOperationFeedback(feedbackText, 'processing');
-                        
-                        // 3秒后恢复按钮状态（以防页面未跳转）
-                        setTimeout(() => {
-                            if (submitBtn) {
-                                ux.setButtonLoading(submitBtn, false);
-                            }
-                        }, 3000);
-                    } else if (operation) {
-                        // 备用方案（如果UX增强未加载）
-                        if (submitBtn) {
-                            submitBtn.disabled = true;
-                            const originalText = submitBtn.querySelector('.btn-text')?.textContent || submitBtn.textContent;
-                            if (submitBtn.querySelector('.btn-text')) {
-                                submitBtn.querySelector('.btn-text').textContent = actionText;
-                            } else {
-                                submitBtn.textContent = actionText;
-                            }
-                            
-                            setTimeout(() => {
-                                if (submitBtn) {
-                                    submitBtn.disabled = false;
-                                    if (submitBtn.querySelector('.btn-text')) {
-                                        submitBtn.querySelector('.btn-text').textContent = originalText;
-                                    } else {
-                                        submitBtn.textContent = originalText;
-                                    }
-                                }
-                            }, 3000);
-                        }
-                    }
-                });
-            });
-        }
-
-        // 切换上传表单显示
-        function toggleUploadForm() {
-            const form = document.getElementById('uploadForm');
-            const toggleText = document.getElementById('toggle-text');
-            const toggleIcon = document.getElementById('toggle-icon');
-            
-            uploadFormVisible = !uploadFormVisible;
-            
-            if (uploadFormVisible) {
-                form.style.display = 'block';
-                form.style.animation = 'slideDown 0.3s ease forwards';
-                toggleText.textContent = '收起';
-                toggleIcon.textContent = '▲';
-            } else {
-                form.style.animation = 'slideUp 0.3s ease forwards';
-                setTimeout(() => {
-                    form.style.display = 'none';
-                }, 300);
-                toggleText.textContent = '展开';
-                toggleIcon.textContent = '▼';
-            }
-        }
-
-        // 切换高级选项
-        function toggleAdvanced() {
-            const content = document.getElementById('advancedOptions');
-            const icon = document.querySelector('.advanced-icon');
-            
-            advancedVisible = !advancedVisible;
-            
-            if (advancedVisible) {
-                content.style.display = 'block';
-                content.style.animation = 'slideDown 0.3s ease forwards';
-                icon.textContent = '▲';
-            } else {
-                content.style.animation = 'slideUp 0.3s ease forwards';
-                setTimeout(() => {
-                    content.style.display = 'none';
-                }, 300);
-                icon.textContent = '▼';
-            }
-        }
-
-        // 初始化文件上传
-        function initializeFileUpload() {
-            const fileInput = document.getElementById('file');
-            const uploadDisplay = document.querySelector('.file-upload-display');
-            const uploadTitle = document.querySelector('.upload-title');
-            
-            fileInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    uploadTitle.textContent = file.name;
-                    uploadDisplay.classList.add('file-selected');
-                }
-            });
-
-            // 拖拽上传
-            uploadDisplay.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                this.classList.add('drag-over');
-            });
-
-            uploadDisplay.addEventListener('dragleave', function(e) {
-                e.preventDefault();
-                this.classList.remove('drag-over');
-            });
-
-            uploadDisplay.addEventListener('drop', function(e) {
-                e.preventDefault();
-                this.classList.remove('drag-over');
-                
-                const files = e.dataTransfer.files;
-                if (files.length > 0 && files[0].name.endsWith('.jar')) {
-                    fileInput.files = files;
-                    uploadTitle.textContent = files[0].name;
-                    this.classList.add('file-selected');
-                }
-            });
-        }
-
-        // 初始化视图切换
-        function initializeViewToggle() {
-            const viewButtons = document.querySelectorAll('.view-btn');
-            const appsGrid = document.getElementById('appsGrid');
-            
-            viewButtons.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    viewButtons.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    const view = this.getAttribute('data-view');
-                    appsGrid.className = view === 'list' ? 'applications-list' : 'applications-grid';
-                });
-            });
-        }
-
-        // 切换应用详情
-        function toggleAppDetails(button) {
-            const card = button.closest('.application-card');
-            const details = card.querySelector('.app-details');
-            const icon = button.querySelector('.details-icon');
-            
-            if (details.style.display === 'none' || !details.style.display) {
-                details.style.display = 'block';
-                details.style.animation = 'slideDown 0.3s ease forwards';
-                icon.textContent = '✖️';
-                card.classList.add('expanded');
-            } else {
-                details.style.animation = 'slideUp 0.3s ease forwards';
-                setTimeout(() => {
-                    details.style.display = 'none';
-                }, 300);
-                icon.textContent = 'ℹ️';
-                card.classList.remove('expanded');
-            }
-        }
-
-        // 切换日志显示
-        function toggleLogs(button) {
-            const card = button.closest('.application-card');
-            const logsSection = card.querySelector('.logs-section');
-            const icon = button.querySelector('.btn-icon');
-            
-            if (!logsSection) return;
-            
-            const appId = card.querySelector('[id^="logs-"]').id.split('-')[1];
-            
-            if (logsSection.style.display === 'none' || !logsSection.style.display) {
-                logsSection.style.display = 'block';
-                logsSection.style.animation = 'slideDown 0.3s ease forwards';
-                icon.textContent = '📄';
-                button.classList.add('active');
-                
-                // 加载历史日志
-                loadHistoryLogs(appId);
-                
-                // 订阅实时日志
-                subscribeToAppLogs(appId);
-            } else {
-                logsSection.style.animation = 'slideUp 0.3s ease forwards';
-                setTimeout(() => {
-                    logsSection.style.display = 'none';
-                }, 300);
-                icon.textContent = '📄';
-                button.classList.remove('active');
-                
-                // 取消订阅实时日志
-                unsubscribeFromAppLogs(appId);
-            }
-        }
-
-        // 加载历史日志
-        function loadHistoryLogs(appId) {
-            const logsElement = document.getElementById(`logs-${appId}`);
-            if (!logsElement) return;
-            
-            logsElement.textContent = '正在加载历史日志...';
-            
-            fetch(`/api/logs/${appId}/tail?lines=100`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        logsElement.textContent = data.content || '暂无日志内容';
-                        // 滚动到底部
-                        logsElement.scrollTop = logsElement.scrollHeight;
-                    } else {
-                        logsElement.textContent = '加载失败: ' + data.message;
-                    }
-                })
-                .catch(error => {
-                    console.error('加载历史日志失败:', error);
-                    logsElement.textContent = '加载失败: ' + error.message;
-                });
-        }
-
-        // 加载日志(旧版本，保留兼容性)
-        function loadLogs(appId) {
-            loadHistoryLogs(appId);
-        }
-
-        // 加载所有日志
-        function loadAllLogs() {
-            document.querySelectorAll('[id^="logs-"]').forEach(element => {
-                const appId = element.id.split('-')[1];
-                loadLogs(appId);
-            });
-        }
-
-        // 切换自动刷新
-        function toggleAutoRefresh(button) {
-            const card = button.closest('.application-card');
-            const appId = card.querySelector('[id^="logs-"]').id.split('-')[1];
-            
-            if (autoRefreshIntervals.has(appId)) {
-                clearInterval(autoRefreshIntervals.get(appId));
-                autoRefreshIntervals.delete(appId);
-                button.classList.remove('active');
-                button.title = '自动刷新';
-            } else {
-                const interval = setInterval(() => {
-                    loadLogs(appId);
-                }, 5000);
-                autoRefreshIntervals.set(appId, interval);
-                button.classList.add('active');
-                button.title = '停止自动刷新';
-            }
-        }
-
-        // 清空日志
-        function clearLogs(button) {
-            if (confirm('确定要清空日志吗？')) {
-                const card = button.closest('.application-card');
-                const logsElement = card.querySelector('.logs-text');
-                logsElement.textContent = '日志已清空';
-            }
-        }
-
-        // 下载日志
-        function downloadLogs(button) {
-            const card = button.closest('.application-card');
-            const appName = card.querySelector('.app-name').textContent;
-            const logsText = card.querySelector('.logs-text').textContent;
-            
-            const blob = new Blob([logsText], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${appName}-logs-${new Date().toISOString().slice(0, 10)}.log`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        // 刷新应用列表
         function refreshApps() {
-            const refreshBtn = document.querySelector('.refresh-icon');
-            refreshBtn.style.animation = 'spin 1s linear infinite';
-            
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
-        }
-
-        // 刷新应用状态
-        function refreshAppStatus() {
-            // 这里可以添加AJAX请求更新应用状态
-            console.log('刷新应用状态...');
+            location.reload();
         }
         
-        // 确认重启操作
-        function confirmRestart(button) {
-            const appName = button.getAttribute('data-app-name') || '未知应用';
-            return confirm(`⚠️ 确定要重启应用「${appName}」吗？\n应用将停止然后重新启动！`);
+        function checkHealth() {
+            // 健康检查逻辑
+            console.log('执行健康检查...');
         }
         
-        // 确认删除操作
-        function confirmDelete(button) {
-            const appName = button.getAttribute('data-app-name') || '未知应用';
-            return confirm(`⚠️ 确定要删除应用「${appName}」吗？\n此操作不可恢复！`);
+        function viewDetails(appId) {
+            // 查看详情逻辑
+            console.log('查看应用详情:', appId);
         }
-
-        // 表单提交处理
-        document.querySelector('.upload-form').addEventListener('submit', function(e) {
-            const submitBtn = this.querySelector('.upload-btn');
-            const fileInput = this.querySelector('input[type="file"]');
-            const appNameInput = this.querySelector('input[name="appName"]');
-            
-            // 验证表单
-            if (!fileInput.files.length) {
-                e.preventDefault();
-                ux.showNotification('请选择要上传的JAR文件', 'error');
-                return;
-            }
-            
-            if (!appNameInput.value.trim()) {
-                e.preventDefault();
-                ux.showNotification('请输入应用名称', 'error');
-                appNameInput.focus();
-                return;
-            }
-            
-            // 验证文件类型
-            const file = fileInput.files[0];
-            if (!file.name.toLowerCase().endsWith('.jar')) {
-                e.preventDefault();
-                ux.showNotification('请选择有效的JAR文件', 'error');
-                return;
-            }
-            
-            // 验证文件大小（例如限制100MB）
-            const maxSize = 100 * 1024 * 1024; // 100MB
-            if (file.size > maxSize) {
-                e.preventDefault();
-                ux.showNotification('文件大小不能超过100MB', 'error');
-                return;
-            }
-            
-            // 显示加载状态
-            ux.setButtonLoading(submitBtn, true, '上传中...');
-            ux.showOperationFeedback('正在上传应用...', 'processing');
-            
-            // 为表单添加进度条
-            this.insertAdjacentHTML('beforeend', '<div class="progress-container"><div class="progress-bar indeterminate"></div></div>');
-        });
-
-        // 端口链接点击处理
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('port-link')) {
-                const port = e.target.textContent;
-                const url = `http://localhost:${port}`;
-                window.open(url, '_blank');
-            }
-        });
+        
+        function refreshApp(appId) {
+            // 刷新单个应用逻辑
+            console.log('刷新应用:', appId);
+        }
+        
+        function uploadApp() {
+            // 上传应用逻辑
+            console.log('上传新应用');
+        }
     </script>
 </body>
 </html>
