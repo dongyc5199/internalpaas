@@ -137,3 +137,47 @@ function formatUptime(seconds) {
         return `${minutes}分钟`;
     }
 }
+
+// 工作台JavaScript功能
+
+// 主题切换功能
+function toggleTheme() {
+    const body = document.body;
+    const themeIcon = document.querySelector('.theme-icon');
+    
+    if (body.classList.contains('dark-theme')) {
+        body.classList.remove('dark-theme');
+        themeIcon.textContent = '🌙';
+        localStorage.setItem('theme', 'light');
+    } else {
+        body.classList.add('dark-theme');
+        themeIcon.textContent = '☀️';
+        localStorage.setItem('theme', 'dark');
+    }
+}
+
+// 页面加载时恢复主题设置
+document.addEventListener('DOMContentLoaded', function() {
+    const savedTheme = localStorage.getItem('theme');
+    const themeIcon = document.querySelector('.theme-icon');
+    
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+        themeIcon.textContent = '☀️';
+    }
+});
+
+// 模拟数据更新功能
+function updateDashboardData() {
+    // 这里可以添加通过AJAX获取实时数据的逻辑
+    console.log('Updating dashboard data...');
+}
+
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 可以在这里添加初始化代码
+    console.log('Dashboard initialized');
+    
+    // 模拟定期更新数据
+    setInterval(updateDashboardData, 30000); // 每30秒更新一次
+});

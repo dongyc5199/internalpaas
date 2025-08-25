@@ -2,8 +2,12 @@ package com.cmict.internalpaas.config;
 
 import com.cmict.internalpaas.controller.SSHTerminalWebSocketHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.config.annotation.*;
 
 /**
@@ -66,5 +70,18 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, WebSoc
         registry.addHandler(sshTerminalWebSocketHandler, "/ws/ssh-terminal")
                 .setAllowedOrigins("*")
                 .addInterceptors(new SecurityWebSocketHandshakeInterceptor());
+    }
+    
+    /**
+     * 定义TaskScheduler Bean以解决与Spring Boot调度器的冲突
+     */
+    @Bean
+    @Primary
+    public TaskScheduler taskScheduler() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(10);
+        scheduler.setThreadNamePrefix("websocket-heartbeat-");
+        scheduler.initialize();
+        return scheduler;
     }
 }

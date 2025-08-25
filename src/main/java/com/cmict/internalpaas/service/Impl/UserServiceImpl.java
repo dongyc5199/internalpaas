@@ -6,7 +6,9 @@ import com.cmict.internalpaas.repository.UserRepository;
 import com.cmict.internalpaas.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -78,9 +80,18 @@ public class UserServiceImpl implements UserService {
         logger.info("找到用户: {}, 密码长度: {}, 角色: {}", 
                    username, user.getPassword().length(), user.getRoles());
         
+        // 添加密码格式检查日志
+        String password = user.getPassword();
+        logger.info("密码格式检查 - 密码前缀: {}", password.length() > 6 ? password.substring(0, 6) : password);
+        if (!password.startsWith("$2a$") && !password.startsWith("$2y$") && !password.startsWith("$2b$")) {
+            logger.warn("密码未使用BCrypt加密格式: {}", password);
+        }
+        
         Set<SimpleGrantedAuthority> authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
                 .collect(Collectors.toSet());
+        
+        logger.info("用户权限: {}", authorities);
         
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
@@ -133,11 +144,29 @@ public class UserServiceImpl implements UserService {
     
     @Override
     public void deleteUser(Long userId) {
-        // 防止删除最后一个超级管理员
-        if (userRepository.countByRolesContaining(User.Role.SUPER_ADMIN) <= 1) {
-            throw new RuntimeException("不能删除最后一个超级管理员");
+        User userToDelete = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        
+        // 获取当前登录用户
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new RuntimeException("当前用户不存在"));
+        
+        // 检查是否删除自己
+        if (currentUser.getId().equals(userId)) {
+            throw new RuntimeException("不允许删除自己的账号");
         }
         
+        // 检查要删除的用户是否是超级管理员
+        if (userToDelete.getRoles().contains(User.Role.SUPER_ADMIN)) {
+            // 如果是超级管理员，检查是否是最后一个超级管理员
+            if (userRepository.countByRolesContaining(User.Role.SUPER_ADMIN) <= 1) {
+                throw new RuntimeException("不能删除最后一个超级管理员");
+            }
+        }
+        
+        // 执行删除操作
         userRepository.deleteById(userId);
     }
 

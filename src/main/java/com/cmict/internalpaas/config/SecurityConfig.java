@@ -11,6 +11,7 @@ import com.cmict.internalpaas.service.UserService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 @Configuration
@@ -22,7 +23,8 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(authorize -> authorize
                 .antMatchers("/css/**", "/js/**", "/register", "/debug/**", "/h2-console/**", "/ws/**", "/test/**").permitAll() // 允许访问静态资源、注册页面、H2控制台、WebSocket端点和测试页面
-                .antMatchers("/admin/**").hasRole("SUPER_ADMIN") // 超级管理员才能访问管理页面
+                .antMatchers("/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN") // 管理员和超级管理员才能访问管理页面
+                .antMatchers("/developer/**").hasRole("USER") // 研发人员才能访问研发工作台
                 .anyRequest().authenticated() // 其他所有请求都需要认证
             )
             .formLogin(form -> form
@@ -37,6 +39,7 @@ public class SecurityConfig {
             )
             .csrf(csrf -> csrf
                 .ignoringAntMatchers("/h2-console/**", "/ws/**", "/test/**") // 禁用H2控制台、WebSocket和测试接口的CSRF保护
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // 使用Cookie存储CSRF token
             )
             .headers(headers -> headers
                 .frameOptions().disable() // 禁用frame限制，允许H2控制台在iframe中运行

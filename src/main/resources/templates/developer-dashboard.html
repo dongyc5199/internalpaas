@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>研发工作台 - Dev Debug Platform</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/common-dashboard.css">
+    <link rel="stylesheet" href="/css/dashboard-theme.css">
+</head>
+<body class="dashboard-body developer-theme">
+    <!-- 顶部导航栏 -->
+    <nav class="top-nav">
+        <div class="nav-brand">
+            <div class="brand-icon">🚀</div>
+            <span class="brand-text">Dev Debug Platform</span>
+        </div>
+        <div class="nav-menu">
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <span th:text="${#strings.substring(username, 0, 1)}">D</span>
+                </div>
+                <div class="user-info">
+                    <span class="greeting">欢迎回来</span>
+                    <span class="username" th:text="${username}">开发者</span>
+                </div>
+            </div>
+            <div class="nav-actions">
+                <div class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+                    <span class="theme-icon">🌙</span>
+                </div>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="logout-btn" title="安全退出">
+                        <span class="logout-icon">🚪</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容区域 -->
+    <div class="dashboard-container">
+        <!-- 侧边栏导航 -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item active">
+                        <a href="/developer/dashboard" class="nav-link">
+                            <span class="nav-icon">📊</span>
+                            <span class="nav-text">工作台概览</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/apps" class="nav-link">
+                            <span class="nav-icon">📱</span>
+                            <span class="nav-text">JAR管理</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/apps/history" class="nav-link">
+                            <span class="nav-icon">📜</span>
+                            <span class="nav-text">历史调试</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/apps/debug" class="nav-link">
+                            <span class="nav-icon">🔧</span>
+                            <span class="nav-text">调试区</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/monitoring/apps" class="nav-link">
+                            <span class="nav-icon">📈</span>
+                            <span class="nav-text">应用监控</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/apps/logs" class="nav-link">
+                            <span class="nav-icon">📝</span>
+                            <span class="nav-text">日志查看</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <div class="dashboard-header">
+                <h1>研发工作台</h1>
+                <p>专注于应用开发、调试和监控</p>
+            </div>
+
+            <!-- 状态面板 -->
+            <section class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-icon bg-primary">📱</div>
+                    <div class="stat-info">
+                        <h3>应用状态</h3>
+                        <p>运行中应用: <span th:text="${developerData.runningApplications}">0</span></p>
+                        <p>停止应用: <span th:text="${developerData.stoppedApplications}">0</span></p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon bg-success">🔧</div>
+                    <div class="stat-info">
+                        <h3>调试会话</h3>
+                        <p>当前会话: <span th:text="${developerData.activeDebugSessions}">0</span></p>
+                        <p>历史记录: <span th:text="${developerData.totalDebugSessions}">0</span></p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon bg-warning">⚡</div>
+                    <div class="stat-info">
+                        <h3>资源使用</h3>
+                        <p>CPU使用率: <span th:text="${#numbers.formatDecimal(developerData.cpuUsage, 1, 2)} + '%'">0%</span></p>
+                        <p>内存使用率: <span th:text="${#numbers.formatDecimal(developerData.memoryUsage, 1, 2)} + '%'">0%</span></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 最近调试时间线 -->
+            <section class="recent-activity">
+                <h2>最近调试活动</h2>
+                <div class="activity-timeline">
+                    <div class="activity-item">
+                        <div class="activity-icon">📱</div>
+                        <div class="activity-content">
+                            <h4>应用启动</h4>
+                            <p>应用 <strong>myapp-1.0.jar</strong> 启动成功</p>
+                            <span class="activity-time">5分钟前</span>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-item">
+                        <div class="activity-icon">🔧</div>
+                        <div class="activity-content">
+                            <h4>调试会话</h4>
+                            <p>开始调试会话 <strong>debug-session-001</strong></p>
+                            <span class="activity-time">25分钟前</span>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-item">
+                        <div class="activity-icon">📜</div>
+                        <div class="activity-content">
+                            <h4>历史记录</h4>
+                            <p>查看应用 <strong>test-app-2.0.jar</strong> 的历史调试记录</p>
+                            <span class="activity-time">2小时前</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 快捷操作区 -->
+            <section class="quick-actions">
+                <h2>快捷操作</h2>
+                <div class="action-grid">
+                    <a href="/apps/upload" class="action-card">
+                        <div class="action-icon">📤</div>
+                        <h3>上传JAR包</h3>
+                        <p>上传新的Java应用程序</p>
+                    </a>
+                    
+                    <a href="/apps" class="action-card">
+                        <div class="action-icon">⚡</div>
+                        <h3>启动应用</h3>
+                        <p>启动已上传的应用程序</p>
+                    </a>
+                    
+                    <a href="/apps/debug" class="action-card">
+                        <div class="action-icon">🔧</div>
+                        <h3>开始调试</h3>
+                        <p>创建新的调试会话</p>
+                    </a>
+                    
+                    <a href="/apps/logs" class="action-card">
+                        <div class="action-icon">📝</div>
+                        <h3>查看日志</h3>
+                        <p>查看应用运行日志</p>
+                    </a>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>

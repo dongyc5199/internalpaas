@@ -6,6 +6,7 @@ import com.cmict.internalpaas.service.ServerService;
 import com.cmict.internalpaas.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +16,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/admin")
-@PreAuthorize("hasRole('SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")  // 允许超级管理员和管理员访问
 public class AdminController {
 
     @Autowired
@@ -23,6 +24,9 @@ public class AdminController {
 
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @GetMapping("/servers")
     public String serverManagement(Model model) {
@@ -150,18 +154,23 @@ public class AdminController {
         return "admin/users";
     }
 
+    // 仅超级管理员可以切换角色
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping("/users/{id}/toggle-admin")
     public String toggleAdminRole(@PathVariable Long id) {
         userService.toggleAdminRole(id);
         return "redirect:/admin/users";
     }
     
+    // 仅超级管理员可以切换角色
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping("/users/{id}/toggle-super-admin")
     public String toggleSuperAdminRole(@PathVariable Long id) {
         userService.toggleSuperAdminRole(id);
         return "redirect:/admin/users";
     }
     
+    // 管理员和超级管理员都可以删除用户，但需要添加额外的检查
     @PostMapping("/users/{id}/delete")
     public String deleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
@@ -169,6 +178,31 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("successMessage", "用户删除成功");
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/users";
+    }
+    
+    // 仅超级管理员可以创建新用户
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @GetMapping("/users/new")
+    public String newUserForm(Model model) {
+        model.addAttribute("user", new User());
+        return "admin/user-form";
+    }
+    
+    // 仅超级管理员可以创建新用户
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PostMapping("/users")
+    public String createUser(@ModelAttribute User user, RedirectAttributes redirectAttributes) {
+        try {
+            // 对密码进行加密处理
+            if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+                user.setPassword(passwordEncoder.encode(user.getPassword()));
+            }
+            userService.save(user);
+            redirectAttributes.addFlashAttribute("successMessage", "用户创建成功");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "用户创建失败: " + e.getMessage());
         }
         return "redirect:/admin/users";
     }

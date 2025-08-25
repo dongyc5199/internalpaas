@@ -55,7 +55,9 @@
                 <a class="nav-link" href="/apps">应用管理</a>
                 <a class="nav-link" href="/admin/servers">服务器管理</a>
                 <a class="nav-link" href="/monitoring/dashboard">监控面板</a>
-                <a class="nav-link" href="/logout">退出</a>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">退出</button>
+                </form>
             </div>
         </div>
     </nav>

@@ -1,0 +1,140 @@
+/* 工作台主题颜色定义 */
+:root {
+    /* 字体设置 */
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-size-base: 14px;
+    --font-size-sm: 12px;
+    --font-size-md: 16px;
+    --font-size-lg: 18px;
+    --font-size-xl: 24px;
+    
+    /* 背景颜色 */
+    --background-color: #f5f7fa;
+    --background-light: #ffffff;
+    --background-dark: #f0f2f5;
+    --background-hover: #e9ecef;
+    
+    /* 导航相关 */
+    --nav-background: #ffffff;
+    --nav-background-light: #f8f9fa;
+    --nav-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    
+    /* 侧边栏 */
+    --sidebar-background: #ffffff;
+    --sidebar-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+    
+    /* 卡片 */
+    --card-background: #ffffff;
+    --card-background-hover: #f8f9fa;
+    --card-border: #e9ecef;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.08);
+    
+    /* 文本颜色 - 提高对比度 */
+    --text-color: #1a1a1a;
+    --text-color-secondary: #666666;
+    --text-color-tertiary: #888888;
+    --heading-color: #2c3e50;
+    --heading-color-secondary: #34495e;
+    
+    /* 边框颜色 */
+    --border-color: #e9ecef;
+    --border-color-light: #f1f3f5;
+    --border-color-dark: #dee2e6;
+    
+    /* 主要颜色 */
+    --primary-color: #409eff;
+    --primary-light: #ecf5ff;
+    --primary-hover: #66b1ff;
+    --primary-active: #3a8ee6;
+    
+    /* 成功颜色 */
+    --success-color: #67c23a;
+    --success-light: #f0f9eb;
+    --success-hover: #85ce61;
+    
+    /* 警告颜色 */
+    --warning-color: #e6a23c;
+    --warning-light: #fdf6ec;
+    --warning-hover: #ebb563;
+    
+    /* 危险颜色 */
+    --danger-color: #f56c6c;
+    --danger-light: #fef0f0;
+    --danger-hover: #f78989;
+    
+    /* 其他颜色 */
+    --info-color: #909399;
+    --info-light: #f4f4f5;
+    
+    /* 过渡动画 */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+    
+    /* 圆角 */
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --border-radius-xl: 16px;
+}
+
+/* 暗色主题 */
+.dark-theme {
+    --background-color: #121212;
+    --background-light: #1e1e1e;
+    --background-dark: #252525;
+    --background-hover: #2d2d2d;
+    
+    --nav-background: #1e1e1e;
+    --nav-background-light: #252525;
+    --nav-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    
+    --sidebar-background: #1e1e1e;
+    --sidebar-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    
+    --card-background: #1e1e1e;
+    --card-background-hover: #252525;
+    --card-border: #333333;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.25);
+    
+    --text-color: #e0e0e0;
+    --text-color-secondary: #b0b0b0;
+    --text-color-tertiary: #808080;
+    --heading-color: #ffffff;
+    --heading-color-secondary: #e0e0e0;
+    
+    --border-color: #333333;
+    --border-color-light: #3a3a3a;
+    --border-color-dark: #2d2d2d;
+    
+    --primary-color: #42a5f5;
+    --primary-light: rgba(66, 165, 245, 0.1);
+    --primary-hover: #64b5f6;
+    --primary-active: #3d9ae9;
+}
+
+/* 管理员工作台主题 */
+.admin-theme {
+    --primary-color: #1976d2;
+    --primary-light: #e3f2fd;
+    --primary-hover: #1e88e5;
+    --primary-active: #1565c0;
+    
+    --success-color: #388e3c;
+    --warning-color: #f57c00;
+    --danger-color: #d32f2f;
+}
+
+/* 研发工作台主题 */
+.developer-theme {
+    --primary-color: #3949ab;
+    --primary-light: #ede7f6;
+    --primary-hover: #455a64;
+    --primary-active: #283593;
+    
+    --success-color: #43a047;
+    --warning-color: #fdd835;
+    --danger-color: #e53935;
+}
