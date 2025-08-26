@@ -353,7 +353,7 @@ curl -I http://localhost:8080
 ### 1. 启动问题
 
 #### Q: 端口占用错误
-```
+```bash
 Error: Port 8080 was already in use.
 ```
 **解决方案:**
@@ -372,7 +372,7 @@ java -jar app.jar --server.port=8081
 ```
 
 #### Q: 内存不足错误
-```
+```bash
 java.lang.OutOfMemoryError: Java heap space
 ```
 **解决方案:**
@@ -387,7 +387,7 @@ java -Xmx2g -XX:+UseG1GC -jar app.jar
 ### 2. 数据库问题
 
 #### Q: 数据库文件权限错误
-```
+```bash
 Caused by: org.h2.jdbc.JdbcSQLException: General error
 ```
 **解决方案:**
@@ -410,7 +410,7 @@ mkdir -p data/
 ### 3. SSH连接问题
 
 #### Q: SSH认证失败
-```
+```bash
 com.jcraft.jsch.JSchException: Auth fail
 ```
 **解决方案:**
@@ -420,7 +420,7 @@ com.jcraft.jsch.JSchException: Auth fail
 4. 检查防火墙设置
 
 #### Q: SSH连接超时
-```
+```bash
 java.net.SocketTimeoutException: Read timed out
 ```
 **解决方案:**
