@@ -18,11 +18,31 @@
             padding: 0;
         }
 
-        .container-fluid {
+        .main-container-fluid {
             height: 100vh;
             display: flex;
             flex-direction: column;
             padding: 0;
+        }
+        
+        /* 确保导航栏container-fluid正常显示 */
+        .navbar .container-fluid {
+            height: auto !important;
+            display: flex !important;
+            align-items: center !important;
+            padding: 0.5rem 1rem !important;
+            justify-content: flex-start !important;
+        }
+        
+        .navbar-brand {
+            margin-right: 2rem !important;
+            flex-shrink: 0 !important;
+        }
+        
+        .navbar-nav.d-flex.flex-row {
+            gap: 1.5rem !important;
+            flex-grow: 1 !important;
+            justify-content: flex-start !important;
         }
 
         .terminal-container {
@@ -88,7 +108,7 @@
         }
 
         .container,
-        .container-fluid,
+        .main-content .container-fluid,
         .row,
         .col,
         .col-12 {
@@ -305,15 +325,27 @@
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/"><i class="fas fa-server"></i> 内部平台</a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link active" href="/applications">应用管理</a>
+        <div class="container-fluid d-flex align-items-center">
+            <!-- 标题栏固定在最左侧 -->
+            <a class="navbar-brand me-4" href="/" style="min-width: fit-content;">
+                <i class="fas fa-server"></i> 内部平台
+            </a>
+            
+            <!-- 菜单栏在同一行 -->
+            <div class="navbar-nav d-flex flex-row gap-3 flex-grow-1">
+                <a class="nav-link" href="/apps">应用管理</a>
                 <a class="nav-link" href="/admin/servers">服务器管理</a>
                 <a class="nav-link" href="/admin/users">用户管理</a>
+                <a class="nav-link active" href="/terminal/manager?serverId=1">SSH终端</a>
                 <a class="nav-link" href="/monitoring/dashboard">监控面板</a>
+            </div>
+            
+            <!-- 退出按钮在最右侧 -->
+            <div class="ms-auto">
                 <form th:action="@{/logout}" method="post" style="display: inline;">
-                    <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">退出</button>
+                    <button type="submit" class="nav-link btn btn-link text-light" style="background: none; border: none; cursor: pointer;">
+                        <i class="fas fa-sign-out-alt me-1"></i>退出
+                    </button>
                 </form>
             </div>
         </div>
