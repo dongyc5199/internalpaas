@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity" class="theme-light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,8 +7,10 @@
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/index.css">
     <link rel="stylesheet" href="/css/ux-enhancement.css">
+    <link rel="stylesheet" href="/css/dashboard-theme.css">
+    <script src="/js/theme.js"></script>
 </head>
-<body class="index-body">
+<body class="index-body theme-body">
     <!-- 背景动画 -->
     <div class="background-animation">
         <div class="floating-shapes">
@@ -20,7 +22,7 @@
         </div>
     </div>
 
-    <div class="container">
+    <div class="container theme-container">
         <!-- 顶部导航栏 -->
         <nav class="top-nav">
             <div class="nav-brand">
@@ -120,9 +122,9 @@
                         <h3>应用管理</h3>
                         <p>上传、启动、停止和管理您的Java应用程序</p>
                         <div class="card-features">
-                            <span class="feature-tag">一键部署</span>
-                            <span class="feature-tag">实时监控</span>
-                            <span class="feature-tag">日志查看</span>
+                            <span class="feature-tag tag-primary">一键部署</span>
+                            <span class="feature-tag tag-primary">实时监控</span>
+                            <span class="feature-tag tag-primary">日志查看</span>
                         </div>
                     </div>
                     <div class="card-arrow">→</div>
@@ -136,8 +138,8 @@
                         <h3>初始配置</h3>
                         <p>配置您的个人工作目录和开发环境</p>
                         <div class="card-features">
-                            <span class="feature-tag">个性化</span>
-                            <span class="feature-tag">简单配置</span>
+                            <span class="feature-tag tag-primary">个性化</span>
+                            <span class="feature-tag tag-primary">简单配置</span>
                         </div>
                     </div>
                     <div class="card-arrow">→</div>
@@ -151,8 +153,8 @@
                         <h3>服务器管理</h3>
                         <p>管理服务器列表和工作目录配置</p>
                         <div class="card-features">
-                            <span class="feature-tag">集群管理</span>
-                            <span class="feature-tag">负载均衡</span>
+                            <span class="feature-tag tag-primary">集群管理</span>
+                            <span class="feature-tag tag-primary">负载均衡</span>
                         </div>
                     </div>
                     <div class="card-arrow">→</div>
@@ -166,8 +168,8 @@
                         <h3>用户管理</h3>
                         <p>管理用户权限和角色分配</p>
                         <div class="card-features">
-                            <span class="feature-tag">权限控制</span>
-                            <span class="feature-tag">角色管理</span>
+                            <span class="feature-tag tag-primary">权限控制</span>
+                            <span class="feature-tag tag-primary">角色管理</span>
                         </div>
                     </div>
                     <div class="card-arrow">→</div>
@@ -180,9 +182,9 @@
                         <h3>监控面板</h3>
                         <p>实时查看服务器状态、用户活动和系统监控</p>
                         <div class="card-features">
-                            <span class="feature-tag">实时监控</span>
-                            <span class="feature-tag">用户活动</span>
-                            <span class="feature-tag">系统指标</span>
+                            <span class="feature-tag tag-primary">实时监控</span>
+                            <span class="feature-tag tag-primary">用户活动</span>
+                            <span class="feature-tag tag-primary">系统指标</span>
                         </div>
                     </div>
                     <div class="card-arrow">→</div>
@@ -195,9 +197,9 @@
                         <h3>SSH终端</h3>
                         <p>远程连接服务器，支持多标签页终端管理</p>
                         <div class="card-features">
-                            <span class="feature-tag">多标签页</span>
-                            <span class="feature-tag">实时连接</span>
-                            <span class="feature-tag">会话管理</span>
+                            <span class="feature-tag tag-primary">多标签页</span>
+                            <span class="feature-tag tag-primary">实时连接</span>
+                            <span class="feature-tag tag-primary">会话管理</span>
                         </div>
                     </div>
                     <div class="card-arrow">→</div>
@@ -213,7 +215,7 @@
                     系统状态监控
                 </h2>
                 <div class="panel-actions">
-                    <button class="refresh-btn" onclick="refreshStatus()">
+                    <button class="refresh-btn button-outline-primary" onclick="refreshStatus()">
                         <span class="refresh-icon">🔄</span>
                         刷新
                     </button>
@@ -231,11 +233,11 @@
                         <span class="value-unit">%</span>
                     </div>
                     <div class="status-chart">
-                        <div class="chart-bar">
-                            <div class="chart-fill" style="width: 15%" id="cpu-bar"></div>
+                            <div class="chart-bar">
+                                <div class="chart-fill" id="cpu-bar"></div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="status-trend up">
+                    <div class="status-trend up text-success-text">
                         <span class="trend-icon">📈</span>
                         <span class="trend-text">正常运行</span>
                     </div>
@@ -251,10 +253,10 @@
                         <span class="value-unit">%</span>
                     </div>
                     <div class="status-chart">
-                        <div class="chart-bar">
-                            <div class="chart-fill" style="width: 68%" id="memory-bar"></div>
+                            <div class="chart-bar">
+                                <div class="chart-fill" id="memory-bar"></div>
+                            </div>
                         </div>
-                    </div>
                     <div class="status-trend stable">
                         <span class="trend-icon">📊</span>
                         <span class="trend-text">稳定运行</span>
@@ -271,10 +273,10 @@
                         <span class="value-unit">%</span>
                     </div>
                     <div class="status-chart">
-                        <div class="chart-bar">
-                            <div class="chart-fill" style="width: 42%" id="disk-bar"></div>
+                            <div class="chart-bar">
+                                <div class="chart-fill" id="disk-bar"></div>
+                            </div>
                         </div>
-                    </div>
                     <div class="status-trend down">
                         <span class="trend-icon">📉</span>
                         <span class="trend-text">充足空间</span>
@@ -291,10 +293,10 @@
                         <span class="value-unit">ms</span>
                     </div>
                     <div class="status-chart">
-                        <div class="chart-bar">
-                            <div class="chart-fill good" style="width: 85%" id="network-bar"></div>
+                            <div class="chart-bar">
+                                <div class="chart-fill" id="network-bar"></div>
+                            </div>
                         </div>
-                    </div>
                     <div class="status-trend up">
                         <span class="trend-icon">🚀</span>
                         <span class="trend-text">连接正常</span>
@@ -315,34 +317,34 @@
             
             <div class="activity-timeline">
                 <div class="timeline-item">
-                    <div class="timeline-dot success"></div>
+                    <div class="timeline-dot status-success"></div>
                     <div class="timeline-content">
                         <div class="activity-title">应用 "user-service" 启动成功</div>
                         <div class="activity-meta">
                             <span class="activity-time">2分钟前</span>
-                            <span class="activity-tag success">启动成功</span>
+                            <span class="activity-tag status-success">启动成功</span>
                         </div>
                     </div>
                 </div>
                 
                 <div class="timeline-item">
-                    <div class="timeline-dot info"></div>
+                    <div class="timeline-dot status-info"></div>
                     <div class="timeline-content">
                         <div class="activity-title">配置文件更新完成</div>
                         <div class="activity-meta">
                             <span class="activity-time">15分钟前</span>
-                            <span class="activity-tag info">配置更新</span>
+                            <span class="activity-tag status-info">配置更新</span>
                         </div>
                     </div>
                 </div>
                 
                 <div class="timeline-item">
-                    <div class="timeline-dot warning"></div>
+                    <div class="timeline-dot status-warning"></div>
                     <div class="timeline-content">
                         <div class="activity-title">应用 "api-gateway" 重启</div>
                         <div class="activity-meta">
                             <span class="activity-time">1小时前</span>
-                            <span class="activity-tag warning">重启</span>
+                            <span class="activity-tag status-warning">重启</span>
                         </div>
                     </div>
                 </div>
@@ -535,12 +537,22 @@
                 
                 // 颜色变化
                 if (type !== 'network') {
+                    barElement.className = 'chart-fill';
                     if (value > 80) {
-                        barElement.className = 'chart-fill danger';
+                        barElement.classList.add('status-danger');
                     } else if (value > 60) {
-                        barElement.className = 'chart-fill warning';
+                        barElement.classList.add('status-warning');
                     } else {
-                        barElement.className = 'chart-fill good';
+                        barElement.classList.add('status-success');
+                    }
+                } else {
+                    barElement.className = 'chart-fill';
+                    if (value < 50) {
+                        barElement.classList.add('status-success');
+                    } else if (value < 100) {
+                        barElement.classList.add('status-warning');
+                    } else {
+                        barElement.classList.add('status-danger');
                     }
                 }
             }
@@ -568,10 +580,10 @@
         // 刷新状态
         function refreshStatus() {
             const refreshIcon = document.querySelector('.refresh-icon');
-            refreshIcon.style.animation = 'spin 1s linear infinite';
+            refreshIcon.classList.add('spin-animation');
             
             setTimeout(() => {
-                refreshIcon.style.animation = '';
+                refreshIcon.classList.remove('spin-animation');
                 updateSystemStatus();
             }, 1000);
         }
@@ -580,14 +592,14 @@
         function showModal(title, content) {
             document.getElementById('modalTitle').textContent = title;
             document.getElementById('modalBody').innerHTML = content;
-            document.getElementById('modalOverlay').style.display = 'flex';
-            document.body.style.overflow = 'hidden';
+            document.getElementById('modalOverlay').classList.add('modal-visible');
+            document.body.classList.add('modal-open');
         }
 
         // 关闭模态框
         function closeModal() {
-            document.getElementById('modalOverlay').style.display = 'none';
-            document.body.style.overflow = '';
+            document.getElementById('modalOverlay').classList.remove('modal-visible');
+            document.body.classList.remove('modal-open');
         }
 
         // 快捷操作功能
