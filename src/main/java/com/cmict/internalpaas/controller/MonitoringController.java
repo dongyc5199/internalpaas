@@ -91,21 +91,45 @@ public class MonitoringController {
      */
     @GetMapping("/server/{id}/metrics")
     @ResponseBody
-    public ResponseEntity<ServerMetrics> getServerMetrics(@PathVariable Long id) {
+    public ResponseEntity<?> getServerMetrics(@PathVariable Long id) {
         try {
+            // 日志记录
+            System.out.println("请求监控数据 - 服务器ID: " + id);
+            
+            // 首先检查服务器是否存在
+            if (!serverService.findById(id).isPresent()) {
+                System.out.println("服务器不存在 - ID: " + id);
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "服务器不存在");
+                error.put("serverId", String.valueOf(id));
+                return ResponseEntity.status(404).body(error);
+            }
+            
             ServerMetrics metrics = serverService.getServerLatestMetrics(id);
+            System.out.println("获取监控数据结果 - metrics: " + (metrics != null ? "有数据" : "无数据"));
+            
             if (metrics == null) {
                 // 如果没有数据，尝试刷新
+                System.out.println("尝试刷新服务器监控数据 - ID: " + id);
                 metrics = serverService.refreshServerMetrics(id);
             }
             
             if (metrics == null) {
-                return ResponseEntity.notFound().build();
+                System.out.println("监控数据为空 - ID: " + id);
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "监控数据不可用");
+                error.put("serverId", String.valueOf(id));
+                return ResponseEntity.status(404).body(error);
             }
             
             return ResponseEntity.ok(metrics);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+            System.err.println("获取监控数据异常 - ID: " + id + ", 错误: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            error.put("serverId", String.valueOf(id));
+            return ResponseEntity.internalServerError().body(error);
         }
     }
     
