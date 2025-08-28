@@ -5,6 +5,7 @@ import com.cmict.internalpaas.model.User;
 import com.cmict.internalpaas.service.ServerService;
 import com.cmict.internalpaas.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -12,7 +13,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/admin")
@@ -129,6 +132,24 @@ public class AdminController {
         }
         return "redirect:/admin/servers";
     }
+    
+    @PostMapping("/servers/{id}/refresh")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> refreshServer(@PathVariable Long id) {
+        try {
+            Server server = serverService.checkServerConnectionAndMetrics(id);
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "服务器状态已刷新");
+            response.put("connectionStatus", server.getConnectionStatus().name());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", e.getMessage());
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
 
     @GetMapping("/users")
     public String userManagement(Model model) {
@@ -203,6 +224,47 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("successMessage", "用户创建成功");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "用户创建失败: " + e.getMessage());
+        }
+        return "redirect:/admin/users";
+    }
+    
+    // 仅超级管理员可以编辑用户
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @GetMapping("/users/{id}/edit")
+    public String editUserForm(@PathVariable Long id, Model model) {
+        User user = userService.findAllUsers().stream()
+                .filter(u -> u.getId().equals(id))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("用户未找到"));
+        model.addAttribute("user", user);
+        return "admin/user-form";
+    }
+    
+    // 仅超级管理员可以更新用户
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PostMapping("/users/{id}/update")
+    public String updateUser(@PathVariable Long id, @ModelAttribute User user, RedirectAttributes redirectAttributes) {
+        try {
+            User existingUser = userService.findAllUsers().stream()
+                    .filter(u -> u.getId().equals(id))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("用户未找到"));
+            
+            // 更新用户信息，但不更新密码（除非提供了新密码）
+            existingUser.setEmail(user.getEmail());
+            existingUser.setWorkDirectory(user.getWorkDirectory());
+            existingUser.setRoles(user.getRoles());
+            existingUser.setIsFirstLogin(user.getIsFirstLogin());
+            
+            // 如果提供了新密码，则更新密码
+            if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+                existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
+            }
+            
+            userService.save(existingUser);
+            redirectAttributes.addFlashAttribute("successMessage", "用户更新成功");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "用户更新失败: " + e.getMessage());
         }
         return "redirect:/admin/users";
     }
