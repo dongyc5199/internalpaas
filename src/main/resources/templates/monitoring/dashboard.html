@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>服务器监控面板 - 内部平台</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -146,10 +148,11 @@
                                         </div>
                                         
                                         <div class="mt-3">
-                                            <a th:href="@{/monitoring/server/{id}(id=${server.id})}" 
-                                               class="btn btn-sm btn-outline-primary">
+                                            <button class="btn btn-sm btn-outline-primary" 
+                                                    th:data-server-id="${server.id}"
+                                                    onclick="openServerDetails(this.getAttribute('data-server-id'))">
                                                 <i class="fas fa-chart-bar"></i> 详细监控
-                                            </a>
+                                            </button>
                                             <button class="btn btn-sm btn-outline-success" 
                                                     th:data-server-id="${server.id}"
                                                     onclick="refreshServerMetricsFromButton(this)">
@@ -168,6 +171,29 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // 获取CSRF token
+        function getCSRFToken() {
+            const csrfToken = document.querySelector('meta[name="_csrf"]');
+            if (csrfToken) {
+                return csrfToken.getAttribute('content');
+            }
+            // 尝试从cookie获取
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'XSRF-TOKEN') {
+                    return decodeURIComponent(value);
+                }
+            }
+            return null;
+        }
+        
+        // 获取CSRF头名称
+        function getCSRFHeaderName() {
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+            return csrfHeader ? csrfHeader.getAttribute('content') : 'X-XSRF-TOKEN';
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             loadAllServerMetrics();
             setInterval(loadAllServerMetrics, 30000);
@@ -184,11 +210,30 @@
             const container = document.getElementById('metrics-' + serverId);
             if (!container) return;
             
-            fetch('/monitoring/server/' + serverId + '/metrics')
-                .then(response => response.ok ? response.json() : Promise.reject())
+            const headers = {};
+            const csrfToken = getCSRFToken();
+            if (csrfToken) {
+                headers[getCSRFHeaderName()] = csrfToken;
+            }
+            
+            fetch('/monitoring/server/' + serverId + '/metrics', {
+                method: 'GET',
+                headers: headers,
+                credentials: 'same-origin'
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else if (response.status === 404) {
+                        throw new Error('服务器监控数据未找到');
+                    } else {
+                        throw new Error('获取监控数据失败');
+                    }
+                })
                 .then(metrics => displayMetrics(container, metrics))
-                .catch(() => {
-                    container.innerHTML = '<div class="text-muted small"><i class="fas fa-exclamation-triangle"></i> 暂无监控数据</div>';
+                .catch(error => {
+                    console.error('加载监控数据失败:', error);
+                    container.innerHTML = '<div class="text-muted small"><i class="fas fa-exclamation-triangle"></i> ' + error.message + '</div>';
                 });
         }
         
@@ -216,17 +261,72 @@
             const container = document.getElementById('metrics-' + serverId);
             container.innerHTML = '<div class="text-center py-2"><i class="fas fa-spinner fa-spin"></i> 刷新中...</div>';
             
-            fetch('/monitoring/server/' + serverId + '/refresh', { method: 'POST' })
-                .then(response => response.ok ? response.json() : Promise.reject())
-                .then(metrics => displayMetrics(container, metrics))
-                .catch(() => {
-                    container.innerHTML = '<div class="text-danger small"><i class="fas fa-exclamation-triangle"></i> 刷新失败</div>';
+            const headers = {};
+            const csrfToken = getCSRFToken();
+            const csrfHeaderName = getCSRFHeaderName();
+            const url = '/monitoring/server/' + serverId + '/refresh';
+            
+            console.log('Refresh request details:');
+            console.log('- URL:', url);
+            console.log('- Server ID:', serverId);
+            console.log('- CSRF Token:', csrfToken);
+            console.log('- CSRF Header:', csrfHeaderName);
+            console.log('- Current location:', window.location.href);
+            console.log('- All cookies:', document.cookie);
+            
+            if (csrfToken) {
+                headers[csrfHeaderName] = csrfToken;
+            }
+            
+            console.log('- Final headers:', headers);
+            
+            fetch(url, {
+                method: 'POST',
+                headers: headers,
+                credentials: 'same-origin'
+            })
+                .then(response => {
+                    console.log('Response received:');
+                    console.log('- Status:', response.status);
+                    console.log('- Status Text:', response.statusText);
+                    console.log('- URL:', response.url);
+                    
+                    if (response.ok) {
+                        return response.json();
+                    } else if (response.status === 404) {
+                        throw new Error('API端点不存在或路由错误');
+                    } else if (response.status === 403) {
+                        throw new Error('CSRF验证失败，请刷新页面后重试');
+                    } else {
+                        throw new Error(`刷新监控数据失败 (${response.status})`);
+                    }
+                })
+                .then(metrics => {
+                    console.log('Metrics received:', metrics);
+                    displayMetrics(container, metrics);
+                    showNotification('监控数据已刷新', 'success');
+                })
+                .catch(error => {
+                    console.error('刷新监控数据失败:', error);
+                    container.innerHTML = '<div class="text-danger small"><i class="fas fa-exclamation-triangle"></i> ' + error.message + '</div>';
+                    showNotification('刷新失败: ' + error.message, 'danger');
                 });
         }
         
         function refreshServerMetricsFromButton(button) {
             const serverId = button.getAttribute('data-server-id');
+            const originalText = button.innerHTML;
+            
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 刷新中...';
+            button.disabled = true;
+            
             refreshServerMetrics(serverId);
+            
+            // 2秒后恢复按钮状态
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }, 2000);
         }
         
         function triggerHealthCheck() {
@@ -235,17 +335,77 @@
             button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 检查中...';
             button.disabled = true;
             
-            fetch('/monitoring/trigger-health-check', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    alert(data.status === 'success' ? '健康检查已触发，请稍后查看结果' : '健康检查失败: ' + data.message);
+            const headers = {};
+            const csrfToken = getCSRFToken();
+            const csrfHeaderName = getCSRFHeaderName();
+            
+            if (csrfToken) {
+                headers[csrfHeaderName] = csrfToken;
+            }
+            
+            fetch('/monitoring/trigger-health-check', {
+                method: 'POST',
+                headers: headers,
+                credentials: 'same-origin'
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else if (response.status === 403) {
+                        throw new Error('CSRF验证失败，请刷新页面后重试');
+                    } else {
+                        throw new Error(`请求失败 (${response.status})`);
+                    }
                 })
-                .catch(error => alert('健康检查失败: ' + error.message))
+                .then(data => {
+                    const message = data.status === 'success' ? '健康检查已触发，请稍后查看结果' : '健康检查失败: ' + data.message;
+                    showNotification(message, data.status === 'success' ? 'success' : 'danger');
+                })
+                .catch(error => {
+                    console.error('健康检查失败:', error);
+                    showNotification('健康检查失败: ' + error.message, 'danger');
+                })
                 .finally(() => {
                     button.innerHTML = originalText;
                     button.disabled = false;
                     setTimeout(loadAllServerMetrics, 5000);
                 });
+        }
+        
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            // 移除现有通知
+            const existingAlert = document.querySelector('.alert-notification');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+            
+            // 创建新通知
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show alert-notification`;
+            alert.style.position = 'fixed';
+            alert.style.top = '20px';
+            alert.style.right = '20px';
+            alert.style.zIndex = '9999';
+            alert.style.minWidth = '300px';
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(alert);
+            
+            // 5秒后自动隐藏
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+        
+        // 详细监控按钮点击处理
+        function openServerDetails(serverId) {
+            window.location.href = '/monitoring/server/' + serverId;
         }
     </script>
 </body>
