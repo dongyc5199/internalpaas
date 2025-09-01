@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>应用管理 - 内部平台</title>
+    <!-- CSRF Meta Tags -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -13,6 +16,68 @@
         .app-card.running { border-left-color: #28a745; }
         .app-card.stopped { border-left-color: #dc3545; }
         .app-card.starting { border-left-color: #007bff; }
+        
+        /* Upload Modal Styles */
+        .upload-progress {
+            height: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .upload-progress-bar {
+            height: 100%;
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+        .upload-progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background-image: linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.2) 25%,
+                transparent 25%,
+                transparent 50%,
+                rgba(255, 255, 255, 0.2) 50%,
+                rgba(255, 255, 255, 0.2) 75%,
+                transparent 75%,
+                transparent
+            );
+            background-size: 30px 30px;
+            animation: progress-bar-stripes 1s linear infinite;
+        }
+        @keyframes progress-bar-stripes {
+            0% { background-position: 30px 0; }
+            100% { background-position: 0 0; }
+        }
+        .file-upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .file-upload-area:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .file-upload-area.dragover {
+            border-color: #007bff;
+            background-color: #e3f2fd;
+        }
+        .env-var-row {
+            margin-bottom: 10px;
+        }
+        .invalid-feedback {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -109,8 +174,11 @@
         <div class="row">
             <div class="col-12">
                 <div class="card">
-                    <div class="card-header">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="fas fa-list"></i> 应用状态</h5>
+                        <button class="btn btn-primary btn-sm" onclick="uploadApp()">
+                            <i class="fas fa-plus"></i> 上传新应用
+                        </button>
                     </div>
                     <div class="card-body">
                         <!-- 空状态 -->
@@ -162,6 +230,9 @@
                                             <button class="btn btn-sm btn-outline-primary" th:onclick="'viewDetails(\'' + ${app.id} + '\')'">
                                                 <i class="fas fa-info-circle"></i> 详细信息
                                             </button>
+                                            <a class="btn btn-sm btn-outline-secondary" th:href="@{'/apps/' + ${app.id} + '/config/editor'}">
+                                                <i class="fas fa-cogs"></i> 配置
+                                            </a>
                                             <button class="btn btn-sm btn-outline-success" th:onclick="'refreshApp(\'' + ${app.id} + '\')'">
                                                 <i class="fas fa-sync-alt"></i> 刷新
                                             </button>
@@ -176,8 +247,170 @@
         </div>
     </div>
 
+    <!-- 上传应用模态框 -->
+    <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadModalLabel">
+                        <i class="fas fa-upload"></i> 上传新应用
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <!-- 应用基本信息 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="mb-3"><i class="fas fa-info-circle"></i> 应用基本信息</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="appName" class="form-label">应用名称 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="appName" name="appName" required 
+                                       placeholder="请输入应用名称" maxlength="50">
+                                <div class="invalid-feedback">
+                                    请输入有效的应用名称（2-50个字符，只能包含字母、数字、中文、下划线和连字符）
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 文件上传区域 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="mb-3"><i class="fas fa-file-upload"></i> JAR文件上传</h6>
+                                <div class="file-upload-area" onclick="document.getElementById('jarFile').click()">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                    <p class="mb-2">点击选择文件或将文件拖拽到此处</p>
+                                    <p class="text-muted small">支持 .jar 文件，最大 100MB</p>
+                                    <input type="file" class="d-none" id="jarFile" name="file" accept=".jar" required>
+                                </div>
+                                <div id="fileInfo" class="mt-2" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-file-archive"></i>
+                                        <span id="fileName"></span>
+                                        <span class="float-end text-muted" id="fileSize"></span>
+                                    </div>
+                                </div>
+                                <div class="invalid-feedback" id="fileError" style="display: none;">
+                                    请选择有效的 JAR 文件
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- JVM配置 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="mb-3"><i class="fas fa-cogs"></i> JVM配置</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="jvmOptions" class="form-label">JVM选项</label>
+                                <textarea class="form-control" id="jvmOptions" name="jvmOptions" rows="3" 
+                                          placeholder="例如：-Xms512m -Xmx1024m -Dfile.encoding=UTF-8"></textarea>
+                                <div class="form-text">设置JVM启动参数，如内存大小、系统属性等</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="programArgs" class="form-label">程序参数</label>
+                                <textarea class="form-control" id="programArgs" name="programArgs" rows="3" 
+                                          placeholder="例如：--server.port=8081 --spring.profiles.active=dev"></textarea>
+                                <div class="form-text">传递给应用程序的启动参数</div>
+                            </div>
+                        </div>
+
+                        <!-- 环境变量 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="mb-3"><i class="fas fa-list-ul"></i> 环境变量</h6>
+                                <div id="envVarsContainer">
+                                    <div class="env-var-row">
+                                        <div class="row g-2">
+                                            <div class="col-5">
+                                                <input type="text" class="form-control" placeholder="变量名" 
+                                                       name="envVarKey[]">
+                                            </div>
+                                            <div class="col-5">
+                                                <input type="text" class="form-control" placeholder="变量值" 
+                                                       name="envVarValue[]">
+                                            </div>
+                                            <div class="col-2">
+                                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                        onclick="removeEnvVar(this)" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addEnvVar()">
+                                    <i class="fas fa-plus"></i> 添加环境变量
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- JMX监控配置 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="mb-3"><i class="fas fa-chart-line"></i> JMX监控配置</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="enableJmx" name="enableJmx">
+                                    <label class="form-check-label" for="enableJmx">
+                                        启用JMX监控
+                                    </label>
+                                </div>
+                                <div class="form-text">启用后可通过JMX监控应用性能指标</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="jmxPort" class="form-label">JMX端口</label>
+                                <input type="number" class="form-control" id="jmxPort" name="jmxPort" 
+                                       min="1024" max="65535" placeholder="自动分配" disabled>
+                                <div class="form-text">留空则自动分配可用端口</div>
+                            </div>
+                        </div>
+
+                        <!-- 上传进度 -->
+                        <div id="uploadProgressContainer" style="display: none;">
+                            <h6 class="mb-2"><i class="fas fa-spinner fa-spin"></i> 上传进度</h6>
+                            <div class="upload-progress">
+                                <div class="upload-progress-bar" id="uploadProgressBar" style="width: 0%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <span class="text-muted" id="uploadStatus">准备上传...</span>
+                                <span class="text-muted" id="uploadPercent">0%</span>
+                            </div>
+                        </div>
+
+                        <!-- 错误信息显示 -->
+                        <div id="uploadError" class="alert alert-danger" style="display: none;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span id="uploadErrorMessage"></span>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="uploadBtn" onclick="performUpload()">
+                        <i class="fas fa-upload"></i> 开始上传
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // CSRF Token Helper Functions
+        function getCSRFToken() {
+            const csrfToken = document.querySelector('meta[name="_csrf"]');
+            return csrfToken ? csrfToken.getAttribute('content') : null;
+        }
+        
+        function getCSRFHeaderName() {
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+            return csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
+        }
+
+        // Application Management Functions
         function refreshApps() {
             location.reload();
         }
@@ -188,8 +421,8 @@
         }
         
         function viewDetails(appId) {
-            // 查看详情逻辑
-            console.log('查看应用详情:', appId);
+            // 导航到应用详情页面
+            window.location.href = '/apps/' + appId;
         }
         
         function refreshApp(appId) {
@@ -197,10 +430,405 @@
             console.log('刷新应用:', appId);
         }
         
+        // Upload Modal Functions
         function uploadApp() {
-            // 上传应用逻辑
-            console.log('上传新应用');
+            // 重置表单
+            resetUploadForm();
+            // 显示模态框
+            const modal = new bootstrap.Modal(document.getElementById('uploadModal'));
+            modal.show();
         }
+
+        function resetUploadForm() {
+            document.getElementById('uploadForm').reset();
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('uploadProgressContainer').style.display = 'none';
+            document.getElementById('uploadError').style.display = 'none';
+            document.getElementById('uploadBtn').disabled = false;
+            document.getElementById('jmxPort').disabled = true;
+            
+            // 重置环境变量
+            const container = document.getElementById('envVarsContainer');
+            container.innerHTML = `
+                <div class="env-var-row">
+                    <div class="row g-2">
+                        <div class="col-5">
+                            <input type="text" class="form-control" placeholder="变量名" name="envVarKey[]">
+                        </div>
+                        <div class="col-5">
+                            <input type="text" class="form-control" placeholder="变量值" name="envVarValue[]">
+                        </div>
+                        <div class="col-2">
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeEnvVar(this)" style="display: none;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 清除所有验证状态
+            document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            document.querySelectorAll('.is-valid').forEach(el => el.classList.remove('is-valid'));
+        }
+
+        // File Upload Handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('jarFile');
+            const uploadArea = document.querySelector('.file-upload-area');
+            const fileInfo = document.getElementById('fileInfo');
+            const fileName = document.getElementById('fileName');
+            const fileSize = document.getElementById('fileSize');
+            const fileError = document.getElementById('fileError');
+            const enableJmx = document.getElementById('enableJmx');
+            const jmxPort = document.getElementById('jmxPort');
+
+            // JMX checkbox handling
+            enableJmx.addEventListener('change', function() {
+                jmxPort.disabled = !this.checked;
+                if (!this.checked) {
+                    jmxPort.value = '';
+                }
+            });
+
+            // File input change handler
+            fileInput.addEventListener('change', function() {
+                handleFileSelection(this.files[0]);
+            });
+
+            // Drag and drop functionality
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    handleFileSelection(files[0]);
+                }
+            });
+
+            function handleFileSelection(file) {
+                if (!file) return;
+
+                // Validate file type
+                if (!file.name.endsWith('.jar')) {
+                    showFileError('请选择有效的 JAR 文件');
+                    return;
+                }
+
+                // Validate file size (100MB limit)
+                const maxSize = 100 * 1024 * 1024; // 100MB
+                if (file.size > maxSize) {
+                    showFileError('文件大小超过限制（最大 100MB）');
+                    return;
+                }
+
+                // Show file info
+                fileName.textContent = file.name;
+                fileSize.textContent = formatFileSize(file.size);
+                fileInfo.style.display = 'block';
+                fileError.style.display = 'none';
+                fileInput.classList.remove('is-invalid');
+                fileInput.classList.add('is-valid');
+
+                // Auto-populate app name from file name if empty
+                const appNameInput = document.getElementById('appName');
+                if (!appNameInput.value.trim()) {
+                    const baseName = file.name.replace(/\.jar$/i, '');
+                    appNameInput.value = baseName;
+                    validateAppName();
+                }
+            }
+
+            function showFileError(message) {
+                fileError.textContent = message;
+                fileError.style.display = 'block';
+                fileInfo.style.display = 'none';
+                fileInput.classList.add('is-invalid');
+                fileInput.classList.remove('is-valid');
+            }
+
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            // App name validation
+            document.getElementById('appName').addEventListener('input', function() {
+                validateAppName();
+            });
+        });
+
+        // Environment Variables Management
+        function addEnvVar() {
+            const container = document.getElementById('envVarsContainer');
+            const newRow = document.createElement('div');
+            newRow.className = 'env-var-row';
+            newRow.innerHTML = `
+                <div class="row g-2">
+                    <div class="col-5">
+                        <input type="text" class="form-control" placeholder="变量名" name="envVarKey[]">
+                    </div>
+                    <div class="col-5">
+                        <input type="text" class="form-control" placeholder="变量值" name="envVarValue[]">
+                    </div>
+                    <div class="col-2">
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeEnvVar(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(newRow);
+            updateRemoveButtons();
+        }
+
+        function removeEnvVar(button) {
+            button.closest('.env-var-row').remove();
+            updateRemoveButtons();
+        }
+
+        function updateRemoveButtons() {
+            const rows = document.querySelectorAll('.env-var-row');
+            rows.forEach((row, index) => {
+                const removeBtn = row.querySelector('.btn-outline-danger');
+                if (rows.length > 1) {
+                    removeBtn.style.display = 'block';
+                } else {
+                    removeBtn.style.display = 'none';
+                }
+            });
+        }
+
+        // Form Validation
+        function validateForm() {
+            let isValid = true;
+            
+            // Validate app name
+            if (!validateAppName()) {
+                isValid = false;
+            }
+            
+            // Validate file
+            const fileInput = document.getElementById('jarFile');
+            if (!fileInput.files[0]) {
+                document.getElementById('fileError').textContent = '请选择要上传的 JAR 文件';
+                document.getElementById('fileError').style.display = 'block';
+                fileInput.classList.add('is-invalid');
+                isValid = false;
+            }
+            
+            // Validate JMX port if enabled
+            const enableJmx = document.getElementById('enableJmx').checked;
+            const jmxPort = document.getElementById('jmxPort');
+            if (enableJmx && jmxPort.value && (jmxPort.value < 1024 || jmxPort.value > 65535)) {
+                jmxPort.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                jmxPort.classList.remove('is-invalid');
+            }
+            
+            return isValid;
+        }
+
+        // Upload Progress Management
+        function updateUploadProgress(percent, status) {
+            document.getElementById('uploadProgressBar').style.width = percent + '%';
+            document.getElementById('uploadPercent').textContent = percent + '%';
+            document.getElementById('uploadStatus').textContent = status;
+        }
+
+        function showUploadError(message) {
+            document.getElementById('uploadErrorMessage').textContent = message;
+            document.getElementById('uploadError').style.display = 'block';
+            document.getElementById('uploadProgressContainer').style.display = 'none';
+            document.getElementById('uploadBtn').disabled = false;
+            document.getElementById('uploadBtn').innerHTML = '<i class="fas fa-upload"></i> 重新上传';
+        }
+
+        // Main Upload Function
+        function performUpload() {
+            // Hide previous errors
+            document.getElementById('uploadError').style.display = 'none';
+            
+            // Validate form
+            if (!validateForm()) {
+                return;
+            }
+
+            // Prepare form data
+            const formData = new FormData();
+            const fileInput = document.getElementById('jarFile');
+            const appName = document.getElementById('appName').value.trim();
+            const jvmOptions = document.getElementById('jvmOptions').value.trim();
+            const programArgs = document.getElementById('programArgs').value.trim();
+            const enableJmx = document.getElementById('enableJmx').checked;
+            const jmxPort = document.getElementById('jmxPort').value.trim();
+
+            // Add basic fields
+            formData.append('file', fileInput.files[0]);
+            formData.append('appName', appName);
+            
+            // Add optional fields
+            if (jvmOptions) {
+                formData.append('jvmOptions', jvmOptions);
+            }
+            if (programArgs) {
+                formData.append('programArgs', programArgs);
+            }
+            if (enableJmx) {
+                formData.append('enableJmx', 'true');
+                if (jmxPort) {
+                    formData.append('jmxPort', jmxPort);
+                }
+            }
+
+            // Collect environment variables
+            const envVars = {};
+            const envKeys = document.querySelectorAll('input[name="envVarKey[]"]');
+            const envValues = document.querySelectorAll('input[name="envVarValue[]"]');
+            
+            for (let i = 0; i < envKeys.length; i++) {
+                const key = envKeys[i].value.trim();
+                const value = envValues[i].value.trim();
+                if (key && value) {
+                    envVars[key] = value;
+                }
+            }
+            
+            if (Object.keys(envVars).length > 0) {
+                formData.append('envVars', JSON.stringify(envVars));
+            }
+
+            // Add CSRF token
+            const csrfToken = getCSRFToken();
+            if (csrfToken) {
+                formData.append('_csrf', csrfToken);
+            }
+
+            // Show progress
+            document.getElementById('uploadProgressContainer').style.display = 'block';
+            document.getElementById('uploadBtn').disabled = true;
+            document.getElementById('uploadBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
+            updateUploadProgress(0, '开始上传...');
+
+            // Create XMLHttpRequest for progress tracking
+            const xhr = new XMLHttpRequest();
+
+            // Progress event listener
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    updateUploadProgress(percent, '上传文件中...');
+                }
+            });
+
+            // Load event listener
+            xhr.addEventListener('load', function() {
+                if (xhr.status === 200) {
+                    updateUploadProgress(100, '上传完成！');
+                    setTimeout(() => {
+                        // 关闭模态框并刷新页面
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('uploadModal'));
+                        modal.hide();
+                        location.reload();
+                    }, 1000);
+                } else {
+                    let errorMessage = '上传失败';
+                    try {
+                        // Try to parse error response
+                        const response = xhr.responseText;
+                        if (response.includes('文件上传失败')) {
+                            errorMessage = response.substring(response.indexOf('文件上传失败'));
+                        } else if (xhr.status === 413) {
+                            errorMessage = '文件过大，请选择小于 100MB 的文件';
+                        } else if (xhr.status === 415) {
+                            errorMessage = '不支持的文件类型，请上传 JAR 文件';
+                        } else if (xhr.status === 403) {
+                            errorMessage = 'CSRF验证失败，请刷新页面后重试';
+                        } else {
+                            errorMessage = `上传失败 (HTTP ${xhr.status})`;
+                        }
+                    } catch (e) {
+                        errorMessage = '上传失败，请检查网络连接';
+                    }
+                    showUploadError(errorMessage);
+                }
+            });
+
+            // Error event listener
+            xhr.addEventListener('error', function() {
+                showUploadError('网络错误，请检查连接后重试');
+            });
+
+            // Timeout event listener
+            xhr.addEventListener('timeout', function() {
+                showUploadError('上传超时，请重试');
+            });
+
+            // Configure and send request
+            xhr.timeout = 300000; // 5 minutes timeout
+            xhr.open('POST', '/apps/upload');
+            
+            // Send request
+            xhr.send(formData);
+        }
+
+        // Form Validation Functions
+        function validateAppName() {
+            const appNameInput = document.getElementById('appName');
+            const appName = appNameInput.value.trim();
+            
+            // Validation rules: 2-50 characters, alphanumeric, Chinese, underscore, hyphen
+            const namePattern = /^[\w\u4e00-\u9fa5-]{2,50}$/;
+            
+            if (!appName) {
+                appNameInput.classList.add('is-invalid');
+                appNameInput.classList.remove('is-valid');
+                return false;
+            } else if (!namePattern.test(appName)) {
+                appNameInput.classList.add('is-invalid');
+                appNameInput.classList.remove('is-valid');
+                return false;
+            } else {
+                appNameInput.classList.remove('is-invalid');
+                appNameInput.classList.add('is-valid');
+                return true;
+            }
+        }
+
+        // Utility Functions
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-focus app name when modal opens
+            document.getElementById('uploadModal').addEventListener('shown.bs.modal', function() {
+                document.getElementById('appName').focus();
+            });
+            
+            // Update remove buttons initially
+            updateRemoveButtons();
+        });
     </script>
 </body>
 </html>

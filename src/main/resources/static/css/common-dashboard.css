@@ -68,6 +68,8 @@
     padding: 0.25rem 0;
     cursor: pointer;
     transition: all var(--transition-fast);
+    text-decoration: none;
+    color: inherit;
 }
 
 .user-profile:hover {
@@ -196,6 +198,13 @@
 
 .nav-item {
     margin-bottom: 0.125rem;
+}
+
+.nav-divider {
+    height: 1px;
+    background: var(--border-color, #e5e7eb);
+    margin: 1rem 1.5rem;
+    opacity: 0.5;
 }
 
 .nav-link {

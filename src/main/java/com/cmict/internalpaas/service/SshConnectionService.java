@@ -18,9 +18,9 @@ public class SshConnectionService {
     
     private static final Logger logger = LoggerFactory.getLogger(SshConnectionService.class);
     
-    private static final int CONNECTION_TIMEOUT = 8000; // 8秒连接超时
-    private static final int CHECK_TIMEOUT = 10000; // 10秒检测超时
-    private static final int COMMAND_TIMEOUT = 15000; // 15秒命令超时
+    private static final int CONNECTION_TIMEOUT = 15000; // 15秒连接超时 (从8秒增加)
+    private static final int CHECK_TIMEOUT = 20000; // 20秒检测超时 (从10秒增加)
+    private static final int COMMAND_TIMEOUT = 30000; // 30秒命令超时 (从15秒增加)
     
     /**
      * 检查服务器SSH连接状态

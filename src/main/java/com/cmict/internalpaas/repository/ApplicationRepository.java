@@ -18,4 +18,14 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     boolean existsByUserAndPort(User user, Integer port);
     
     boolean existsByUserAndDebugPort(User user, Integer debugPort);
+    
+    /**
+     * 统计指定用户的应用总数
+     */
+    int countByUserId(Long userId);
+    
+    /**
+     * 统计指定用户指定状态的应用数量
+     */
+    int countByUserIdAndStatus(Long userId, String status);
 }

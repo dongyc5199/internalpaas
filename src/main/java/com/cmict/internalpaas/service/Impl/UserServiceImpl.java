@@ -1,7 +1,11 @@
 package com.cmict.internalpaas.service.Impl;
 
-import com.cmict.internalpaas.dto.UserRegistrationDto;
+import com.cmict.internalpaas.dto.*;
 import com.cmict.internalpaas.model.User;
+import com.cmict.internalpaas.model.UserConfig;
+import com.cmict.internalpaas.repository.ApplicationRepository;
+import com.cmict.internalpaas.repository.UserActivityRepository;
+import com.cmict.internalpaas.repository.UserConfigRepository;
 import com.cmict.internalpaas.repository.UserRepository;
 import com.cmict.internalpaas.service.UserService;
 import org.slf4j.Logger;
@@ -13,6 +17,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,10 +30,20 @@ public class UserServiceImpl implements UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
     private final UserRepository userRepository;
+    private final UserConfigRepository userConfigRepository;
+    private final ApplicationRepository applicationRepository;
+    private final UserActivityRepository userActivityRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserRepository userRepository, 
+                          UserConfigRepository userConfigRepository,
+                          ApplicationRepository applicationRepository, 
+                          UserActivityRepository userActivityRepository,
+                          PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.userConfigRepository = userConfigRepository;
+        this.applicationRepository = applicationRepository;
+        this.userActivityRepository = userActivityRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -173,5 +188,173 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean hasRole(User user, User.Role role) {
         return user.getRoles() != null && user.getRoles().contains(role);
+    }
+
+    // === 用户档案管理方法实现 ===
+
+    @Override
+    public UserProfileDto getUserProfile(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        
+        UserProfileDto profileDto = new UserProfileDto();
+        profileDto.setId(user.getId());
+        profileDto.setUsername(user.getUsername());
+        profileDto.setEmail(user.getEmail());
+        profileDto.setWorkDirectory(user.getWorkDirectory());
+        profileDto.setFullName(user.getFullName());
+        profileDto.setPhone(user.getPhone());
+        profileDto.setDepartment(user.getDepartment());
+        
+        // 设置角色信息
+        Set<String> roleStrings = user.getRoles().stream()
+                .map(Enum::name)
+                .collect(Collectors.toSet());
+        profileDto.setRoles(roleStrings);
+        
+        profileDto.setCreatedAt(user.getCreatedAt());
+        profileDto.setLastLoginTime(user.getLastLoginTime());
+        profileDto.setIsFirstLogin(user.getIsFirstLogin());
+        
+        // 获取统计信息
+        Long userId = user.getId();
+        profileDto.setTotalApplications(applicationRepository.countByUserId(userId));
+        profileDto.setActiveApplications(applicationRepository.countByUserIdAndStatus(userId, "RUNNING"));
+        profileDto.setTotalSessions(userActivityRepository.countByUsername(username));
+        profileDto.setTotalCommands(userActivityRepository.sumCommandCountByUsername(username));
+        profileDto.setLastActivityTime(userActivityRepository.findLastActivityByUsername(username));
+        
+        return profileDto;
+    }
+
+    @Override
+    public User updateUserProfile(String username, UserProfileDto profileDto) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        
+        // 更新允许修改的字段
+        user.setEmail(profileDto.getEmail());
+        user.setWorkDirectory(profileDto.getWorkDirectory());
+        user.setFullName(profileDto.getFullName());
+        user.setPhone(profileDto.getPhone());
+        user.setDepartment(profileDto.getDepartment());
+        
+        return userRepository.save(user);
+    }
+
+    @Override
+    public void changePassword(String username, PasswordChangeDto passwordChangeDto) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        
+        // 验证当前密码
+        if (!passwordEncoder.matches(passwordChangeDto.getCurrentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("当前密码不正确");
+        }
+        
+        // 验证新密码和确认密码是否匹配
+        if (!passwordChangeDto.isPasswordMatching()) {
+            throw new IllegalArgumentException("新密码和确认密码不匹配");
+        }
+        
+        // 验证新密码不能与当前密码相同
+        if (passwordEncoder.matches(passwordChangeDto.getNewPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("新密码不能与当前密码相同");
+        }
+        
+        // 更新密码
+        user.setPassword(passwordEncoder.encode(passwordChangeDto.getNewPassword()));
+        user.resetFailedLoginAttempts(); // 重置失败登录尝试次数
+        
+        userRepository.save(user);
+        
+        logger.info("用户 {} 修改密码成功", username);
+    }
+
+    @Override
+    public UserPreferencesDto getUserPreferences(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        
+        UserConfig userConfig = getOrCreateUserConfig(user);
+        
+        UserPreferencesDto preferencesDto = new UserPreferencesDto();
+        preferencesDto.setTheme(userConfig.getTheme());
+        preferencesDto.setEmailNotifications(userConfig.getEmailNotifications());
+        preferencesDto.setSystemNotifications(userConfig.getSystemNotifications());
+        preferencesDto.setApplicationStatusNotifications(userConfig.getApplicationStatusNotifications());
+        preferencesDto.setSecurityNotifications(userConfig.getSecurityNotifications());
+        preferencesDto.setDashboardLayout(userConfig.getDashboardLayout());
+        preferencesDto.setShowWelcomeMessage(userConfig.getShowWelcomeMessage());
+        preferencesDto.setShowQuickActions(userConfig.getShowQuickActions());
+        preferencesDto.setShowRecentActivity(userConfig.getShowRecentActivity());
+        preferencesDto.setTerminalTheme(userConfig.getTerminalTheme());
+        preferencesDto.setTerminalFontSize(userConfig.getTerminalFontSize());
+        preferencesDto.setTerminalFontFamily(userConfig.getTerminalFontFamily());
+        preferencesDto.setLanguage(userConfig.getLanguage());
+        preferencesDto.setTimeZone(userConfig.getTimeZone());
+        
+        return preferencesDto;
+    }
+
+    @Override
+    public UserConfig updateUserPreferences(String username, UserPreferencesDto preferencesDto) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        
+        UserConfig userConfig = getOrCreateUserConfig(user);
+        
+        // 更新偏好设置
+        userConfig.setTheme(preferencesDto.getTheme());
+        userConfig.setEmailNotifications(preferencesDto.getEmailNotifications());
+        userConfig.setSystemNotifications(preferencesDto.getSystemNotifications());
+        userConfig.setApplicationStatusNotifications(preferencesDto.getApplicationStatusNotifications());
+        userConfig.setSecurityNotifications(preferencesDto.getSecurityNotifications());
+        userConfig.setDashboardLayout(preferencesDto.getDashboardLayout());
+        userConfig.setShowWelcomeMessage(preferencesDto.getShowWelcomeMessage());
+        userConfig.setShowQuickActions(preferencesDto.getShowQuickActions());
+        userConfig.setShowRecentActivity(preferencesDto.getShowRecentActivity());
+        userConfig.setTerminalTheme(preferencesDto.getTerminalTheme());
+        userConfig.setTerminalFontSize(preferencesDto.getTerminalFontSize());
+        userConfig.setTerminalFontFamily(preferencesDto.getTerminalFontFamily());
+        userConfig.setLanguage(preferencesDto.getLanguage());
+        userConfig.setTimeZone(preferencesDto.getTimeZone());
+        
+        return userConfigRepository.save(userConfig);
+    }
+
+    @Override
+    @Transactional
+    public UserConfig getOrCreateUserConfig(User user) {
+        Optional<UserConfig> existingConfig = userConfigRepository.findByUserId(user.getId());
+        if (existingConfig.isPresent()) {
+            return existingConfig.get();
+        }
+        
+        // 重新从数据库获取managed状态的User实体，然后创建UserConfig
+        User managedUser = userRepository.findById(user.getId())
+            .orElseThrow(() -> new RuntimeException("用户不存在"));
+            
+        UserConfig newConfig = new UserConfig();
+        newConfig.setWorkDirectory(managedUser.getWorkDirectory());
+        newConfig.setUser(managedUser);
+        
+        return userConfigRepository.save(newConfig);
+    }
+
+    @Override
+    public void updateLastLogin(String username, String loginIp) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+        
+        user.setLastLoginTime(java.time.LocalDateTime.now());
+        user.setLastLoginIp(loginIp);
+        user.incrementLoginCount();
+        user.setIsFirstLogin(false);
+        user.resetFailedLoginAttempts();
+        
+        userRepository.save(user);
+        
+        logger.info("更新用户 {} 登录信息，IP: {}", username, loginIp);
     }
 }

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>告警阈值管理 - 内部平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/monitoring-history.css}" rel="stylesheet">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-bell"></i> 内部平台 - 告警设置
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/monitoring/dashboard">实时监控</a>
+                <a class="nav-link" href="/monitoring/history/dashboard">历史数据</a>
+                <a class="nav-link active" href="/monitoring/thresholds/dashboard">告警设置</a>
+                <a class="nav-link" href="/admin/servers">服务器管理</a>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">退出</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- 页面头部 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2><i class="fas fa-bell"></i> 告警阈值管理</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- 统计信息 -->
+        <div class="row mb-4" th:if="${statistics}">
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h5 th:text="${statistics.totalThresholds ?: 0}">0</h5>
+                        <small>总阈值配置</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h5 th:text="${statistics.enabledThresholds ?: 0}">0</h5>
+                        <small>已启用</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h5 th:text="${statistics.notificationEnabledThresholds ?: 0}">0</h5>
+                        <small>通知已启用</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h5 th:text="${#lists.size(servers)}">0</h5>
+                        <small>管理的服务器</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 服务器列表 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-server"></i> 服务器阈值配置</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" th:if="${#lists.isEmpty(servers)}">
+                            <div class="col-12 text-center py-4">
+                                <i class="fas fa-server fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">暂无服务器数据</p>
+                            </div>
+                        </div>
+                        <div class="row" th:each="server : ${servers}">
+                            <div class="col-lg-6 col-xl-4 mb-3">
+                                <div class="card chart-card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="card-title mb-0" th:text="${server.name}">服务器名称</h6>
+                                            <span class="badge" 
+                                                  th:classappend="${server.connectionStatus?.name() == 'CONNECTED' ? 'bg-success' : 
+                                                                    server.connectionStatus?.name() == 'MONITORING' ? 'bg-primary' :
+                                                                    server.connectionStatus?.name() == 'FAILED' ? 'bg-danger' : 'bg-secondary'}"
+                                                  th:text="${server.connectionStatus?.description ?: '未知'}">状态</span>
+                                        </div>
+                                        <p class="card-text small text-muted mb-2">
+                                            <i class="fas fa-network-wired"></i> <span th:text="${server.hostname}">hostname</span>
+                                        </p>
+                                        
+                                        <div class="mt-3">
+                                            <a th:href="@{/monitoring/thresholds/server/{id}(id=${server.id})}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-cog"></i> 配置阈值
+                                            </a>
+                                            <a th:href="@{/monitoring/history/dashboard(server=${server.id})}" 
+                                               class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-chart-line"></i> 历史数据
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 功能说明 -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> 功能说明</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6><i class="fas fa-bell text-warning"></i> 告警阈值</h6>
+                                <p class="text-muted small">为每个服务器的各项监控指标设置警告和严重阈值，超过阈值时系统将自动触发告警。</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h6><i class="fas fa-envelope text-info"></i> 通知设置</h6>
+                                <p class="text-muted small">配置告警通知方式和频率，避免重复通知，确保及时响应重要告警。</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h6><i class="fas fa-copy text-success"></i> 批量管理</h6>
+                                <p class="text-muted small">支持复制阈值配置到多个服务器，快速完成批量配置，提高管理效率。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

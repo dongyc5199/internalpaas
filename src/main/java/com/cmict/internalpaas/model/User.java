@@ -37,6 +37,36 @@ public class User {
     
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+    
+    @Column(name = "last_login_time")
+    private LocalDateTime lastLoginTime;
+    
+    @Column(name = "last_login_ip")
+    private String lastLoginIp;
+    
+    @Column(name = "login_count")
+    private Integer loginCount = 0;
+    
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+    
+    @Column(name = "full_name")
+    private String fullName;
+    
+    @Column(name = "phone")
+    private String phone;
+    
+    @Column(name = "department")
+    private String department;
+    
+    @Column(name = "is_email_verified")
+    private Boolean isEmailVerified = false;
+    
+    @Column(name = "is_account_locked")
+    private Boolean isAccountLocked = false;
+    
+    @Column(name = "failed_login_attempts")
+    private Integer failedLoginAttempts = 0;
 
     @PrePersist
     protected void onCreate() {
@@ -82,5 +112,49 @@ public class User {
     
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    
+    public LocalDateTime getLastLoginTime() { return lastLoginTime; }
+    public void setLastLoginTime(LocalDateTime lastLoginTime) { this.lastLoginTime = lastLoginTime; }
+    
+    public String getLastLoginIp() { return lastLoginIp; }
+    public void setLastLoginIp(String lastLoginIp) { this.lastLoginIp = lastLoginIp; }
+    
+    public Integer getLoginCount() { return loginCount; }
+    public void setLoginCount(Integer loginCount) { this.loginCount = loginCount; }
+    
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
+    
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+    
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+    
+    public String getDepartment() { return department; }
+    public void setDepartment(String department) { this.department = department; }
+    
+    public Boolean getIsEmailVerified() { return isEmailVerified; }
+    public void setIsEmailVerified(Boolean isEmailVerified) { this.isEmailVerified = isEmailVerified; }
+    
+    public Boolean getIsAccountLocked() { return isAccountLocked; }
+    public void setIsAccountLocked(Boolean isAccountLocked) { this.isAccountLocked = isAccountLocked; }
+    
+    public Integer getFailedLoginAttempts() { return failedLoginAttempts; }
+    public void setFailedLoginAttempts(Integer failedLoginAttempts) { this.failedLoginAttempts = failedLoginAttempts; }
+    
+    // Helper methods
+    public void incrementLoginCount() {
+        this.loginCount = (this.loginCount == null ? 0 : this.loginCount) + 1;
+        this.lastLoginTime = LocalDateTime.now();
+    }
+    
+    public void resetFailedLoginAttempts() {
+        this.failedLoginAttempts = 0;
+    }
+    
+    public void incrementFailedLoginAttempts() {
+        this.failedLoginAttempts = (this.failedLoginAttempts == null ? 0 : this.failedLoginAttempts) + 1;
+    }
 }
 

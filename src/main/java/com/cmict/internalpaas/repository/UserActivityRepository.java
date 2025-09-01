@@ -80,4 +80,21 @@ public interface UserActivityRepository extends JpaRepository<UserActivity, Long
      * 删除指定时间之前的历史活动记录
      */
     void deleteByCreatedAtBefore(LocalDateTime cutoffTime);
+    
+    /**
+     * 统计指定用户的总会话数
+     */
+    int countByUsername(String username);
+    
+    /**
+     * 统计指定用户的总命令执行数
+     */
+    @Query("SELECT COALESCE(SUM(ua.commandCount), 0) FROM UserActivity ua WHERE ua.username = :username")
+    Integer sumCommandCountByUsername(@Param("username") String username);
+    
+    /**
+     * 查找指定用户的最后活动时间
+     */
+    @Query("SELECT MAX(ua.lastActivity) FROM UserActivity ua WHERE ua.username = :username")
+    LocalDateTime findLastActivityByUsername(@Param("username") String username);
 }

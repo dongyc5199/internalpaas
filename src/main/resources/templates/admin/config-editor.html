@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>应用配置编辑器 - Dev Debug Platform</title>
+    
+    <!-- CSRF Token -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/dashboard-theme.css}">
+    <link rel="stylesheet" th:href="@{/css/config-editor.css}">
+</head>
+<body class="bg-light">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" th:href="@{/admin-dashboard}">
+                <i class="fas fa-cogs me-2"></i>
+                应用配置编辑器
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" th:href="@{/admin-dashboard}">
+                    <i class="fas fa-arrow-left me-1"></i> 返回仪表板
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-0">配置编辑器</h2>
+                        <p class="text-muted mb-0">应用ID: <span th:text="${applicationId}"></span></p>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-primary" id="loadTemplateBtn">
+                            <i class="fas fa-template me-1"></i> 加载模板
+                        </button>
+                        <button type="button" class="btn btn-outline-success" id="importConfigBtn">
+                            <i class="fas fa-file-import me-1"></i> 导入配置
+                        </button>
+                        <button type="button" class="btn btn-outline-info" id="exportConfigBtn">
+                            <i class="fas fa-file-export me-1"></i> 导出配置
+                        </button>
+                        <button type="button" class="btn btn-warning" id="createBackupBtn">
+                            <i class="fas fa-save me-1"></i> 创建备份
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Main Configuration Panel -->
+            <div class="col-lg-9">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white border-bottom">
+                        <!-- Configuration Tabs -->
+                        <ul class="nav nav-tabs card-header-tabs" id="configTabs" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active" id="jvm-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#jvm-panel" type="button">
+                                    <i class="fas fa-memory me-1"></i> JVM配置
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" id="env-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#env-panel" type="button">
+                                    <i class="fas fa-env me-1"></i> 环境变量
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" id="spring-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#spring-panel" type="button">
+                                    <i class="fas fa-leaf me-1"></i> Spring配置
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" id="debug-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#debug-panel" type="button">
+                                    <i class="fas fa-bug me-1"></i> 调试配置
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" id="jmx-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#jmx-panel" type="button">
+                                    <i class="fas fa-chart-line me-1"></i> JMX监控
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#advanced-panel" type="button">
+                                    <i class="fas fa-cog me-1"></i> 高级配置
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="card-body">
+                        <form id="configForm">
+                            <div class="tab-content" id="configTabContent">
+                                
+                                <!-- JVM Configuration Panel -->
+                                <div class="tab-pane fade show active" id="jvm-panel">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">JVM选项</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="fas fa-memory"></i></span>
+                                                    <textarea class="form-control config-textarea" id="jvmOptions" 
+                                                              placeholder="-Xms512m -Xmx1g" rows="3"></textarea>
+                                                </div>
+                                                <div class="form-text">设置JVM堆内存大小等参数</div>
+                                                <div class="invalid-feedback" id="jvmOptions-error"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">GC选项</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="fas fa-recycle"></i></span>
+                                                    <textarea class="form-control config-textarea" id="gcOptions" 
+                                                              placeholder="-XX:+UseG1GC -XX:MaxGCPauseMillis=200" rows="3"></textarea>
+                                                </div>
+                                                <div class="form-text">垃圾收集器配置参数</div>
+                                                <div class="invalid-feedback" id="gcOptions-error"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">系统属性</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-list"></i></span>
+                                            <textarea class="form-control config-textarea" id="systemProperties" 
+                                                      placeholder="-Dspring.profiles.active=prod -Dfile.encoding=UTF-8" rows="2"></textarea>
+                                        </div>
+                                        <div class="form-text">系统属性设置（-D参数）</div>
+                                        <div class="invalid-feedback" id="systemProperties-error"></div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label class="form-label">最大线程数</label>
+                                                <input type="number" class="form-control" id="maxThreads" 
+                                                       placeholder="200" min="1" max="1000">
+                                                <div class="invalid-feedback" id="maxThreads-error"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label class="form-label">连接超时(ms)</label>
+                                                <input type="number" class="form-control" id="connectionTimeout" 
+                                                       placeholder="30000" min="1000" max="300000">
+                                                <div class="invalid-feedback" id="connectionTimeout-error"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label class="form-label">活动配置文件</label>
+                                                <input type="text" class="form-control" id="activeProfiles" 
+                                                       placeholder="dev,local">
+                                                <div class="form-text">Spring活动配置文件</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Environment Variables Panel -->
+                                <div class="tab-pane fade" id="env-panel">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5>环境变量</h5>
+                                        <button type="button" class="btn btn-sm btn-primary" id="addEnvVarBtn">
+                                            <i class="fas fa-plus me-1"></i> 添加变量
+                                        </button>
+                                    </div>
+                                    
+                                    <div id="envVarContainer">
+                                        <!-- Environment variables will be dynamically added here -->
+                                    </div>
+                                    
+                                    <div class="mt-3">
+                                        <label class="form-label">JSON格式编辑</label>
+                                        <textarea class="form-control config-textarea" id="environmentVariables" 
+                                                  placeholder='{"KEY": "value"}' rows="6"></textarea>
+                                        <div class="form-text">以JSON格式编辑环境变量</div>
+                                        <div class="invalid-feedback" id="environmentVariables-error"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Spring Configuration Panel -->
+                                <div class="tab-pane fade" id="spring-panel">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">服务器端口</label>
+                                                <input type="number" class="form-control" id="serverPort" 
+                                                       placeholder="8080" min="1024" max="65535">
+                                                <div class="invalid-feedback" id="serverPort-error"></div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">上下文路径</label>
+                                                <input type="text" class="form-control" id="serverContextPath" 
+                                                       placeholder="/api">
+                                                <div class="form-text">应用上下文路径</div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">健康检查路径</label>
+                                                <input type="text" class="form-control" id="healthCheckPath" 
+                                                       placeholder="/actuator/health">
+                                                <div class="form-text">健康检查端点</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">健康检查超时(秒)</label>
+                                                <input type="number" class="form-control" id="healthCheckTimeout" 
+                                                       placeholder="30" min="5" max="300">
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">程序参数</label>
+                                                <textarea class="form-control config-textarea" id="programArguments" 
+                                                          placeholder="--server.port=8080 --debug" rows="3"></textarea>
+                                                <div class="form-text">命令行参数</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Spring Boot属性</label>
+                                        <textarea class="form-control config-textarea" id="springProperties" 
+                                                  placeholder="server.port=8080&#10;logging.level.root=INFO" rows="8"></textarea>
+                                        <div class="form-text">Spring Boot配置属性（properties格式）</div>
+                                        <div class="invalid-feedback" id="springProperties-error"></div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">日志配置</label>
+                                        <textarea class="form-control config-textarea" id="loggingConfig" 
+                                                  placeholder="logging.level.com.cmict=DEBUG" rows="4"></textarea>
+                                        <div class="form-text">日志级别和格式配置</div>
+                                    </div>
+                                </div>
+
+                                <!-- Debug Configuration Panel -->
+                                <div class="tab-pane fade" id="debug-panel">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card border-info">
+                                                <div class="card-header bg-info text-white">
+                                                    <h6 class="mb-0"><i class="fas fa-bug me-1"></i> 调试设置</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="mb-3">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" id="enableDebug">
+                                                            <label class="form-check-label" for="enableDebug">
+                                                                启用远程调试
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label class="form-label">调试端口</label>
+                                                        <input type="number" class="form-control" id="debugPort" 
+                                                               placeholder="5005" min="1024" max="65535">
+                                                        <div class="invalid-feedback" id="debugPort-error"></div>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label class="form-label">调试选项</label>
+                                                        <textarea class="form-control" id="debugOptions" 
+                                                                  placeholder="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n" rows="3"></textarea>
+                                                        <div class="form-text">JDWP调试参数</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="card border-warning">
+                                                <div class="card-header bg-warning text-dark">
+                                                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-1"></i> 调试提示</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="alert alert-info">
+                                                        <h6>远程调试说明：</h6>
+                                                        <ul class="mb-0">
+                                                            <li>启用调试后，应用将监听指定端口</li>
+                                                            <li>可以使用IDE连接到调试端口</li>
+                                                            <li>生产环境请谨慎启用调试功能</li>
+                                                            <li>调试端口必须在有效范围内</li>
+                                                        </ul>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label class="form-label">IDE连接示例</label>
+                                                        <div class="bg-dark text-light p-2 rounded">
+                                                            <code>
+                                                                Host: localhost<br>
+                                                                Port: <span id="debugPortDisplay">5005</span><br>
+                                                                Transport: Socket
+                                                            </code>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- JMX Configuration Panel -->
+                                <div class="tab-pane fade" id="jmx-panel">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card border-success">
+                                                <div class="card-header bg-success text-white">
+                                                    <h6 class="mb-0"><i class="fas fa-chart-line me-1"></i> JMX监控</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="mb-3">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" id="enableJmx">
+                                                            <label class="form-check-label" for="enableJmx">
+                                                                启用JMX监控
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label class="form-label">JMX端口</label>
+                                                        <input type="number" class="form-control" id="jmxPort" 
+                                                               placeholder="9999" min="1024" max="65535">
+                                                        <div class="invalid-feedback" id="jmxPort-error"></div>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label class="form-label">认证用户</label>
+                                                        <input type="text" class="form-control" id="jmxAuthUser" 
+                                                               placeholder="admin">
+                                                        <div class="form-text">JMX访问用户名</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="card border-info">
+                                                <div class="card-header bg-info text-white">
+                                                    <h6 class="mb-0"><i class="fas fa-info-circle me-1"></i> 监控信息</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="alert alert-light">
+                                                        <h6>JMX功能：</h6>
+                                                        <ul class="mb-0">
+                                                            <li>实时监控应用性能指标</li>
+                                                            <li>查看内存和线程使用情况</li>
+                                                            <li>动态调整配置参数</li>
+                                                            <li>支持JConsole和其他JMX客户端</li>
+                                                        </ul>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label class="form-label">连接字符串</label>
+                                                        <div class="bg-dark text-light p-2 rounded">
+                                                            <code>
+                                                                service:jmx:rmi:///jndi/rmi://localhost:<span id="jmxPortDisplay">9999</span>/jmxrmi
+                                                            </code>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Advanced Configuration Panel -->
+                                <div class="tab-pane fade" id="advanced-panel">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="mb-3">
+                                                <label class="form-label">配置描述</label>
+                                                <textarea class="form-control" id="description" 
+                                                          placeholder="配置变更说明..." rows="2"></textarea>
+                                                <div class="form-text">描述这次配置变更的目的</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card border-secondary">
+                                                <div class="card-header">
+                                                    <h6 class="mb-0"><i class="fas fa-code me-1"></i> 高级选项</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">配置版本</label>
+                                                        <input type="text" class="form-control" id="configVersion" 
+                                                               placeholder="1.0.0" readonly>
+                                                        <div class="form-text">配置版本号（自动生成）</div>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="hotReloadSupport">
+                                                            <label class="form-check-label" for="hotReloadSupport">
+                                                                支持热重载
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-text">某些配置支持在不重启的情况下生效</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="card border-warning">
+                                                <div class="card-header bg-warning text-dark">
+                                                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-1"></i> 配置预览</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <button type="button" class="btn btn-outline-primary btn-sm mb-2" id="previewConfigBtn">
+                                                        <i class="fas fa-eye me-1"></i> 预览配置
+                                                    </button>
+                                                    <div id="configPreview" class="bg-light p-2 rounded" style="max-height: 200px; overflow-y: auto;">
+                                                        <!-- Configuration preview will be shown here -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Configuration Actions -->
+                    <div class="card-footer bg-white border-top">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-secondary" id="resetConfigBtn">
+                                    <i class="fas fa-undo me-1"></i> 重置
+                                </button>
+                                <button type="button" class="btn btn-info" id="validateConfigBtn">
+                                    <i class="fas fa-check-circle me-1"></i> 验证配置
+                                </button>
+                                <button type="button" class="btn btn-warning" id="previewConfigBtn2">
+                                    <i class="fas fa-eye me-1"></i> 预览
+                                </button>
+                            </div>
+                            
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-success" id="saveConfigBtn">
+                                    <i class="fas fa-save me-1"></i> 保存配置
+                                </button>
+                                <button type="button" class="btn btn-primary" id="applyConfigBtn">
+                                    <i class="fas fa-play me-1"></i> 应用配置
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" id="hotReloadBtn" style="display: none;">
+                                    <i class="fas fa-refresh me-1"></i> 热重载
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar: Templates & History -->
+            <div class="col-lg-3">
+                <!-- Configuration Templates -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-template me-1"></i> 配置模板</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush" id="templateList">
+                            <!-- Templates will be loaded dynamically -->
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button type="button" class="btn btn-sm btn-outline-primary w-100" id="saveAsTemplateBtn">
+                            <i class="fas fa-save me-1"></i> 保存为模板
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Configuration History -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-history me-1"></i> 配置历史</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush" id="historyList" style="max-height: 400px; overflow-y: auto;">
+                            <!-- History will be loaded dynamically -->
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button type="button" class="btn btn-sm btn-outline-info w-100" id="compareConfigBtn">
+                            <i class="fas fa-code-compare me-1"></i> 配置对比
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    
+    <!-- Template Selection Modal -->
+    <div class="modal fade" id="templateModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">选择配置模板</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>预定义模板</h6>
+                            <div id="predefinedTemplatesList" class="list-group">
+                                <!-- Predefined templates will be loaded here -->
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>自定义模板</h6>
+                            <div id="customTemplatesList" class="list-group">
+                                <!-- Custom templates will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Configuration Modal -->
+    <div class="modal fade" id="importModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">导入配置</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">选择配置文件</label>
+                        <input type="file" class="form-control" id="configFileInput" accept=".json,.yml,.yaml">
+                        <div class="form-text">支持JSON和YAML格式</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">文件格式</label>
+                        <select class="form-select" id="importFormat">
+                            <option value="json">JSON</option>
+                            <option value="yaml">YAML</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="importConfirmBtn">导入</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Configuration Modal -->
+    <div class="modal fade" id="exportModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">导出配置</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">导出格式</label>
+                        <select class="form-select" id="exportFormat">
+                            <option value="json">JSON</option>
+                            <option value="yaml">YAML</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">选择配置</label>
+                        <select class="form-select" id="exportConfigSelect">
+                            <option value="current">当前配置</option>
+                            <option value="active">活动配置</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="exportConfirmBtn">导出</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save as Template Modal -->
+    <div class="modal fade" id="saveTemplateModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">保存为模板</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">模板名称</label>
+                        <input type="text" class="form-control" id="templateName" placeholder="我的模板">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">模板描述</label>
+                        <textarea class="form-control" id="templateDescription" rows="3" 
+                                  placeholder="描述这个模板的用途..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveTemplateConfirmBtn">保存模板</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration Compare Modal -->
+    <div class="modal fade" id="compareModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">配置对比</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">配置 1</label>
+                            <select class="form-select" id="compareConfig1">
+                                <option value="">选择配置...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">配置 2</label>
+                            <select class="form-select" id="compareConfig2">
+                                <option value="">选择配置...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="compareResult" style="min-height: 400px;">
+                        <!-- Comparison result will be shown here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="compareConfirmBtn">开始对比</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+    <script th:src="@{/js/config-editor.js}"></script>
+    
+    <!-- Hidden data for JavaScript -->
+    <div id="pageData" style="display: none;"
+         th:data-application-id="${applicationId}"
+         th:data-csrf-token="${_csrf.token}"
+         th:data-csrf-header="${_csrf.headerName}">
+    </div>
+</body>
+</html>

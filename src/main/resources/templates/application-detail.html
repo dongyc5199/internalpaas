@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>应用详情 - <span th:text="${application.name}">应用名称</span> - 内部平台</title>
+    <!-- CSRF Meta Tags -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css" rel="stylesheet">
+    <link th:href="@{/css/common-dashboard.css}" rel="stylesheet">
+    <link th:href="@{/css/application-detail.css}" rel="stylesheet">
+    
+    <style>
+        /* Embedded CSS for immediate styling */
+        .app-status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        .app-status-indicator.running {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+        }
+        .app-status-indicator.stopped {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: #721c24;
+        }
+        .app-status-indicator.starting {
+            background: linear-gradient(135deg, #cce7ff 0%, #b3d9ff 100%);
+            color: #004085;
+        }
+        .app-status-indicator .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .running .status-dot {
+            background-color: #28a745;
+        }
+        .stopped .status-dot {
+            background-color: #dc3545;
+        }
+        .starting .status-dot {
+            background-color: #007bff;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .metric-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .metric-card.cpu { border-left-color: #007bff; }
+        .metric-card.memory { border-left-color: #28a745; }
+        .metric-card.disk { border-left-color: #ffc107; }
+        .metric-card.uptime { border-left-color: #17a2b8; }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        .log-viewer {
+            height: 400px;
+            background: #1e1e1e;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            overflow-y: auto;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            white-space: pre-wrap;
+        }
+        
+        .config-item {
+            padding: 0.75rem;
+            background: #f8f9fa;
+            border-radius: 0.375rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid #007bff;
+        }
+        
+        .config-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.25rem;
+        }
+        
+        .config-value {
+            color: #6c757d;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+        
+        .action-buttons .btn {
+            min-width: 120px;
+            margin-right: 0.5rem;
+        }
+        
+        .breadcrumb-item a {
+            text-decoration: none;
+        }
+        
+        .alert-dismissible {
+            position: relative;
+        }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            border-radius: 0.375rem;
+        }
+        
+        .spinner-custom {
+            width: 2rem;
+            height: 2rem;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/"><i class="fas fa-server"></i> 内部平台</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/applications">应用管理</a>
+                <a class="nav-link" href="/admin/servers">服务器管理</a>
+                <a class="nav-link" href="/admin/users">用户管理</a>
+                <a class="nav-link" href="/monitoring/dashboard">监控面板</a>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">退出</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- 面包屑导航 -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/"><i class="fas fa-home"></i> 首页</a></li>
+                <li class="breadcrumb-item"><a href="/apps"><i class="fas fa-rocket"></i> 应用管理</a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${application.name}">应用详情</li>
+            </ol>
+        </nav>
+
+        <!-- 应用基本信息头部 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h2 class="card-title mb-2">
+                                    <i class="fas fa-cube text-primary"></i>
+                                    <span th:text="${application.name}">应用名称</span>
+                                </h2>
+                                <div class="mb-3">
+                                    <span class="app-status-indicator" 
+                                          th:classappend="${application.status?.toLowerCase()}">
+                                        <span class="status-dot"></span>
+                                        <span th:text="${application.status == 'RUNNING'} ? '运行中' : 
+                                                       (${application.status == 'STOPPED'} ? '已停止' : '启动中')">运行中</span>
+                                    </span>
+                                </div>
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-file-archive"></i> 
+                                    JAR文件: <span th:text="${application.jarFileName}">app.jar</span>
+                                </p>
+                                <p class="text-muted mb-0" th:if="${application.lastStartedAt}">
+                                    <i class="fas fa-clock"></i> 
+                                    上次启动: <span th:text="${#temporals.format(application.lastStartedAt, 'yyyy-MM-dd HH:mm:ss')}">2024-08-26 10:30:00</span>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="action-buttons text-md-end">
+                                    <button class="btn btn-success" 
+                                            th:disabled="${application.status == 'RUNNING'}" 
+                                            onclick="startApplication()">
+                                        <i class="fas fa-play"></i> 启动
+                                    </button>
+                                    <button class="btn btn-warning" 
+                                            th:disabled="${application.status == 'STOPPED'}" 
+                                            onclick="stopApplication()">
+                                        <i class="fas fa-stop"></i> 停止
+                                    </button>
+                                    <button class="btn btn-info" 
+                                            th:disabled="${application.status == 'STOPPED'}" 
+                                            onclick="restartApplication()">
+                                        <i class="fas fa-redo"></i> 重启
+                                    </button>
+                                    <div class="btn-group">
+                                        <button class="btn btn-outline-primary dropdown-toggle" 
+                                                type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-cog"></i> 更多操作
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" th:href="@{'/apps/' + ${application.id} + '/config/editor'}">
+                                                <i class="fas fa-cogs"></i> 高级配置编辑器
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="editConfiguration()">
+                                                <i class="fas fa-edit"></i> 快速配置编辑
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="downloadLogs()">
+                                                <i class="fas fa-download"></i> 下载日志
+                                            </a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteApplication()">
+                                                <i class="fas fa-trash"></i> 删除应用
+                                            </a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 运行指标卡片 -->
+        <div class="row mb-4">
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card metric-card cpu">
+                    <div class="card-body text-center">
+                        <i class="fas fa-microchip fa-2x text-primary mb-2"></i>
+                        <h5>CPU 使用率</h5>
+                        <h3 class="text-primary mb-0" id="cpuUsage">--</h3>
+                        <small class="text-muted">实时数据</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card metric-card memory">
+                    <div class="card-body text-center">
+                        <i class="fas fa-memory fa-2x text-success mb-2"></i>
+                        <h5>内存使用率</h5>
+                        <h3 class="text-success mb-0" id="memoryUsage">--</h3>
+                        <small class="text-muted">实时数据</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card metric-card disk">
+                    <div class="card-body text-center">
+                        <i class="fas fa-hdd fa-2x text-warning mb-2"></i>
+                        <h5>磁盘使用率</h5>
+                        <h3 class="text-warning mb-0" id="diskUsage">--</h3>
+                        <small class="text-muted">实时数据</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card metric-card uptime">
+                    <div class="card-body text-center">
+                        <i class="fas fa-clock fa-2x text-info mb-2"></i>
+                        <h5>运行时间</h5>
+                        <h3 class="text-info mb-0" id="uptime">--</h3>
+                        <small class="text-muted">自启动时间</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主要内容区域 -->
+        <div class="row">
+            <!-- 左侧内容 -->
+            <div class="col-lg-8">
+                <!-- 性能图表 -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-chart-line"></i> 性能监控</h5>
+                        <div class="btn-group btn-group-sm">
+                            <input type="radio" class="btn-check" name="timeRange" id="range5m" value="5m" checked>
+                            <label class="btn btn-outline-primary" for="range5m">5分钟</label>
+                            
+                            <input type="radio" class="btn-check" name="timeRange" id="range30m" value="30m">
+                            <label class="btn btn-outline-primary" for="range30m">30分钟</label>
+                            
+                            <input type="radio" class="btn-check" name="timeRange" id="range1h" value="1h">
+                            <label class="btn btn-outline-primary" for="range1h">1小时</label>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="metricsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 实时日志查看器 -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-file-alt"></i> 实时日志</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="clearLogs()">
+                                <i class="fas fa-broom"></i> 清空
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="downloadLogs()">
+                                <i class="fas fa-download"></i> 下载
+                            </button>
+                            <button class="btn btn-sm btn-primary" id="toggleAutoScroll" onclick="toggleAutoScroll()">
+                                <i class="fas fa-arrow-down"></i> 自动滚动
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="log-viewer" id="logViewer">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-spinner fa-spin"></i> 加载日志中...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧信息面板 -->
+            <div class="col-lg-4">
+                <!-- 基本信息 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> 基本信息</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="config-item">
+                            <div class="config-label">应用ID</div>
+                            <div class="config-value" th:text="${application.id}">#12345</div>
+                        </div>
+                        <div class="config-item">
+                            <div class="config-label">应用端口</div>
+                            <div class="config-value">
+                                <span th:text="${application.port ?: 'N/A'}">8080</span>
+                                <a th:if="${application.port}" 
+                                   th:href="'http://localhost:' + ${application.port}" 
+                                   target="_blank" class="ms-2">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="config-item">
+                            <div class="config-label">调试端口</div>
+                            <div class="config-value" th:text="${application.debugPort ?: 'N/A'}">5005</div>
+                        </div>
+                        <div class="config-item" th:if="${application.jmxPort}">
+                            <div class="config-label">JMX端口</div>
+                            <div class="config-value" th:text="${application.jmxPort}">9999</div>
+                        </div>
+                        <div class="config-item">
+                            <div class="config-label">进程ID</div>
+                            <div class="config-value" th:text="${application.processId ?: 'N/A'}">12345</div>
+                        </div>
+                        <div class="config-item">
+                            <div class="config-label">创建时间</div>
+                            <div class="config-value" th:text="${#temporals.format(application.createdAt, 'yyyy-MM-dd HH:mm')}">2024-08-26 10:00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- JVM配置 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-cogs"></i> JVM配置</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="config-item" th:if="${application.jvmOptions}">
+                            <div class="config-label">JVM参数</div>
+                            <div class="config-value" th:text="${application.jvmOptions}">-Xms512m -Xmx1024m</div>
+                        </div>
+                        <div class="config-item" th:if="${application.programArguments}">
+                            <div class="config-label">程序参数</div>
+                            <div class="config-value" th:text="${application.programArguments}">--server.port=8080</div>
+                        </div>
+                        <div class="config-item" th:if="${application.environmentVariables}">
+                            <div class="config-label">环境变量</div>
+                            <div class="config-value" th:text="${application.environmentVariables}">{"ENV":"prod"}</div>
+                        </div>
+                        <div class="config-item">
+                            <div class="config-label">JMX监控</div>
+                            <div class="config-value">
+                                <span th:text="${application.enableJmx} ? '已启用' : '未启用'"
+                                      th:class="${application.enableJmx} ? 'text-success' : 'text-muted'">已启用</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 快捷操作 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-bolt"></i> 快捷操作</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary btn-sm" onclick="openLogFile()">
+                                <i class="fas fa-folder-open"></i> 打开日志目录
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="viewSystemMetrics()">
+                                <i class="fas fa-chart-bar"></i> 查看系统指标
+                            </button>
+                            <button class="btn btn-outline-success btn-sm" 
+                                    th:if="${application.enableJmx}" 
+                                    onclick="openJmxConsole()">
+                                <i class="fas fa-desktop"></i> JMX控制台
+                            </button>
+                            <button class="btn btn-outline-warning btn-sm" onclick="healthCheck()">
+                                <i class="fas fa-heartbeat"></i> 健康检查
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑配置模态框 -->
+    <div class="modal fade" id="editConfigModal" tabindex="-1" aria-labelledby="editConfigModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editConfigModalLabel">编辑应用配置</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="configForm">
+                        <div class="mb-3">
+                            <label for="configJvmOptions" class="form-label">JVM参数</label>
+                            <textarea class="form-control" id="configJvmOptions" rows="3" 
+                                      th:text="${application.jvmOptions}"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="configProgramArgs" class="form-label">程序参数</label>
+                            <textarea class="form-control" id="configProgramArgs" rows="3" 
+                                      th:text="${application.programArguments}"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="configEnvVars" class="form-label">环境变量 (JSON格式)</label>
+                            <textarea class="form-control" id="configEnvVars" rows="3" 
+                                      th:text="${application.environmentVariables}"></textarea>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="configEnableJmx" 
+                                   th:checked="${application.enableJmx}">
+                            <label class="form-check-label" for="configEnableJmx">
+                                启用JMX监控
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="saveConfiguration()">保存配置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script th:src="@{/js/application-detail.js}"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        
+        // 应用详情页面配置
+        const appConfig = {
+            id: [[${application.id}]],
+            name: [[${application.name}]],
+            status: [[${application.status}]],
+            port: [[${application.port}]],
+            debugPort: [[${application.debugPort}]],
+            processId: [[${application.processId}]]
+        };
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化应用详情管理器
+            appDetailManager = new ApplicationDetailManager(appConfig);
+        });
+        
+        /*]]>*/
+    </script>
+</body>
+</html>

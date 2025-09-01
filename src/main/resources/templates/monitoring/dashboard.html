@@ -38,6 +38,12 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2><i class="fas fa-chart-line"></i> 服务器监控面板</h2>
                     <div>
+                        <a href="/monitoring/history/dashboard" class="btn btn-outline-info" th:if="${hasHistoryFeature}">
+                            <i class="fas fa-history"></i> 历史数据
+                        </a>
+                        <a href="/monitoring/thresholds/dashboard" class="btn btn-outline-warning" th:if="${hasThresholdFeature}">
+                            <i class="fas fa-bell"></i> 告警设置
+                        </a>
                         <button class="btn btn-outline-primary" onclick="location.reload()">
                             <i class="fas fa-sync-alt"></i> 刷新数据
                         </button>

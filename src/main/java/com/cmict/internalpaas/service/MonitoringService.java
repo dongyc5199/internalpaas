@@ -23,9 +23,9 @@ import java.util.concurrent.TimeUnit;
 public class MonitoringService {
     
     private static final Logger logger = LoggerFactory.getLogger(MonitoringService.class);
-    private static final int COMMAND_TIMEOUT = 30000; // 30秒命令超时（从10秒增加到30秒）
-    private static final int SSH_CONNECT_TIMEOUT = 8000; // 8秒SSH连接超时
-    private static final int METRICS_COLLECTION_TIMEOUT = 45000; // 45秒指标收集总超时
+    private static final int COMMAND_TIMEOUT = 45000; // 45秒命令超时（从30秒增加）
+    private static final int SSH_CONNECT_TIMEOUT = 15000; // 15秒SSH连接超时（从8秒增加）
+    private static final int METRICS_COLLECTION_TIMEOUT = 90000; // 90秒指标收集总超时（从45秒增加）
     
     @Autowired
     private SshConnectionService sshConnectionService;

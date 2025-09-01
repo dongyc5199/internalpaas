@@ -3,6 +3,7 @@ package com.cmict.internalpaas.model;
 import lombok.Data;
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "applications")
@@ -61,6 +62,35 @@ public class Application {
     private LocalDateTime updatedAt = LocalDateTime.now();
     
     private LocalDateTime lastStartedAt; // 上次启动时间
+    
+    // Configuration management relationships
+    @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ApplicationConfig> configurations; // All configuration versions for this application
+    
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "active_config_id")
+    private ApplicationConfig activeConfiguration; // Currently active configuration
+    
+    // Configuration management helper methods
+    public ApplicationConfig getActiveConfig() {
+        return this.activeConfiguration;
+    }
+    
+    public void setActiveConfig(ApplicationConfig config) {
+        this.activeConfiguration = config;
+        if (config != null) {
+            config.setApplication(this);
+            config.markAsActive();
+        }
+    }
+    
+    public boolean hasActiveConfiguration() {
+        return this.activeConfiguration != null;
+    }
+    
+    public int getConfigurationCount() {
+        return this.configurations != null ? this.configurations.size() : 0;
+    }
     
     @PreUpdate
     public void preUpdate() {

@@ -159,13 +159,22 @@
                                         <div class="col-sm-8 font-medium" th:text="${server.description}">服务器描述</div>
                                     </div>
                                 </div>
-                                <div class="info-row">
+                                <div class="info-row mb-2">
                                     <div class="row">
                                         <div class="col-sm-4 text-muted">状态：</div>
                                         <div class="col-sm-8">
                                             <span class="badge rounded-pill px-3 py-1" 
                                                   th:class="${server.active} ? 'bg-success' : 'bg-danger'" 
                                                   th:text="${server.active} ? '启用' : '禁用'">启用</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="row">
+                                        <div class="col-sm-4 text-muted">连接状态：</div>
+                                        <div class="col-sm-8">
+                                            <span id="connectionStatus" class="badge rounded-pill px-3 py-1 bg-secondary">检查中...</span>
+                                            <small id="connectionDescription" class="text-muted ms-2">正在检查连接状态</small>
                                         </div>
                                     </div>
                                 </div>
@@ -279,7 +288,64 @@
                     }
                 });
             }
+            
+            // 异步获取服务器连接状态
+            updateConnectionStatus();
         });
+
+        // 异步更新连接状态
+        function updateConnectionStatus() {
+            const serverId = document.getElementById('serverData').getAttribute('data-id');
+            const statusSpan = document.getElementById('connectionStatus');
+            const descSpan = document.getElementById('connectionDescription');
+            
+            fetch('/admin/servers/' + serverId + '/status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.connectionStatus) {
+                    // 更新状态显示
+                    statusSpan.textContent = getStatusText(data.connectionStatus);
+                    statusSpan.className = 'badge rounded-pill px-3 py-1 ' + getStatusClass(data.connectionStatus);
+                    descSpan.textContent = data.connectionDescription || '';
+                } else if (data.error) {
+                    statusSpan.textContent = '获取失败';
+                    statusSpan.className = 'badge rounded-pill px-3 py-1 bg-warning';
+                    descSpan.textContent = data.error;
+                }
+            })
+            .catch(error => {
+                console.error('获取连接状态失败:', error);
+                statusSpan.textContent = '获取失败';
+                statusSpan.className = 'badge rounded-pill px-3 py-1 bg-warning';
+                descSpan.textContent = '无法获取连接状态';
+            });
+        }
+
+        // 获取状态文本
+        function getStatusText(status) {
+            const statusMap = {
+                'CONNECTED': '已连接',
+                'MONITORING': '监控中',
+                'FAILED': '连接失败',
+                'TIMEOUT': '连接超时',
+                'AUTH_FAILED': '认证失败',
+                'UNKNOWN': '未知'
+            };
+            return statusMap[status] || '未知';
+        }
+
+        // 获取状态样式类
+        function getStatusClass(status) {
+            const classMap = {
+                'CONNECTED': 'bg-success',
+                'MONITORING': 'bg-info',
+                'FAILED': 'bg-danger',
+                'TIMEOUT': 'bg-danger', 
+                'AUTH_FAILED': 'bg-danger',
+                'UNKNOWN': 'bg-secondary'
+            };
+            return classMap[status] || 'bg-secondary';
+        }
 
         // 删除服务器函数
         function deleteServer(button) {

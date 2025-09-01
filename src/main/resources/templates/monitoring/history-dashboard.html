@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>历史监控数据分析 - 内部平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
+    <link th:href="@{/css/monitoring-history.css}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-chart-line"></i> 内部平台 - 历史监控
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/monitoring/dashboard">实时监控</a>
+                <a class="nav-link active" href="/monitoring/history/dashboard">历史数据</a>
+                <a class="nav-link" href="/admin/servers">服务器管理</a>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">退出</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- 页面头部 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2><i class="fas fa-history"></i> 历史监控数据分析</h2>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary" onclick="exportCurrentData()">
+                            <i class="fas fa-download"></i> 导出数据
+                        </button>
+                        <button class="btn btn-outline-info" onclick="showStatistics()">
+                            <i class="fas fa-chart-bar"></i> 统计信息
+                        </button>
+                        <button class="btn btn-outline-warning" onclick="showAnomalies()">
+                            <i class="fas fa-exclamation-triangle"></i> 异常事件
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 控制面板 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card monitoring-control-panel">
+                    <div class="card-header">
+                        <h5><i class="fas fa-cogs"></i> 监控控制面板</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <!-- 服务器选择 -->
+                            <div class="col-md-3">
+                                <label class="form-label">选择服务器</label>
+                                <select id="serverSelect" class="form-select" multiple>
+                                    <option th:each="server : ${servers}" 
+                                            th:value="${server.id}" 
+                                            th:text="${server.name}">服务器名称</option>
+                                </select>
+                                <div class="form-text">按住Ctrl可多选进行对比</div>
+                            </div>
+                            
+                            <!-- 时间范围快捷选择 -->
+                            <div class="col-md-3">
+                                <label class="form-label">快捷时间范围</label>
+                                <div class="btn-group-vertical w-100" role="group">
+                                    <input type="radio" class="btn-check" name="quickRange" id="range1h" value="1h">
+                                    <label class="btn btn-outline-primary btn-sm" for="range1h">最近1小时</label>
+                                    
+                                    <input type="radio" class="btn-check" name="quickRange" id="range6h" value="6h">
+                                    <label class="btn btn-outline-primary btn-sm" for="range6h">最近6小时</label>
+                                    
+                                    <input type="radio" class="btn-check" name="quickRange" id="range24h" value="24h" checked>
+                                    <label class="btn btn-outline-primary btn-sm" for="range24h">最近24小时</label>
+                                    
+                                    <input type="radio" class="btn-check" name="quickRange" id="range7d" value="7d">
+                                    <label class="btn btn-outline-primary btn-sm" for="range7d">最近7天</label>
+                                    
+                                    <input type="radio" class="btn-check" name="quickRange" id="range30d" value="30d">
+                                    <label class="btn btn-outline-primary btn-sm" for="range30d">最近30天</label>
+                                </div>
+                            </div>
+                            
+                            <!-- 自定义时间范围 -->
+                            <div class="col-md-4">
+                                <label class="form-label">自定义时间范围</label>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <input type="datetime-local" id="startTime" class="form-control" 
+                                               th:value="${defaultStartTime}">
+                                        <div class="form-text">开始时间</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="datetime-local" id="endTime" class="form-control" 
+                                               th:value="${defaultEndTime}">
+                                        <div class="form-text">结束时间</div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary btn-sm mt-2 w-100" onclick="loadCustomRange()">
+                                    <i class="fas fa-search"></i> 查询自定义范围
+                                </button>
+                            </div>
+                            
+                            <!-- 数据聚合选项 -->
+                            <div class="col-md-2">
+                                <label class="form-label">数据聚合</label>
+                                <select id="aggregationType" class="form-select">
+                                    <option value="none">原始数据</option>
+                                    <option value="hour" selected>按小时</option>
+                                    <option value="day">按天</option>
+                                </select>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="realtimeUpdate">
+                                    <label class="form-check-label" for="realtimeUpdate">
+                                        实时更新
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图表展示区域 -->
+        <div class="row">
+            <!-- CPU使用率图表 -->
+            <div class="col-lg-6 mb-4">
+                <div class="card chart-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6><i class="fas fa-microchip text-info"></i> CPU使用率趋势</h6>
+                        <div class="chart-controls">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="toggleChartType('cpuChart')">
+                                <i class="fas fa-chart-area"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="resetZoom('cpuChart')">
+                                <i class="fas fa-search-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="cpuChart" width="400" height="200"></canvas>
+                        <div class="chart-legend mt-2" id="cpuLegend"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 内存使用率图表 -->
+            <div class="col-lg-6 mb-4">
+                <div class="card chart-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6><i class="fas fa-memory text-success"></i> 内存使用率趋势</h6>
+                        <div class="chart-controls">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="toggleChartType('memoryChart')">
+                                <i class="fas fa-chart-area"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="resetZoom('memoryChart')">
+                                <i class="fas fa-search-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="memoryChart" width="400" height="200"></canvas>
+                        <div class="chart-legend mt-2" id="memoryLegend"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 磁盘使用率图表 -->
+            <div class="col-lg-6 mb-4">
+                <div class="card chart-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6><i class="fas fa-hdd text-warning"></i> 磁盘使用率趋势</h6>
+                        <div class="chart-controls">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="toggleChartType('diskChart')">
+                                <i class="fas fa-chart-area"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="resetZoom('diskChart')">
+                                <i class="fas fa-search-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="diskChart" width="400" height="200"></canvas>
+                        <div class="chart-legend mt-2" id="diskLegend"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 服务器比较图表 -->
+            <div class="col-lg-6 mb-4">
+                <div class="card chart-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6><i class="fas fa-balance-scale text-primary"></i> 服务器性能比较</h6>
+                        <div class="chart-controls">
+                            <select class="form-select form-select-sm" id="compareMetric" onchange="updateComparisonChart()">
+                                <option value="cpu">CPU对比</option>
+                                <option value="memory">内存对比</option>
+                                <option value="disk">磁盘对比</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="comparisonChart" width="400" height="200"></canvas>
+                        <div class="chart-legend mt-2" id="comparisonLegend"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 详细信息面板 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-pills card-header-pills" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="pill" href="#statisticsTab">
+                                    <i class="fas fa-chart-bar"></i> 统计信息
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="pill" href="#anomaliesTab">
+                                    <i class="fas fa-exclamation-triangle"></i> 异常事件
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="pill" href="#rankingTab">
+                                    <i class="fas fa-trophy"></i> 性能排名
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="pill" href="#realtimeTab">
+                                    <i class="fas fa-broadcast-tower"></i> 实时数据
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content">
+                            <!-- 统计信息标签页 -->
+                            <div class="tab-pane fade show active" id="statisticsTab">
+                                <div id="statisticsContent">
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                                        <p>请选择服务器并查询数据以查看统计信息</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 异常事件标签页 -->
+                            <div class="tab-pane fade" id="anomaliesTab">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">CPU阈值</label>
+                                        <div class="input-group">
+                                            <input type="number" id="cpuThreshold" class="form-control" value="80" min="0" max="100">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">内存阈值</label>
+                                        <div class="input-group">
+                                            <input type="number" id="memoryThreshold" class="form-control" value="80" min="0" max="100">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="anomaliesContent">
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                                        <p>请选择服务器并查询数据以查看异常事件</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 性能排名标签页 -->
+                            <div class="tab-pane fade" id="rankingTab">
+                                <div id="rankingContent">
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fas fa-trophy fa-2x mb-2"></i>
+                                        <p>请查询数据以查看服务器性能排名</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 实时数据标签页 -->
+                            <div class="tab-pane fade" id="realtimeTab">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">实时数据范围</label>
+                                        <select class="form-select" id="realtimeRange" onchange="updateRealtimeData()">
+                                            <option value="15">最近15分钟</option>
+                                            <option value="30" selected>最近30分钟</option>
+                                            <option value="60">最近1小时</option>
+                                            <option value="120">最近2小时</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">更新频率</label>
+                                        <select class="form-select" id="updateFrequency">
+                                            <option value="30">30秒</option>
+                                            <option value="60" selected>1分钟</option>
+                                            <option value="300">5分钟</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <canvas id="realtimeChart" width="400" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载遮罩 -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">加载中...</span>
+        </div>
+        <div class="mt-2">正在加载数据...</div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/zh.js"></script>
+    <!-- 自定义监控历史JavaScript -->
+    <script th:src="@{/js/monitoring-history.js}"></script>
+    
+    <script>
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMonitoringHistory();
+        });
+    </script>
+</body>
+</html>

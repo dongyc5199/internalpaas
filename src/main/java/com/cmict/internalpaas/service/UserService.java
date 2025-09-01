@@ -1,7 +1,11 @@
 package com.cmict.internalpaas.service;
 
+import com.cmict.internalpaas.dto.PasswordChangeDto;
+import com.cmict.internalpaas.dto.UserPreferencesDto;
+import com.cmict.internalpaas.dto.UserProfileDto;
 import com.cmict.internalpaas.dto.UserRegistrationDto;
 import com.cmict.internalpaas.model.User;
+import com.cmict.internalpaas.model.UserConfig;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.util.List;
@@ -68,4 +72,58 @@ public interface UserService extends UserDetailsService {
      * @return 是否存在
      */
     boolean existsByUsername(String username);
+    
+    // === 用户档案管理方法 ===
+    
+    /**
+     * 获取用户资料信息
+     * @param username 用户名
+     * @return 用户资料DTO
+     */
+    UserProfileDto getUserProfile(String username);
+    
+    /**
+     * 更新用户资料
+     * @param username 用户名
+     * @param profileDto 用户资料DTO
+     * @return 更新后的用户实体
+     */
+    User updateUserProfile(String username, UserProfileDto profileDto);
+    
+    /**
+     * 修改用户密码
+     * @param username 用户名
+     * @param passwordChangeDto 密码修改DTO
+     * @throws IllegalArgumentException 如果当前密码不正确或新密码格式不正确
+     */
+    void changePassword(String username, PasswordChangeDto passwordChangeDto);
+    
+    /**
+     * 获取用户偏好设置
+     * @param username 用户名
+     * @return 用户偏好设置DTO
+     */
+    UserPreferencesDto getUserPreferences(String username);
+    
+    /**
+     * 更新用户偏好设置
+     * @param username 用户名
+     * @param preferencesDto 偏好设置DTO
+     * @return 更新后的用户配置
+     */
+    UserConfig updateUserPreferences(String username, UserPreferencesDto preferencesDto);
+    
+    /**
+     * 获取或创建用户配置
+     * @param user 用户实体
+     * @return 用户配置
+     */
+    UserConfig getOrCreateUserConfig(User user);
+    
+    /**
+     * 更新用户最后登录信息
+     * @param username 用户名
+     * @param loginIp 登录IP
+     */
+    void updateLastLogin(String username, String loginIp);
 }

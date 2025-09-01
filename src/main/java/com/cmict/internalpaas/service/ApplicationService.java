@@ -93,6 +93,13 @@ public class ApplicationService {
     }
     
     /**
+     * 保存应用配置
+     */
+    public Application saveApplication(Application app) {
+        return applicationRepository.save(app);
+    }
+    
+    /**
      * 启动应用
      */
     public Application startApplication(Long appId) throws IOException {

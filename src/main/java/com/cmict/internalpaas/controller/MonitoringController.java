@@ -50,6 +50,10 @@ public class MonitoringController {
             }
             model.addAttribute("statusStats", statusStats);
             
+            // 添加历史监控和阈值管理的快捷链接
+            model.addAttribute("hasHistoryFeature", true);
+            model.addAttribute("hasThresholdFeature", true);
+            
             return "monitoring/dashboard";
         } catch (Exception e) {
             model.addAttribute("error", "加载监控数据失败: " + e.getMessage());

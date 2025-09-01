@@ -4,6 +4,8 @@ import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.User;
 import com.cmict.internalpaas.service.ServerService;
 import com.cmict.internalpaas.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,6 +23,8 @@ import java.util.Map;
 @RequestMapping("/admin")
 @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")  // 允许超级管理员和管理员访问
 public class AdminController {
+    
+    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
 
     @Autowired
     private ServerService serverService;
@@ -64,12 +68,13 @@ public class AdminController {
         Server server = serverService.findById(id)
             .orElseThrow(() -> new RuntimeException("服务器未找到"));
         
-        String connectionStatus = serverService.checkConnectionStatus(id);
-        String connectionDescription = serverService.getConnectionStatusDescription(
-            Server.ConnectionStatus.valueOf(connectionStatus));
+        // 使用服务器当前存储的连接状态，避免同步SSH检查导致页面卡住
+        Server.ConnectionStatus currentStatus = server.getConnectionStatus() != null ? 
+            server.getConnectionStatus() : Server.ConnectionStatus.UNKNOWN;
+        String connectionDescription = serverService.getConnectionStatusDescription(currentStatus);
         
         model.addAttribute("server", server);
-        model.addAttribute("connectionStatus", connectionStatus);
+        model.addAttribute("connectionStatus", currentStatus.name());
         model.addAttribute("connectionDescription", connectionDescription);
         
         return "admin/server-detail";
@@ -133,17 +138,50 @@ public class AdminController {
         return "redirect:/admin/servers";
     }
     
+    @GetMapping("/servers/{id}/status")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> getServerStatus(@PathVariable Long id) {
+        try {
+            Server server = serverService.findById(id)
+                .orElseThrow(() -> new RuntimeException("服务器未找到"));
+            
+            Map<String, String> status = new HashMap<>();
+            status.put("connectionStatus", server.getConnectionStatus() != null ? 
+                server.getConnectionStatus().name() : "UNKNOWN");
+            status.put("connectionDescription", serverService.getConnectionStatusDescription(
+                server.getConnectionStatus() != null ? server.getConnectionStatus() : Server.ConnectionStatus.UNKNOWN));
+            
+            return ResponseEntity.ok(status);
+        } catch (Exception e) {
+            logger.error("获取服务器状态失败，ID: {}", id, e);
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "获取状态失败: " + e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+
     @PostMapping("/servers/{id}/refresh")
     @ResponseBody
     public ResponseEntity<Map<String, String>> refreshServer(@PathVariable Long id) {
         try {
+            // 增加超时保护和更详细的日志
+            long startTime = System.currentTimeMillis();
+            logger.info("开始刷新服务器状态，ID: {}", id);
+            
             Server server = serverService.checkServerConnectionAndMetrics(id);
+            
+            long duration = System.currentTimeMillis() - startTime;
+            logger.info("服务器状态刷新完成，ID: {}, 耗时: {}ms, 状态: {}", 
+                id, duration, server.getConnectionStatus().name());
+            
             Map<String, String> response = new HashMap<>();
             response.put("status", "success");
-            response.put("message", "服务器状态已刷新");
+            response.put("message", String.format("服务器状态已刷新 (耗时: %dms)", duration));
             response.put("connectionStatus", server.getConnectionStatus().name());
+            response.put("duration", String.valueOf(duration));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            logger.error("刷新服务器状态失败，ID: {}", id, e);
             Map<String, String> error = new HashMap<>();
             error.put("status", "error");
             error.put("message", e.getMessage());
