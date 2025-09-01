@@ -35,30 +35,11 @@ public class MonitoringController {
     private MonitoringSchedulerService schedulerService;
     
     /**
-     * 监控主页面
+     * 监控主页面 - 重定向到服务器管理页面
      */
     @GetMapping("/dashboard")
-    public String dashboard(Model model) {
-        try {
-            List<Server> servers = serverService.getActiveServers();
-            model.addAttribute("servers", servers);
-            
-            // 添加服务器状态统计
-            Map<Server.ConnectionStatus, Long> statusStats = new HashMap<>();
-            for (Server server : servers) {
-                statusStats.merge(server.getConnectionStatus(), 1L, Long::sum);
-            }
-            model.addAttribute("statusStats", statusStats);
-            
-            // 添加历史监控和阈值管理的快捷链接
-            model.addAttribute("hasHistoryFeature", true);
-            model.addAttribute("hasThresholdFeature", true);
-            
-            return "monitoring/dashboard";
-        } catch (Exception e) {
-            model.addAttribute("error", "加载监控数据失败: " + e.getMessage());
-            return "monitoring/dashboard";
-        }
+    public String dashboard() {
+        return "redirect:/admin/servers";
     }
     
     /**
@@ -257,6 +238,41 @@ public class MonitoringController {
         }
     }
     
+    /**
+     * 用户活动监控页面
+     */
+    @GetMapping("/user-activity")
+    public String userActivity(Model model) {
+        try {
+            List<Server> servers = serverService.getActiveServers();
+            model.addAttribute("servers", servers);
+            
+            // 获取所有服务器的用户活动摘要
+            Map<Long, UserActivityService.UserActivitySummary> activitySummaries = new HashMap<>();
+            Map<Long, List<UserActivity>> activeUsersMap = new HashMap<>();
+            
+            for (Server server : servers) {
+                try {
+                    UserActivityService.UserActivitySummary summary = userActivityService.getUserActivitySummary(server.getId());
+                    activitySummaries.put(server.getId(), summary);
+                    
+                    List<UserActivity> activeUsers = userActivityService.getActiveUsers(server.getId());
+                    activeUsersMap.put(server.getId(), activeUsers);
+                } catch (Exception e) {
+                    // 单个服务器失败不影响其他服务器
+                }
+            }
+            
+            model.addAttribute("activitySummaries", activitySummaries);
+            model.addAttribute("activeUsersMap", activeUsersMap);
+            
+            return "monitoring/user-activity";
+        } catch (Exception e) {
+            model.addAttribute("error", "加载用户活动数据失败: " + e.getMessage());
+            return "monitoring/user-activity";
+        }
+    }
+
     /**
      * 手动触发全量健康检查
      */

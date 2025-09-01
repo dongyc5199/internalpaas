@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - 内部平台</title>
+    <!-- CSRF Meta Tags -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .metric-card { transition: transform 0.2s; }
+        .metric-card:hover { transform: translateY(-2px); }
+        .user-card { border-left: 4px solid #dee2e6; }
+        .user-card.admin { border-left-color: #28a745; }
+        .user-card.regular { border-left-color: #007bff; }
+        .user-card.first-login { border-left-color: #ffc107; }
+        
+        /* 响应式改进 */
+        @media (max-width: 768px) {
+            .btn-action {
+                margin-bottom: 5px;
+            }
+            
+            .table-responsive {
+                font-size: 0.8rem;
+            }
+            
+            .table-responsive th,
+            .table-responsive td {
+                padding: 0.5rem;
+            }
+        }
+        
+        /* 焦点样式改进 */
+        .btn:focus, .form-control:focus {
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        }
+        
+        /* 表格行悬停效果 */
+        .user-row:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/"><i class="fas fa-server"></i> 内部平台</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/apps">应用管理</a>
+                <a class="nav-link" href="/admin/servers">服务器管理</a>
+                <a class="nav-link active" href="/admin/users">用户管理</a>
+                <a class="nav-link" href="/admin/servers">服务器管理</a>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">退出</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <!-- 改进标题布局，确保标题在最左侧，菜单在同一行 -->
+                <div class="d-flex align-items-center mb-4">
+                    <h2 class="flex-grow-1" style="margin: 0;"><i class="fas fa-users"></i> 用户管理控制面板</h2>
+                    <div class="ms-auto">
+                        <button class="btn btn-outline-primary btn-action" onclick="refreshUsers()">
+                            <i class="fas fa-sync-alt"></i> 刷新数据
+                        </button>
+                        <a href="/admin/users/new" class="btn btn-primary btn-action">
+                            <i class="fas fa-user-plus"></i> 添加用户
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 消息显示 -->
+        <div th:if="${successMessage}" class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        </div>
+        <div th:if="${errorMessage}" class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 用户统计 -->
+        <div class="row mb-4">
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card metric-card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 th:text="${totalUsers ?: 0}">0</h4>
+                                <p>总用户数</p>
+                            </div>
+                            <i class="fas fa-users fa-2x align-self-center"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card metric-card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 th:text="${adminUsers ?: 0}">0</h4>
+                                <p>管理员</p>
+                            </div>
+                            <i class="fas fa-user-shield fa-2x align-self-center"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card metric-card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 th:text="${regularUsers ?: 0}">0</h4>
+                                <p>普通用户</p>
+                            </div>
+                            <i class="fas fa-user fa-2x align-self-center"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card metric-card bg-warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 th:text="${firstLoginUsers ?: 0}">0</h4>
+                                <p>首次登录</p>
+                            </div>
+                            <i class="fas fa-user-clock fa-2x align-self-center"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 用户列表 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-list"></i> 用户列表</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- 空状态 -->
+                        <div th:if="${#lists.isEmpty(users)}" class="text-center py-4">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">暂无用户数据，系统中还没有注册的用户</p>
+                            <a href="/admin/users/new" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> 添加用户
+                            </a>
+                        </div>
+
+                        <!-- 用户表格 -->
+                        <div class="table-responsive" th:unless="${#lists.isEmpty(users)}">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th><i class="fas fa-user"></i> 用户名</th>
+                                        <th><i class="fas fa-envelope"></i> 邮箱</th>
+                                        <th><i class="fas fa-user-tag"></i> 角色</th>
+                                        <th><i class="fas fa-folder"></i> 工作目录</th>
+                                        <th><i class="fas fa-calendar"></i> 注册时间</th>
+                                        <th><i class="fas fa-sign-in-alt"></i> 首次登录</th>
+                                        <th><i class="fas fa-cogs"></i> 操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="user : ${users}" class="user-row">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="user-avatar me-3">
+                                                    <i class="fas fa-user-circle fa-2x text-primary"></i>
+                                                </div>
+                                                <div>
+                                                    <strong th:text="${user.username}">username</strong>
+                                                    <br>
+                                                    <small class="text-muted">ID: <span th:text="${user.id}">1</span></small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span th:text="${user.email}">user@example.com</span>
+                                        </td>
+                                        <td>
+                                            <div th:each="role : ${user.roles}" class="mb-1">
+                                                <span class="badge" 
+                                                      th:classappend="${role.name() == 'SUPER_ADMIN'} ? 'bg-danger' : 
+                                                                     (${role.name() == 'ADMIN'} ? 'bg-warning' : 'bg-primary')"
+                                                      th:text="${role.name()}">USER</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <code class="text-muted" th:text="${user.workDirectory}">./workspaces/username</code>
+                                        </td>
+                                        <td>
+                                            <span th:text="${#temporals.format(user.createdAt, 'yyyy-MM-dd HH:mm')}">2024-01-01 12:00</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge" 
+                                                  th:classappend="${user.isFirstLogin} ? 'bg-success' : 'bg-secondary'"
+                                                  th:text="${user.isFirstLogin} ? '是' : '否'">是</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                        th:attr="data-user-id=${user.id}" onclick="viewUser(this.getAttribute('data-user-id'))">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <a th:href="@{/admin/users/{id}/edit(id=${user.id})}" class="btn btn-sm btn-outline-warning">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                                        th:attr="data-user-id=${user.id},data-user-name=${user.username}" onclick="deleteUser(this.getAttribute('data-user-id'), this.getAttribute('data-user-name'))">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function refreshUsers() {
+            location.reload();
+        }
+        
+        function viewUser(userId) {
+            window.location.href = '/admin/users/' + userId;
+        }
+        
+        function deleteUser(userId, username) {
+            if (confirm('⚠️ 确定要删除用户 "' + username + '" 吗？此操作不可恢复，请谨慎操作！')) {
+                // 创建表单并提交删除请求
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/admin/users/' + userId + '/delete';
+                
+                // 添加_method隐藏字段来模拟DELETE请求（如果需要的话）
+                const methodInput = document.createElement('input');
+                methodInput.type = 'hidden';
+                methodInput.name = '_method';
+                methodInput.value = 'DELETE';
+                form.appendChild(methodInput);
+                
+                // 添加CSRF token
+                const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+                
+                if (csrfToken) {
+                    // 添加隐藏字段
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = '_csrf';
+                    csrfInput.value = csrfToken;
+                    form.appendChild(csrfInput);
+                }
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
+</body>
+</html>

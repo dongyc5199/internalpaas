@@ -335,7 +335,7 @@
                 <a class="nav-link" href="/admin/servers">服务器管理</a>
                 <a class="nav-link" href="/admin/users">用户管理</a>
                 <a class="nav-link active" href="/terminal/manager?serverId=1">SSH终端</a>
-                <a class="nav-link" href="/monitoring/dashboard">监控面板</a>
+                <a class="nav-link" href="/admin/servers">服务器管理</a>
             </div>
             
             <!-- 退出按钮在最右侧 -->
@@ -1195,6 +1195,25 @@
 
         // 初始化终端管理器
         const terminalManager = new SSHTerminalManager();
+
+        // 检查URL参数并自动选择服务器
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const serverId = urlParams.get('serverId');
+            
+            if (serverId) {
+                // 自动选择服务器
+                const serverSelector = document.getElementById('serverSelector');
+                if (serverSelector) {
+                    serverSelector.value = serverId;
+                    
+                    // 自动创建新的终端连接
+                    setTimeout(() => {
+                        terminalManager.createNewTerminal();
+                    }, 500);
+                }
+            }
+        });
 
         // 页面卸载时清理资源
         window.addEventListener('beforeunload', () => {

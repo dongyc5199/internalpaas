@@ -272,6 +272,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserPreferencesDto getUserPreferences(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
@@ -298,6 +299,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserConfig updateUserPreferences(String username, UserPreferencesDto preferencesDto) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
@@ -331,13 +333,10 @@ public class UserServiceImpl implements UserService {
             return existingConfig.get();
         }
         
-        // 重新从数据库获取managed状态的User实体，然后创建UserConfig
-        User managedUser = userRepository.findById(user.getId())
-            .orElseThrow(() -> new RuntimeException("用户不存在"));
-            
+        // 由于使用了@MapsId，必须设置user字段以便Hibernate生成ID
         UserConfig newConfig = new UserConfig();
-        newConfig.setWorkDirectory(managedUser.getWorkDirectory());
-        newConfig.setUser(managedUser);
+        newConfig.setUser(user); // @MapsId要求必须设置关联实体
+        newConfig.setWorkDirectory(user.getWorkDirectory());
         
         return userConfigRepository.save(newConfig);
     }

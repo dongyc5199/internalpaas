@@ -285,19 +285,58 @@ public class MonitoringHistoryService {
                                            LocalDateTime endTime, String aggregationType) {
         switch (aggregationType.toLowerCase()) {
             case "hour":
-                Object[] hourlyData = metricsRepository.findHourlyAggregatedMetrics(serverId, startTime, endTime);
-                List<Object[]> hourlyResult = new ArrayList<>();
-                if (hourlyData != null) {
-                    hourlyResult.add(hourlyData);
-                }
-                return hourlyResult;
             case "day":
-                Object[] dailyData = metricsRepository.findDailyAggregatedMetrics(serverId, startTime, endTime);
-                List<Object[]> dailyResult = new ArrayList<>();
-                if (dailyData != null) {
-                    dailyResult.add(dailyData);
+                try {
+                    Object[] aggregatedData = aggregationType.equals("hour") 
+                        ? metricsRepository.findHourlyAggregatedMetrics(serverId, startTime, endTime)
+                        : metricsRepository.findDailyAggregatedMetrics(serverId, startTime, endTime);
+                    
+                    List<Object[]> result = new ArrayList<>();
+                    if (aggregatedData != null && aggregatedData.length > 0) {
+                        // aggregatedData实际上是包含一个Object[]的数组，需要取出内部数组
+                        Object[] actualData = (Object[]) aggregatedData[0];
+                        logger.info("聚合查询结果 - serverId: {}, 外层数组长度: {}, 内层数组长度: {}", 
+                            serverId, aggregatedData.length, actualData.length);
+                        
+                        if (actualData.length == 10) {
+                            // 数据正常，创建13元素数组
+                            Object[] fullRow = new Object[13];
+                            fullRow[0] = serverId;
+                            fullRow[1] = getServerName(serverId);
+                            fullRow[2] = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                            // actualData: [avgCpu, maxCpu, minCpu, avgMem, maxMem, minMem, avgDisk, maxDisk, minDisk, count]
+                            System.arraycopy(actualData, 0, fullRow, 3, 10);
+                            result.add(fullRow);
+                        } else {
+                            logger.warn("内层聚合数据长度异常 - serverId: {}, 期望10个元素，实际{}个元素", 
+                                serverId, actualData.length);
+                            // 创建空数据行避免数组越界
+                            Object[] emptyRow = new Object[13];
+                            emptyRow[0] = serverId;
+                            emptyRow[1] = getServerName(serverId);
+                            emptyRow[2] = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                            for (int i = 3; i < 13; i++) {
+                                emptyRow[i] = 0.0;
+                            }
+                            result.add(emptyRow);
+                        }
+                    } else {
+                        logger.warn("聚合查询返回空结果 - serverId: {}", serverId);
+                        // 创建空数据行
+                        Object[] emptyRow = new Object[13];
+                        emptyRow[0] = serverId;
+                        emptyRow[1] = getServerName(serverId);
+                        emptyRow[2] = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                        for (int i = 3; i < 13; i++) {
+                            emptyRow[i] = 0.0;
+                        }
+                        result.add(emptyRow);
+                    }
+                    return result;
+                } catch (Exception e) {
+                    logger.error("聚合数据处理失败 - serverId: {}", serverId, e);
+                    return new ArrayList<>();
                 }
-                return dailyResult;
             default:
                 // 返回原始数据
                 List<ServerMetrics> rawData = metricsRepository
@@ -338,6 +377,12 @@ public class MonitoringHistoryService {
         
         for (Object[] row : aggregatedData) {
             // row结构: serverId, serverName, timeGroup, avgCpu, maxCpu, minCpu, avgMem, maxMem, minMem, avgDisk, maxDisk, minDisk, count
+            // 实际从getAggregatedData返回的结构，timeGroup在索引2位置
+            if (row.length < 13) {
+                logger.warn("数组长度不足，期望13个元素，实际{}个元素", row.length);
+                continue;
+            }
+            
             LocalDateTime timeGroup = LocalDateTime.parse((String) row[2], DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             timestamps.add(timeGroup.format(formatter));
             
@@ -388,5 +433,13 @@ public class MonitoringHistoryService {
         chartData.put("disk", diskData);
         
         return chartData;
+    }
+    
+    /**
+     * 获取服务器名称
+     */
+    private String getServerName(Long serverId) {
+        Optional<Server> serverOpt = serverService.findById(serverId);
+        return serverOpt.map(Server::getName).orElse("Unknown Server");
     }
 }

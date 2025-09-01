@@ -1,7 +1,9 @@
 package com.cmict.internalpaas.controller;
 
 import com.cmict.internalpaas.model.Server;
+import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.model.User;
+import com.cmict.internalpaas.service.MonitoringSchedulerService;
 import com.cmict.internalpaas.service.ServerService;
 import com.cmict.internalpaas.service.UserService;
 import org.slf4j.Logger;
@@ -34,25 +36,39 @@ public class AdminController {
     
     @Autowired
     private PasswordEncoder passwordEncoder;
+    
+    @Autowired
+    private MonitoringSchedulerService schedulerService;
 
     @GetMapping("/servers")
     public String serverManagement(Model model) {
         List<Server> servers = serverService.getAllServers();
         model.addAttribute("servers", servers);
         
-        // 计算统计数据
+        // 计算统计数据 - 基于连接状态而不是active字段
         long totalServers = servers.size();
-        long activeServers = servers.stream().filter(Server::getActive).count();
-        long inactiveServers = totalServers - activeServers;
-        long monitoringServers = servers.stream()
-            .filter(server -> server.getConnectionStatus() != null && 
+        long activeServers = servers.stream()
+            .filter(server -> server.getConnectionStatus() == Server.ConnectionStatus.CONNECTED || 
                              server.getConnectionStatus() == Server.ConnectionStatus.MONITORING)
+            .count();
+        long inactiveServers = servers.stream()
+            .filter(server -> server.getConnectionStatus() == Server.ConnectionStatus.FAILED ||
+                             server.getConnectionStatus() == Server.ConnectionStatus.TIMEOUT ||
+                             server.getConnectionStatus() == Server.ConnectionStatus.AUTH_FAILED ||
+                             server.getConnectionStatus() == Server.ConnectionStatus.UNKNOWN)
+            .count();
+        long monitoringServers = servers.stream()
+            .filter(server -> server.getConnectionStatus() == Server.ConnectionStatus.MONITORING)
             .count();
         
         model.addAttribute("totalServers", totalServers);
         model.addAttribute("activeServers", activeServers);
         model.addAttribute("inactiveServers", inactiveServers);
         model.addAttribute("monitoringServers", monitoringServers);
+        
+        // 添加监控相关功能的标志
+        model.addAttribute("hasHistoryFeature", true);
+        model.addAttribute("hasThresholdFeature", true);
         
         return "admin/servers";
     }
@@ -92,6 +108,27 @@ public class AdminController {
         }
         return "redirect:/admin/servers";
     }
+    
+    /**
+     * 创建服务器API - 用于抽屉提交
+     */
+    @PostMapping("/api/servers")
+    @ResponseBody
+    public ResponseEntity<?> createServerApi(@ModelAttribute Server server) {
+        try {
+            Server savedServer = serverService.saveServerWithAutoCheck(server);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "服务器创建成功");
+            response.put("server", savedServer);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", e.getMessage());
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
 
     @GetMapping("/servers/{id}/edit")
     public String editServerForm(@PathVariable Long id, Model model) {
@@ -100,11 +137,62 @@ public class AdminController {
         model.addAttribute("server", server);
         return "admin/server-form";
     }
+    
+    /**
+     * 获取服务器数据API - 用于抽屉编辑
+     */
+    @GetMapping("/servers/{id}/data")
+    @ResponseBody
+    public ResponseEntity<?> getServerData(@PathVariable Long id) {
+        try {
+            Server server = serverService.findById(id)
+                .orElseThrow(() -> new RuntimeException("服务器未找到"));
+            
+            Map<String, Object> data = new HashMap<>();
+            data.put("id", server.getId());
+            data.put("name", server.getName());
+            data.put("description", server.getDescription());
+            data.put("hostname", server.getHostname());
+            data.put("port", server.getPort());
+            data.put("baseWorkDirectory", server.getBaseWorkDirectory());
+            data.put("sshPort", server.getSshPort());
+            data.put("sshUsername", server.getSshUsername());
+            data.put("sshPassword", server.getSshPassword());
+            data.put("active", server.getActive());
+            
+            return ResponseEntity.ok(data);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(404).body(error);
+        }
+    }
 
     @PostMapping("/servers/{id}/update")
     public String updateServer(@PathVariable Long id, @ModelAttribute Server server) {
         serverService.updateServer(id, server);
         return "redirect:/admin/servers";
+    }
+    
+    /**
+     * 更新服务器API - 用于抽屉提交
+     */
+    @PostMapping("/api/servers/{id}/update")
+    @ResponseBody
+    public ResponseEntity<?> updateServerApi(@PathVariable Long id, @ModelAttribute Server server) {
+        try {
+            Server updatedServer = serverService.updateServer(id, server);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "服务器更新成功");
+            response.put("server", updatedServer);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", e.getMessage());
+            return ResponseEntity.internalServerError().body(error);
+        }
     }
 
     @PostMapping("/servers/{id}/delete")
@@ -125,6 +213,64 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("errorMessage", "检查连接失败: " + e.getMessage());
         }
         return "redirect:/admin/servers";
+    }
+    
+    /**
+     * 获取服务器监控数据API - 与监控控制器保持一致
+     */
+    @GetMapping("/servers/{id}/metrics")
+    @ResponseBody
+    public ResponseEntity<?> getServerMetrics(@PathVariable Long id) {
+        try {
+            // 首先检查服务器是否存在
+            if (!serverService.findById(id).isPresent()) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "服务器不存在");
+                error.put("serverId", String.valueOf(id));
+                return ResponseEntity.status(404).body(error);
+            }
+            
+            ServerMetrics metrics = serverService.getServerLatestMetrics(id);
+            
+            if (metrics == null) {
+                // 如果没有数据，尝试刷新
+                metrics = serverService.refreshServerMetrics(id);
+            }
+            
+            if (metrics == null) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "监控数据不可用");
+                error.put("serverId", String.valueOf(id));
+                return ResponseEntity.status(404).body(error);
+            }
+            
+            return ResponseEntity.ok(metrics);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            error.put("serverId", String.valueOf(id));
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+    
+    /**
+     * 手动触发健康检查API
+     */
+    @PostMapping("/servers/trigger-health-check")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> triggerHealthCheck() {
+        try {
+            schedulerService.triggerFullHealthCheck();
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "健康检查已触发");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
     
     @PostMapping("/servers/check-all-connections")
@@ -204,11 +350,16 @@ public class AdminController {
             !user.getRoles().contains(User.Role.ADMIN) && 
             !user.getRoles().contains(User.Role.SUPER_ADMIN)).count();
         long firstLoginUsers = users.stream().filter(User::getIsFirstLogin).count();
+        // 计算近期活跃用户（7天内登录）
+        long recentUsers = users.stream().filter(user -> 
+            user.getLastLoginTime() != null && 
+            user.getLastLoginTime().isAfter(java.time.LocalDateTime.now().minusDays(7))).count();
         
         model.addAttribute("totalUsers", totalUsers);
         model.addAttribute("adminUsers", adminUsers);
         model.addAttribute("regularUsers", regularUsers);
         model.addAttribute("firstLoginUsers", firstLoginUsers);
+        model.addAttribute("recentUsers", recentUsers);
         
         return "admin/users";
     }

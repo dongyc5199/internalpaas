@@ -1,292 +1,1086 @@
 <!DOCTYPE html>
-<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" class="theme-light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>用户管理 - 内部平台</title>
-    <!-- CSRF Meta Tags -->
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>用户管理 - Dev Debug Platform</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/common-dashboard.css">
+    <link rel="stylesheet" href="/css/dashboard-theme.css">
+    <link rel="stylesheet" href="/css/drawer.css">
     <style>
-        .metric-card { transition: transform 0.2s; }
-        .metric-card:hover { transform: translateY(-2px); }
-        .user-card { border-left: 4px solid #dee2e6; }
-        .user-card.admin { border-left-color: #28a745; }
-        .user-card.regular { border-left-color: #007bff; }
-        .user-card.first-login { border-left-color: #ffc107; }
-        
-        /* 响应式改进 */
+        :root {
+            --primary-color: #6366f1;
+            --primary-light: #e0e7ff;
+            --primary-dark: #4f46e5;
+            --success-color: #10b981;
+            --success-light: #d1fae5;
+            --danger-color: #ef4444;
+            --danger-light: #fee2e2;
+            --warning-color: #f59e0b;
+            --warning-light: #fef3c7;
+            --info-color: #3b82f6;
+            --info-light: #dbeafe;
+            --text-color: #1f2937;
+            --text-color-secondary: #6b7280;
+            --text-color-tertiary: #9ca3af;
+            --background-color: #f9fafb;
+            --background-light: #ffffff;
+            --background-dark: #f3f4f6;
+            --background-hover: #f3f4f6;
+            --card-background: #ffffff;
+            --card-background-hover: #f8fafc;
+            --card-border: #e5e7eb;
+            --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --card-shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.15);
+            --border-color: #e5e7eb;
+            --border-color-dark: #d1d5db;
+            --border-radius-sm: 4px;
+            --border-radius-md: 8px;
+            --border-radius-lg: 12px;
+            --border-radius-xl: 16px;
+            --border-radius-full: 9999px;
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --font-size-sm: 0.875rem;
+            --font-size-base: 1rem;
+            --font-size-md: 1rem;
+            --font-size-lg: 1.125rem;
+            --font-size-xl: 1.5rem;
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.3s ease;
+            --nav-background: #ffffff;
+            --nav-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --sidebar-background: #ffffff;
+            --sidebar-shadow: 1px 0 3px rgba(0, 0, 0, 0.1);
+            --heading-color: #111827;
+            --heading-color-secondary: #374151;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-background);
+            border-right: 1px solid var(--border-color);
+            padding: 1rem 0;
+        }
+
+        .nav-item {
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-color-secondary);
+            text-decoration: none;
+            border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+            margin: 0 0.5rem;
+            transition: all var(--transition-fast);
+        }
+
+        .nav-link.active,
+        .nav-item.active .nav-link {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            margin-right: 0.75rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            background-color: var(--background-color);
+        }
+
+        .content-header {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--heading-color);
+            margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            background: var(--card-background);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+
+        .action-btn.primary {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--card-shadow);
+        }
+
+        /* 现代化统计卡片网格 */
+        .modern-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .modern-stat-card {
+            background: linear-gradient(135deg, var(--card-background) 0%, var(--background-light) 100%);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modern-stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+        }
+
+        .modern-stat-card.total::before { background: linear-gradient(90deg, #8b5cf6, #7c3aed); }
+        .modern-stat-card.admin::before { background: linear-gradient(90deg, #ef4444, #dc2626); }
+        .modern-stat-card.developer::before { background: linear-gradient(90deg, #10b981, #059669); }
+        .modern-stat-card.recent::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
+
+        .modern-stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-light);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon-wrapper {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.25rem;
+        }
+
+        .stat-icon-wrapper.total { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .stat-icon-wrapper.admin { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .stat-icon-wrapper.developer { background: linear-gradient(135deg, #10b981, #059669); }
+        .stat-icon-wrapper.recent { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+        .stat-trend {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+        }
+
+        .stat-trend.positive { background: rgba(16, 185, 129, 0.1); color: #059669; }
+        .stat-trend.neutral { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
+
+        .stat-body {
+            text-align: left;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-color);
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 0.125rem;
+        }
+
+        .stat-sublabel {
+            font-size: 0.75rem;
+            color: var(--text-color-secondary);
+        }
+
+        /* 现代化用户卡片网格 */
+        .modern-user-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .modern-user-card {
+            background: var(--card-background);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .modern-user-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #10b981, #059669);
+            transition: background 0.3s ease;
+        }
+
+        .modern-user-card.admin::before {
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+        }
+
+        .modern-user-card.super-admin::before {
+            background: linear-gradient(90deg, #8b5cf6, #7c3aed);
+        }
+
+        .modern-user-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+            border-color: var(--primary-light);
+        }
+
+        /* 用户卡片头部 */
+        .user-card-header {
+            padding: 1.5rem 1.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .user-avatar-large {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .modern-user-card.admin .user-avatar-large {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .modern-user-card.super-admin .user-avatar-large {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+        .user-basic-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0 0 0.25rem 0;
+        }
+
+        .user-email {
+            font-size: 0.875rem;
+            color: var(--text-color-secondary);
+            margin: 0 0 0.75rem 0;
+        }
+
+        .user-roles {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .role-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .role-badge.super-admin {
+            background: rgba(139, 92, 246, 0.1);
+            color: #7c3aed;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .role-badge.admin {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .role-badge.developer {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        /* 用户统计信息 */
+        .user-stats-section {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .stats-grid-small {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-item-label {
+            font-size: 0.75rem;
+            color: var(--text-color-secondary);
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+
+        .stat-item-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        /* 用户操作区 */
+        .user-actions {
+            padding: 1.5rem;
+            background: var(--background-light);
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .user-action-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.75rem 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--card-background);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .user-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-action-btn.edit:hover {
+            background: var(--info-color);
+            color: white;
+            border-color: var(--info-color);
+        }
+
+        .user-action-btn.reset:hover {
+            background: var(--warning-color);
+            color: white;
+            border-color: var(--warning-color);
+        }
+
+        .user-action-btn.delete:hover {
+            background: var(--danger-color);
+            color: white;
+            border-color: var(--danger-color);
+        }
+
+        .user-action-btn i {
+            font-size: 1rem;
+        }
+
+        /* 现代化空状态 */
+        .modern-empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            text-align: center;
+            min-height: 400px;
+        }
+
+        .empty-illustration {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .empty-illustration i {
+            font-size: 4rem;
+            color: var(--text-color-tertiary);
+            opacity: 0.6;
+        }
+
+        .illustration-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, var(--primary-light) 0%, transparent 70%);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { opacity: 0.2; transform: translate(-50%, -50%) scale(0.9); }
+            to { opacity: 0.4; transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        .empty-content {
+            max-width: 400px;
+        }
+
+        .empty-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 0.75rem;
+        }
+
+        .empty-description {
+            font-size: 1rem;
+            color: var(--text-color-secondary);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .empty-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .modern-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            border: none;
+        }
+
+        .modern-action-btn.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .modern-action-btn.primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .modern-action-btn.secondary {
+            background: var(--card-background);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .modern-action-btn.secondary:hover {
+            background: var(--background-hover);
+            border-color: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        /* 顶部导航栏样式 */
+        .top-nav {
+            background: var(--nav-background);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--nav-shadow);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .brand-icon {
+            font-size: 1.5rem;
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            border-radius: var(--border-radius-md);
+            text-decoration: none;
+            color: var(--text-color);
+            transition: background-color 0.2s ease;
+        }
+
+        .user-profile:hover {
+            background: var(--background-hover);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .greeting {
+            font-size: 0.75rem;
+            color: var(--text-color-secondary);
+        }
+
+        .username {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .theme-toggle, .logout-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: none;
+            background: var(--background-hover);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover, .logout-btn:hover {
+            background: var(--primary-light);
+        }
+
+        /* 消息提示样式 */
+        .message-container {
+            margin-bottom: 1rem;
+            border-radius: var(--border-radius-md);
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .message-container.success {
+            background: var(--success-light);
+            border: 1px solid var(--success-color);
+        }
+
+        .message-container.error {
+            background: var(--danger-light);
+            border: 1px solid var(--danger-color);
+        }
+
+        .message-content {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .message-close {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            cursor: pointer;
+            color: var(--text-color-secondary);
+        }
+
         @media (max-width: 768px) {
-            .btn-action {
-                margin-bottom: 5px;
+            .dashboard-container {
+                flex-direction: column;
             }
             
-            .table-responsive {
-                font-size: 0.8rem;
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding: 0.5rem 0;
             }
             
-            .table-responsive th,
-            .table-responsive td {
-                padding: 0.5rem;
+            .main-content {
+                padding: 1rem;
             }
-        }
-        
-        /* 焦点样式改进 */
-        .btn:focus, .form-control:focus {
-            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-        }
-        
-        /* 表格行悬停效果 */
-        .user-row:hover {
-            background-color: rgba(0, 0, 0, 0.02);
+            
+            .modern-stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 1rem;
+            }
+            
+            .modern-user-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
         }
     </style>
+    <script src="/js/theme.js"></script>
 </head>
-<body>
-    <!-- 顶部导航 -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/"><i class="fas fa-server"></i> 内部平台</a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/apps">应用管理</a>
-                <a class="nav-link" href="/admin/servers">服务器管理</a>
-                <a class="nav-link active" href="/admin/users">用户管理</a>
-                <a class="nav-link" href="/monitoring/dashboard">监控面板</a>
+<body class="dashboard-body admin-theme theme-body">
+    <!-- 顶部导航栏 -->
+    <nav class="top-nav">
+        <div class="nav-brand">
+            <div class="brand-icon">🚀</div>
+            <span class="brand-text">Dev Debug Platform</span>
+        </div>
+        <div class="nav-menu">
+            <a href="/profile" class="user-profile" title="查看个人档案">
+                <div class="user-avatar">
+                    <span th:text="${#strings.substring(username ?: 'A', 0, 1)}">A</span>
+                </div>
+                <div class="user-info">
+                    <span class="greeting">欢迎回来</span>
+                    <span class="username" th:text="${username ?: '管理员'}">管理员</span>
+                </div>
+            </a>
+            <div class="nav-actions">
+                <div class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+                    <span class="theme-icon">🌙</span>
+                </div>
                 <form th:action="@{/logout}" method="post" style="display: inline;">
-                    <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">退出</button>
+                    <button type="submit" class="logout-btn" title="安全退出">
+                        <span class="logout-icon">🚪</span>
+                    </button>
                 </form>
             </div>
         </div>
     </nav>
 
-    <div class="container-fluid mt-4">
-        <div class="row">
-            <div class="col-12">
-                <!-- 改进标题布局，确保标题在最左侧，菜单在同一行 -->
-                <div class="d-flex align-items-center mb-4">
-                    <h2 class="flex-grow-1" style="margin: 0;"><i class="fas fa-users"></i> 用户管理控制面板</h2>
-                    <div class="ms-auto">
-                        <button class="btn btn-outline-primary btn-action" onclick="refreshUsers()">
-                            <i class="fas fa-sync-alt"></i> 刷新数据
+    <!-- 主要内容区域 -->
+    <div class="dashboard-container theme-container">
+        <!-- 侧边栏导航 -->
+        <aside class="sidebar">
+            <nav>
+                <div class="nav-item">
+                    <a href="/admin/dashboard" class="nav-link">
+                        <span class="nav-icon">📊</span>
+                        <span>工作台概览</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/admin/servers" class="nav-link">
+                        <span class="nav-icon">🖥️</span>
+                        <span>服务器管理</span>
+                    </a>
+                </div>
+                <div class="nav-item active">
+                    <a href="/admin/users" class="nav-link">
+                        <span class="nav-icon">👥</span>
+                        <span>用户管理</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- 主内容区域 -->
+        <main class="main-content">
+            <div class="content-header">
+                <h1 class="page-title">用户管理</h1>
+                <div class="header-actions">
+                    <button class="action-btn" onclick="refreshAllData()">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>刷新数据</span>
+                    </button>
+                    <button class="action-btn primary" onclick="addUser()">
+                        <i class="fas fa-plus"></i>
+                        <span>添加用户</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 消息显示 -->
+            <div th:if="${successMessage}" class="message-container success">
+                <div class="message-content">
+                    <span class="message-icon">✅</span>
+                    <span class="message-text" th:text="${successMessage}"></span>
+                    <button class="message-close" onclick="this.parentElement.parentElement.remove()">×</button>
+                </div>
+            </div>
+
+            <div th:if="${errorMessage}" class="message-container error">
+                <div class="message-content">
+                    <span class="message-icon">⚠️</span>
+                    <span class="message-text" th:text="${errorMessage}"></span>
+                    <button class="message-close" onclick="this.parentElement.parentElement.remove()">×</button>
+                </div>
+            </div>
+
+            <!-- 现代化统计面板 -->
+            <div class="modern-stats-grid">
+                <div class="modern-stat-card total">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper total">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-trend positive">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                    </div>
+                    <div class="stat-body">
+                        <div class="stat-number" th:text="${totalUsers ?: 0}">0</div>
+                        <div class="stat-label">总用户数</div>
+                        <div class="stat-sublabel">系统注册用户</div>
+                    </div>
+                </div>
+                <div class="modern-stat-card admin">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper admin">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <div class="stat-trend neutral">
+                            <i class="fas fa-minus"></i>
+                        </div>
+                    </div>
+                    <div class="stat-body">
+                        <div class="stat-number" th:text="${adminUsers ?: 0}">0</div>
+                        <div class="stat-label">管理员用户</div>
+                        <div class="stat-sublabel">具有管理权限</div>
+                    </div>
+                </div>
+                <div class="modern-stat-card developer">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper developer">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <div class="stat-trend positive">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                    </div>
+                    <div class="stat-body">
+                        <div class="stat-number" th:text="${regularUsers ?: 0}">0</div>
+                        <div class="stat-label">开发者用户</div>
+                        <div class="stat-sublabel">普通开发用户</div>
+                    </div>
+                </div>
+                <div class="modern-stat-card recent">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper recent">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-trend neutral">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                    <div class="stat-body">
+                        <div class="stat-number" th:text="${recentUsers ?: 0}">0</div>
+                        <div class="stat-label">近期活跃</div>
+                        <div class="stat-sublabel">7天内登录</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 现代化空状态 -->
+            <div th:if="${users == null or #lists.isEmpty(users)}" class="modern-empty-state">
+                <div class="empty-illustration">
+                    <i class="fas fa-users"></i>
+                    <div class="illustration-glow"></div>
+                </div>
+                <div class="empty-content">
+                    <h2 class="empty-title">暂无用户数据</h2>
+                    <p class="empty-description">系统中还没有注册的用户，点击下方按钮添加第一个用户。</p>
+                    <div class="empty-actions">
+                        <button class="modern-action-btn primary" onclick="addUser()">
+                            <i class="fas fa-plus"></i>
+                            <span>添加用户</span>
                         </button>
-                        <a href="/admin/users/new" class="btn btn-primary btn-action">
-                            <i class="fas fa-user-plus"></i> 添加用户
-                        </a>
+                        <button class="modern-action-btn secondary" onclick="refreshAllData()">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>刷新数据</span>
+                        </button>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- 消息显示 -->
-        <div th:if="${successMessage}" class="row mb-3">
-            <div class="col-12">
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fas fa-check-circle me-2"></i>
-                    <span th:text="${successMessage}"></span>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            </div>
-        </div>
-        <div th:if="${errorMessage}" class="row mb-3">
-            <div class="col-12">
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <span th:text="${errorMessage}"></span>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 用户统计 -->
-        <div class="row mb-4">
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card metric-card bg-primary text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 th:text="${totalUsers ?: 0}">0</h4>
-                                <p>总用户数</p>
+            <!-- 现代化用户网格 -->
+            <div th:unless="${users == null or #lists.isEmpty(users)}" class="modern-user-grid">
+                <div th:each="user : ${users}" class="modern-user-card" 
+                     th:classappend="${#sets.contains(user.roles, T(com.cmict.internalpaas.model.User.Role).SUPER_ADMIN) ? 'super-admin' : 
+                                     #sets.contains(user.roles, T(com.cmict.internalpaas.model.User.Role).ADMIN) ? 'admin' : 'developer'}">
+                    
+                    <!-- 用户卡片头部 -->
+                    <div class="user-card-header">
+                        <div class="user-avatar-large">
+                            <span th:text="${#strings.substring(user.username, 0, 1)}">U</span>
+                        </div>
+                        <div class="user-basic-info">
+                            <h4 class="user-name" th:text="${user.username}">username</h4>
+                            <p class="user-email" th:text="${user.email}">email@example.com</p>
+                            <div class="user-roles">
+                                <span th:each="role : ${user.roles}" 
+                                      class="role-badge" 
+                                      th:classappend="${role.name() == 'SUPER_ADMIN' ? 'super-admin' : 
+                                                      role.name() == 'ADMIN' ? 'admin' : 'developer'}"
+                                      th:text="${role.name() == 'SUPER_ADMIN' ? '超级管理员' : 
+                                               role.name() == 'ADMIN' ? '管理员' : '开发者'}">角色</span>
                             </div>
-                            <i class="fas fa-users fa-2x align-self-center"></i>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card metric-card bg-success text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 th:text="${adminUsers ?: 0}">0</h4>
-                                <p>管理员</p>
+                    
+                    <!-- 用户统计信息 -->
+                    <div class="user-stats-section">
+                        <div class="stats-grid-small">
+                            <div class="stat-item">
+                                <div class="stat-item-label">登录次数</div>
+                                <div class="stat-item-value" th:text="${user.loginCount ?: 0}">0</div>
                             </div>
-                            <i class="fas fa-user-shield fa-2x align-self-center"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card metric-card bg-info text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 th:text="${regularUsers ?: 0}">0</h4>
-                                <p>普通用户</p>
+                            <div class="stat-item">
+                                <div class="stat-item-label">注册时间</div>
+                                <div class="stat-item-value" th:text="${#temporals.format(user.createdAt, 'MM-dd')}">时间</div>
                             </div>
-                            <i class="fas fa-user fa-2x align-self-center"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card metric-card bg-warning text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 th:text="${firstLoginUsers ?: 0}">0</h4>
-                                <p>首次登录</p>
+                            <div class="stat-item" th:if="${user.lastLoginTime}">
+                                <div class="stat-item-label">最后登录</div>
+                                <div class="stat-item-value" th:text="${#temporals.format(user.lastLoginTime, 'MM-dd HH:mm')}">时间</div>
                             </div>
-                            <i class="fas fa-user-clock fa-2x align-self-center"></i>
+                            <div class="stat-item" th:unless="${user.lastLoginTime}">
+                                <div class="stat-item-label">状态</div>
+                                <div class="stat-item-value">首次登录</div>
+                            </div>
                         </div>
+                    </div>
+                    
+                    <!-- 用户操作区 -->
+                    <div class="user-actions">
+                        <button class="user-action-btn edit edit-user-btn" th:data-user-id="${user.id}" title="编辑用户">
+                            <i class="fas fa-edit"></i>
+                            <span>编辑</span>
+                        </button>
+                        <button class="user-action-btn reset reset-password-btn" th:data-user-id="${user.id}" title="重置密码">
+                            <i class="fas fa-key"></i>
+                            <span>重置密码</span>
+                        </button>
+                        <button class="user-action-btn delete delete-user-btn" 
+                                th:data-user-id="${user.id}" 
+                                th:data-username="${user.username}"
+                                th:if="${user.username != 'root'}" title="删除用户">
+                            <i class="fas fa-trash"></i>
+                            <span>删除</span>
+                        </button>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- 用户列表 -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-list"></i> 用户列表</h5>
-                    </div>
-                    <div class="card-body">
-                        <!-- 空状态 -->
-                        <div th:if="${#lists.isEmpty(users)}" class="text-center py-4">
-                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">暂无用户数据，系统中还没有注册的用户</p>
-                            <a href="/admin/users/new" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> 添加用户
-                            </a>
-                        </div>
-
-                        <!-- 用户表格 -->
-                        <div class="table-responsive" th:unless="${#lists.isEmpty(users)}">
-                            <table class="table table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th><i class="fas fa-user"></i> 用户名</th>
-                                        <th><i class="fas fa-envelope"></i> 邮箱</th>
-                                        <th><i class="fas fa-user-tag"></i> 角色</th>
-                                        <th><i class="fas fa-folder"></i> 工作目录</th>
-                                        <th><i class="fas fa-calendar"></i> 注册时间</th>
-                                        <th><i class="fas fa-sign-in-alt"></i> 首次登录</th>
-                                        <th><i class="fas fa-cogs"></i> 操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr th:each="user : ${users}" class="user-row">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="user-avatar me-3">
-                                                    <i class="fas fa-user-circle fa-2x text-primary"></i>
-                                                </div>
-                                                <div>
-                                                    <strong th:text="${user.username}">username</strong>
-                                                    <br>
-                                                    <small class="text-muted">ID: <span th:text="${user.id}">1</span></small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span th:text="${user.email}">user@example.com</span>
-                                        </td>
-                                        <td>
-                                            <div th:each="role : ${user.roles}" class="mb-1">
-                                                <span class="badge" 
-                                                      th:classappend="${role.name() == 'SUPER_ADMIN'} ? 'bg-danger' : 
-                                                                     (${role.name() == 'ADMIN'} ? 'bg-warning' : 'bg-primary')"
-                                                      th:text="${role.name()}">USER</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <code class="text-muted" th:text="${user.workDirectory}">./workspaces/username</code>
-                                        </td>
-                                        <td>
-                                            <span th:text="${#temporals.format(user.createdAt, 'yyyy-MM-dd HH:mm')}">2024-01-01 12:00</span>
-                                        </td>
-                                        <td>
-                                            <span class="badge" 
-                                                  th:classappend="${user.isFirstLogin} ? 'bg-success' : 'bg-secondary'"
-                                                  th:text="${user.isFirstLogin} ? '是' : '否'">是</span>
-                                        </td>
-                                        <td>
-                                            <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-outline-primary" 
-                                                        th:attr="data-user-id=${user.id}" onclick="viewUser(this.getAttribute('data-user-id'))">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                                <a th:href="@{/admin/users/{id}/edit(id=${user.id})}" class="btn btn-sm btn-outline-warning">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                        th:attr="data-user-id=${user.id},data-user-name=${user.username}" onclick="deleteUser(this.getAttribute('data-user-id'), this.getAttribute('data-user-name'))">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/drawer.js"></script>
     <script>
-        function refreshUsers() {
+        // 用户管理相关功能
+        function refreshAllData() {
             location.reload();
         }
         
-        function viewUser(userId) {
-            window.location.href = '/admin/users/' + userId;
+        function addUser() {
+            // 使用抽屉组件
+            if (typeof drawerManager !== 'undefined' && drawerManager) {
+                drawerManager.openUserDrawer();
+            } else {
+                // 后备方案：跳转到原页面
+                window.location.href = '/admin/users/new';
+            }
         }
         
-        function deleteUser(userId, username) {
-            if (confirm('⚠️ 确定要删除用户 "' + username + '" 吗？此操作不可恢复，请谨慎操作！')) {
-                // 创建表单并提交删除请求
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '/admin/users/' + userId + '/delete';
-                
-                // 添加_method隐藏字段来模拟DELETE请求（如果需要的话）
-                const methodInput = document.createElement('input');
-                methodInput.type = 'hidden';
-                methodInput.name = '_method';
-                methodInput.value = 'DELETE';
-                form.appendChild(methodInput);
-                
-                // 添加CSRF token
+        function editUser(userId) {
+            // 使用抽屉组件
+            if (typeof drawerManager !== 'undefined' && drawerManager) {
+                drawerManager.openUserDrawer(userId);
+            } else {
+                // 后备方案：跳转到原页面
+                window.location.href = `/admin/users/${userId}/edit`;
+            }
+        }
+        
+        function resetPassword(userId) {
+            if (confirm('确定要重置该用户的密码吗？')) {
                 const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
                 const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
                 
-                if (csrfToken) {
-                    // 添加隐藏字段
-                    const csrfInput = document.createElement('input');
-                    csrfInput.type = 'hidden';
-                    csrfInput.name = '_csrf';
-                    csrfInput.value = csrfToken;
-                    form.appendChild(csrfInput);
-                }
-                
-                document.body.appendChild(form);
-                form.submit();
+                fetch(`/admin/users/${userId}/reset-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        alert('密码重置成功，新密码已发送到用户邮箱');
+                        location.reload();
+                    } else {
+                        alert('密码重置失败，请重试');
+                    }
+                }).catch(error => {
+                    console.error('重置密码失败:', error);
+                    alert('密码重置失败，请检查网络连接');
+                });
             }
+        }
+        
+        function deleteUser(userId, username) {
+            if (confirm(`确定要删除用户 "${username}" 吗？此操作不可撤销！`)) {
+                const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+                
+                fetch(`/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        [csrfHeader]: csrfToken
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        alert('用户删除成功');
+                        location.reload();
+                    } else {
+                        alert('用户删除失败，请重试');
+                    }
+                }).catch(error => {
+                    console.error('删除用户失败:', error);
+                    alert('用户删除失败，请检查网络连接');
+                });
+            }
+        }
+        
+        // 添加事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            // 编辑用户按钮
+            document.querySelectorAll('.edit-user-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    editUser(userId);
+                });
+            });
+            
+            // 重置密码按钮
+            document.querySelectorAll('.reset-password-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    resetPassword(userId);
+                });
+            });
+            
+            // 删除用户按钮
+            document.querySelectorAll('.delete-user-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    const username = this.getAttribute('data-username');
+                    deleteUser(userId, username);
+                });
+            });
+        });
+        
+        function exportUsers() {
+            window.location.href = '/admin/users/export';
         }
     </script>
 </body>

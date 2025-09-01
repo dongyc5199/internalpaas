@@ -9,7 +9,7 @@ public class UserConfig {
     @Id
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, cascade = {})
     @MapsId // 将此实体的主键与User实体的主键关联
     @JoinColumn(name = "user_id")
     private User user;

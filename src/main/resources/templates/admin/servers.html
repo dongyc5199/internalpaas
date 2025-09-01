@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" class="theme-light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,238 +8,1377 @@
     <title>服务器管理与监控 - 内部平台</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/common-dashboard.css">
+    <link rel="stylesheet" href="/css/dashboard-theme.css">
+    <link rel="stylesheet" href="/css/drawer.css">
     <style>
-        .metric-card { transition: transform 0.2s; }
-        .metric-card:hover { transform: translateY(-2px); }
-        .server-card { border-left: 4px solid #dee2e6; }
-        .server-card.active { border-left-color: #28a745; }
-        .server-card.inactive { border-left-color: #dc3545; }
-        .server-card.monitoring { border-left-color: #007bff; }
+        :root {
+            --primary-color: #6366f1;
+            --primary-light: #e0e7ff;
+            --primary-dark: #4f46e5;
+            --success-color: #10b981;
+            --success-light: #d1fae5;
+            --danger-color: #ef4444;
+            --danger-light: #fee2e2;
+            --warning-color: #f59e0b;
+            --warning-light: #fef3c7;
+            --info-color: #3b82f6;
+            --info-light: #dbeafe;
+            --text-color: #1f2937;
+            --text-color-secondary: #6b7280;
+            --text-color-tertiary: #9ca3af;
+            --background-color: #f9fafb;
+            --background-light: #ffffff;
+            --background-dark: #f3f4f6;
+            --background-hover: #f3f4f6;
+            --card-background: #ffffff;
+            --card-background-hover: #f8fafc;
+            --card-border: #e5e7eb;
+            --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --card-shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.15);
+            --border-color: #e5e7eb;
+            --border-color-dark: #d1d5db;
+            --border-radius-sm: 4px;
+            --border-radius-md: 8px;
+            --border-radius-lg: 12px;
+            --border-radius-xl: 16px;
+            --border-radius-full: 9999px;
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --font-size-sm: 0.875rem;
+            --font-size-base: 1rem;
+            --font-size-md: 1rem;
+            --font-size-lg: 1.125rem;
+            --font-size-xl: 1.5rem;
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.3s ease;
+            --nav-background: #ffffff;
+            --nav-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --sidebar-background: #ffffff;
+            --sidebar-shadow: 1px 0 3px rgba(0, 0, 0, 0.1);
+            --heading-color: #111827;
+            --heading-color-secondary: #374151;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-background);
+            border-right: 1px solid var(--border-color);
+            padding: 1rem 0;
+        }
+
+        .nav-item {
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-color-secondary);
+            text-decoration: none;
+            border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+            margin: 0 0.5rem;
+            transition: all var(--transition-fast);
+        }
+
+        .nav-link.active,
+        .nav-item.active .nav-link {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            margin-right: 0.75rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            background-color: var(--background-color);
+        }
+
+        .content-header {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--heading-color);
+            margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            background: var(--card-background);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+
+        .action-btn.primary {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--card-shadow);
+        }
+
+        /* 现代化统计卡片网格 */
+        .modern-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .modern-stat-card {
+            background: linear-gradient(135deg, var(--card-background) 0%, var(--background-light) 100%);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modern-stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+        }
+
+        .modern-stat-card.online::before { background: linear-gradient(90deg, #10b981, #059669); }
+        .modern-stat-card.offline::before { background: linear-gradient(90deg, #ef4444, #dc2626); }
+        .modern-stat-card.monitoring::before { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+        .modern-stat-card.total::before { background: linear-gradient(90deg, #8b5cf6, #7c3aed); }
+
+        .modern-stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-light);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon-wrapper {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.25rem;
+        }
+
+        .stat-icon-wrapper.online { background: linear-gradient(135deg, #10b981, #059669); }
+        .stat-icon-wrapper.offline { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .stat-icon-wrapper.monitoring { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .stat-icon-wrapper.total { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+        .stat-trend {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+        }
+
+        .stat-trend.positive { background: rgba(16, 185, 129, 0.1); color: #059669; }
+        .stat-trend.negative { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+        .stat-trend.neutral { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
+
+        .stat-body {
+            text-align: left;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-color);
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 0.125rem;
+        }
+
+        .stat-sublabel {
+            font-size: 0.75rem;
+            color: var(--text-color-secondary);
+        }
+
+        /* 现代化服务器卡片网格 */
+        .modern-server-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .modern-server-card {
+            background: var(--card-background);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .modern-server-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+            transition: background 0.3s ease;
+        }
+
+        .modern-server-card.server-online::before {
+            background: linear-gradient(90deg, #10b981, #059669);
+        }
+
+        .modern-server-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+            border-color: var(--primary-light);
+        }
+
+        /* 服务器卡片头部 */
+        .server-card-header {
+            padding: 1.5rem 1.5rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .server-info {
+            flex: 1;
+        }
+
+        .server-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .server-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        .server-status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .server-status-badge.status-online {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .server-status-badge.status-offline {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .server-status-badge i {
+            font-size: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .server-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-color-secondary);
+        }
+
+        .meta-item i {
+            color: var(--text-color-tertiary);
+            width: 16px;
+            text-align: center;
+        }
+
+        /* 操作下拉菜单 */
+        .server-actions-dropdown {
+            position: relative;
+        }
+
+        .dropdown-toggle {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: var(--background-hover);
+            color: var(--text-color-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dropdown-toggle:hover {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            padding: 0.5rem 0;
+            min-width: 160px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            color: var(--text-color);
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background: var(--background-hover);
+        }
+
+        .dropdown-item.danger {
+            color: var(--danger-color);
+        }
+
+        .dropdown-item.danger:hover {
+            background: var(--danger-light);
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 0.5rem 0;
+        }
+
+        /* SSH连接状态 */
+        .ssh-connection-status {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .connection-indicator {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+        }
+
+        .connection-indicator.connected {
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .connection-indicator.failed {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .connection-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+        }
+
+        .connection-indicator.connected .connection-icon {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+        }
+
+        .connection-indicator.failed .connection-icon {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+        }
+
+        .connection-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .connection-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-color-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .connection-status {
+            font-size: 0.875rem;
+            color: var(--text-color);
+        }
+
+        /* 基础信息区域 */
+        .server-basic-info {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem;
+        }
+
+        .info-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-color-secondary);
+            font-weight: 500;
+        }
+
+        .info-label i {
+            color: var(--text-color-tertiary);
+            width: 16px;
+            text-align: center;
+        }
+
+        .info-value {
+            color: var(--text-color);
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.8rem;
+            background: var(--background-dark);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* 实时监控指标 */
+        .real-time-metrics {
+            background: var(--background-light);
+        }
+
+        .metrics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .metrics-header:hover {
+            background: var(--background-hover);
+        }
+
+        .metrics-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .metrics-title i {
+            color: var(--primary-color);
+        }
+
+        .metrics-toggle {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: none;
+            background: var(--background-hover);
+            color: var(--text-color-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .metrics-toggle:hover {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .metrics-content {
+            padding: 0 1.5rem 1.5rem;
+        }
+
+        .metrics-grid-modern {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .metric-card {
+            background: var(--card-background);
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: scale(1.02);
+        }
+
+        .metric-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+            color: white;
+        }
+
+        .metric-icon.cpu { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .metric-icon.memory { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .metric-icon.disk { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+        .metric-data {
+            margin-bottom: 0.75rem;
+        }
+
+        .metric-value {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.125rem;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--text-color-secondary);
+        }
+
+        .metric-chart {
+            margin-top: 0.5rem;
+        }
+
+        .usage-bar {
+            height: 6px;
+            background: var(--background-dark);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .usage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .metrics-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .last-update-time {
+            font-size: 0.75rem;
+            color: var(--text-color-tertiary);
+        }
+
+        .refresh-metrics-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            border: none;
+            background: var(--primary-light);
+            color: var(--primary-color);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .refresh-metrics-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* 快捷操作区 */
+        .server-quick-actions {
+            padding: 1.5rem;
+            background: var(--background-light);
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .quick-action-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.75rem 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--card-background);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .quick-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .quick-action-btn.primary:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .quick-action-btn.secondary:hover {
+            background: var(--info-color);
+            color: white;
+            border-color: var(--info-color);
+        }
+
+        .quick-action-btn.info:hover {
+            background: var(--warning-color);
+            color: white;
+            border-color: var(--warning-color);
+        }
+
+        .quick-action-btn i {
+            font-size: 1rem;
+        }
+
+        /* 现代化空状态 */
+        .modern-empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            text-align: center;
+            min-height: 400px;
+        }
+
+        .empty-illustration {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .empty-illustration i {
+            font-size: 4rem;
+            color: var(--text-color-tertiary);
+            opacity: 0.6;
+        }
+
+        .illustration-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, var(--primary-light) 0%, transparent 70%);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { opacity: 0.2; transform: translate(-50%, -50%) scale(0.9); }
+            to { opacity: 0.4; transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        .empty-content {
+            max-width: 400px;
+        }
+
+        .empty-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 0.75rem;
+        }
+
+        .empty-description {
+            font-size: 1rem;
+            color: var(--text-color-secondary);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .empty-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .modern-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            border: none;
+        }
+
+        .modern-action-btn.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .modern-action-btn.primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .modern-action-btn.secondary {
+            background: var(--card-background);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .modern-action-btn.secondary:hover {
+            background: var(--background-hover);
+            border-color: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        /* 顶部导航栏样式 */
+        .top-nav {
+            background: var(--nav-background);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--nav-shadow);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .brand-icon {
+            font-size: 1.5rem;
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            border-radius: var(--border-radius-md);
+            text-decoration: none;
+            color: var(--text-color);
+            transition: background-color 0.2s ease;
+        }
+
+        .user-profile:hover {
+            background: var(--background-hover);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .greeting {
+            font-size: 0.75rem;
+            color: var(--text-color-secondary);
+        }
+
+        .username {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .theme-toggle, .logout-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: none;
+            background: var(--background-hover);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover, .logout-btn:hover {
+            background: var(--primary-light);
+        }
+
+        /* 消息提示样式 */
+        .message-container {
+            margin-bottom: 1rem;
+            border-radius: var(--border-radius-md);
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .message-container.success {
+            background: var(--success-light);
+            border: 1px solid var(--success-color);
+        }
+
+        .message-container.error {
+            background: var(--danger-light);
+            border: 1px solid var(--danger-color);
+        }
+
+        .message-content {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .message-close {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            cursor: pointer;
+            color: var(--text-color-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding: 0.5rem 0;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .modern-stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 1rem;
+            }
+            
+            .modern-server-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
     </style>
+    <script src="/js/theme.js"></script>
 </head>
-<body>
-    <!-- 顶部导航 -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/"><i class="fas fa-server"></i> 内部平台</a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/apps">应用管理</a>
-                <a class="nav-link active" href="/admin/servers">服务器管理与监控</a>
-                <a class="nav-link" href="/admin/users">用户管理</a>
+<body class="dashboard-body admin-theme theme-body">
+    <!-- 顶部导航栏 -->
+    <nav class="top-nav">
+        <div class="nav-brand">
+            <div class="brand-icon">🚀</div>
+            <span class="brand-text">Dev Debug Platform</span>
+        </div>
+        <div class="nav-menu">
+            <a href="/profile" class="user-profile" title="查看个人档案">
+                <div class="user-avatar">
+                    <span th:text="${#strings.substring(username ?: 'A', 0, 1)}">A</span>
+                </div>
+                <div class="user-info">
+                    <span class="greeting">欢迎回来</span>
+                    <span class="username" th:text="${username ?: '管理员'}">管理员</span>
+                </div>
+            </a>
+            <div class="nav-actions">
+                <div class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+                    <span class="theme-icon">🌙</span>
+                </div>
                 <form th:action="@{/logout}" method="post" style="display: inline;">
-                    <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">退出</button>
+                    <button type="submit" class="logout-btn" title="安全退出">
+                        <span class="logout-icon">🚪</span>
+                    </button>
                 </form>
             </div>
         </div>
     </nav>
 
-    <div class="container-fluid mt-4">
-        <div class="row">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2><i class="fas fa-tachometer-alt"></i> 服务器管理与监控</h2>
-                    <div>
-                        <button class="btn btn-outline-primary" onclick="refreshAllData()">
-                            <i class="fas fa-sync-alt"></i> 刷新所有数据
-                        </button>
-                        <button class="btn btn-outline-warning" onclick="triggerHealthCheck()">
-                            <i class="fas fa-heartbeat"></i> 健康检查
-                        </button>
-                        <button class="btn btn-outline-success" onclick="addServer()">
-                            <i class="fas fa-plus"></i> 添加服务器
-                        </button>
-                    </div>
+    <!-- 主要内容区域 -->
+    <div class="dashboard-container theme-container">
+        <!-- 侧边栏导航 -->
+        <aside class="sidebar">
+            <nav>
+                <div class="nav-item">
+                    <a href="/admin/dashboard" class="nav-link">
+                        <span class="nav-icon">📊</span>
+                        <span>工作台概览</span>
+                    </a>
                 </div>
-            </div>
-        </div>
+                <div class="nav-item active">
+                    <a href="/admin/servers" class="nav-link">
+                        <span class="nav-icon">🖥️</span>
+                        <span>服务器管理</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/admin/users" class="nav-link">
+                        <span class="nav-icon">👥</span>
+                        <span>用户管理</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
 
-        <!-- 消息显示 -->
-        <div th:if="${successMessage}" class="row mb-3">
-            <div class="col-12">
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fas fa-check-circle me-2"></i>
-                    <span th:text="${successMessage}"></span>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <!-- 主内容区域 -->
+        <main class="main-content">
+            <div class="content-header">
+                <h1 class="page-title">服务器管理与监控</h1>
+                <div class="header-actions">
+                    <button class="action-btn" onclick="refreshAllData()">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>刷新数据</span>
+                    </button>
+                    <button class="action-btn primary" onclick="addServer()">
+                        <i class="fas fa-plus"></i>
+                        <span>添加服务器</span>
+                    </button>
                 </div>
             </div>
-        </div>
-        <div th:if="${errorMessage}" class="row mb-3">
-            <div class="col-12">
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <span th:text="${errorMessage}"></span>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            </div>
-        </div>
 
-        <!-- 服务器状态统计 -->
-        <div class="row mb-4">
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card metric-card bg-success text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 th:text="${activeServers ?: 0}">0</h4>
-                                <p>在线服务器</p>
-                            </div>
-                            <i class="fas fa-check-circle fa-2x align-self-center"></i>
-                        </div>
-                    </div>
+            <!-- 消息显示 -->
+            <div th:if="${successMessage}" class="message-container success">
+                <div class="message-content">
+                    <span class="message-icon">✅</span>
+                    <span class="message-text" th:text="${successMessage}"></span>
+                    <button class="message-close" onclick="this.parentElement.parentElement.remove()">×</button>
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card metric-card bg-danger text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 th:text="${inactiveServers ?: 0}">0</h4>
-                                <p>离线服务器</p>
-                            </div>
-                            <i class="fas fa-times-circle fa-2x align-self-center"></i>
-                        </div>
-                    </div>
+            <div th:if="${errorMessage}" class="message-container error">
+                <div class="message-content">
+                    <span class="message-icon">⚠️</span>
+                    <span class="message-text" th:text="${errorMessage}"></span>
+                    <button class="message-close" onclick="this.parentElement.parentElement.remove()">×</button>
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card metric-card bg-primary text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 th:text="${monitoringServers ?: 0}">0</h4>
-                                <p>监控中</p>
-                            </div>
-                            <i class="fas fa-eye fa-2x align-self-center"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card metric-card bg-secondary text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 th:text="${totalServers ?: 1}">1</h4>
-                                <p>总服务器数</p>
-                            </div>
-                            <i class="fas fa-server fa-2x align-self-center"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- 服务器列表 -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-list"></i> 服务器状态</h5>
-                    </div>
-                    <div class="card-body">
-                        <!-- 空状态 -->
-                        <div class="row" th:if="${servers == null or #lists.isEmpty(servers)}">
-                            <div class="col-12 text-center py-4">
-                                <i class="fas fa-server fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">暂无服务器配置，请添加第一个服务器来开始使用开发调试平台</p>
-                                <button class="btn btn-primary" onclick="addServer()">
-                                    <i class="fas fa-plus"></i> 添加第一个服务器
-                                </button>
-                            </div>
+            <!-- 服务器状态统计 -->
+            <div class="modern-stats-grid">
+                <div class="modern-stat-card online">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper online">
+                            <i class="fas fa-server"></i>
                         </div>
+                        <div class="stat-trend positive">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                    </div>
+                    <div class="stat-body">
+                        <div class="stat-number" th:text="${activeServers ?: 0}">0</div>
+                        <div class="stat-label">在线服务器</div>
+                        <div class="stat-sublabel">正常运行中</div>
+                    </div>
+                </div>
+                
+                <div class="modern-stat-card offline">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper offline">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-trend negative" th:if="${inactiveServers > 0}">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                    </div>
+                    <div class="stat-body">
+                        <div class="stat-number" th:text="${inactiveServers ?: 0}">0</div>
+                        <div class="stat-label">离线服务器</div>
+                        <div class="stat-sublabel">需要注意</div>
+                    </div>
+                </div>
+                
+                <div class="modern-stat-card monitoring">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper monitoring">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-trend neutral">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                    </div>
+                    <div class="stat-body">
+                        <div class="stat-number" th:text="${monitoringServers ?: 0}">0</div>
+                        <div class="stat-label">监控中</div>
+                        <div class="stat-sublabel">实时数据</div>
+                    </div>
+                </div>
+                
+                <div class="modern-stat-card total">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper total">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <div class="stat-trend">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                    </div>
+                    <div class="stat-body">
+                        <div class="stat-number" th:text="${totalServers ?: 1}">1</div>
+                        <div class="stat-label">总计</div>
+                        <div class="stat-sublabel">所有服务器</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 现代化空状态 -->
+                <div th:if="${servers == null or #lists.isEmpty(servers)}" class="modern-empty-state">
+                    <div class="empty-illustration">
+                        <i class="fas fa-server"></i>
+                        <div class="illustration-glow"></div>
+                    </div>
+                    <div class="empty-content">
+                        <h3 class="empty-title">还没有服务器</h3>
+                        <p class="empty-description">添加你的第一个服务器开始管理和监控基础设施</p>
+                        <div class="empty-actions">
+                            <button class="modern-action-btn primary" onclick="addServer()">
+                                <i class="fas fa-plus"></i>
+                                <span>添加服务器</span>
+                            </button>
+                            <button class="modern-action-btn secondary" onclick="showImportDialog()">
+                                <i class="fas fa-upload"></i>
+                                <span>批量导入</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 现代化服务器卡片网格 -->
+                <div class="modern-server-grid" th:if="${servers != null and not #lists.isEmpty(servers)}">
+                    <div th:each="server : ${servers}" class="modern-server-card" 
+                         th:classappend="${server.active} ? 'server-online' : 'server-offline'">
                         
-                        <!-- 服务器卡片列表 -->
-                        <div class="row" th:each="server : ${servers}">
-                            <div class="col-lg-6 col-xl-4 mb-3">
-                                <div class="card server-card" 
-                                     th:classappend="${server.active} ? 'active' : 'inactive'">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <h6 class="card-title mb-0">
-                                                <a th:href="@{/admin/servers/{id}(id=${server.id})}" 
-                                                   th:text="${server.name}" 
-                                                   class="text-decoration-none">服务器名称</a>
-                                            </h6>
-                                            <span class="badge" 
-                                                  th:classappend="${server.active} ? 'bg-success' : 'bg-danger'"
-                                                  th:text="${server.active} ? '在线' : '离线'">状态</span>
-                                        </div>
-                                        <p class="card-text small text-muted mb-2">
-                                            <i class="fas fa-globe"></i> 主机: <span th:text="${server.hostname}">localhost</span>
-                                        </p>
-                                        <p class="card-text small text-muted mb-2">
-                                            <i class="fas fa-plug"></i> 端口: <span th:text="${server.port}">8080</span>
-                                        </p>
-                                        <p class="card-text small text-muted mb-3">
-                                            <i class="fas fa-folder"></i> 工作目录: <span th:text="${server.baseWorkDirectory}">./workspaces</span>
-                                        </p>
-                                        
-                                        <!-- 实时监控数据 -->
-                                        <div class="monitoring-metrics mb-3" th:data-server-id="${server.id}" style="display: none;">
-                                            <div class="row g-2">
-                                                <div class="col-4">
-                                                    <div class="text-center p-2" style="background-color: #f8f9fa; border-radius: 4px;">
-                                                        <i class="fas fa-microchip text-primary"></i>
-                                                        <div class="cpu-usage font-weight-bold" style="font-size: 0.8rem;">--%</div>
-                                                        <div style="font-size: 0.7rem; color: #6c757d;">CPU</div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-4">
-                                                    <div class="text-center p-2" style="background-color: #f8f9fa; border-radius: 4px;">
-                                                        <i class="fas fa-memory text-success"></i>
-                                                        <div class="memory-usage font-weight-bold" style="font-size: 0.8rem;">--%</div>
-                                                        <div style="font-size: 0.7rem; color: #6c757d;">内存</div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-4">
-                                                    <div class="text-center p-2" style="background-color: #f8f9fa; border-radius: 4px;">
-                                                        <i class="fas fa-hdd text-warning"></i>
-                                                        <div class="disk-usage font-weight-bold" style="font-size: 0.8rem;">--%</div>
-                                                        <div style="font-size: 0.7rem; color: #6c757d;">磁盘</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="text-center mt-2">
-                                                <small class="text-muted last-update">正在获取监控数据...</small>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- SSH状态 -->
-                                        <div class="mb-3">
-                                            <span class="badge" 
-                                                  th:classappend="${server.connectionStatus != null ? 
-                                                                 (server.connectionStatus.name() == 'CONNECTED' ? 'bg-success' : 
-                                                                  server.connectionStatus.name() == 'FAILED' ? 'bg-danger' :
-                                                                  server.connectionStatus.name() == 'TIMEOUT' ? 'bg-warning' :
-                                                                  server.connectionStatus.name() == 'AUTH_FAILED' ? 'bg-danger' :
-                                                                  server.connectionStatus.name() == 'MONITORING' ? 'bg-primary' : 'bg-secondary') : 'bg-secondary'}"
-                                                  th:text="${server.connectionStatus != null} ? 'SSH: ' + ${server.connectionStatus.description} : 'SSH: 未知'">
-                                                SSH状态
-                                            </span>
-                                        </div>
-                                        
-                                        <div class="mt-3">
-                                            <button class="btn btn-sm btn-outline-primary" th:data-id="${server.id}" onclick="viewServer(this)">
-                                                <i class="fas fa-chart-line"></i> 详细信息
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-info" th:data-id="${server.id}" onclick="toggleMonitoring(this)">
-                                                <i class="fas fa-eye"></i> <span class="monitor-text">显示监控</span>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-success" th:data-id="${server.id}" onclick="refreshServer(this)">
-                                                <i class="fas fa-sync-alt"></i> 刷新
-                                            </button>
-                                        </div>
+                        <!-- 卡片头部 -->
+                        <div class="server-card-header">
+                            <div class="server-info">
+                                <div class="server-title">
+                                    <h3 class="server-name" th:text="${server.name}">服务器名称</h3>
+                                    <div class="server-status-badge" 
+                                         th:classappend="${server.active} ? 'status-online' : 'status-offline'">
+                                        <i class="fas fa-circle"></i>
+                                        <span th:text="${server.active} ? '在线' : '离线'">状态</span>
                                     </div>
+                                </div>
+                                <div class="server-meta">
+                                    <span class="meta-item">
+                                        <i class="fas fa-globe"></i>
+                                        <span th:text="${server.hostname}">localhost</span>
+                                    </span>
+                                    <span class="meta-item">
+                                        <i class="fas fa-ethernet"></i>
+                                        <span th:text="${server.port}">22</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="server-actions-dropdown">
+                                <button class="dropdown-toggle" onclick="toggleDropdown(this)">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a th:href="@{/admin/servers/{id}(id=${server.id})}" class="dropdown-item">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>详细信息</span>
+                                    </a>
+                                    <button class="dropdown-item" th:data-id="${server.id}" onclick="refreshServer(this)">
+                                        <i class="fas fa-sync-alt"></i>
+                                        <span>刷新状态</span>
+                                    </button>
+                                    <button class="dropdown-item" onclick="editServer(this)" th:data-id="${server.id}">
+                                        <i class="fas fa-edit"></i>
+                                        <span>编辑配置</span>
+                                    </button>
+                                    <div class="dropdown-divider"></div>
+                                    <button class="dropdown-item danger" onclick="deleteServer(this)" th:data-id="${server.id}">
+                                        <i class="fas fa-trash"></i>
+                                        <span>删除服务器</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- SSH连接状态 -->
+                        <div class="ssh-connection-status">
+                            <div class="connection-indicator" 
+                                 th:classappend="${server.connectionStatus != null ? 
+                                                (server.connectionStatus.name() == 'CONNECTED' ? 'connected' : 
+                                                 server.connectionStatus.name() == 'FAILED' ? 'failed' :
+                                                 server.connectionStatus.name() == 'TIMEOUT' ? 'timeout' :
+                                                 server.connectionStatus.name() == 'AUTH_FAILED' ? 'auth-failed' :
+                                                 server.connectionStatus.name() == 'MONITORING' ? 'monitoring' : 'unknown') : 'unknown'}">
+                                <div class="connection-icon">
+                                    <i class="fas fa-terminal"></i>
+                                </div>
+                                <div class="connection-info">
+                                    <span class="connection-label">SSH连接</span>
+                                    <span class="connection-status" 
+                                          th:text="${server.connectionStatus != null} ? ${server.connectionStatus.description} : '未知状态'">未知状态</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 服务器基础信息 -->
+                        <div class="server-basic-info">
+                            <div class="info-row">
+                                <span class="info-label">
+                                    <i class="fas fa-folder"></i>
+                                    工作目录
+                                </span>
+                                <span class="info-value" th:text="${server.baseWorkDirectory}">./workspaces</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 实时监控指标 -->
+                        <div class="real-time-metrics" th:data-server-id="${server.id}">
+                            <div class="metrics-header">
+                                <span class="metrics-title">
+                                    <i class="fas fa-chart-area"></i>
+                                    实时监控
+                                </span>
+                                <button class="metrics-toggle" th:data-id="${server.id}" onclick="toggleServerMetrics(this)">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                            </div>
+                            <div class="metrics-content" style="display: none;">
+                                <div class="metrics-grid-modern">
+                                    <div class="metric-card">
+                                        <div class="metric-icon cpu">
+                                            <i class="fas fa-microchip"></i>
+                                        </div>
+                                        <div class="metric-data">
+                                            <div class="metric-value cpu-usage">--%</div>
+                                            <div class="metric-label">CPU使用率</div>
+                                        </div>
+                                        <div class="metric-chart">
+                                            <div class="usage-bar">
+                                                <div class="usage-fill cpu-fill" style="width: 0%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="metric-card">
+                                        <div class="metric-icon memory">
+                                            <i class="fas fa-memory"></i>
+                                        </div>
+                                        <div class="metric-data">
+                                            <div class="metric-value memory-usage">--%</div>
+                                            <div class="metric-label">内存使用率</div>
+                                        </div>
+                                        <div class="metric-chart">
+                                            <div class="usage-bar">
+                                                <div class="usage-fill memory-fill" style="width: 0%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="metric-card">
+                                        <div class="metric-icon disk">
+                                            <i class="fas fa-hdd"></i>
+                                        </div>
+                                        <div class="metric-data">
+                                            <div class="metric-value disk-usage">--%</div>
+                                            <div class="metric-label">磁盘使用率</div>
+                                        </div>
+                                        <div class="metric-chart">
+                                            <div class="usage-bar">
+                                                <div class="usage-fill disk-fill" style="width: 0%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="metrics-footer">
+                                    <span class="last-update-time">正在获取监控数据...</span>
+                                    <button class="refresh-metrics-btn" th:data-id="${server.id}" onclick="fetchServerMetrics(this.dataset.id)">
+                                        <i class="fas fa-sync-alt"></i>
+                                        刷新
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 快捷操作区 -->
+                        <div class="server-quick-actions">
+                            <button class="quick-action-btn primary" th:data-id="${server.id}" onclick="openTerminal(this)" title="打开SSH终端">
+                                <i class="fas fa-terminal"></i>
+                                <span>终端</span>
+                            </button>
+                            <button class="quick-action-btn secondary" th:data-id="${server.id}" onclick="viewServer(this)" title="查看详情">
+                                <i class="fas fa-eye"></i>
+                                <span>详情</span>
+                            </button>
+                            <button class="quick-action-btn info" th:data-id="${server.id}" onclick="viewLogs(this)" title="查看日志">
+                                <i class="fas fa-file-alt"></i>
+                                <span>日志</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/drawer.js"></script>
     <script>
         let monitoringInterval;
         let activeMonitoringServers = new Set();
@@ -255,10 +1394,10 @@
         function triggerHealthCheck() {
             const button = event.target.closest('button');
             const originalText = button.innerHTML;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 检查中...';
+            button.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">检查中...</span>';
             button.disabled = true;
             
-            fetch('/monitoring/trigger-health-check', {
+            fetch('/admin/servers/trigger-health-check', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -283,7 +1422,13 @@
         }
         
         function addServer() {
-            window.location.href = '/admin/servers/new';
+            // 使用抽屉组件
+            if (typeof drawerManager !== 'undefined' && drawerManager) {
+                drawerManager.openServerDrawer();
+            } else {
+                // 后备方案：跳转到原页面
+                window.location.href = '/admin/servers/new';
+            }
         }
         
         function viewServer(element) {
@@ -295,7 +1440,7 @@
             const serverId = element.getAttribute('data-id');
             const button = element;
             const originalText = button.innerHTML;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 刷新中...';
+            button.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">刷新中...</span>';
             button.disabled = true;
             
             fetch('/admin/servers/' + serverId + '/refresh', {
@@ -323,31 +1468,117 @@
             });
         }
         
-        function toggleMonitoring(element) {
+        function toggleServerMetrics(element) {
             const serverId = element.getAttribute('data-id');
-            const monitoringDiv = document.querySelector(`div[data-server-id="${serverId}"].monitoring-metrics`);
-            const buttonText = element.querySelector('.monitor-text');
-            const isHidden = monitoringDiv.style.display === 'none';
+            const card = element.closest('.modern-server-card');
+            const metricsContent = card.querySelector('.metrics-content');
+            const toggleIcon = element.querySelector('i');
+            const isHidden = metricsContent.style.display === 'none';
             
             if (isHidden) {
-                monitoringDiv.style.display = 'block';
-                buttonText.textContent = '隐藏监控';
+                metricsContent.style.display = 'block';
+                toggleIcon.className = 'fas fa-chevron-up';
                 activeMonitoringServers.add(serverId);
                 fetchServerMetrics(serverId);
             } else {
-                monitoringDiv.style.display = 'none';
-                buttonText.textContent = '显示监控';
+                metricsContent.style.display = 'none';
+                toggleIcon.className = 'fas fa-chevron-down';
                 activeMonitoringServers.delete(serverId);
             }
         }
         
+        function toggleMetrics(element) {
+            const content = element.parentElement.querySelector('.metrics-content');
+            const icon = element.querySelector('.metrics-toggle i');
+            const isHidden = content.style.display === 'none';
+            
+            if (isHidden) {
+                content.style.display = 'block';
+                icon.className = 'fas fa-chevron-up';
+            } else {
+                content.style.display = 'none';
+                icon.className = 'fas fa-chevron-down';
+            }
+        }
+        
+        function toggleDropdown(button) {
+            const dropdown = button.nextElementSibling;
+            const isOpen = dropdown.classList.contains('show');
+            
+            // 关闭所有其他下拉菜单
+            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
+            
+            if (!isOpen) {
+                dropdown.classList.add('show');
+            }
+        }
+        
+        function openTerminal(element) {
+            const serverId = element.getAttribute('data-id');
+            window.open('/terminal/manager?serverId=' + serverId, '_blank');
+        }
+        
+        function viewLogs(element) {
+            const serverId = element.getAttribute('data-id');
+            window.location.href = '/admin/servers/' + serverId + '/logs';
+        }
+        
+        function editServer(element) {
+            const serverId = element.getAttribute('data-id');
+            // 使用抽屉组件
+            if (typeof drawerManager !== 'undefined' && drawerManager) {
+                drawerManager.openServerDrawer(serverId);
+            } else {
+                // 后备方案：跳转到原页面
+                window.location.href = '/admin/servers/' + serverId + '/edit';
+            }
+        }
+        
+        function deleteServer(element) {
+            const serverId = element.getAttribute('data-id');
+            if (confirm('确定要删除这个服务器吗？此操作不可撤销。')) {
+                fetch('/admin/servers/' + serverId + '/delete', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('删除失败，请稍后重试');
+                    }
+                }).catch(error => {
+                    console.error('删除服务器失败:', error);
+                    alert('删除失败，请稍后重试');
+                });
+            }
+        }
+        
+        function showImportDialog() {
+            alert('批量导入功能开发中...');
+        }
+        
+        // 点击外部关闭下拉菜单
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.server-actions-dropdown')) {
+                document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+        });
+        
         function fetchServerMetrics(serverId) {
-            const monitoringDiv = document.querySelector(`div[data-server-id="${serverId}"].monitoring-metrics`);
-            if (!monitoringDiv || monitoringDiv.style.display === 'none') {
+            const metricsDiv = document.querySelector(`div[data-server-id="${serverId}"].real-time-metrics`);
+            const metricsContent = metricsDiv?.querySelector('.metrics-content');
+            if (!metricsContent || metricsContent.style.display === 'none') {
                 return;
             }
             
-            fetch(`/monitoring/server/${serverId}/metrics`, {
+            fetch(`/admin/servers/${serverId}/metrics`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -360,62 +1591,90 @@
                     throw new Error('获取监控数据失败');
                 }
             }).then(data => {
-                updateMetricsDisplay(serverId, data);
+                updateModernMetricsDisplay(serverId, data);
             }).catch(error => {
                 console.error(`获取服务器 ${serverId} 监控数据失败:`, error);
-                updateMetricsDisplay(serverId, null, '数据获取失败');
+                updateModernMetricsDisplay(serverId, null, '数据获取失败');
             });
         }
         
-        function updateMetricsDisplay(serverId, metrics, errorMsg = null) {
-            const monitoringDiv = document.querySelector(`div[data-server-id="${serverId}"].monitoring-metrics`);
-            if (!monitoringDiv) return;
+        function updateModernMetricsDisplay(serverId, metrics, errorMsg = null) {
+            const metricsDiv = document.querySelector(`div[data-server-id="${serverId}"].real-time-metrics`);
+            if (!metricsDiv) return;
             
-            const cpuElement = monitoringDiv.querySelector('.cpu-usage');
-            const memoryElement = monitoringDiv.querySelector('.memory-usage');
-            const diskElement = monitoringDiv.querySelector('.disk-usage');
-            const lastUpdateElement = monitoringDiv.querySelector('.last-update');
+            const cpuElement = metricsDiv.querySelector('.cpu-usage');
+            const memoryElement = metricsDiv.querySelector('.memory-usage');
+            const diskElement = metricsDiv.querySelector('.disk-usage');
+            const lastUpdateElement = metricsDiv.querySelector('.last-update-time');
+            
+            const cpuFill = metricsDiv.querySelector('.cpu-fill');
+            const memoryFill = metricsDiv.querySelector('.memory-fill');
+            const diskFill = metricsDiv.querySelector('.disk-fill');
             
             if (errorMsg) {
                 cpuElement.textContent = '--';
                 memoryElement.textContent = '--';
                 diskElement.textContent = '--';
                 lastUpdateElement.textContent = errorMsg;
+                cpuFill.style.width = '0%';
+                memoryFill.style.width = '0%';
+                diskFill.style.width = '0%';
                 return;
             }
             
             if (metrics) {
-                cpuElement.textContent = metrics.cpuUsage ? metrics.cpuUsage.toFixed(1) + '%' : '--%';
-                memoryElement.textContent = metrics.memoryUsage ? metrics.memoryUsage.toFixed(1) + '%' : '--%';
-                diskElement.textContent = metrics.diskUsage ? metrics.diskUsage.toFixed(1) + '%' : '--%';
+                const cpuUsage = metrics.cpuUsage || 0;
+                const memoryUsage = metrics.memoryUsage || 0;
+                const diskUsage = metrics.diskUsage || 0;
+                
+                cpuElement.textContent = cpuUsage.toFixed(1) + '%';
+                memoryElement.textContent = memoryUsage.toFixed(1) + '%';
+                diskElement.textContent = diskUsage.toFixed(1) + '%';
+                
+                // 更新进度条
+                cpuFill.style.width = cpuUsage + '%';
+                memoryFill.style.width = memoryUsage + '%';
+                diskFill.style.width = diskUsage + '%';
+                
+                // 根据使用率设置进度条颜色
+                updateProgressBarColor(cpuFill, cpuUsage);
+                updateProgressBarColor(memoryFill, memoryUsage);
+                updateProgressBarColor(diskFill, diskUsage);
                 
                 const now = new Date();
-                lastUpdateElement.textContent = `最后更新: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-                
-                // 根据使用率调整颜色
-                updateUsageColor(cpuElement, metrics.cpuUsage);
-                updateUsageColor(memoryElement, metrics.memoryUsage);
-                updateUsageColor(diskElement, metrics.diskUsage);
+                lastUpdateElement.textContent = `更新于 ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
             } else {
                 cpuElement.textContent = '--%';
                 memoryElement.textContent = '--%';
                 diskElement.textContent = '--%';
                 lastUpdateElement.textContent = '无数据';
+                cpuFill.style.width = '0%';
+                memoryFill.style.width = '0%';
+                diskFill.style.width = '0%';
+            }
+        }
+        
+        function updateProgressBarColor(fillElement, usage) {
+            if (usage >= 90) {
+                fillElement.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+            } else if (usage >= 70) {
+                fillElement.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
+            } else if (usage >= 50) {
+                fillElement.style.background = 'linear-gradient(90deg, #3b82f6, #2563eb)';
+            } else {
+                fillElement.style.background = 'linear-gradient(90deg, #10b981, #059669)';
             }
         }
         
         function updateUsageColor(element, usage) {
             if (!usage) return;
             
-            element.className = 'font-weight-bold';
-            element.style.fontSize = '0.8rem';
-            
             if (usage >= 90) {
-                element.style.color = '#dc3545'; // 危险红色
+                element.style.color = 'var(--danger-color)';
             } else if (usage >= 70) {
-                element.style.color = '#ffc107'; // 警告黄色
+                element.style.color = 'var(--warning-color)';
             } else {
-                element.style.color = '#28a745'; // 正常绿色
+                element.style.color = 'var(--success-color)';
             }
         }
         

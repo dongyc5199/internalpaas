@@ -963,7 +963,7 @@ function openLogFile() {
 }
 
 function viewSystemMetrics() {
-    window.open('/monitoring/dashboard', '_blank');
+    window.open('/admin/servers', '_blank');
 }
 
 function openJmxConsole() {
