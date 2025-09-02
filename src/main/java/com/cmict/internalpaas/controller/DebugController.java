@@ -4,14 +4,17 @@ import com.cmict.internalpaas.repository.UserRepository;
 import com.cmict.internalpaas.repository.ServerMetricsRepository;
 import com.cmict.internalpaas.service.MonitoringHistoryService;
 import com.cmict.internalpaas.service.UserService;
+import com.cmict.internalpaas.service.ServerService;
 import com.cmict.internalpaas.dto.UserProfileDto;
 import com.cmict.internalpaas.dto.UserPreferencesDto;
+import com.cmict.internalpaas.model.Server;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -31,6 +34,9 @@ public class DebugController {
     
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private ServerService serverService;
 
     @GetMapping("/debug/check-root")
     public String checkRootUser() {
@@ -148,6 +154,43 @@ public class DebugController {
                    "语言: " + preferences.getLanguage();
         } catch (Exception e) {
             return "用户偏好测试失败: " + e.getMessage();
+        }
+    }
+    
+    @GetMapping("/debug/check-server-status")
+    public String checkServerStatus() {
+        try {
+            List<Server> servers = serverService.getAllServers();
+            StringBuilder result = new StringBuilder();
+            result.append("服务器状态检查:\n\n");
+            
+            for (Server server : servers) {
+                result.append("服务器: ").append(server.getName()).append("\n");
+                result.append("  ID: ").append(server.getId()).append("\n");
+                result.append("  active字段: ").append(server.getActive()).append("\n");
+                result.append("  connectionStatus: ").append(server.getConnectionStatus()).append("\n");
+                result.append("  hostname: ").append(server.getHostname()).append("\n");
+                result.append("  最后连接检查: ").append(server.getLastConnectionCheck()).append("\n\n");
+            }
+            
+            // 计算统计
+            long totalServers = servers.size();
+            long activeServersBasedOnConnection = servers.stream()
+                .filter(server -> server.getConnectionStatus() == Server.ConnectionStatus.CONNECTED || 
+                                 server.getConnectionStatus() == Server.ConnectionStatus.MONITORING)
+                .count();
+            long activeServersBasedOnFlag = servers.stream()
+                .filter(Server::getActive)
+                .count();
+            
+            result.append("统计数据:\n");
+            result.append("总服务器数: ").append(totalServers).append("\n");
+            result.append("基于connectionStatus的在线数: ").append(activeServersBasedOnConnection).append("\n");
+            result.append("基于active字段的在线数: ").append(activeServersBasedOnFlag).append("\n");
+            
+            return result.toString();
+        } catch (Exception e) {
+            return "检查服务器状态失败: " + e.getMessage();
         }
     }
 }
