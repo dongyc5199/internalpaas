@@ -122,13 +122,13 @@
                         <div class="form-group">
                             <label for="sshPort" class="form-label">SSH端口</label>
                             <input type="number" class="form-control" id="sshPort" th:field="*{sshPort}" 
-                                   min="1" max="65535" placeholder="22">
+                                   min="1" max="65535" placeholder="22" required>
                         </div>
 
                         <div class="form-group">
                             <label for="sshUsername" class="form-label">SSH用户名</label>
                             <input type="text" class="form-control" id="sshUsername" th:field="*{sshUsername}" 
-                                   placeholder="root">
+                                   placeholder="root" required>
                         </div>
 
                         <div class="form-group">

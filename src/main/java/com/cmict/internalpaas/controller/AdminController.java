@@ -6,6 +6,7 @@ import com.cmict.internalpaas.model.User;
 import com.cmict.internalpaas.service.MonitoringSchedulerService;
 import com.cmict.internalpaas.service.ServerService;
 import com.cmict.internalpaas.service.UserService;
+import com.cmict.internalpaas.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import java.util.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.HashMap;
@@ -36,6 +38,9 @@ public class AdminController {
     
     @Autowired
     private PasswordEncoder passwordEncoder;
+    
+    @Autowired
+    private UserRepository userRepository;
     
     @Autowired
     private MonitoringSchedulerService schedulerService;
@@ -116,6 +121,11 @@ public class AdminController {
     @ResponseBody
     public ResponseEntity<?> createServerApi(@ModelAttribute Server server) {
         try {
+            // 设置默认端口值（如果未提供）
+            if (server.getPort() == null) {
+                server.setPort(8080); // 默认应用端口
+            }
+            
             Server savedServer = serverService.saveServerWithAutoCheck(server);
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
@@ -390,6 +400,136 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/admin/users";
+    }
+    
+    /**
+     * 获取用户数据API - 用于抽屉编辑
+     */
+    @GetMapping("/users/{id}/data")
+    @ResponseBody
+    public ResponseEntity<?> getUserData(@PathVariable Long id) {
+        try {
+            User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("用户未找到"));
+            
+            Map<String, Object> data = new HashMap<>();
+            data.put("id", user.getId());
+            data.put("username", user.getUsername());
+            data.put("email", user.getEmail());
+            data.put("workDirectory", user.getWorkDirectory());
+            data.put("enabled", !user.getIsAccountLocked());
+            
+            // 转换角色为字符串数组
+            List<String> roleNames = user.getRoles().stream()
+                .map(role -> role.name())
+                .collect(java.util.stream.Collectors.toList());
+            data.put("roles", roleNames);
+            
+            return ResponseEntity.ok(data);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(404).body(error);
+        }
+    }
+    
+    /**
+     * 创建用户API - 用于抽屉提交
+     */
+    @PostMapping("/api/users")
+    @ResponseBody
+    public ResponseEntity<?> createUserApi(@RequestBody Map<String, Object> userData) {
+        try {
+            User user = new User();
+            user.setUsername((String) userData.get("username"));
+            user.setEmail((String) userData.get("email"));
+            user.setWorkDirectory((String) userData.get("workDirectory"));
+            user.setIsAccountLocked(!((Boolean) userData.getOrDefault("enabled", true)));
+            
+            // 设置密码
+            String password = (String) userData.get("password");
+            if (password != null && !password.trim().isEmpty()) {
+                user.setPassword(passwordEncoder.encode(password));
+            }
+            
+            // 设置角色
+            List<String> roleNames = (List<String>) userData.get("roles");
+            if (roleNames != null && !roleNames.isEmpty()) {
+                Set<User.Role> roles = new HashSet<>();
+                for (String roleName : roleNames) {
+                    try {
+                        roles.add(User.Role.valueOf(roleName));
+                    } catch (IllegalArgumentException e) {
+                        // 忽略无效角色
+                    }
+                }
+                user.setRoles(roles);
+            }
+            
+            User savedUser = userService.save(user);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "用户创建成功");
+            response.put("user", savedUser);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", e.getMessage());
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+    
+    /**
+     * 更新用户API - 用于抽屉提交
+     */
+    @PostMapping("/api/users/{id}/update")
+    @ResponseBody
+    public ResponseEntity<?> updateUserApi(@PathVariable Long id, @RequestBody Map<String, Object> userData) {
+        try {
+            User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("用户未找到"));
+            
+            // 更新基本信息
+            user.setUsername((String) userData.get("username"));
+            user.setEmail((String) userData.get("email"));
+            user.setWorkDirectory((String) userData.get("workDirectory"));
+            user.setIsAccountLocked(!((Boolean) userData.getOrDefault("enabled", true)));
+            
+            // 更新密码（如果提供）
+            String password = (String) userData.get("password");
+            if (password != null && !password.trim().isEmpty()) {
+                user.setPassword(passwordEncoder.encode(password));
+            }
+            
+            // 更新角色
+            List<String> roleNames = (List<String>) userData.get("roles");
+            if (roleNames != null && !roleNames.isEmpty()) {
+                Set<User.Role> roles = new HashSet<>();
+                for (String roleName : roleNames) {
+                    try {
+                        roles.add(User.Role.valueOf(roleName));
+                    } catch (IllegalArgumentException e) {
+                        // 忽略无效角色
+                    }
+                }
+                user.setRoles(roles);
+            }
+            
+            User updatedUser = userService.save(user);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "用户更新成功");
+            response.put("user", updatedUser);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", e.getMessage());
+            return ResponseEntity.internalServerError().body(error);
+        }
     }
     
     // 仅超级管理员可以创建新用户
