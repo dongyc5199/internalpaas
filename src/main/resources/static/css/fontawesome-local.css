@@ -1,0 +1,97 @@
+/*!
+ * Font Awesome Icons - Local Fallback
+ * 包含项目中使用的主要图标的本地实现
+ */
+
+/* 通用图标字体基类 */
+.fas, .far, .fab {
+    font-family: "Font Awesome 6 Free", Arial, sans-serif;
+    font-weight: 900;
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 当Font Awesome CDN不可用时的图标替代方案 */
+.icon-fallback {
+    display: inline-block;
+    text-align: center;
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    line-height: 1;
+}
+
+/* 服务器相关图标 */
+.fa-server::before, .fas.fa-server::before { content: "🖥️"; }
+.fa-network-wired::before, .fas.fa-network-wired::before { content: "🌐"; }
+.fa-globe::before, .fas.fa-globe::before { content: "🌍"; }
+.fa-ethernet::before, .fas.fa-ethernet::before { content: "🔌"; }
+
+/* 状态指示图标 */
+.fa-circle::before, .fas.fa-circle::before { content: "●"; }
+.fa-exclamation-triangle::before, .fas.fa-exclamation-triangle::before { content: "⚠️"; }
+.fa-check-circle::before, .fas.fa-check-circle::before { content: "✅"; }
+.fa-times-circle::before, .fas.fa-times-circle::before { content: "❌"; }
+
+/* 箭头图标 */
+.fa-arrow-up::before, .fas.fa-arrow-up::before { content: "↑"; }
+.fa-arrow-down::before, .fas.fa-arrow-down::before { content: "↓"; }
+.fa-chevron-up::before, .fas.fa-chevron-up::before { content: "▲"; }
+.fa-chevron-down::before, .fas.fa-chevron-down::before { content: "▼"; }
+.fa-ellipsis-v::before, .fas.fa-ellipsis-v::before { content: "⋮"; }
+
+/* 系统监控图标 */
+.fa-chart-line::before, .fas.fa-chart-line::before { content: "📈"; }
+.fa-chart-area::before, .fas.fa-chart-area::before { content: "📊"; }
+.fa-microchip::before, .fas.fa-microchip::before { content: "🔧"; }
+.fa-memory::before, .fas.fa-memory::before { content: "💾"; }
+.fa-hdd::before, .fas.fa-hdd::before { content: "💿"; }
+
+/* 操作图标 */
+.fa-terminal::before, .fas.fa-terminal::before { content: "💻"; }
+.fa-eye::before, .fas.fa-eye::before { content: "👁️"; }
+.fa-file-alt::before, .fas.fa-file-alt::before { content: "📄"; }
+.fa-edit::before, .fas.fa-edit::before { content: "✏️"; }
+.fa-trash::before, .fas.fa-trash::before { content: "🗑️"; }
+.fa-plus::before, .fas.fa-plus::before { content: "➕"; }
+.fa-sync-alt::before, .fas.fa-sync-alt::before { content: "🔄"; }
+.fa-info-circle::before, .fas.fa-info-circle::before { content: "ℹ️"; }
+
+/* 文件夹和导航图标 */
+.fa-folder::before, .fas.fa-folder::before { content: "📁"; }
+.fa-home::before, .fas.fa-home::before { content: "🏠"; }
+.fa-cog::before, .fas.fa-cog::before { content: "⚙️"; }
+.fa-upload::before, .fas.fa-upload::before { content: "📤"; }
+
+/* 用户相关图标 */
+.fa-user::before, .fas.fa-user::before { content: "👤"; }
+.fa-users::before, .fas.fa-users::before { content: "👥"; }
+.fa-sign-out-alt::before, .fas.fa-sign-out-alt::before { content: "🚪"; }
+
+/* 主题和界面图标 */
+.fa-moon::before, .fas.fa-moon::before { content: "🌙"; }
+.fa-sun::before, .fas.fa-sun::before { content: "☀️"; }
+
+/* 当Font Awesome不可用时，确保图标样式不会破坏布局 */
+@supports not (font-family: "Font Awesome 6 Free") {
+    .fas, .far, .fab {
+        font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", Arial, sans-serif;
+        font-weight: normal;
+    }
+}
+
+/* 图标尺寸控制 */
+.fas.fa-lg, .far.fa-lg, .fab.fa-lg { font-size: 1.25em; }
+.fas.fa-2x, .far.fa-2x, .fab.fa-2x { font-size: 2em; }
+.fas.fa-3x, .far.fa-3x, .fab.fa-3x { font-size: 3em; }
+
+/* 确保图标在深色主题下也能正常显示 */
+.theme-dark .fas,
+.theme-dark .far,
+.theme-dark .fab {
+    color: inherit;
+}
