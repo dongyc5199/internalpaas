@@ -115,6 +115,34 @@
     --primary-active: #3d9ae9;
 }
 
+/* 防止主题闪烁的预设样式 */
+@media (prefers-color-scheme: dark) {
+    html {
+        background-color: #121212 !important;
+        color: #e0e0e0 !important;
+    }
+}
+
+/* 立即生效的暗色主题样式 */
+.theme-dark {
+    background-color: #121212 !important;
+    color: #e0e0e0 !important;
+}
+
+.theme-dark body {
+    background-color: #121212 !important;
+    color: #e0e0e0 !important;
+}
+
+.theme-dark .top-nav,
+.theme-dark .sidebar,
+.theme-dark .card,
+.theme-dark .nav-item {
+    background-color: #1e1e1e !important;
+    color: #e0e0e0 !important;
+    border-color: #333333 !important;
+}
+
 /* 管理员工作台主题 */
 .admin-theme {
     --primary-color: #1976d2;

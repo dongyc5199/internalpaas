@@ -4,6 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理员工作台 - Dev Debug Platform</title>
+    <!-- 更强的防闪烁策略 - 立即执行 -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.remove('theme-light');
+                document.documentElement.classList.add('theme-dark');
+                document.documentElement.style.setProperty('--background-color', '#121212');
+                document.documentElement.style.setProperty('--background-light', '#1e1e1e');
+                document.documentElement.style.setProperty('--text-color', '#e0e0e0');
+                // 监听body可用时立即应用
+                function applyToBody() {
+                    if (document.body) {
+                        document.body.classList.add('dark-theme');
+                    } else {
+                        setTimeout(applyToBody, 1);
+                    }
+                }
+                applyToBody();
+            }
+        })();
+    </script>
+    <style>
+        /* 预设暗色主题样式避免闪烁 */
+        .theme-dark {
+            background-color: #121212 !important;
+            color: #e0e0e0 !important;
+        }
+        .theme-dark * {
+            transition: none !important;
+        }
+    </style>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/common-dashboard.css">
     <link rel="stylesheet" href="/css/dashboard-theme.css">
