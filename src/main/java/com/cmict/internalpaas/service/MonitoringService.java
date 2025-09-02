@@ -11,12 +11,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PreDestroy;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -26,6 +30,13 @@ public class MonitoringService {
     private static final int COMMAND_TIMEOUT = 45000; // 45秒命令超时（从30秒增加）
     private static final int SSH_CONNECT_TIMEOUT = 15000; // 15秒SSH连接超时（从8秒增加）
     private static final int METRICS_COLLECTION_TIMEOUT = 90000; // 90秒指标收集总超时（从45秒增加）
+    
+    // 专用线程池，用于指标收集的异步任务
+    private final ExecutorService metricsExecutor = Executors.newFixedThreadPool(4, r -> {
+        Thread t = new Thread(r, "metrics-collector-" + System.currentTimeMillis());
+        t.setDaemon(true);  // 设置为守护线程，应用关闭时会自动退出
+        return t;
+    });
     
     @Autowired
     private SshConnectionService sshConnectionService;
@@ -76,7 +87,7 @@ public class MonitoringService {
         try {
             logger.debug("并行收集服务器 {} 的各项指标", server.getHostname());
             
-            // 并行收集各项指标
+            // 并行收集各项指标，使用自定义线程池
             CompletableFuture<Void> cpuFuture = CompletableFuture.runAsync(() -> {
                 try {
                     collectCpuMetrics(server, metrics);
@@ -84,7 +95,7 @@ public class MonitoringService {
                 } catch (Exception e) {
                     logger.error("CPU指标收集失败: {}", server.getHostname(), e);
                 }
-            });
+            }, metricsExecutor);
             
             CompletableFuture<Void> memoryFuture = CompletableFuture.runAsync(() -> {
                 try {
@@ -93,7 +104,7 @@ public class MonitoringService {
                 } catch (Exception e) {
                     logger.error("内存指标收集失败: {}", server.getHostname(), e);
                 }
-            });
+            }, metricsExecutor);
             
             CompletableFuture<Void> diskFuture = CompletableFuture.runAsync(() -> {
                 try {
@@ -102,7 +113,7 @@ public class MonitoringService {
                 } catch (Exception e) {
                     logger.error("磁盘指标收集失败: {}", server.getHostname(), e);
                 }
-            });
+            }, metricsExecutor);
             
             CompletableFuture<Void> systemFuture = CompletableFuture.runAsync(() -> {
                 try {
@@ -111,7 +122,7 @@ public class MonitoringService {
                 } catch (Exception e) {
                     logger.error("系统指标收集失败: {}", server.getHostname(), e);
                 }
-            });
+            }, metricsExecutor);
             
             // 等待所有指标收集完成，使用更长的超时时间
             CompletableFuture.allOf(cpuFuture, memoryFuture, diskFuture, systemFuture)
@@ -475,6 +486,39 @@ public class MonitoringService {
             logger.info("清理了{}天前的监控数据", daysToKeep);
         } catch (Exception e) {
             logger.error("清理过期数据失败", e);
+        }
+    }
+    
+    /**
+     * 在应用关闭时清理线程池
+     */
+    @PreDestroy
+    public void destroy() {
+        logger.info("MonitoringService正在关闭，清理线程池...");
+        
+        try {
+            // 优雅关闭线程池
+            metricsExecutor.shutdown();
+            
+            // 等待最多10秒让任务完成
+            if (!metricsExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+                logger.warn("线程池在10秒内未能正常关闭，强制关闭");
+                metricsExecutor.shutdownNow();
+                
+                // 再等待5秒
+                if (!metricsExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    logger.error("线程池强制关闭失败");
+                } else {
+                    logger.info("线程池已强制关闭");
+                }
+            } else {
+                logger.info("MonitoringService线程池已正常关闭");
+            }
+            
+        } catch (InterruptedException e) {
+            logger.warn("等待线程池关闭时被中断", e);
+            metricsExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
 }

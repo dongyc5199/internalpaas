@@ -29,7 +29,7 @@ public class UserSessionService {
         try {
             logger.debug("开始检查活跃用户状态...");
             
-            // 方法1：通过Spring Security SessionRegistry检查
+            // 只通过Spring Security SessionRegistry检查当前登录用户
             if (sessionRegistry != null) {
                 int activeSessionCount = sessionRegistry.getAllPrincipals().size();
                 logger.debug("SessionRegistry可用，检测到{}个活跃用户会话", activeSessionCount);
@@ -41,23 +41,10 @@ public class UserSessionService {
                     return true;
                 }
             } else {
-                logger.debug("SessionRegistry不可用，跳过Spring Security会话检查");
+                logger.debug("SessionRegistry不可用，无法检查用户会话状态");
             }
             
-            // 方法2：通过用户活动记录检查（检查最近30分钟内的活动）
-            java.time.LocalDateTime startTime = java.time.LocalDateTime.now().minusMinutes(30);
-            java.time.LocalDateTime endTime = java.time.LocalDateTime.now();
-            long recentActiveUsers = userActivityService.countActivitiesInTimeRange(startTime, endTime);
-            
-            logger.debug("检查最近30分钟内的用户活动: 从{}到{}, 发现{}个活动记录", 
-                startTime, endTime, recentActiveUsers);
-            
-            if (recentActiveUsers > 0) {
-                logger.debug("通过用户活动记录检测到最近30分钟内有{}个用户活动", recentActiveUsers);
-                return true;
-            }
-            
-            logger.debug("当前系统没有检测到活跃用户");
+            logger.debug("当前系统没有检测到活跃登录用户");
             return false;
             
         } catch (Exception e) {

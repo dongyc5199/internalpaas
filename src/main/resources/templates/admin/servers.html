@@ -834,6 +834,70 @@
             to { opacity: 0.4; transform: translate(-50%, -50%) scale(1.1); }
         }
 
+        /* 服务器卡片刷新等待效果 */
+        .server-card-refreshing {
+            position: relative;
+            pointer-events: none;
+        }
+
+        .server-card-refreshing::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(2px);
+            z-index: 10;
+            animation: refreshPulse 2s ease-in-out infinite;
+        }
+
+        .theme-dark .server-card-refreshing::after {
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        @keyframes refreshPulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 0.9; }
+        }
+
+        .refresh-loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 11;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .refresh-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 禁用卡片内所有按钮 */
+        .server-card-refreshing .quick-action-btn,
+        .server-card-refreshing .refresh-metrics-btn,
+        .server-card-refreshing button {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
         .empty-content {
             max-width: 400px;
         }
@@ -1419,6 +1483,192 @@
         const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
         const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
         
+        // 服务器刷新状态管理
+        class ServerRefreshManager {
+            constructor() {
+                this.storageKey = 'serverRefreshStates';
+                this.refreshStates = this.loadStates();
+                this.cleanExpiredStates();
+            }
+            
+            loadStates() {
+                try {
+                    const stored = localStorage.getItem(this.storageKey);
+                    return stored ? JSON.parse(stored) : {};
+                } catch (e) {
+                    console.warn('无法加载服务器刷新状态:', e);
+                    return {};
+                }
+            }
+            
+            saveStates() {
+                try {
+                    localStorage.setItem(this.storageKey, JSON.stringify(this.refreshStates));
+                } catch (e) {
+                    console.warn('无法保存服务器刷新状态:', e);
+                }
+            }
+            
+            startRefresh(serverId) {
+                this.refreshStates[serverId] = {
+                    isRefreshing: true,
+                    startTime: Date.now(),
+                    status: 'running'
+                };
+                this.saveStates();
+            }
+            
+            finishRefresh(serverId, success = true, message = '') {
+                if (this.refreshStates[serverId]) {
+                    this.refreshStates[serverId] = {
+                        isRefreshing: false,
+                        startTime: this.refreshStates[serverId].startTime,
+                        endTime: Date.now(),
+                        status: success ? 'completed' : 'failed',
+                        message: message
+                    };
+                    this.saveStates();
+                    
+                    // 30秒后清理状态
+                    setTimeout(() => {
+                        delete this.refreshStates[serverId];
+                        this.saveStates();
+                    }, 30000);
+                }
+            }
+            
+            isRefreshing(serverId) {
+                const state = this.refreshStates[serverId];
+                if (!state || !state.isRefreshing) return false;
+                
+                // 检查是否超时 (超过40秒认为异常)
+                const elapsed = Date.now() - state.startTime;
+                if (elapsed > 40000) {
+                    this.finishRefresh(serverId, false, '刷新超时');
+                    return false;
+                }
+                
+                return true;
+            }
+            
+            getRefreshState(serverId) {
+                return this.refreshStates[serverId] || null;
+            }
+            
+            cleanExpiredStates() {
+                const now = Date.now();
+                Object.keys(this.refreshStates).forEach(serverId => {
+                    const state = this.refreshStates[serverId];
+                    // 清理超过5分钟的状态
+                    if (state.startTime && (now - state.startTime) > 300000) {
+                        delete this.refreshStates[serverId];
+                    }
+                });
+                this.saveStates();
+            }
+            
+            applyRefreshingState(serverId) {
+                const serverCard = document.querySelector(`[data-id="${serverId}"]`)?.closest('.modern-server-card');
+                if (!serverCard) return;
+                
+                // 添加刷新状态样式
+                serverCard.classList.add('server-card-refreshing');
+                
+                // 创建加载指示器
+                if (!serverCard.querySelector('.refresh-loading-indicator')) {
+                    const loadingIndicator = document.createElement('div');
+                    loadingIndicator.className = 'refresh-loading-indicator';
+                    loadingIndicator.innerHTML = `
+                        <div class="refresh-spinner"></div>
+                        <span>正在刷新服务器状态...</span>
+                    `;
+                    serverCard.appendChild(loadingIndicator);
+                }
+                
+                // 禁用刷新按钮
+                const refreshBtn = serverCard.querySelector('[onclick*="refreshServer"]');
+                if (refreshBtn) {
+                    refreshBtn.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">刷新中...</span>';
+                    refreshBtn.disabled = true;
+                }
+            }
+            
+            clearRefreshingState(serverId) {
+                const serverCard = document.querySelector(`[data-id="${serverId}"]`)?.closest('.modern-server-card');
+                if (!serverCard) return;
+                
+                // 移除刷新状态
+                serverCard.classList.remove('server-card-refreshing');
+                const indicator = serverCard.querySelector('.refresh-loading-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+                
+                // 恢复刷新按钮
+                const refreshBtn = serverCard.querySelector('[onclick*="refreshServer"]');
+                if (refreshBtn) {
+                    refreshBtn.innerHTML = '<span class="btn-icon">🔄</span><span class="btn-text">刷新状态</span>';
+                    refreshBtn.disabled = false;
+                }
+            }
+            
+            // 后台检查服务器状态更新
+            async checkServerStatus(serverId) {
+                try {
+                    const response = await fetch(`/admin/servers/${serverId}/status`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            [csrfHeader]: csrfToken
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        return {
+                            success: true,
+                            status: data.connectionStatus,
+                            lastCheck: data.lastConnectionCheck || new Date().toISOString()
+                        };
+                    }
+                } catch (error) {
+                    console.error('检查服务器状态失败:', error);
+                }
+                
+                return { success: false };
+            }
+            
+            // 启动后台刷新监控
+            startBackgroundRefreshMonitoring(serverId) {
+                const checkInterval = setInterval(() => {
+                    const refreshState = this.getRefreshState(serverId);
+                    if (!refreshState || !refreshState.isRefreshing) {
+                        clearInterval(checkInterval);
+                        return;
+                    }
+                    
+                    // 检查刷新是否超时（45秒）
+                    const elapsed = Date.now() - refreshState.startTime;
+                    if (elapsed > 45000) {
+                        // 刷新超时，标记为失败
+                        this.finishRefresh(serverId, false, '后台刷新超时');
+                        this.clearRefreshingState(serverId);
+                        clearInterval(checkInterval);
+                        
+                        // 显示超时通知（如果用户在当前页面）
+                        if (document.querySelector(`[data-id="${serverId}"]`)) {
+                            alert('服务器状态刷新超时，请手动重试');
+                        }
+                    }
+                }, 3000); // 每3秒检查一次
+                
+                return checkInterval;
+            }
+        }
+        
+        // 初始化刷新管理器
+        const refreshManager = new ServerRefreshManager();
+        
         function refreshAllData() {
             location.reload();
         }
@@ -1472,31 +1722,68 @@
             const serverId = element.getAttribute('data-id');
             const button = element;
             const originalText = button.innerHTML;
-            button.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">刷新中...</span>';
-            button.disabled = true;
+            
+            // 防止重复刷新
+            if (refreshManager.isRefreshing(serverId)) {
+                alert('服务器正在刷新中，请等待完成');
+                return;
+            }
+            
+            // 开始刷新状态管理
+            refreshManager.startRefresh(serverId);
+            refreshManager.applyRefreshingState(serverId);
+            
+            // 启动后台监控
+            refreshManager.startBackgroundRefreshMonitoring(serverId);
+            
+            // 添加30秒超时控制
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                controller.abort();
+            }, 30000);
             
             fetch('/admin/servers/' + serverId + '/refresh', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     [csrfHeader]: csrfToken
-                }
+                },
+                signal: controller.signal
             }).then(response => {
+                clearTimeout(timeoutId);
                 if (response.ok) {
-                    // 如果当前服务器正在显示监控数据，立即更新
-                    if (activeMonitoringServers.has(serverId)) {
-                        fetchServerMetrics(serverId);
-                    }
-                    location.reload();
+                    return response.json();
                 } else {
-                    alert('刷新失败，请稍后重试');
+                    throw new Error('服务器响应错误: ' + response.status);
                 }
+            }).then(data => {
+                console.log('服务器状态刷新成功:', data);
+                // 标记刷新完成
+                refreshManager.finishRefresh(serverId, true, '刷新成功');
+                
+                // 如果当前服务器正在显示监控数据，立即更新
+                if (activeMonitoringServers.has(serverId)) {
+                    fetchServerMetrics(serverId);
+                }
+                alert('服务器状态已刷新');
+                location.reload();
             }).catch(error => {
+                clearTimeout(timeoutId);
                 console.error('刷新服务器状态失败:', error);
-                alert('刷新失败，请稍后重试');
+                
+                let errorMessage = '刷新失败';
+                if (error.name === 'AbortError') {
+                    errorMessage = '刷新超时(30秒)，请检查服务器SSH配置或网络连接';
+                } else if (error.message) {
+                    errorMessage = '刷新失败: ' + error.message;
+                }
+                
+                // 标记刷新失败
+                refreshManager.finishRefresh(serverId, false, errorMessage);
+                alert(errorMessage);
             }).finally(() => {
-                button.innerHTML = originalText;
-                button.disabled = false;
+                // 清理视觉效果
+                refreshManager.clearRefreshingState(serverId);
             });
         }
         
@@ -1725,6 +2012,16 @@
         
         // 页面加载完成后启动监控
         document.addEventListener('DOMContentLoaded', function() {
+            // 恢复服务器刷新状态
+            Object.keys(refreshManager.refreshStates).forEach(serverId => {
+                if (refreshManager.isRefreshing(serverId)) {
+                    refreshManager.applyRefreshingState(serverId);
+                    
+                    // 启动后台监控以跟踪刷新进度
+                    refreshManager.startBackgroundRefreshMonitoring(serverId);
+                }
+            });
+            
             startMonitoringRefresh();
         });
         

@@ -104,10 +104,10 @@ public class AdminController {
     @PostMapping("/servers")
     public String saveServer(@ModelAttribute Server server, RedirectAttributes redirectAttributes) {
         try {
-            // 使用自动检测功能
-            Server savedServer = serverService.saveServerWithAutoCheck(server);
+            // 保存服务器，不进行自动检测
+            Server savedServer = serverService.saveServer(server);
             redirectAttributes.addFlashAttribute("successMessage", 
-                String.format("服务器 '%s' 已保存，正在后台检测连接状态", savedServer.getName()));
+                String.format("服务器 '%s' 已保存", savedServer.getName()));
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "保存失败: " + e.getMessage());
         }
@@ -126,7 +126,7 @@ public class AdminController {
                 server.setPort(8080); // 默认应用端口
             }
             
-            Server savedServer = serverService.saveServerWithAutoCheck(server);
+            Server savedServer = serverService.saveServer(server);
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
             response.put("message", "服务器创建成功");

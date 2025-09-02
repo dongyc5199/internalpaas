@@ -16,11 +16,23 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.PreDestroy;
 
 @Service
 public class ServerService {
     
     private static final Logger logger = LoggerFactory.getLogger(ServerService.class);
+    
+    // 专用线程池，用于异步服务器检测任务
+    private final ExecutorService serverCheckExecutor = Executors.newFixedThreadPool(2, r -> {
+        Thread t = new Thread(r, "server-check-" + System.currentTimeMillis());
+        t.setDaemon(true);  // 设置为守护线程
+        return t;
+    });
     
     @Autowired
     private ServerRepository serverRepository;
@@ -123,7 +135,7 @@ public class ServerService {
     public Server saveServerWithAutoCheck(Server server) {
         Server savedServer = saveServer(server);
         
-        // 异步执行连接检测和监控
+        // 异步执行连接检测和监控，使用专用线程池
         CompletableFuture.runAsync(() -> {
             try {
                 // 检查是否有活跃用户，只有在有用户登录时才执行自动检测
@@ -158,7 +170,7 @@ public class ServerService {
                 savedServer.setLastConnectionCheck(LocalDateTime.now());
                 serverRepository.save(savedServer);
             }
-        });
+        }, serverCheckExecutor);
         
         return savedServer;
     }
@@ -291,6 +303,33 @@ public class ServerService {
             case UNKNOWN:
             default:
                 return "text-secondary";
+        }
+    }
+    
+    @PreDestroy
+    public void cleanup() {
+        logger.info("ServerService正在清理资源...");
+        
+        try {
+            serverCheckExecutor.shutdown();
+            
+            if (!serverCheckExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+                logger.warn("ServerCheckExecutor在10秒内未能正常关闭，尝试强制关闭");
+                serverCheckExecutor.shutdownNow();
+                
+                if (!serverCheckExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    logger.error("ServerCheckExecutor强制关闭失败");
+                } else {
+                    logger.info("ServerCheckExecutor已强制关闭");
+                }
+            } else {
+                logger.info("ServerCheckExecutor已正常关闭");
+            }
+            
+        } catch (InterruptedException e) {
+            logger.warn("等待ServerCheckExecutor关闭时被中断", e);
+            serverCheckExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
 }
