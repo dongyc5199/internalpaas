@@ -47,67 +47,166 @@
 src/main/java/com/cmict/internalpaas/
 ├── InternalpaasApplication.java          # 主应用入口
 ├── config/                               # 配置类
+│   ├── ApplicationShutdownListener.java # 应用关闭监听器
 │   ├── DataInitializer.java             # 数据初始化
 │   ├── GlobalExceptionHandler.java      # 全局异常处理
 │   ├── SecurityConfig.java              # 安全配置
-│   ├── SecurityWebSocketHandshakeInterceptor.java
+│   ├── SecurityWebSocketHandshakeInterceptor.java # WebSocket安全拦截器
 │   └── WebSocketConfig.java             # WebSocket配置
 ├── controller/                           # 控制器层
 │   ├── AdminController.java             # 管理员功能
 │   ├── AdminDashboardController.java    # 管理员仪表板
+│   ├── AlertThresholdController.java    # 告警阈值控制器
+│   ├── ApplicationConfigController.java # 应用配置控制器
 │   ├── ApplicationController.java       # 应用管理
+│   ├── DebugController.java             # 调试功能控制器
 │   ├── DeveloperDashboardController.java # 开发者仪表板
+│   ├── InitialConfigController.java     # 初始配置控制器
+│   ├── LogController.java               # 日志控制器
 │   ├── MonitoringController.java        # 监控功能
+│   ├── MonitoringHistoryController.java # 监控历史控制器
+│   ├── PageController.java              # 页面控制器
+│   ├── RemoteCommandController.java     # 远程命令控制器
 │   ├── SSHTerminalController.java       # SSH终端
 │   ├── SSHTerminalWebSocketHandler.java # SSH WebSocket处理
+│   ├── SSHTestController.java           # SSH测试控制器
+│   ├── TestController.java              # 测试控制器
 │   ├── UserController.java              # 用户管理
-│   └── ...其他控制器
+│   └── WebSocketController.java         # WebSocket控制器
 ├── dto/                                  # 数据传输对象
+│   ├── AdminDashboardDto.java           # 管理员仪表板DTO
+│   ├── AggregatedServerMetrics.java     # 聚合服务器指标DTO
+│   ├── DeveloperDashboardDto.java       # 开发者仪表板DTO
+│   ├── PasswordChangeDto.java           # 密码修改DTO
+│   ├── UserPreferencesDto.java          # 用户偏好DTO
+│   ├── UserProfileDto.java              # 用户档案DTO
+│   └── UserRegistrationDto.java         # 用户注册DTO
+├── event/                               # 事件类
+│   └── ServerStatusUpdateEvent.java     # 服务器状态更新事件
 ├── model/                               # 实体类
-│   ├── Application.java                # 应用实体
-│   ├── Server.java                     # 服务器实体
-│   ├── ServerMetrics.java              # 监控指标
-│   ├── SSHSession.java                 # SSH会话
-│   ├── User.java                       # 用户实体
-│   └── UserActivity.java               # 用户活动
+│   ├── AlertThreshold.java              # 告警阈值实体
+│   ├── Application.java                 # 应用实体
+│   ├── ApplicationConfig.java           # 应用配置实体
+│   ├── Server.java                      # 服务器实体
+│   ├── ServerMetrics.java               # 服务器监控指标
+│   ├── SSHSession.java                  # SSH会话实体
+│   ├── User.java                        # 用户实体
+│   ├── UserActivity.java                # 用户活动实体
+│   └── UserConfig.java                  # 用户配置实体
 ├── repository/                          # 数据访问层
-├── service/                            # 业务逻辑层
-│   ├── ApplicationService.java         # 应用服务
-│   ├── MonitoringService.java          # 监控服务
-│   ├── SSHTerminalService.java         # SSH终端服务
-│   ├── ServerService.java              # 服务器服务
-│   ├── UserService.java                # 用户服务
-│   └── ...其他服务类
-└── test/                               # 测试工具
+│   ├── AlertThresholdRepository.java    # 告警阈值数据访问
+│   ├── ApplicationConfigRepository.java # 应用配置数据访问
+│   ├── ApplicationRepository.java       # 应用数据访问
+│   ├── ServerMetricsRepository.java     # 服务器指标数据访问
+│   ├── ServerRepository.java            # 服务器数据访问
+│   ├── SSHSessionRepository.java        # SSH会话数据访问
+│   ├── UserActivityRepository.java      # 用户活动数据访问
+│   ├── UserConfigRepository.java        # 用户配置数据访问
+│   └── UserRepository.java              # 用户数据访问
+├── service/                             # 业务逻辑层
+│   ├── AlertThresholdService.java       # 告警阈值服务
+│   ├── ApplicationConfigService.java    # 应用配置服务
+│   ├── ApplicationService.java          # 应用服务
+│   ├── BatchProcessingService.java      # 批处理服务
+│   ├── DashboardService.java            # 仪表板服务
+│   ├── Impl/                            # 服务实现
+│   │   └── UserServiceImpl.java         # 用户服务实现
+│   ├── LogMonitoringService.java        # 日志监控服务
+│   ├── MonitoringHistoryService.java    # 监控历史服务
+│   ├── MonitoringSchedulerService.java  # 监控调度服务
+│   ├── MonitoringService.java           # 监控服务
+│   ├── PerformanceMonitoringService.java # 性能监控服务
+│   ├── PortManagerService.java          # 端口管理服务
+│   ├── RemoteCommandService.java        # 远程命令服务
+│   ├── ServerService.java               # 服务器服务
+│   ├── SshConnectionService.java        # SSH连接服务
+│   ├── SSHTerminalService.java          # SSH终端服务
+│   ├── UserActivityService.java         # 用户活动服务
+│   ├── UserService.java                 # 用户服务
+│   └── UserSessionService.java          # 用户会话服务
+└── test/                                # 测试工具
+    ├── DirectSSHTest.java               # 直接SSH测试
+    ├── ServerManagementTester.java      # 服务器管理测试器
+    └── SSHConnectionTester.java         # SSH连接测试器
 ```
 
-```
-src/main/resources/
-├── application.properties              # 主配置文件
 ├── static/                            # 静态资源
 │   ├── css/                          # 样式文件
+│   │   ├── application-detail.css    # 应用详情样式
+│   │   ├── applications.css          # 应用列表样式
 │   │   ├── common-dashboard.css      # 通用仪表板样式
+│   │   ├── config-editor.css         # 配置编辑器样式
 │   │   ├── dashboard-theme.css       # 主题样式
-│   │   └── ...其他样式文件
-│   └── js/                           # JavaScript文件
-│       ├── dashboard.js              # 仪表板脚本
-│       ├── theme.js                  # 主题切换
-│       └── ...其他脚本文件
+│   │   ├── drawer.css                # 抽屉组件样式
+│   │   ├── fontawesome-local.css     # 本地Font Awesome图标
+│   │   ├── index.css                 # 首页样式
+│   │   ├── initial-config.css        # 初始配置样式
+│   │   ├── login.css                 # 登录页面样式
+│   │   ├── monitoring-history.css    # 监控历史样式
+│   │   ├── profile.css               # 用户档案样式
+│   │   ├── servers.css               # 服务器管理样式
+│   │   ├── style.css                 # 通用样式
+│   │   └── ux-enhancement.css        # UX增强样式
+│   ├── js/                           # JavaScript文件
+│   │   ├── application-detail.js     # 应用详情脚本
+│   │   ├── config-editor.js          # 配置编辑器脚本
+│   │   ├── dashboard.js              # 仪表板脚本
+│   │   ├── drawer.js                 # 抽屉组件脚本
+│   │   ├── monitoring-history.js     # 监控历史脚本
+│   │   ├── profile.js                # 用户档案脚本
+│   │   ├── server-detail.js          # 服务器详情脚本
+│   │   ├── theme.js                  # 主题切换脚本
+│   │   └── ux-enhancement.js         # UX增强脚本
+│   └── vendor/                       # 第三方资源
 └── templates/                         # Thymeleaf模板
     ├── admin-dashboard.html          # 管理员仪表板
-    ├── developer-dashboard.html      # 开发者仪表板
     ├── admin/                        # 管理员页面
+    │   ├── config-editor.html        # 配置编辑器
+    │   ├── server-detail.html        # 服务器详情
+    │   ├── server-form.html          # 服务器表单
+    │   ├── servers.html              # 服务器列表
+    │   ├── user-form.html            # 用户表单
+    │   ├── users.html                # 用户列表
+    │   └── users_old.html            # 用户列表(旧版)
+    ├── application-detail.html       # 应用详情页面
+    ├── applications.html             # 应用列表页面
+    ├── developer-dashboard.html      # 开发者仪表板
+    ├── index.html                    # 首页
+    ├── initial-config.html           # 初始配置页面
+    ├── login.html                    # 登录页面
     ├── monitoring/                   # 监控页面
-    └── terminal/                     # 终端页面
+    │   ├── history-dashboard.html    # 历史监控仪表板
+    │   ├── server-details.html       # 服务器详情监控
+    │   ├── threshold-dashboard.html  # 阈值监控仪表板
+    │   └── user-activity.html        # 用户活动监控
+    ├── register.html                 # 注册页面
+    ├── server-management-test.html   # 服务器管理测试页面
+    ├── ssh-test.html                 # SSH测试页面
+    ├── terminal/                     # 终端页面
+    │   ├── index.html                # 终端主页
+    │   └── manager.html              # 终端管理器
+    └── user-profile.html             # 用户档案页面
 ```
 
 ```
-doc/                                   # 项目文档目录
-├── README.md                         # 文档目录索引
-├── project-overview.md               # 项目概述
-├── deployment-guide.md               # 部署指南
-├── operations-manual.md              # 运维手册
-└── performance-optimization.md       # 性能优化指南
+项目根目录结构:
+├── CLAUDE.md                         # Claude AI 开发助手指南
+├── DRAWER_INTEGRATION.md             # 抽屉组件集成文档
+├── data/                             # 数据文件目录
+│   └── devplatformdb.mv.db           # H2数据库文件
+├── doc/                              # 项目文档目录
+│   ├── README.md                     # 文档目录索引
+│   ├── deployment-guide.md           # 部署指南
+│   ├── operations-manual.md          # 运维手册
+│   ├── performance-optimization.md   # 性能优化指南
+│   └── project-overview.md           # 项目概述
+├── mvnw                              # Maven Wrapper (Unix)
+├── mvnw.cmd                          # Maven Wrapper (Windows)
+├── pom.xml                           # Maven项目配置
+├── src/                              # 源代码目录
+├── target/                           # 构建输出目录
+└── workspaces/                       # 工作空间目录
+    └── root/                         # 根工作空间
 ```
 
 ## 核心模块说明
@@ -395,23 +494,201 @@ jstack <PID>
 
 ## API接口说明
 
-### 1. 应用管理API
-- `POST /api/applications/upload`: 上传应用
-- `POST /api/applications/{id}/start`: 启动应用
-- `POST /api/applications/{id}/stop`: 停止应用
-- `GET /api/applications/{id}/status`: 获取应用状态
-- `GET /api/applications/{id}/logs`: 获取应用日志
+### 1. 应用管理API (`/apps`)
+**基础路径**: `/apps`
+**权限**: 用户只能访问自己的应用
+
+#### 应用生命周期管理
+- `GET /apps`: 应用管理页面
+- `GET /apps/{id}`: 应用详情页面
+- `POST /apps/upload`: 上传应用
+- `POST /apps/{id}/start`: 启动应用
+- `POST /apps/{id}/stop`: 停止应用
+- `POST /apps/{id}/restart`: 重启应用
+- `POST /apps/{id}/delete`: 删除应用
+
+#### 应用配置管理
+- `GET /apps/{id}/config/editor`: 配置编辑器页面
+- `POST /apps/{id}/config`: 更新应用配置
+
+#### 应用数据API
+- `GET /apps/api/list`: 获取用户应用列表 (JSON)
+- `GET /apps/{id}/metrics`: 获取应用监控指标 (JSON)
+- `GET /apps/{id}/logs`: 获取应用日志 (JSON)
+- `GET /apps/{id}/logs/download`: 下载应用日志文件
+- `GET /apps/{id}/health`: 应用健康检查 (JSON)
 
 ### 2. 用户管理API
-- `POST /api/users/register`: 用户注册
-- `POST /api/users/login`: 用户登录
-- `GET /api/users/profile`: 获取用户信息
-- `PUT /api/users/profile`: 更新用户信息
+**权限**: 需要认证用户
 
-### 3. 监控API
-- `GET /api/monitoring/servers`: 获取服务器列表
-- `GET /api/monitoring/servers/{id}/metrics`: 获取服务器监控数据
-- `GET /api/monitoring/applications/{id}/metrics`: 获取应用监控数据
+#### 用户注册与档案
+- `GET /register`: 用户注册页面
+- `POST /register`: 处理用户注册
+- `GET /profile`: 用户档案页面
+- `POST /profile/update`: 更新用户档案
+- `POST /profile/change-password`: 修改密码
+- `POST /profile/preferences`: 更新用户偏好 (JSON)
+
+#### 用户数据API
+- `GET /api/profile`: 获取用户档案信息 (JSON)
+- `GET /api/profile/preferences`: 获取用户偏好设置 (JSON)
+
+### 3. 管理员API (`/admin`)
+**基础路径**: `/admin`
+**权限**: 需要ADMIN或SUPER_ADMIN角色
+
+#### 服务器管理
+- `GET /admin/servers`: 服务器管理页面
+- `GET /admin/servers/{id}`: 服务器详情页面
+- `POST /admin/servers`: 创建服务器
+- `POST /admin/servers/{id}/update`: 更新服务器
+- `POST /admin/servers/{id}/delete`: 删除服务器
+- `POST /admin/servers/{id}/check-connection`: 检查服务器连接
+- `POST /admin/servers/check-all-connections`: 检查所有服务器连接
+- `GET /admin/servers/{id}/status`: 获取服务器状态 (JSON)
+- `GET /admin/servers/{id}/metrics`: 获取服务器监控数据 (JSON)
+- `POST /admin/servers/{id}/refresh`: 刷新服务器状态 (JSON)
+
+#### 用户管理 (SUPER_ADMIN)
+- `GET /admin/users`: 用户管理页面
+- `POST /admin/users`: 创建用户
+- `POST /admin/users/{id}/update`: 更新用户
+- `POST /admin/users/{id}/delete`: 删除用户
+- `POST /admin/users/{id}/toggle-admin`: 切换管理员角色
+- `POST /admin/users/{id}/toggle-super-admin`: 切换超级管理员角色
+
+### 4. 监控API (`/monitoring`)
+**基础路径**: `/monitoring`
+
+#### 监控页面
+- `GET /monitoring/server/{id}`: 服务器详情监控页面
+- `GET /monitoring/user-activity`: 用户活动监控页面
+
+#### 监控数据API
+- `GET /monitoring/server/{id}/metrics`: 获取服务器监控指标 (JSON)
+- `POST /monitoring/server/{id}/refresh`: 刷新服务器监控数据 (JSON)
+- `GET /monitoring/servers/metrics`: 获取所有服务器监控数据 (JSON)
+- `GET /monitoring/server/{id}/health`: 服务器健康检查 (JSON)
+- `GET /monitoring/server/{id}/users`: 获取服务器活跃用户 (JSON)
+- `GET /monitoring/server/{id}/activity-summary`: 获取服务器活动摘要 (JSON)
+
+### 5. 告警阈值API (`/monitoring/thresholds`)
+**基础路径**: `/monitoring/thresholds`
+**权限**: 需要ADMIN或DEVELOPER角色
+
+#### 阈值管理页面
+- `GET /monitoring/thresholds/dashboard`: 阈值管理仪表板
+- `GET /monitoring/thresholds/server/{serverId}`: 服务器阈值配置页面
+
+#### 阈值配置API
+- `GET /monitoring/thresholds/api/server/{serverId}`: 获取服务器阈值配置 (JSON)
+- `POST /monitoring/thresholds/api/save`: 保存阈值配置 (JSON)
+- `POST /monitoring/thresholds/api/batch-save`: 批量保存阈值 (JSON)
+- `DELETE /monitoring/thresholds/api/{thresholdId}`: 删除阈值配置 (JSON)
+- `POST /monitoring/thresholds/api/server/{serverId}/reset`: 重置服务器阈值 (JSON)
+- `POST /monitoring/thresholds/api/server/{sourceServerId}/copy`: 复制阈值配置 (JSON)
+- `GET /monitoring/thresholds/api/statistics`: 获取阈值统计信息 (JSON)
+
+### 6. 监控历史API (`/monitoring/history`)
+**基础路径**: `/monitoring/history`
+
+#### 历史数据API
+- `GET /monitoring/history/api/server/{serverId}/data`: 获取服务器历史数据 (JSON)
+- `GET /monitoring/history/api/servers/compare`: 比较服务器数据 (JSON)
+- `GET /monitoring/history/api/server/{serverId}/realtime`: 获取实时数据 (JSON)
+- `GET /monitoring/history/api/server/{serverId}/statistics`: 获取服务器统计信息 (JSON)
+- `GET /monitoring/history/api/server/{serverId}/anomalies`: 获取异常事件 (JSON)
+- `GET /monitoring/history/api/servers/ranking`: 获取服务器性能排名 (JSON)
+- `GET /monitoring/history/api/server/{serverId}/export`: 导出历史数据为CSV
+- `GET /monitoring/history/api/server/{serverId}/quick-range`: 获取快速时间范围数据 (JSON)
+
+### 7. 应用配置API (`/api/applications/{applicationId}/config`)
+**基础路径**: `/api/applications/{applicationId}/config`
+
+#### 配置管理
+- `GET /api/applications/{applicationId}/config/active`: 获取活跃配置 (JSON)
+- `GET /api/applications/{applicationId}/config`: 获取所有配置 (JSON)
+- `GET /api/applications/{applicationId}/config/history`: 获取配置历史 (JSON)
+- `POST /api/applications/{applicationId}/config`: 创建配置 (JSON)
+- `POST /api/applications/{applicationId}/config/{configId}/apply`: 应用配置 (JSON)
+- `POST /api/applications/{applicationId}/config/validate`: 验证配置 (JSON)
+- `POST /api/applications/{applicationId}/config/backup`: 创建配置备份 (JSON)
+- `POST /api/applications/{applicationId}/config/{configId}/hot-reload`: 热重载配置 (JSON)
+
+#### 配置模板与导入导出
+- `GET /api/applications/{applicationId}/config/templates`: 获取配置模板 (JSON)
+- `POST /api/applications/{applicationId}/config/templates`: 创建配置模板 (JSON)
+- `POST /api/applications/{applicationId}/config/templates/{templateName}/apply`: 应用配置模板 (JSON)
+- `GET /api/applications/{applicationId}/config/{configId}/export/json`: 导出配置为JSON
+- `GET /api/applications/{applicationId}/config/{configId}/export/yaml`: 导出配置为YAML
+- `GET /api/applications/{applicationId}/config/{configId1}/compare/{configId2}`: 比较配置 (JSON)
+
+### 8. 日志管理API (`/api/logs`)
+**基础路径**: `/api/logs`
+
+#### 日志监控
+- `POST /api/logs/{applicationId}/start-monitoring`: 开始日志监控 (JSON)
+- `POST /api/logs/{applicationId}/stop-monitoring`: 停止日志监控 (JSON)
+- `GET /api/logs/{applicationId}/tail`: 获取尾部日志 (JSON)
+- `GET /api/logs/{applicationId}/info`: 获取日志信息 (JSON)
+
+### 9. 远程命令API (`/api/command`)
+**基础路径**: `/api/command`
+
+#### 远程命令执行
+- `POST /api/command/execute/{serverId}`: 在服务器上执行命令 (JSON)
+- `POST /api/command/execute/batch`: 批量执行命令 (JSON)
+- `GET /api/command/file/{serverId}`: 读取远程文件 (JSON)
+- `POST /api/command/file/{serverId}`: 写入远程文件 (JSON)
+- `GET /api/command/common-commands`: 获取常用命令列表 (JSON)
+
+### 10. SSH终端API (`/terminal`)
+**基础路径**: `/terminal`
+
+#### 终端管理
+- `GET /terminal`: 终端首页
+- `GET /terminal/connect/{serverId}`: 连接服务器终端页面
+- `GET /terminal/manager`: 终端管理器页面
+
+#### 终端数据API
+- `GET /terminal/api/servers`: 获取服务器列表 (JSON)
+- `GET /terminal/api/sessions`: 获取活跃SSH会话 (JSON)
+- `GET /terminal/api/session/{sessionId}/status`: 获取会话状态 (JSON)
+- `DELETE /terminal/api/session/{sessionId}`: 关闭SSH会话 (JSON)
+- `GET /terminal/api/stats`: 获取会话统计信息 (JSON)
+- `POST /terminal/api/test-connection/{serverId}`: 测试服务器连接 (JSON)
+
+### 11. WebSocket实时通信API
+**协议**: STOMP over WebSocket
+**端点**: `/ws`
+
+#### 消息映射
+- `@MessageMapping /connect` → `@SendTo /topic/status`: 处理客户端连接
+- `@SubscribeMapping /logs/{applicationId}`: 处理日志订阅
+- `@SubscribeMapping /status`: 处理状态订阅
+
+#### 订阅主题
+- `/topic/status`: 通用状态更新
+- `/topic/app-status`: 应用状态更新
+- `/topic/server-status`: 服务器状态更新
+- `/logs/{applicationId}`: 应用特定日志流
+
+### 12. 调试与测试API
+**基础路径**: `/debug`, `/test`
+
+#### 调试端点
+- `GET /debug/check-root`: 检查root用户状态
+- `GET /debug/test-aggregated-metrics`: 测试聚合监控指标
+- `GET /debug/test-monitoring-service`: 测试监控服务
+- `GET /debug/test-user-profile`: 测试用户档案功能
+- `GET /debug/check-server-status`: 检查服务器状态信息
+
+#### 测试端点
+- `GET /test/ssh`: SSH测试页面
+- `POST /test/ssh/connect`: 测试SSH连接 (JSON)
+- `POST /test/ssh/execute`: 执行SSH命令测试 (JSON)
+- `GET /test/ssh/servers`: 获取测试服务器列表 (JSON)
+- `GET /test/server-management`: 测试服务器管理功能 (JSON)
 
 ## 安全注意事项
 
@@ -456,7 +733,7 @@ jstack <PID>
 
 **开发团队**: CMICT Internal PaaS Team
 **技术支持**: 查看项目README或提交Issue
-**文档更新**: 2025-08-26
+**文档更新**: 2025-09-02
 
 ---
 
