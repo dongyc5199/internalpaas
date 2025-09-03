@@ -2,6 +2,7 @@ package com.cmict.internalpaas.model;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -67,6 +68,18 @@ public class User {
     
     @Column(name = "failed_login_attempts")
     private Integer failedLoginAttempts = 0;
+    
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "user_servers",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "server_id")
+    )
+    private Set<Server> availableServers = new HashSet<>();
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "default_server_id")
+    private Server defaultServer;
 
     @PrePersist
     protected void onCreate() {
@@ -156,5 +169,11 @@ public class User {
     public void incrementFailedLoginAttempts() {
         this.failedLoginAttempts = (this.failedLoginAttempts == null ? 0 : this.failedLoginAttempts) + 1;
     }
+    
+    public Set<Server> getAvailableServers() { return availableServers; }
+    public void setAvailableServers(Set<Server> availableServers) { this.availableServers = availableServers; }
+    
+    public Server getDefaultServer() { return defaultServer; }
+    public void setDefaultServer(Server defaultServer) { this.defaultServer = defaultServer; }
 }
 

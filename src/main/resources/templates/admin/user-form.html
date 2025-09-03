@@ -59,6 +59,42 @@
             border: 1px solid #e9ecef;
         }
         
+        /* 服务器选择样式 */
+        .server-selection-container {
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            border: 1px solid #e9ecef;
+        }
+        
+        .server-option {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .server-option:hover {
+            border-color: #0d6efd;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .server-option:has(.form-check-input:checked) {
+            border-color: #0d6efd;
+            background: #f0f7ff;
+        }
+        
+        .server-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
         .role-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -338,13 +374,69 @@
                             </div>
                         </div>
 
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="workDirectory" class="form-label">工作目录 *</label>
-                                <input type="text" class="form-control" id="workDirectory" th:field="*{workDirectory}" required 
-                                       placeholder="例如：./workspaces/username">
-                                <div class="form-text">用户工作目录的路径</div>
+                    </div>
+
+                    <!-- 服务器资源选择 -->
+                    <div class="form-group">
+                        <label class="form-label">可用服务器资源 *</label>
+                        <div class="server-selection-container" style="background: #f8f9fa; border-radius: 0.5rem; padding: 1.5rem; border: 1px solid #e9ecef;">
+                            <div class="row" th:if="${servers != null and !servers.isEmpty()}">
+                                <div class="col-md-6 col-lg-4 mb-3" th:each="server : ${servers}">
+                                    <div class="server-option" style="background: white; border: 2px solid #e9ecef; border-radius: 0.5rem; padding: 1rem; transition: all 0.2s ease; cursor: pointer;">
+                                        <div class="form-check">
+                                            <input class="form-check-input server-checkbox" type="checkbox" 
+                                                   th:id="'server' + ${server.id}"
+                                                   name="serverIds" 
+                                                   th:value="${server.id}"
+                                                   th:checked="${user.availableServers != null and user.availableServers.contains(server)}">
+                                            <label class="form-check-label" th:for="'server' + ${server.id}">
+                                                <div class="server-title" style="font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                                                    <i class="fas fa-server" th:class="'fas fa-server text-' + (${server.connectionStatus?.name() == 'CONNECTED'} ? 'success' : 'secondary')"></i>
+                                                    <span th:text="${server.name}">服务器名称</span>
+                                                </div>
+                                                <small class="text-muted">
+                                                    <div th:text="${server.host + ':' + server.port}">IP:端口</div>
+                                                    <div th:text="'状态: ' + ${server.connectionStatus?.name() ?: 'UNKNOWN'}" 
+                                                         th:class="'text-' + (${server.connectionStatus?.name() == 'CONNECTED'} ? 'success' : 'warning')">状态</div>
+                                                </small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                            <div th:if="${servers == null or servers.isEmpty()}" class="text-center text-muted py-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                暂无可用服务器，请先添加服务器资源
+                            </div>
+                        </div>
+                        <div class="form-text">选择用户可以访问的服务器资源</div>
+                    </div>
+
+                    <!-- 默认服务器选择 -->
+                    <div class="form-group">
+                        <label for="defaultServerId" class="form-label">默认服务器</label>
+                        <select class="form-control" id="defaultServerId" name="defaultServerId">
+                            <option value="">请选择默认服务器</option>
+                            <option th:each="server : ${servers}" 
+                                    th:value="${server.id}" 
+                                    th:text="${server.name + ' (' + server.host + ')'}"
+                                    th:selected="${user.defaultServer != null and user.defaultServer.id == server.id}">
+                            </option>
+                        </select>
+                        <div class="form-text">用户登录后默认使用的服务器（可选）</div>
+                    </div>
+
+                    <!-- 工作目录设置 -->
+                    <div class="form-group">
+                        <label for="workDirectory" class="form-label">工作目录模板</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-folder"></i></span>
+                            <input type="text" class="form-control" id="workDirectory" th:field="*{workDirectory}" 
+                                   placeholder="例如：/home/{username} 或 ./workspaces/{username}"
+                                   th:value="${user.workDirectory ?: '/home/{username}'}">
+                        </div>
+                        <div class="form-text">
+                            工作目录模板，{username} 会被替换为实际用户名。将在选中的服务器上创建此目录。
                         </div>
                     </div>
 
@@ -449,6 +541,30 @@
                 updateRoleOptionStyle(option, checkbox.checked);
             });
             
+            // 服务器选择增强体验
+            const serverOptions = document.querySelectorAll('.server-option');
+            serverOptions.forEach(option => {
+                const checkbox = option.querySelector('.server-checkbox');
+                
+                // 点击整个区域切换选择状态
+                option.addEventListener('click', function(e) {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                        updateServerOptionStyle(option, checkbox.checked);
+                        updateDefaultServerOptions();
+                    }
+                });
+                
+                // 监听复选框变化
+                checkbox.addEventListener('change', function() {
+                    updateServerOptionStyle(option, this.checked);
+                    updateDefaultServerOptions();
+                });
+                
+                // 初始化样式
+                updateServerOptionStyle(option, checkbox.checked);
+            });
+            
             // 表单验证增强
             const form = document.querySelector('form');
             if (form) {
@@ -486,6 +602,51 @@
             }
         }
         
+        // 更新服务器选项样式
+        function updateServerOptionStyle(option, isChecked) {
+            if (isChecked) {
+                option.classList.add('selected');
+                option.style.borderColor = '#0d6efd';
+                option.style.background = '#f0f7ff';
+            } else {
+                option.classList.remove('selected');
+                option.style.borderColor = '#e9ecef';
+                option.style.background = 'white';
+            }
+        }
+        
+        // 更新默认服务器选项列表
+        function updateDefaultServerOptions() {
+            const selectedServerCheckboxes = document.querySelectorAll('.server-checkbox:checked');
+            const defaultServerSelect = document.getElementById('defaultServerId');
+            const currentDefaultValue = defaultServerSelect.value;
+            
+            // 清空现有选项（保留空选项）
+            while (defaultServerSelect.children.length > 1) {
+                defaultServerSelect.removeChild(defaultServerSelect.lastChild);
+            }
+            
+            // 添加已选中的服务器到默认服务器选项
+            selectedServerCheckboxes.forEach(checkbox => {
+                const serverId = checkbox.value;
+                const serverOption = checkbox.closest('.server-option');
+                const serverName = serverOption.querySelector('.server-title span').textContent;
+                const serverHost = serverOption.querySelector('small div').textContent;
+                
+                const option = document.createElement('option');
+                option.value = serverId;
+                option.textContent = `${serverName} (${serverHost})`;
+                option.selected = serverId === currentDefaultValue;
+                
+                defaultServerSelect.appendChild(option);
+            });
+            
+            // 如果当前默认服务器不在选中列表中，清空选择
+            if (currentDefaultValue && !Array.from(selectedServerCheckboxes).some(cb => cb.value === currentDefaultValue)) {
+                defaultServerSelect.value = '';
+            }
+        }
+        
         // 表单验证
         function validateForm() {
             let isValid = true;
@@ -494,6 +655,13 @@
             const roleCheckboxes = document.querySelectorAll('input[name="roles"]:checked');
             if (roleCheckboxes.length === 0) {
                 showNotification('请至少选择一个用户角色', 'warning');
+                isValid = false;
+            }
+            
+            // 检查是否至少选择了一个服务器
+            const serverCheckboxes = document.querySelectorAll('.server-checkbox:checked');
+            if (serverCheckboxes.length === 0) {
+                showNotification('请至少选择一个可用服务器', 'warning');
                 isValid = false;
             }
             

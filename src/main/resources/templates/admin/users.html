@@ -772,11 +772,11 @@
         <div class="nav-menu">
             <a href="/profile" class="user-profile" title="查看个人档案">
                 <div class="user-avatar">
-                    <span th:text="${#strings.substring(username ?: 'A', 0, 1)}">A</span>
+                    <span th:text="${#strings.substring(username != null ? username : 'A', 0, 1)}">A</span>
                 </div>
                 <div class="user-info">
                     <span class="greeting">欢迎回来</span>
-                    <span class="username" th:text="${username ?: '管理员'}">管理员</span>
+                    <span class="username" th:text="${username != null ? username : '管理员'}">管理员</span>
                 </div>
             </a>
             <div class="nav-actions">
@@ -863,7 +863,7 @@
                         </div>
                     </div>
                     <div class="stat-body">
-                        <div class="stat-number" th:text="${totalUsers ?: 0}">0</div>
+                        <div class="stat-number" th:text="${totalUsers != null ? totalUsers : 0}">0</div>
                         <div class="stat-label">总用户数</div>
                         <div class="stat-sublabel">系统注册用户</div>
                     </div>
@@ -878,7 +878,7 @@
                         </div>
                     </div>
                     <div class="stat-body">
-                        <div class="stat-number" th:text="${adminUsers ?: 0}">0</div>
+                        <div class="stat-number" th:text="${adminUsers != null ? adminUsers : 0}">0</div>
                         <div class="stat-label">管理员用户</div>
                         <div class="stat-sublabel">具有管理权限</div>
                     </div>
@@ -893,7 +893,7 @@
                         </div>
                     </div>
                     <div class="stat-body">
-                        <div class="stat-number" th:text="${regularUsers ?: 0}">0</div>
+                        <div class="stat-number" th:text="${regularUsers != null ? regularUsers : 0}">0</div>
                         <div class="stat-label">开发者用户</div>
                         <div class="stat-sublabel">普通开发用户</div>
                     </div>
@@ -908,7 +908,7 @@
                         </div>
                     </div>
                     <div class="stat-body">
-                        <div class="stat-number" th:text="${recentUsers ?: 0}">0</div>
+                        <div class="stat-number" th:text="${recentUsers != null ? recentUsers : 0}">0</div>
                         <div class="stat-label">近期活跃</div>
                         <div class="stat-sublabel">7天内登录</div>
                     </div>
@@ -967,7 +967,7 @@
                         <div class="stats-grid-small">
                             <div class="stat-item">
                                 <div class="stat-item-label">登录次数</div>
-                                <div class="stat-item-value" th:text="${user.loginCount ?: 0}">0</div>
+                                <div class="stat-item-value" th:text="${user.loginCount != null ? user.loginCount : 0}">0</div>
                             </div>
                             <div class="stat-item">
                                 <div class="stat-item-label">注册时间</div>
@@ -981,6 +981,45 @@
                                 <div class="stat-item-label">状态</div>
                                 <div class="stat-item-value">首次登录</div>
                             </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 服务器资源信息 -->
+                    <div class="user-servers-section" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                        <div class="section-header" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                            <i class="fas fa-server" style="color: var(--primary-color);"></i>
+                            <span style="font-weight: 600; color: var(--text-color);">可用服务器</span>
+                            <span class="badge bg-primary rounded-pill" th:text="${user.availableServers != null ? user.availableServers.size() : 0}">0</span>
+                        </div>
+                        
+                        <div th:if="${user.availableServers != null and !user.availableServers.isEmpty()}" class="servers-list">
+                            <div th:each="server : ${user.availableServers}" class="server-item" 
+                                 style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: var(--background-light); border-radius: 6px; margin-bottom: 0.5rem;">
+                                <i class="fas fa-server" 
+                                   th:class="'fas fa-server text-' + (${server.connectionStatus != null and server.connectionStatus.name() == 'CONNECTED'} ? 'success' : 'secondary')"
+                                   style="font-size: 0.875rem;"></i>
+                                <span style="font-weight: 500; flex-grow: 1;" th:text="${server.name}">服务器名称</span>
+                                <span class="badge" 
+                                      th:class="'badge bg-' + (${server.connectionStatus != null and server.connectionStatus.name() == 'CONNECTED'} ? 'success' : 'secondary')"
+                                      th:text="${server.connectionStatus != null ? server.connectionStatus.name() : 'UNKNOWN'}"
+                                      style="font-size: 0.7rem;">状态</span>
+                                <span th:if="${user.defaultServer != null and user.defaultServer.id == server.id}" 
+                                      class="badge bg-primary" style="font-size: 0.7rem;">默认</span>
+                            </div>
+                        </div>
+                        
+                        <div th:if="${user.availableServers == null or user.availableServers.isEmpty()}" 
+                             class="text-muted" style="font-size: 0.875rem; font-style: italic;">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            未分配服务器资源
+                        </div>
+                        
+                        <div th:if="${user.workDirectory}" class="work-directory-info" style="margin-top: 0.75rem;">
+                            <div style="font-size: 0.75rem; color: var(--text-color-secondary); margin-bottom: 0.25rem;">
+                                <i class="fas fa-folder me-1"></i>工作目录
+                            </div>
+                            <code style="font-size: 0.75rem; background: var(--background-dark); padding: 0.25rem 0.5rem; border-radius: 4px;" 
+                                  th:text="${user.workDirectory}">工作目录路径</code>
                         </div>
                     </div>
                     

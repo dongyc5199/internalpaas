@@ -4,6 +4,7 @@ import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.model.User;
 import com.cmict.internalpaas.service.MonitoringSchedulerService;
+import com.cmict.internalpaas.service.RemoteCommandService;
 import com.cmict.internalpaas.service.ServerService;
 import com.cmict.internalpaas.service.UserService;
 import com.cmict.internalpaas.repository.UserRepository;
@@ -20,6 +21,7 @@ import java.util.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +46,9 @@ public class AdminController {
     
     @Autowired
     private MonitoringSchedulerService schedulerService;
+    
+    @Autowired
+    private RemoteCommandService remoteCommandService;
 
     @GetMapping("/servers")
     public String serverManagement(Model model) {
@@ -532,25 +537,53 @@ public class AdminController {
         }
     }
     
-    // 仅超级管理员可以创建新用户
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @GetMapping("/users/new")
     public String newUserForm(Model model) {
         model.addAttribute("user", new User());
+        model.addAttribute("servers", serverService.getAllServers());
         return "admin/user-form";
     }
     
     // 仅超级管理员可以创建新用户
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping("/users")
-    public String createUser(@ModelAttribute User user, RedirectAttributes redirectAttributes) {
+    public String createUser(@ModelAttribute User user, 
+                            @RequestParam(value = "serverIds", required = false) List<Long> serverIds,
+                            @RequestParam(value = "defaultServerId", required = false) Long defaultServerId,
+                            RedirectAttributes redirectAttributes) {
         try {
             // 对密码进行加密处理
             if (user.getPassword() != null && !user.getPassword().isEmpty()) {
                 user.setPassword(passwordEncoder.encode(user.getPassword()));
             }
+            
+            // 处理服务器关联
+            if (serverIds != null && !serverIds.isEmpty()) {
+                Set<Server> availableServers = new HashSet<>();
+                for (Long serverId : serverIds) {
+                    serverService.findById(serverId).ifPresent(availableServers::add);
+                }
+                user.setAvailableServers(availableServers);
+            }
+            
+            // 设置默认服务器
+            if (defaultServerId != null) {
+                serverService.findById(defaultServerId).ifPresent(user::setDefaultServer);
+            }
+            
+            // 处理工作目录模板
+            if (user.getWorkDirectory() != null) {
+                String workDir = user.getWorkDirectory().replace("{username}", user.getUsername());
+                user.setWorkDirectory(workDir);
+            }
+            
             userService.save(user);
-            redirectAttributes.addFlashAttribute("successMessage", "用户创建成功");
+            
+            // 在选中的服务器上创建工作目录
+            createWorkDirectoryOnServers(user);
+            
+            redirectAttributes.addFlashAttribute("successMessage", "用户创建成功，工作目录已在选中服务器上创建");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "用户创建失败: " + e.getMessage());
         }
@@ -566,13 +599,18 @@ public class AdminController {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("用户未找到"));
         model.addAttribute("user", user);
+        model.addAttribute("servers", serverService.getAllServers());
         return "admin/user-form";
     }
     
     // 仅超级管理员可以更新用户
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping("/users/{id}/update")
-    public String updateUser(@PathVariable Long id, @ModelAttribute User user, RedirectAttributes redirectAttributes) {
+    public String updateUser(@PathVariable Long id, 
+                            @ModelAttribute User user,
+                            @RequestParam(value = "serverIds", required = false) List<Long> serverIds,
+                            @RequestParam(value = "defaultServerId", required = false) Long defaultServerId,
+                            RedirectAttributes redirectAttributes) {
         try {
             User existingUser = userService.findAllUsers().stream()
                     .filter(u -> u.getId().equals(id))
@@ -581,9 +619,32 @@ public class AdminController {
             
             // 更新用户信息，但不更新密码（除非提供了新密码）
             existingUser.setEmail(user.getEmail());
-            existingUser.setWorkDirectory(user.getWorkDirectory());
             existingUser.setRoles(user.getRoles());
             existingUser.setIsFirstLogin(user.getIsFirstLogin());
+            
+            // 处理服务器关联
+            if (serverIds != null && !serverIds.isEmpty()) {
+                Set<Server> availableServers = new HashSet<>();
+                for (Long serverId : serverIds) {
+                    serverService.findById(serverId).ifPresent(availableServers::add);
+                }
+                existingUser.setAvailableServers(availableServers);
+            } else {
+                existingUser.setAvailableServers(new HashSet<>());
+            }
+            
+            // 设置默认服务器
+            if (defaultServerId != null && serverIds != null && serverIds.contains(defaultServerId)) {
+                serverService.findById(defaultServerId).ifPresent(existingUser::setDefaultServer);
+            } else {
+                existingUser.setDefaultServer(null);
+            }
+            
+            // 处理工作目录模板
+            if (user.getWorkDirectory() != null && !user.getWorkDirectory().isEmpty()) {
+                String workDir = user.getWorkDirectory().replace("{username}", existingUser.getUsername());
+                existingUser.setWorkDirectory(workDir);
+            }
             
             // 如果提供了新密码，则更新密码
             if (user.getPassword() != null && !user.getPassword().isEmpty()) {
@@ -591,10 +652,66 @@ public class AdminController {
             }
             
             userService.save(existingUser);
-            redirectAttributes.addFlashAttribute("successMessage", "用户更新成功");
+            
+            // 在选中的服务器上创建工作目录
+            createWorkDirectoryOnServers(existingUser);
+            
+            redirectAttributes.addFlashAttribute("successMessage", "用户更新成功，工作目录已在选中服务器上更新");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "用户更新失败: " + e.getMessage());
         }
         return "redirect:/admin/users";
+    }
+    
+    /**
+     * 在用户可用的服务器上创建工作目录
+     */
+    private void createWorkDirectoryOnServers(User user) {
+        if (user.getAvailableServers() == null || user.getAvailableServers().isEmpty()) {
+            logger.warn("用户 {} 没有分配任何服务器资源", user.getUsername());
+            return;
+        }
+        
+        if (user.getWorkDirectory() == null || user.getWorkDirectory().isEmpty()) {
+            logger.warn("用户 {} 没有设置工作目录", user.getUsername());
+            return;
+        }
+        
+        String workDir = user.getWorkDirectory();
+        logger.info("开始在用户 {} 的 {} 个服务器上创建工作目录: {}", 
+                   user.getUsername(), user.getAvailableServers().size(), workDir);
+        
+        for (Server server : user.getAvailableServers()) {
+            try {
+                // 创建目录命令
+                String createDirCommand = "mkdir -p " + workDir;
+                
+                // 执行创建目录命令
+                var result = remoteCommandService.executeCommand(server, createDirCommand);
+                
+                if (result.isSuccess()) {
+                    logger.info("成功在服务器 {} 上创建工作目录: {}", server.getName(), workDir);
+                    
+                    // 设置目录权限
+                    String chmodCommand = "chmod 755 " + workDir;
+                    remoteCommandService.executeCommand(server, chmodCommand);
+                    
+                    // 创建用户信息文件
+                    String userInfoCommand = String.format(
+                        "echo 'User: %s\nCreated: %s\nDirectory: %s' > %s/.user_info", 
+                        user.getUsername(), 
+                        java.time.LocalDateTime.now().toString(),
+                        workDir,
+                        workDir
+                    );
+                    remoteCommandService.executeCommand(server, userInfoCommand);
+                    
+                } else {
+                    logger.warn("在服务器 {} 上创建工作目录失败: {}", server.getName(), result.getError());
+                }
+            } catch (Exception e) {
+                logger.error("在服务器 {} 上创建工作目录时发生异常: {}", server.getName(), e.getMessage(), e);
+            }
+        }
     }
 }
