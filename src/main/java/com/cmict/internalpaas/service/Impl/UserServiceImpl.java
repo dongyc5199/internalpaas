@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);

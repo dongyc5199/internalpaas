@@ -15,15 +15,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/admin")
@@ -117,6 +114,23 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("errorMessage", "保存失败: " + e.getMessage());
         }
         return "redirect:/admin/servers";
+    }
+    
+    /**
+     * 获取服务器列表API - 用于前端选择
+     */
+    @GetMapping("/api/servers")
+    @ResponseBody
+    public ResponseEntity<?> getServerListApi() {
+        try {
+            List<Server> servers = serverService.getAllServers();
+            return ResponseEntity.ok(servers);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", e.getMessage());
+            return ResponseEntity.internalServerError().body(error);
+        }
     }
     
     /**
@@ -351,6 +365,7 @@ public class AdminController {
     }
 
     @GetMapping("/users")
+    @Transactional(readOnly = true)
     public String userManagement(Model model) {
         List<User> users = userService.findAllUsers();
         model.addAttribute("users", users);
@@ -408,10 +423,77 @@ public class AdminController {
     }
     
     /**
+     * 删除用户API - AJAX调用
+     */
+    @DeleteMapping("/users/{id}")
+    @ResponseBody
+    public ResponseEntity<?> deleteUserApi(@PathVariable Long id) {
+        try {
+            userService.deleteUser(id);
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "用户删除成功");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", e.getMessage());
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+    
+    /**
+     * 重置用户密码API - AJAX调用
+     */
+    @PostMapping("/users/{id}/reset-password")
+    @ResponseBody
+    public ResponseEntity<?> resetUserPasswordApi(@PathVariable Long id) {
+        try {
+            // 生成随机密码
+            String newPassword = generateRandomPassword();
+            
+            User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("用户未找到"));
+            
+            // 更新密码
+            user.setPassword(passwordEncoder.encode(newPassword));
+            user.setIsFirstLogin(true); // 强制首次登录修改密码
+            userRepository.save(user);
+            
+            logger.info("管理员重置了用户 {} 的密码", user.getUsername());
+            
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "密码重置成功，新密码：" + newPassword);
+            response.put("newPassword", newPassword);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", e.getMessage());
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+    
+    /**
+     * 生成随机密码
+     */
+    private String generateRandomPassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder password = new StringBuilder();
+        java.util.Random random = new java.util.Random();
+        for (int i = 0; i < 8; i++) {
+            password.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return password.toString();
+    }
+    
+    /**
      * 获取用户数据API - 用于抽屉编辑
      */
     @GetMapping("/users/{id}/data")
     @ResponseBody
+    @Transactional // 添加事务注解以解决懒加载问题
     public ResponseEntity<?> getUserData(@PathVariable Long id) {
         try {
             User user = userRepository.findById(id)
@@ -471,6 +553,15 @@ public class AdminController {
                 user.setRoles(roles);
             }
             
+            // 设置工作目录模板替换
+            if (user.getWorkDirectory() != null && !user.getWorkDirectory().isEmpty()) {
+                String workDir = user.getWorkDirectory().replace("{username}", user.getUsername());
+                user.setWorkDirectory(workDir);
+            } else {
+                // 如果未设置工作目录，自动生成
+                user.setWorkDirectory("/home/" + user.getUsername());
+            }
+            
             User savedUser = userService.save(user);
             
             Map<String, Object> response = new HashMap<>();
@@ -522,6 +613,12 @@ public class AdminController {
                 user.setRoles(roles);
             }
             
+            // 处理工作目录
+            if (user.getWorkDirectory() != null && !user.getWorkDirectory().isEmpty()) {
+                String workDir = user.getWorkDirectory().replace("{username}", user.getUsername());
+                user.setWorkDirectory(workDir);
+            }
+            
             User updatedUser = userService.save(user);
             
             Map<String, Object> response = new HashMap<>();
@@ -541,7 +638,6 @@ public class AdminController {
     @GetMapping("/users/new")
     public String newUserForm(Model model) {
         model.addAttribute("user", new User());
-        model.addAttribute("servers", serverService.getAllServers());
         return "admin/user-form";
     }
     
@@ -549,27 +645,11 @@ public class AdminController {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping("/users")
     public String createUser(@ModelAttribute User user, 
-                            @RequestParam(value = "serverIds", required = false) List<Long> serverIds,
-                            @RequestParam(value = "defaultServerId", required = false) Long defaultServerId,
                             RedirectAttributes redirectAttributes) {
         try {
             // 对密码进行加密处理
             if (user.getPassword() != null && !user.getPassword().isEmpty()) {
                 user.setPassword(passwordEncoder.encode(user.getPassword()));
-            }
-            
-            // 处理服务器关联
-            if (serverIds != null && !serverIds.isEmpty()) {
-                Set<Server> availableServers = new HashSet<>();
-                for (Long serverId : serverIds) {
-                    serverService.findById(serverId).ifPresent(availableServers::add);
-                }
-                user.setAvailableServers(availableServers);
-            }
-            
-            // 设置默认服务器
-            if (defaultServerId != null) {
-                serverService.findById(defaultServerId).ifPresent(user::setDefaultServer);
             }
             
             // 处理工作目录模板
@@ -580,10 +660,7 @@ public class AdminController {
             
             userService.save(user);
             
-            // 在选中的服务器上创建工作目录
-            createWorkDirectoryOnServers(user);
-            
-            redirectAttributes.addFlashAttribute("successMessage", "用户创建成功，工作目录已在选中服务器上创建");
+            redirectAttributes.addFlashAttribute("successMessage", "用户创建成功");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "用户创建失败: " + e.getMessage());
         }
@@ -599,7 +676,6 @@ public class AdminController {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("用户未找到"));
         model.addAttribute("user", user);
-        model.addAttribute("servers", serverService.getAllServers());
         return "admin/user-form";
     }
     
@@ -608,8 +684,6 @@ public class AdminController {
     @PostMapping("/users/{id}/update")
     public String updateUser(@PathVariable Long id, 
                             @ModelAttribute User user,
-                            @RequestParam(value = "serverIds", required = false) List<Long> serverIds,
-                            @RequestParam(value = "defaultServerId", required = false) Long defaultServerId,
                             RedirectAttributes redirectAttributes) {
         try {
             User existingUser = userService.findAllUsers().stream()
@@ -621,24 +695,6 @@ public class AdminController {
             existingUser.setEmail(user.getEmail());
             existingUser.setRoles(user.getRoles());
             existingUser.setIsFirstLogin(user.getIsFirstLogin());
-            
-            // 处理服务器关联
-            if (serverIds != null && !serverIds.isEmpty()) {
-                Set<Server> availableServers = new HashSet<>();
-                for (Long serverId : serverIds) {
-                    serverService.findById(serverId).ifPresent(availableServers::add);
-                }
-                existingUser.setAvailableServers(availableServers);
-            } else {
-                existingUser.setAvailableServers(new HashSet<>());
-            }
-            
-            // 设置默认服务器
-            if (defaultServerId != null && serverIds != null && serverIds.contains(defaultServerId)) {
-                serverService.findById(defaultServerId).ifPresent(existingUser::setDefaultServer);
-            } else {
-                existingUser.setDefaultServer(null);
-            }
             
             // 处理工作目录模板
             if (user.getWorkDirectory() != null && !user.getWorkDirectory().isEmpty()) {
@@ -653,10 +709,7 @@ public class AdminController {
             
             userService.save(existingUser);
             
-            // 在选中的服务器上创建工作目录
-            createWorkDirectoryOnServers(existingUser);
-            
-            redirectAttributes.addFlashAttribute("successMessage", "用户更新成功，工作目录已在选中服务器上更新");
+            redirectAttributes.addFlashAttribute("successMessage", "用户更新成功");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "用户更新失败: " + e.getMessage());
         }
@@ -664,54 +717,17 @@ public class AdminController {
     }
     
     /**
-     * 在用户可用的服务器上创建工作目录
+     * 处理用户服务器分配（已删除）
+     */
+    private void handleUserServerAssignment(User user, Map<String, Object> userData) {
+        // 服务器相关功能已删除
+        logger.info("用户 {} 信息更新完成", user.getUsername());
+    }
+    
+    /**
+     * 在用户可用的服务器上创建工作目录（已删除）
      */
     private void createWorkDirectoryOnServers(User user) {
-        if (user.getAvailableServers() == null || user.getAvailableServers().isEmpty()) {
-            logger.warn("用户 {} 没有分配任何服务器资源", user.getUsername());
-            return;
-        }
-        
-        if (user.getWorkDirectory() == null || user.getWorkDirectory().isEmpty()) {
-            logger.warn("用户 {} 没有设置工作目录", user.getUsername());
-            return;
-        }
-        
-        String workDir = user.getWorkDirectory();
-        logger.info("开始在用户 {} 的 {} 个服务器上创建工作目录: {}", 
-                   user.getUsername(), user.getAvailableServers().size(), workDir);
-        
-        for (Server server : user.getAvailableServers()) {
-            try {
-                // 创建目录命令
-                String createDirCommand = "mkdir -p " + workDir;
-                
-                // 执行创建目录命令
-                var result = remoteCommandService.executeCommand(server, createDirCommand);
-                
-                if (result.isSuccess()) {
-                    logger.info("成功在服务器 {} 上创建工作目录: {}", server.getName(), workDir);
-                    
-                    // 设置目录权限
-                    String chmodCommand = "chmod 755 " + workDir;
-                    remoteCommandService.executeCommand(server, chmodCommand);
-                    
-                    // 创建用户信息文件
-                    String userInfoCommand = String.format(
-                        "echo 'User: %s\nCreated: %s\nDirectory: %s' > %s/.user_info", 
-                        user.getUsername(), 
-                        java.time.LocalDateTime.now().toString(),
-                        workDir,
-                        workDir
-                    );
-                    remoteCommandService.executeCommand(server, userInfoCommand);
-                    
-                } else {
-                    logger.warn("在服务器 {} 上创建工作目录失败: {}", server.getName(), result.getError());
-                }
-            } catch (Exception e) {
-                logger.error("在服务器 {} 上创建工作目录时发生异常: {}", server.getName(), e.getMessage(), e);
-            }
-        }
+        // 服务器相关功能已删除
     }
 }

@@ -378,53 +378,7 @@
 
                     <!-- 服务器资源选择 -->
                     <div class="form-group">
-                        <label class="form-label">可用服务器资源 *</label>
-                        <div class="server-selection-container" style="background: #f8f9fa; border-radius: 0.5rem; padding: 1.5rem; border: 1px solid #e9ecef;">
-                            <div class="row" th:if="${servers != null and !servers.isEmpty()}">
-                                <div class="col-md-6 col-lg-4 mb-3" th:each="server : ${servers}">
-                                    <div class="server-option" style="background: white; border: 2px solid #e9ecef; border-radius: 0.5rem; padding: 1rem; transition: all 0.2s ease; cursor: pointer;">
-                                        <div class="form-check">
-                                            <input class="form-check-input server-checkbox" type="checkbox" 
-                                                   th:id="'server' + ${server.id}"
-                                                   name="serverIds" 
-                                                   th:value="${server.id}"
-                                                   th:checked="${user.availableServers != null and user.availableServers.contains(server)}">
-                                            <label class="form-check-label" th:for="'server' + ${server.id}">
-                                                <div class="server-title" style="font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                                                    <i class="fas fa-server" th:class="'fas fa-server text-' + (${server.connectionStatus?.name() == 'CONNECTED'} ? 'success' : 'secondary')"></i>
-                                                    <span th:text="${server.name}">服务器名称</span>
-                                                </div>
-                                                <small class="text-muted">
-                                                    <div th:text="${server.host + ':' + server.port}">IP:端口</div>
-                                                    <div th:text="'状态: ' + ${server.connectionStatus?.name() ?: 'UNKNOWN'}" 
-                                                         th:class="'text-' + (${server.connectionStatus?.name() == 'CONNECTED'} ? 'success' : 'warning')">状态</div>
-                                                </small>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div th:if="${servers == null or servers.isEmpty()}" class="text-center text-muted py-3">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                暂无可用服务器，请先添加服务器资源
-                            </div>
-                        </div>
-                        <div class="form-text">选择用户可以访问的服务器资源</div>
-                    </div>
 
-                    <!-- 默认服务器选择 -->
-                    <div class="form-group">
-                        <label for="defaultServerId" class="form-label">默认服务器</label>
-                        <select class="form-control" id="defaultServerId" name="defaultServerId">
-                            <option value="">请选择默认服务器</option>
-                            <option th:each="server : ${servers}" 
-                                    th:value="${server.id}" 
-                                    th:text="${server.name + ' (' + server.host + ')'}"
-                                    th:selected="${user.defaultServer != null and user.defaultServer.id == server.id}">
-                            </option>
-                        </select>
-                        <div class="form-text">用户登录后默认使用的服务器（可选）</div>
-                    </div>
 
                     <!-- 工作目录设置 -->
                     <div class="form-group">
@@ -436,7 +390,7 @@
                                    th:value="${user.workDirectory ?: '/home/{username}'}">
                         </div>
                         <div class="form-text">
-                            工作目录模板，{username} 会被替换为实际用户名。将在选中的服务器上创建此目录。
+                            工作目录模板，{username} 会被替换为实际用户名。
                         </div>
                     </div>
 

@@ -219,193 +219,390 @@ class DrawerManager {
         const drawer = document.createElement('div');
         drawer.className = 'drawer user-drawer drawer-compact drawer-modern';
         drawer.innerHTML = `
+            <style>
+                /* 帮助信息提示样式 */
+                .drawer-header-with-help {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
+                    padding-bottom: 15px;
+                    border-bottom: 1px solid #e1e5e9;
+                }
+                
+                .help-tooltip {
+                    position: relative;
+                    display: inline-block;
+                }
+                
+                .help-icon {
+                    background: none;
+                    border: none;
+                    font-size: 20px;
+                    color: #6b7280;
+                    cursor: pointer;
+                    padding: 5px;
+                    border-radius: 50%;
+                    transition: all 0.2s ease;
+                }
+                
+                .help-icon:hover {
+                    background-color: #f3f4f6;
+                    color: #4b5563;
+                }
+                
+                .help-tooltip-content {
+                    position: absolute;
+                    left: 0;
+                    right: auto;
+                    top: 100%;
+                    margin-top: 5px;
+                    width: 250px;
+                    background-color: white;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 8px;
+                    padding: 15px;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                    z-index: 9999; /* 增加z-index值以确保显示在最上层 */
+                    opacity: 0;
+                    visibility: hidden;
+                    transition: opacity 0.2s ease, visibility 0.2s ease;
+                }
+                
+                .help-tooltip-content.show {
+                    opacity: 1;
+                    visibility: visible;
+                }
+                
+                .help-tooltip-content .help-item {
+                    margin-bottom: 10px;
+                }
+                
+                .help-tooltip-content .help-item:last-child {
+                    margin-bottom: 0;
+                }
+                
+                .help-tooltip-content h6 {
+                    margin: 0 0 5px 0;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #374151;
+                }
+                
+                .help-tooltip-content p {
+                    margin: 0;
+                    font-size: 13px;
+                    color: #6b7280;
+                    line-height: 1.4;
+                }
+                
+                /* 两栏布局样式 */
+                .drawer-dual-pane {
+                    display: flex;
+                    gap: 24px;
+                    height: calc(100% - 80px);
+                }
+                
+                .drawer-left-pane,
+                .drawer-right-pane {
+                    flex: 1;
+                    overflow-y: auto;
+                    padding-right: 10px;
+                }
+                
+                .drawer-left-pane::-webkit-scrollbar,
+                .drawer-right-pane::-webkit-scrollbar {
+                    width: 6px;
+                }
+                
+                .drawer-left-pane::-webkit-scrollbar-track,
+                .drawer-right-pane::-webkit-scrollbar-track {
+                    background: #f1f1f1;
+                    border-radius: 3px;
+                }
+                
+                .drawer-left-pane::-webkit-scrollbar-thumb,
+                .drawer-right-pane::-webkit-scrollbar-thumb {
+                    background: #c1c1c1;
+                    border-radius: 3px;
+                }
+                
+                .drawer-left-pane::-webkit-scrollbar-thumb:hover,
+                .drawer-right-pane::-webkit-scrollbar-thumb:hover {
+                    background: #a1a1a1;
+                }
+                
+                /* 动画效果 */
+                @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+                
+                .animate-spin {
+                    animation: spin 1s linear infinite;
+                }
+                
+                /* 移动端布局适配 */
+                @media (max-width: 768px) {
+                    .drawer-dual-pane {
+                        flex-direction: column;
+                        height: auto;
+                    }
+                    
+                    .drawer-left-pane,
+                    .drawer-right-pane {
+                        width: 100%;
+                        padding-right: 0;
+                    }
+                    
+                    .help-tooltip-content {
+                        right: auto;
+                        left: 0;
+                        width: 280px;
+                    }
+                }
+            </style>
+            
             <div class="drawer-header">
                 <h2 class="drawer-title">
                     <div class="drawer-title-icon">👥</div>
                     <span class="drawer-title-text">添加用户</span>
+                    <div class="help-tooltip" style="margin-left: 8px;">
+                        <button type="button" class="help-icon" id="drawerHelpBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </button>
+                        <div class="help-tooltip-content" id="drawerHelpContent">
+                            <div class="help-item">
+                                <h6>用户名规则</h6>
+                                <p>3-20个字符，支持字母、数字、下划线</p>
+                            </div>
+                            <div class="help-item">
+                                <h6>密码要求</h6>
+                                <p>至少8位，包含字母和数字</p>
+                            </div>
+                            <div class="help-item">
+                                <h6>服务器分配</h6>
+                                <p>至少选择一个可用服务器</p>
+                            </div>
+                        </div>
+                    </div>
                 </h2>
                 <button type="button" class="drawer-close" onclick="drawerManager.closeDrawer()">
                     ✕
                 </button>
             </div>
             <div class="drawer-content">
-                    <div class="drawer-messages"></div>
+                
+                <!-- 双列布局容器 -->
+                <div class="drawer-dual-pane">
+                    <!-- 第一栏：基本信息、密码设置、权限设置 -->
+                    <div class="drawer-left-pane">
+                        <div class="drawer-messages"></div>
+                        
+                        <form id="userDrawerForm" class="drawer-form">
+                            <input type="hidden" name="_csrf" value="">
+                            <input type="hidden" name="id" value="">
+                            
+                            <!-- 基本信息 -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">
+                                    <div class="form-section-icon">👤</div>
+                                    基本信息
+                                </h3>
+                                
+                                <div class="form-row">
+                                    <div class="col-6">
+                                        <div class="form-group compact">
+                                            <label class="form-label" for="userUsername">
+                                                <span class="form-label-text">用户名</span>
+                                                <span class="form-label-required">*</span>
+                                            </label>
+                                            <input type="text" id="userUsername" name="username" class="form-control" 
+                                                   placeholder="请输入用户名" required>
+                                            <div class="invalid-feedback"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-group compact">
+                                            <label class="form-label" for="userEmail">
+                                                <span class="form-label-text">邮箱地址</span>
+                                                <span class="form-label-required">*</span>
+                                            </label>
+                                            <input type="email" id="userEmail" name="email" class="form-control" 
+                                                   placeholder="请输入邮箱地址" required>
+                                            <div class="invalid-feedback"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group compact">
+                                    <label class="form-label" for="userWorkDirectory">
+                                        <span class="form-label-text">工作目录</span>
+                                    </label>
+                                    <input type="text" id="userWorkDirectory" name="workDirectory" class="form-control" 
+                                           placeholder="自动生成或手动输入">
+                                    <div class="form-help">
+                                        <span class="form-help-icon">💡</span>
+                                        <span class="form-help-text">留空将根据用户名自动生成</span>
+                                    </div>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- 密码设置 -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">
+                                    <div class="form-section-icon">🔐</div>
+                                    密码设置
+                                </h3>
+                                
+                                <div class="form-row">
+                                    <div class="col-6">
+                                        <div class="form-group compact">
+                                            <label class="form-label" for="userPassword">
+                                                <span class="form-label-text">登录密码</span>
+                                                <span class="form-label-required" id="passwordRequired">*</span>
+                                            </label>
+                                            <div class="password-input-group">
+                                                <input type="password" id="userPassword" name="password" class="form-control" 
+                                                       placeholder="请输入密码">
+                                                <button type="button" class="password-toggle" onclick="drawerManager.togglePasswordVisibility('userPassword')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                            <div class="form-help edit-mode-note" style="display: none;">
+                                                <span class="form-help-icon">ℹ️</span>
+                                                <span class="form-help-text">留空保持原密码不变</span>
+                                            </div>
+                                            <div class="invalid-feedback"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-group compact">
+                                            <label class="form-label" for="userPasswordConfirm">
+                                                <span class="form-label-text">确认密码</span>
+                                                <span class="form-label-required" id="confirmRequired">*</span>
+                                            </label>
+                                            <input type="password" id="userPasswordConfirm" name="passwordConfirm" class="form-control" 
+                                                   placeholder="请再次输入密码">
+                                            <div class="invalid-feedback"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="password-strength">
+                                    <div class="password-strength-bar">
+                                        <div class="password-strength-fill"></div>
+                                    </div>
+                                    <span class="password-strength-text">密码强度</span>
+                                </div>
+                            </div>
+                            
+                            <!-- 权限设置 -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">
+                                    <div class="form-section-icon">🛡️</div>
+                                    权限设置
+                                </h3>
+                                
+                                <div class="form-group compact">
+                                    <label class="form-label">
+                                        <span class="form-label-text">用户角色</span>
+                                        <span class="form-label-required">*</span>
+                                    </label>
+                                    <div class="role-selection compact">
+                                        <div class="role-card compact" data-role="USER">
+                                            <div class="role-card-header">
+                                                <input type="checkbox" name="roles" value="USER" id="roleUser">
+                                                <div class="role-icon">👨‍💻</div>
+                                            </div>
+                                            <div class="role-card-body">
+                                                <h6 class="role-card-title">开发者</h6>
+                                                <p class="role-card-description">可访问分配的服务器，执行开发测试任务</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="role-card compact" data-role="ADMIN">
+                                            <div class="role-card-header">
+                                                <input type="checkbox" name="roles" value="ADMIN" id="roleAdmin">
+                                                <div class="role-icon">🛡️</div>
+                                            </div>
+                                            <div class="role-card-body">
+                                                <h6 class="role-card-title">管理员</h6>
+                                                <p class="role-card-description">管理用户和服务器，查看系统状态</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="role-card compact" data-role="SUPER_ADMIN">
+                                            <div class="role-card-header">
+                                                <input type="checkbox" name="roles" value="SUPER_ADMIN" id="roleSuperAdmin">
+                                                <div class="role-icon">👑</div>
+                                            </div>
+                                            <div class="role-card-body">
+                                                <h6 class="role-card-title">超级管理员</h6>
+                                                <p class="role-card-description">拥有系统全部权限，管理所有资源</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                     
-                    <form id="userDrawerForm" class="drawer-form">
-                        <input type="hidden" name="_csrf" value="">
-                        <input type="hidden" name="id" value="">
-                        
-                        <!-- 基本信息 -->
-                        <div class="form-section">
-                            <h3 class="form-section-title">
-                                <div class="form-section-icon">👤</div>
-                                基本信息
-                            </h3>
-                            
-                            <div class="form-row">
-                                <div class="col-6">
-                                    <div class="form-group compact">
-                                        <label class="form-label" for="userUsername">
-                                            <span class="form-label-icon">📝</span>
-                                            <span class="form-label-text">用户名</span>
-                                            <span class="form-label-required">*</span>
-                                        </label>
-                                        <input type="text" id="userUsername" name="username" class="form-control" 
-                                               placeholder="请输入用户名" required>
-                                        <div class="invalid-feedback"></div>
+                    <!-- 第二栏：服务器分配、账户状态 -->
+                    <div class="drawer-right-pane">
+                        <form id="userDrawerFormRight" class="drawer-form">
+                            <!-- 服务器资源分配 -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">
+                                    <div class="form-section-icon">🖥️</div>
+                                    服务器资源分配
+                                </h3>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <span class="form-label-text">可用服务器</span>
+                                    </label>
+                                    <div class="server-selection">
+                                        <div id="serverSelectionList" class="server-selection-list">
+                                            <!-- 服务器列表将通过JavaScript动态加载 -->
+                                            <div class="server-loading">加载可用服务器...</div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="form-group compact">
-                                        <label class="form-label" for="userEmail">
-                                            <span class="form-label-icon">📧</span>
-                                            <span class="form-label-text">邮箱地址</span>
-                                            <span class="form-label-required">*</span>
-                                        </label>
-                                        <input type="email" id="userEmail" name="email" class="form-control" 
-                                               placeholder="请输入邮箱地址" required>
-                                        <div class="invalid-feedback"></div>
+                                    <div class="form-help">
+                                        <span class="form-help-icon">💡</span>
+                                        <span class="form-help-text">请至少选择一个可用服务器</span>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div class="form-group compact">
-                                <label class="form-label" for="userWorkDirectory">
-                                    <span class="form-label-icon">📁</span>
-                                    <span class="form-label-text">工作目录</span>
-                                </label>
-                                <input type="text" id="userWorkDirectory" name="workDirectory" class="form-control" 
-                                       placeholder="自动生成或手动输入">
-                                <div class="form-help">
-                                    <span class="form-help-icon">💡</span>
-                                    <span class="form-help-text">留空将根据用户名自动生成</span>
-                                </div>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- 密码设置 -->
-                        <div class="form-section">
-                            <h3 class="form-section-title">
-                                <div class="form-section-icon">🔐</div>
-                                密码设置
-                            </h3>
-                            
-                            <div class="form-row">
-                                <div class="col-6">
-                                    <div class="form-group compact">
-                                        <label class="form-label" for="userPassword">
-                                            <span class="form-label-icon">🔑</span>
-                                            <span class="form-label-text">登录密码</span>
-                                            <span class="form-label-required" id="passwordRequired">*</span>
-                                        </label>
-                                        <div class="password-input-group">
-                                            <input type="password" id="userPassword" name="password" class="form-control" 
-                                                   placeholder="请输入密码">
-                                            <button type="button" class="password-toggle" onclick="drawerManager.togglePasswordVisibility('userPassword')">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                        </div>
-                                        <div class="form-help edit-mode-note" style="display: none;">
-                                            <span class="form-help-icon">ℹ️</span>
-                                            <span class="form-help-text">留空保持原密码不变</span>
-                                        </div>
-                                        <div class="invalid-feedback"></div>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="form-group compact">
-                                        <label class="form-label" for="userPasswordConfirm">
-                                            <span class="form-label-icon">🔒</span>
-                                            <span class="form-label-text">确认密码</span>
-                                            <span class="form-label-required" id="confirmRequired">*</span>
-                                        </label>
-                                        <input type="password" id="userPasswordConfirm" name="passwordConfirm" class="form-control" 
-                                               placeholder="请再次输入密码">
-                                        <div class="invalid-feedback"></div>
-                                    </div>
+
+                            <!-- 账户状态 -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">
+                                    <div class="form-section-icon">⚡</div>
+                                    账户状态
+                                </h3>
+                                
+                                <div class="form-check">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           id="userEnabled" 
+                                           name="enabled" 
+                                           checked>
+                                    <label class="form-check-label" for="userEnabled">
+                                        启用此账户
+                                    </label>
                                 </div>
                             </div>
-                            
-                            <div class="password-strength">
-                                <div class="password-strength-bar">
-                                    <div class="password-strength-fill"></div>
-                                </div>
-                                <span class="password-strength-text">密码强度</span>
-                            </div>
-                        </div>
-                        
-                        <!-- 权限设置 -->
-                        <div class="form-section">
-                            <h3 class="form-section-title">
-                                <div class="form-section-icon">🛡️</div>
-                                权限设置
-                            </h3>
-                            
-                            <div class="form-group compact">
-                                <label class="form-label">
-                                    <span class="form-label-icon">👑</span>
-                                    <span class="form-label-text">用户角色</span>
-                                    <span class="form-label-required">*</span>
-                                </label>
-                                <div class="role-selection compact">
-                                    <div class="role-card compact" data-role="USER">
-                                        <div class="role-card-header">
-                                            <input type="checkbox" name="roles" value="USER" id="roleUser">
-                                            <label for="roleUser" class="role-card-checkbox"></label>
-                                            <div class="role-icon">👨‍💻</div>
-                                        </div>
-                                        <div class="role-card-body">
-                                            <h6 class="role-card-title">开发者</h6>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="role-card compact" data-role="ADMIN">
-                                        <div class="role-card-header">
-                                            <input type="checkbox" name="roles" value="ADMIN" id="roleAdmin">
-                                            <label for="roleAdmin" class="role-card-checkbox"></label>
-                                            <div class="role-icon">🛡️</div>
-                                        </div>
-                                        <div class="role-card-body">
-                                            <h6 class="role-card-title">管理员</h6>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="role-card compact" data-role="SUPER_ADMIN">
-                                        <div class="role-card-header">
-                                            <input type="checkbox" name="roles" value="SUPER_ADMIN" id="roleSuperAdmin">
-                                            <label for="roleSuperAdmin" class="role-card-checkbox"></label>
-                                            <div class="role-icon">👑</div>
-                                        </div>
-                                        <div class="role-card-body">
-                                            <h6 class="role-card-title">超级管理员</h6>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- 账户状态 -->
-                        <div class="form-section">
-                            <h3 class="form-section-title">
-                                <div class="form-section-icon">⚡</div>
-                                账户状态
-                            </h3>
-                            
-                            <div class="form-check">
-                                <input class="form-check-input" 
-                                       type="checkbox" 
-                                       id="userEnabled" 
-                                       name="enabled" 
-                                       checked>
-                                <label class="form-check-label" for="userEnabled">
-                                    启用此账户
-                                </label>
-                            </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
+            </div>
                 <div class="drawer-footer">
                     <button type="button" class="drawer-btn drawer-btn-secondary" onclick="drawerManager.closeDrawer()">
                         <span>✕</span>
@@ -434,6 +631,18 @@ class DrawerManager {
                 this.closeDrawer();
             }
         });
+        
+        // 帮助信息提示按钮交互
+        document.addEventListener('click', (e) => {
+            const helpBtn = document.getElementById('drawerHelpBtn');
+            const helpContent = document.getElementById('drawerHelpContent');
+            
+            if (helpBtn && e.target === helpBtn || helpBtn.contains(e.target)) {
+                helpContent.classList.toggle('show');
+            } else if (helpContent && !helpContent.contains(e.target)) {
+                helpContent.classList.remove('show');
+            }
+        });
 
         // 防止页面关闭时丢失未保存数据
         window.addEventListener('beforeunload', (e) => {
@@ -443,10 +652,33 @@ class DrawerManager {
             }
         });
 
+        // 监听窗口大小变化，调整抽屉布局
+        window.addEventListener('resize', () => {
+            if (this.currentDrawer) {
+                this.adjustLayoutForScreenSize();
+            }
+        });
+
         // 延迟绑定用户表单事件（等DOM创建完成）
         setTimeout(() => {
             this.bindUserFormEvents();
         }, 100);
+    }
+    
+    // 根据屏幕大小调整抽屉布局
+    adjustLayoutForScreenSize() {
+        const dualPane = this.currentDrawer.querySelector('.drawer-dual-pane');
+        if (!dualPane) return;
+        
+        const isMobile = window.innerWidth <= 768;
+        const isMedium = window.innerWidth <= 1200;
+        
+        if (isMobile) {
+            // 在移动设备上强制使用单列布局
+            dualPane.classList.add('mobile-layout');
+        } else {
+            dualPane.classList.remove('mobile-layout');
+        }
     }
 
     // 获取CSRF令牌
@@ -819,6 +1051,8 @@ class DrawerManager {
             titleText.textContent = '添加用户';
             submitBtn.textContent = '保存用户';
             this.resetUserForm();
+            // 加载可用服务器列表
+            this.loadAvailableServers();
         }
 
         // 设置CSRF令牌
@@ -835,18 +1069,129 @@ class DrawerManager {
         }, 300);
     }
 
+
+    // 加载可用服务器列表
+    async loadAvailableServers(userId = null) {
+        const serverListContainer = this.userDrawer?.querySelector('#serverSelectionList');
+        if (!serverListContainer) return;
+        
+        try {
+            // 显示加载状态
+            serverListContainer.innerHTML = '<div class="server-loading">加载可用服务器...</div>';
+            
+            // 获取可用服务器列表
+            const response = await fetch('/admin/api/servers/available');
+            if (!response.ok) {
+                throw new Error('获取可用服务器失败');
+            }
+            
+            const servers = await response.json();
+            
+            // 清空容器
+            serverListContainer.innerHTML = '';
+            
+            if (servers.length === 0) {
+                serverListContainer.innerHTML = '<div class="no-servers">暂无可用服务器</div>';
+                return;
+            }
+            
+            // 获取用户已分配的服务器（如果是编辑模式）
+            let assignedServerIds = [];
+            if (userId) {
+                try {
+                    const userServersResponse = await fetch(`/admin/api/users/${userId}/servers`);
+                    if (userServersResponse.ok) {
+                        const userServers = await userServersResponse.json();
+                        assignedServerIds = userServers.map(server => server.id.toString());
+                    }
+                } catch (error) {
+                    console.warn('获取用户已分配服务器失败:', error);
+                }
+            }
+            
+            // 创建服务器选项
+            servers.forEach(server => {
+                const serverItem = document.createElement('div');
+                serverItem.className = 'server-item';
+                serverItem.innerHTML = `
+                    <div class="server-checkbox-wrapper">
+                        <input type="checkbox" 
+                               class="server-checkbox" 
+                               name="serverIds" 
+                               value="${server.id}" 
+                               id="server-${server.id}"
+                               ${assignedServerIds.includes(server.id.toString()) ? 'checked' : ''}>
+                        <label for="server-${server.id}" class="server-checkbox-label"></label>
+                    </div>
+                    <div class="server-info">
+                        <div class="server-name">${server.name}</div>
+                        <div class="server-details">
+                            <span class="server-hostname">${server.hostname}</span>
+                            <span class="server-status ${server.active ? 'active' : 'inactive'}">
+                                ${server.active ? '运行中' : '已停用'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+                
+                // 添加点击事件（点击整个项目时切换复选框状态）
+                serverItem.addEventListener('click', (e) => {
+                    if (!e.target.closest('.server-checkbox-wrapper')) {
+                        const checkbox = serverItem.querySelector('.server-checkbox');
+                        checkbox.checked = !checkbox.checked;
+                        this.updateServerItemVisual(checkbox);
+                    }
+                });
+                
+                // 监听复选框变化
+                const checkbox = serverItem.querySelector('.server-checkbox');
+                checkbox.addEventListener('change', () => {
+                    this.updateServerItemVisual(checkbox);
+                });
+                
+                // 初始化样式
+                this.updateServerItemVisual(checkbox);
+                
+                serverListContainer.appendChild(serverItem);
+            });
+            
+        } catch (error) {
+            serverListContainer.innerHTML = `<div class="server-error">加载失败：${error.message}</div>`;
+            console.error('加载服务器列表失败:', error);
+        }
+    }
+    
+    // 更新服务器选项的视觉效果
+    updateServerItemVisual(checkbox) {
+        const serverItem = checkbox.closest('.server-item');
+        if (!serverItem) return;
+        
+        if (checkbox.checked) {
+            serverItem.classList.add('selected');
+        } else {
+            serverItem.classList.remove('selected');
+        }
+    }
+    
     // 加载用户数据
     async loadUserData(userId) {
         try {
             this.showLoading(true);
             
-            const response = await fetch(`/admin/users/${userId}/data`);
+            console.log('加载用户数据，userId:', userId); // 添加调试日志
+            const response = await fetch(`/admin/users/${userId}/data`); // 正确的路径，包含/admin前缀
+            
             if (!response.ok) {
-                throw new Error('获取用户数据失败');
+                // 获取详细的错误信息
+                const errorBody = await response.json().catch(() => ({error: '未知错误'}));
+                console.log('API错误响应:', response.status, errorBody);
+                throw new Error(`获取用户数据失败: ${errorBody.error || '未知错误'}`);
             }
             
             const userData = await response.json();
             this.fillUserForm(userData);
+            // 加载用户可分配的服务器列表
+            this.loadAvailableServers(userId);
             
         } catch (error) {
             this.showMessage(
@@ -894,6 +1239,8 @@ class DrawerManager {
             enabledCheckbox.checked = data.enabled !== false;
         }
         
+
+        
         // 编辑模式下显示密码提示
         const editModeNotes = form.querySelectorAll('.edit-mode-note');
         editModeNotes.forEach(note => note.style.display = 'block');
@@ -930,8 +1277,10 @@ class DrawerManager {
         this.updatePasswordStrength('');
         
         // 设置默认值
-        form.querySelector('[name="enabled"]').checked = true;
-        form.querySelector('[name="roles"][value="USER"]').checked = true;
+        const enabledCheckbox = form.querySelector('[name="enabled"]');
+        const userRoleCheckbox = form.querySelector('#roleUser'); // 使用ID选择器更可靠
+        if (enabledCheckbox) enabledCheckbox.checked = true;
+        if (userRoleCheckbox) userRoleCheckbox.checked = true;
         
         // 显示必填标记
         const passwordRequired = form.querySelector('#passwordRequired');
@@ -968,6 +1317,12 @@ class DrawerManager {
                 roles.push(checkbox.value);
             });
             
+            // 收集用户选择的服务器ID
+            const serverIds = [];
+            form.querySelectorAll('[name="serverIds"]:checked').forEach(checkbox => {
+                serverIds.push(parseInt(checkbox.value));
+            });
+            
             // 构建请求数据
             const userData = {
                 username: formData.get('username'),
@@ -975,14 +1330,15 @@ class DrawerManager {
                 password: formData.get('password'),
                 workDirectory: formData.get('workDirectory'),
                 roles: roles,
+                serverIds: serverIds,
                 enabled: formData.get('enabled') === 'on'
             };
             
             const url = userId ? `/admin/api/users/${userId}/update` : '/admin/api/users';
-            const method = userId ? 'PUT' : 'POST';
+            const method = 'POST';
             
             const response = await fetch(url, {
-                method: method,
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     [this.getCSRFHeaderName()]: this.getCSRFToken()
@@ -1071,9 +1427,25 @@ class DrawerManager {
             errors.roles = '请至少选择一个角色';
             isValid = false;
         }
+        
+            // 验证服务器选择
+        const checkedServers = form.querySelectorAll('[name="serverIds"]:checked');
+        if (checkedServers.length === 0) {
+            errors.servers = '请至少选择一个可用服务器';
+            isValid = false;
+            // 显示服务器选择错误
+            this.validateServerSelection();
+        }
 
-        // 显示验证错误
-        this.displayValidationErrors(form, errors);
+        // 显示字段验证错误
+        for (const [field, message] of Object.entries(errors)) {
+            if (field !== 'servers') { // 服务器错误已经单独处理
+                const fieldElement = form.querySelector(`[name="${field}"]`);
+                if (fieldElement) {
+                    this.showFieldValidation(fieldElement, false, message);
+                }
+            }
+        }
         
         return isValid;
     }
@@ -1120,10 +1492,10 @@ class DrawerManager {
         
         if (input.type === 'password') {
             input.type = 'text';
-            button.className = 'fas fa-eye-slash';
+            button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24m12.84 11.46a3 3 0 1 1-4.24-4.24"></path></svg>';
         } else {
             input.type = 'password';
-            button.className = 'fas fa-eye';
+            button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
         }
     }
 
@@ -1197,6 +1569,7 @@ class DrawerManager {
                         checkbox.checked = !checkbox.checked;
                         this.updateRoleCardStyle(card, checkbox.checked);
                         this.validateRoleSelection();
+                        this.updateStatusInfo();
                     }
                 }
             });
@@ -1207,10 +1580,49 @@ class DrawerManager {
                 checkbox.addEventListener('change', (e) => {
                     this.updateRoleCardStyle(card, e.target.checked);
                     this.validateRoleSelection();
+                    this.updateStatusInfo();
                 });
             }
         });
         
+        // 监听所有表单字段的变化以更新状态信息
+        const allInputs = form.querySelectorAll('input, select, textarea');
+        allInputs.forEach(input => {
+            input.addEventListener('input', () => {
+                this.updateStatusInfo();
+                this.updatePreviewContent();
+            });
+            
+            input.addEventListener('change', () => {
+                this.updateStatusInfo();
+                this.updatePreviewContent();
+            });
+        });
+        
+        // 监听服务器选择变化
+        const serverContainer = form.querySelector('#serverSelection');
+        if (serverContainer) {
+            // 使用MutationObserver监听服务器选择的动态变化
+            const observer = new MutationObserver(() => {
+                const serverCheckboxes = form.querySelectorAll('.server-item input[type="checkbox"]');
+                serverCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', () => {
+                        this.updateStatusInfo();
+                        this.updatePreviewContent();
+                        this.validateServerSelection(); // 验证服务器选择
+                    });
+                });
+            });
+            
+            observer.observe(serverContainer, {
+                childList: true,
+                subtree: true
+            });
+        }
+        
+        // 初始化状态信息
+        this.updateStatusInfo();
+        this.updatePreviewContent();
     }
 
     // 更新角色卡片样式
@@ -1296,6 +1708,42 @@ class DrawerManager {
         return isValid;
     }
     
+    // 验证服务器选择
+    validateServerSelection() {
+        const form = this.userDrawer.querySelector('form');
+        if (!form) return true;
+        
+        const checkedServers = form.querySelectorAll('[name="serverIds"]:checked');
+        const isValid = checkedServers.length > 0;
+        const serverGroup = form.querySelector('#serverSelection');
+        
+        if (serverGroup) {
+            const feedback = serverGroup.querySelector('.invalid-feedback');
+            if (!feedback) {
+                // 如果没有错误提示元素，则创建一个
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.className = 'invalid-feedback';
+                feedbackDiv.style.display = 'none';
+                serverGroup.appendChild(feedbackDiv);
+                
+                // 更新服务器组样式以支持错误提示
+                serverGroup.classList.add('has-feedback');
+            } else {
+                feedback.textContent = isValid ? '' : '请至少选择一个可用服务器';
+                feedback.style.display = isValid ? 'none' : 'block';
+                
+                // 更新服务器组样式
+                if (isValid) {
+                    serverGroup.classList.remove('has-error');
+                } else {
+                    serverGroup.classList.add('has-error');
+                }
+            }
+        }
+        
+        return isValid;
+    }
+    
     // 显示字段验证结果
     showFieldValidation(field, isValid, message) {
         const formGroup = field.closest('.form-group');
@@ -1372,6 +1820,292 @@ class DrawerManager {
                 }
             }
         }
+    }
+
+    // 填充默认值
+    fillDefaultValues() {
+        const form = this.userDrawer?.querySelector('#userDrawerForm');
+        if (!form) return;
+        
+        // 填充一些默认值作为示例
+        const workDirInput = form.querySelector('#userWorkDirectory');
+        const usernameInput = form.querySelector('#userUsername');
+        
+        if (usernameInput && workDirInput && !workDirInput.value) {
+            const username = usernameInput.value;
+            if (username) {
+                workDirInput.value = `/workspaces/${username}`;
+            }
+        }
+        
+        // 默认选择开发者角色
+        const userRoleCheckbox = form.querySelector('#roleUser');
+        if (userRoleCheckbox && !userRoleCheckbox.checked) {
+            userRoleCheckbox.checked = true;
+            this.updateRoleCardVisual(userRoleCheckbox);
+        }
+        
+        this.updateStatusInfo();
+        this.showMessage('success', '已填充默认值');
+    }
+
+    // 清空表单
+    clearForm() {
+        const form = this.userDrawer?.querySelector('#userDrawerForm');
+        if (!form) return;
+        
+        // 清空所有输入框
+        form.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], textarea').forEach(input => {
+            input.value = '';
+        });
+        
+        // 取消所有复选框选择
+        form.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            if (checkbox.id !== 'userEnabled') { // 保持启用状态复选框
+                checkbox.checked = false;
+                if (checkbox.closest('.role-card')) {
+                    this.updateRoleCardVisual(checkbox);
+                }
+            }
+        });
+        
+        // 清空选择框
+        form.querySelectorAll('select').forEach(select => {
+            select.value = '';
+        });
+        
+        // 清空服务器选择
+        const serverCheckboxes = form.querySelectorAll('.server-item input[type="checkbox"]');
+        serverCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        
+        this.updateStatusInfo();
+        this.showMessage('success', '已清空表单');
+    }
+
+    // 验证表单
+    validateForm() {
+        const form = this.userDrawer?.querySelector('#userDrawerForm');
+        if (!form) return false;
+        
+        let isValid = true;
+        const errors = {};
+        
+        // 验证用户名
+        const username = form.querySelector('#userUsername')?.value;
+        if (!username || username.length < 3) {
+            errors.username = '用户名至少需要3个字符';
+            isValid = false;
+        }
+        
+        // 验证邮箱
+        const email = form.querySelector('#userEmail')?.value;
+        if (!email || !email.includes('@')) {
+            errors.email = '请输入有效的邮箱地址';
+            isValid = false;
+        }
+        
+        // 验证密码（仅在新增用户时）
+        const isEditMode = form.querySelector('input[name="id"]')?.value;
+        if (!isEditMode) {
+            const password = form.querySelector('#userPassword')?.value;
+            if (!password || password.length < 8) {
+                errors.password = '密码至少需要8个字符';
+                isValid = false;
+            }
+            
+            const confirmPassword = form.querySelector('#userPasswordConfirm')?.value;
+            if (password !== confirmPassword) {
+                errors.confirmPassword = '两次密码输入不一致';
+                isValid = false;
+            }
+        }
+        
+        // 验证角色选择
+        const roles = form.querySelectorAll('input[name="roles"]:checked');
+        if (roles.length === 0) {
+            errors.roles = '至少需要选择一个用户角色';
+            isValid = false;
+        }
+        
+        // 验证服务器选择
+        const servers = form.querySelectorAll('.server-item input[type="checkbox"]:checked');
+        if (servers.length === 0) {
+            errors.servers = '至少需要选择一个可用服务器';
+            isValid = false;
+            this.validateServerSelection(); // 显示服务器选择错误
+        } else {
+            // 如果服务器选择有效，确保错误状态被清除
+            const serverGroup = form.querySelector('#serverSelection');
+            if (serverGroup && serverGroup.classList.contains('has-error')) {
+                serverGroup.classList.remove('has-error');
+                const feedback = serverGroup.querySelector('.invalid-feedback');
+                if (feedback) feedback.style.display = 'none';
+            }
+        }
+        
+        // 显示其他字段的错误
+        for (const [fieldName, message] of Object.entries(errors)) {
+            if (fieldName !== 'servers') { // 服务器错误已单独处理
+                const field = form.querySelector(`#user${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}`) || form.querySelector(`[name="${fieldName}"]`);
+                if (field) {
+                    this.showFieldValidation(field, false, message);
+                }
+            }
+        }
+        
+        if (isValid) {
+            this.showMessage('success', '表单验证通过 ✓');
+        } else {
+            this.showMessage('error', `验证失败：${Object.values(errors).join('、')}`);
+        }
+        
+        this.updateStatusInfo();
+        return isValid;
+    }
+
+    // 更新状态信息
+    updateStatusInfo() {
+        if (!this.userDrawer) return;
+        
+        const form = this.userDrawer.querySelector('#userDrawerForm');
+        if (!form) return;
+        
+        // 更新表单状态
+        const formStatusEl = this.userDrawer.querySelector('#formStatus');
+        const validationStatusEl = this.userDrawer.querySelector('#validationStatus');
+        const serverCountEl = this.userDrawer.querySelector('#serverCount');
+        
+        // 检查表单填写情况
+        const filledFields = form.querySelectorAll('input[required], select[required]');
+        let filledCount = 0;
+        filledFields.forEach(field => {
+            if (field.type === 'checkbox' && field.checked) filledCount++;
+            else if (field.value.trim()) filledCount++;
+        });
+        
+        if (formStatusEl) {
+            const percentage = Math.round((filledCount / filledFields.length) * 100);
+            formStatusEl.textContent = `${percentage}% 已填写`;
+        }
+        
+        // 更新验证状态
+        if (validationStatusEl) {
+            const isValid = this.validateFormSilently();
+            validationStatusEl.textContent = isValid ? '验证通过' : '待完善';
+            validationStatusEl.style.color = isValid ? 'var(--success-color, #10b981)' : 'var(--warning-color, #f59e0b)';
+        }
+        
+        // 更新服务器计数
+        if (serverCountEl) {
+            const serverCount = form.querySelectorAll('.server-item input[type="checkbox"]:checked').length;
+            serverCountEl.textContent = `${serverCount} 个`;
+        }
+    }
+
+    // 静默验证表单（不显示错误消息）
+    validateFormSilently() {
+        const form = this.userDrawer?.querySelector('#userDrawerForm');
+        if (!form) return false;
+        
+        const username = form.querySelector('#userUsername')?.value;
+        const email = form.querySelector('#userEmail')?.value;
+        const roles = form.querySelectorAll('input[name="roles"]:checked');
+        const servers = form.querySelectorAll('.server-item input[type="checkbox"]:checked');
+        
+        const isEditMode = form.querySelector('input[name="id"]')?.value;
+        let passwordValid = true;
+        
+        if (!isEditMode) {
+            const password = form.querySelector('#userPassword')?.value;
+            const confirmPassword = form.querySelector('#userPasswordConfirm')?.value;
+            passwordValid = password && password.length >= 8 && password === confirmPassword;
+        }
+        
+        return username && username.length >= 3 && 
+               email && email.includes('@') && 
+               passwordValid && 
+               roles.length > 0 && 
+               servers.length > 0;
+    }
+
+    // 更新预览内容
+    updatePreviewContent() {
+        if (!this.userDrawer) return;
+        
+        const form = this.userDrawer.querySelector('#userDrawerForm');
+        const previewContent = this.userDrawer.querySelector('#previewContent');
+        const previewStatus = this.userDrawer.querySelector('#previewStatus');
+        const previewStatusDot = this.userDrawer.querySelector('#previewStatusDot');
+        
+        if (!form || !previewContent) return;
+        
+        const username = form.querySelector('#userUsername')?.value || '';
+        const email = form.querySelector('#userEmail')?.value || '';
+        const workDir = form.querySelector('#userWorkDirectory')?.value || '';
+        const roles = Array.from(form.querySelectorAll('input[name="roles"]:checked')).map(cb => cb.value);
+        const servers = Array.from(form.querySelectorAll('.server-item input[type="checkbox"]:checked')).map(cb => {
+            const serverItem = cb.closest('.server-item');
+            return serverItem ? serverItem.querySelector('.server-name')?.textContent || cb.value : cb.value;
+        });
+        
+        // 更新预览状态
+        if (username || email) {
+            if (previewStatus) previewStatus.textContent = '实时预览';
+            if (previewStatusDot) {
+                previewStatusDot.className = 'status-dot';
+                if (this.validateFormSilently()) {
+                    previewStatusDot.classList.add('success');
+                } else {
+                    previewStatusDot.classList.add('warning');
+                }
+            }
+        } else {
+            if (previewStatus) previewStatus.textContent = '等待输入...';
+            if (previewStatusDot) previewStatusDot.className = 'status-dot';
+        }
+        
+        // 构建预览内容
+        let previewHtml = '';
+        
+        if (username || email || workDir || roles.length > 0 || servers.length > 0) {
+            previewHtml = '<div class="preview-content">';
+            
+            if (username) {
+                previewHtml += `<div class="preview-item"><strong>用户名:</strong> ${username}</div>`;
+            }
+            
+            if (email) {
+                previewHtml += `<div class="preview-item"><strong>邮箱:</strong> ${email}</div>`;
+            }
+            
+            if (workDir) {
+                previewHtml += `<div class="preview-item"><strong>工作目录:</strong> ${workDir}</div>`;
+            }
+            
+            if (roles.length > 0) {
+                const roleNames = roles.map(role => {
+                    switch(role) {
+                        case 'USER': return '开发者';
+                        case 'ADMIN': return '管理员';
+                        case 'SUPER_ADMIN': return '超级管理员';
+                        default: return role;
+                    }
+                });
+                previewHtml += `<div class="preview-item"><strong>角色:</strong> ${roleNames.join(', ')}</div>`;
+            }
+            
+            if (servers.length > 0) {
+                previewHtml += `<div class="preview-item"><strong>可用服务器:</strong> ${servers.join(', ')}</div>`;
+            }
+            
+            previewHtml += '</div>';
+        } else {
+            previewHtml = '<p class="text-muted">请开始填写表单，实时预览将在此显示</p>';
+        }
+        
+        previewContent.innerHTML = previewHtml;
     }
 }
 
