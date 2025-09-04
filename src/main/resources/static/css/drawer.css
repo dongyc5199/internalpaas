@@ -107,11 +107,78 @@
     box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
     z-index: 1001;
     transform: translateX(100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
     max-height: 100vh;
     overflow: hidden;
+}
+
+/* 不同类型抽屉的宽度设置 */
+.drawer.drawer-user {
+    width: 900px !important; /* 增加100px宽度以容纳双栏布局 */
+    max-width: 90vw !important;
+}
+
+.drawer.drawer-server {
+    width: 500px !important; /* 服务器抽屉适中宽度 */
+    max-width: 85vw !important;
+}
+
+/* 服务器抽屉特定样式调整 */
+.drawer.drawer-server .drawer-main-pane {
+    min-width: 300px; /* 减少最小宽度适应较小抽屉 */
+}
+
+.drawer.drawer-server .drawer-sidebar-pane {
+    width: 150px; /* 减少侧边栏宽度 */
+    min-width: 150px;
+}
+
+/* 用户抽屉双栏布局调整 */
+.drawer.drawer-user .drawer-left-pane {
+    flex: 0 0 450px; /* 固定宽度450px，不缩放 */
+    min-width: 450px;
+    max-width: 450px;
+    padding-bottom: 0;
+}
+
+.drawer.drawer-user .drawer-right-pane {
+    flex: 1; /* 剩余空间由右栏填充 */
+    min-width: 320px;
+    padding-bottom: 0;
+}
+
+/* 用户抽屉表单容器优化 */
+.drawer.drawer-user .drawer-form {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* 用户抽屉最后一个form-section移除底部margin */
+.drawer.drawer-user .form-section:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* 用户抽屉左栏特定优化 - 消除底部空白 */
+.drawer.drawer-user .drawer-left-pane .drawer-form {
+    height: auto; /* 高度自适应内容 */
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: var(--space-6) var(--space-6) 0 var(--space-6); /* 移除底部padding */
+}
+
+/* 用户抽屉左栏表单区块紧凑化 */
+.drawer.drawer-user .drawer-left-pane .form-section {
+    margin-bottom: var(--space-4) !important; /* 减少section间距 */
+}
+
+.drawer.drawer-user .drawer-left-pane .form-section:last-child {
+    margin-bottom: 0 !important; /* 最后一个section无底部margin */
 }
 
 .drawer.show {
@@ -194,6 +261,8 @@
     flex: 1;
     overflow-y: auto;
     padding: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 /* 双列布局容器 */
@@ -202,6 +271,7 @@
     height: 100%;
     width: 100%;
     gap: 1px;
+    align-items: stretch; /* 确保左右两栏等高 */
 }
 
 /* 主内容区 (左侧) */
@@ -211,6 +281,9 @@
     overflow-y: auto;
     background: var(--card-background, #ffffff);
     border-right: 1px solid var(--border-color, #e5e7eb);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* 内容顶部对齐，避免底部空白 */
 }
 
 /* 侧边栏区域 (右侧) */
@@ -221,6 +294,7 @@
     background: var(--background-color, #f9fafb);
     display: flex;
     flex-direction: column;
+    justify-content: flex-start; /* 内容顶部对齐 */
 }
 
 /* 响应式调整 - 中等屏幕 */
@@ -230,17 +304,34 @@
         max-width: 95vw;
     }
     
+    .drawer.drawer-user {
+        width: 75vw !important;
+        max-width: 90vw !important;
+    }
+    
+    .drawer.drawer-server {
+        width: 65vw !important;
+        max-width: 85vw !important;
+    }
+    
     .drawer-sidebar-pane {
         width: 280px;
         min-width: 280px;
+    }
+    
+    .drawer.drawer-server .drawer-sidebar-pane {
+        width: 120px;
+        min-width: 120px;
     }
 }
 
 /* 响应式调整 - 小屏幕 */
 @media (max-width: 768px) {
-    .drawer {
-        width: 100vw;
-        max-width: 100vw;
+    .drawer,
+    .drawer.drawer-user,
+    .drawer.drawer-server {
+        width: 100vw !important;
+        max-width: 100vw !important;
     }
     
     .drawer-dual-pane {
@@ -257,6 +348,11 @@
         width: 100%;
         min-width: auto;
         max-height: 300px;
+    }
+    
+    /* 移动端隐藏分隔图标 */
+    .drawer-separator {
+        display: none;
     }
 }
 
@@ -510,6 +606,10 @@
 .drawer-form {
     padding: var(--drawer-padding);
     font-family: var(--font-sans);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
 }
 
 /* 改进的表单部分样式 */
@@ -522,6 +622,7 @@
     transition: all 0.2s ease;
     position: relative;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    flex-shrink: 0; /* 防止表单部分被压缩 */
 }
 
 .form-section:hover {
@@ -807,6 +908,61 @@
 /* 服务器卡片复选框隐藏，使用角色卡片的selected样式 */
 .server-card input[type="checkbox"] {
     display: none;
+}
+
+/* 抽屉分隔线样式 - 简洁现代化设计 */
+.drawer-separator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1px;
+    min-width: 1px;
+    padding: 0;
+    position: relative;
+    background: transparent;
+}
+
+.separator-line {
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(to bottom, 
+        transparent 0%, 
+        var(--gray-200) 10%, 
+        var(--gray-300) 50%, 
+        var(--gray-200) 90%, 
+        transparent 100%);
+    opacity: 0.6;
+}
+
+/* 移动端分隔线隐藏 */
+@media (max-width: 768px) {
+    .drawer-separator {
+        display: none;
+    }
+}
+
+/* 账户状态卡片特殊样式 */
+.account-status-card {
+    border: 1.5px solid var(--success-500);
+    background: var(--success-50);
+}
+
+.account-status-card.selected {
+    border-color: var(--success-600);
+    background: var(--success-100);
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+.account-status-card .role-icon {
+    color: var(--success-600);
+}
+
+.account-status-card .role-card-title {
+    color: var(--success-800);
+}
+
+.account-status-card .role-card-description {
+    color: var(--success-700);
 }
 
 /* 服务器选择复选框美化（隐藏原生外观，只显示自定义勾） */

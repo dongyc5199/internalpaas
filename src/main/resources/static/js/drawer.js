@@ -34,7 +34,7 @@ class DrawerManager {
     // 创建服务器抽屉HTML
     createServerDrawer() {
         const drawer = document.createElement('div');
-        drawer.className = 'drawer server-drawer drawer-compact drawer-modern';
+        drawer.className = 'drawer drawer-server drawer-compact drawer-modern';
         drawer.innerHTML = `
             <div class="drawer-header">
                 <h2 class="drawer-title">
@@ -217,7 +217,7 @@ class DrawerManager {
     // 创建用户抽屉HTML
     createUserDrawer() {
         const drawer = document.createElement('div');
-        drawer.className = 'drawer user-drawer drawer-compact drawer-modern';
+        drawer.className = 'drawer drawer-user drawer-compact drawer-modern';
         drawer.innerHTML = `
             <style>
                 /* 帮助信息提示样式 */
@@ -313,7 +313,7 @@ class DrawerManager {
                 .drawer-dual-pane {
                     display: flex;
                     gap: 24px;
-                    height: calc(100% - 80px);
+                    height: 100%; /* 使用100%高度，不减去固定值 */
                 }
                 
                 .drawer-left-pane,
@@ -518,7 +518,7 @@ class DrawerManager {
                                     <div class="role-selection compact">
                                         <div class="role-card compact" data-role="USER">
                                             <div class="role-card-header">
-                                                <input type="checkbox" name="roles" value="USER" id="roleUser">
+                                                <input type="checkbox" name="roles" value="USER" id="roleUser" style="display: none;">
                                                 <div class="role-icon">👨‍💻</div>
                                             </div>
                                             <div class="role-card-body">
@@ -529,7 +529,7 @@ class DrawerManager {
                                         
                                         <div class="role-card compact" data-role="ADMIN">
                                             <div class="role-card-header">
-                                                <input type="checkbox" name="roles" value="ADMIN" id="roleAdmin">
+                                                <input type="checkbox" name="roles" value="ADMIN" id="roleAdmin" style="display: none;">
                                                 <div class="role-icon">🛡️</div>
                                             </div>
                                             <div class="role-card-body">
@@ -540,7 +540,7 @@ class DrawerManager {
                                         
                                         <div class="role-card compact" data-role="SUPER_ADMIN">
                                             <div class="role-card-header">
-                                                <input type="checkbox" name="roles" value="SUPER_ADMIN" id="roleSuperAdmin">
+                                                <input type="checkbox" name="roles" value="SUPER_ADMIN" id="roleSuperAdmin" style="display: none;">
                                                 <div class="role-icon">👑</div>
                                             </div>
                                             <div class="role-card-body">
@@ -552,10 +552,46 @@ class DrawerManager {
                                     <div class="invalid-feedback"></div>
                                 </div>
                             </div>
+                            
+                            <!-- 账户状态 -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">
+                                    <div class="form-section-icon">⚡</div>
+                                    账户状态
+                                </h3>
+                                
+                                <div class="form-group compact">
+                                    <label class="form-label">
+                                        <span class="form-label-text">账户状态</span>
+                                    </label>
+                                    <div class="role-selection compact">
+                                        <div class="role-card compact account-status-card selected" data-status="enabled">
+                                            <div class="role-card-header">
+                                                <input type="checkbox" 
+                                                       class="form-check-input" 
+                                                       id="userEnabled" 
+                                                       name="enabled" 
+                                                       checked
+                                                       style="display: none;">
+                                                <div class="role-icon">✅</div>
+                                            </div>
+                                            <div class="role-card-body">
+                                                <h6 class="role-card-title">启用此账户</h6>
+                                                <p class="role-card-description">用户可以正常登录和使用系统</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </form>
                     </div>
                     
-                    <!-- 第二栏：服务器分配、账户状态 -->
+                    <!-- 简洁分隔线 -->
+                    <div class="drawer-separator">
+                        <div class="separator-line"></div>
+                    </div>
+                    
+                    <!-- 第二栏：服务器资源分配 -->
                     <div class="drawer-right-pane">
                         <form id="userDrawerFormRight" class="drawer-form">
                             <!-- 服务器资源分配 -->
@@ -581,45 +617,26 @@ class DrawerManager {
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- 账户状态 -->
-                            <div class="form-section">
-                                <h3 class="form-section-title">
-                                    <div class="form-section-icon">⚡</div>
-                                    账户状态
-                                </h3>
-                                
-                                <div class="form-check">
-                                    <input class="form-check-input" 
-                                           type="checkbox" 
-                                           id="userEnabled" 
-                                           name="enabled" 
-                                           checked>
-                                    <label class="form-check-label" for="userEnabled">
-                                        启用此账户
-                                    </label>
-                                </div>
-                            </div>
                         </form>
                     </div>
                 </div>
             </div>
-                <div class="drawer-footer">
-                    <button type="button" class="drawer-btn drawer-btn-secondary" onclick="drawerManager.closeDrawer()">
-                        <span>✕</span>
-                        取消
-                    </button>
-                    <button type="button" class="drawer-btn drawer-btn-primary" onclick="drawerManager.submitUserForm()" id="userSubmitBtn">
-                        <span>💾</span>
-                        <span class="submit-text">保存用户</span>
-                    </button>
+            <div class="drawer-footer">
+                <button type="button" class="drawer-btn drawer-btn-secondary" onclick="drawerManager.closeDrawer()">
+                    <span>✕</span>
+                    取消
+                </button>
+                <button type="button" class="drawer-btn drawer-btn-primary" onclick="drawerManager.submitUserForm()" id="userSubmitBtn">
+                    <span>💾</span>
+                    <span class="submit-text">保存用户</span>
+                </button>
+            </div>
+            <div class="drawer-loading">
+                <div class="loading-content">
+                    <div class="loading-spinner"></div>
+                    <span class="loading-text">处理中...</span>
                 </div>
-                <div class="drawer-loading">
-                    <div class="loading-content">
-                        <div class="loading-spinner"></div>
-                        <span class="loading-text">处理中...</span>
-                    </div>
-                </div>
+            </div>
         `;
         return drawer;
     }
@@ -818,6 +835,9 @@ class DrawerManager {
     // 打开服务器抽屉
     openServerDrawer(serverId = null) {
         this.currentDrawer = this.serverDrawer;
+        
+        // 确保服务器抽屉宽度类存在
+        this.serverDrawer.classList.add('drawer-server');
         
         // 更新标题
         const titleText = this.serverDrawer.querySelector('.drawer-title-text');
@@ -1023,15 +1043,23 @@ class DrawerManager {
         this.overlay.classList.remove('show');
         if (this.currentDrawer) {
             this.currentDrawer.classList.remove('show');
+            // 延迟移除宽度类，等待关闭动画完成
+            setTimeout(() => {
+                if (this.currentDrawer) {
+                    this.currentDrawer.classList.remove('drawer-user', 'drawer-server');
+                }
+            }, 300); // 与CSS transition时间一致
         }
         
         // 恢复背景滚动
         document.body.style.overflow = '';
         
         // 重置状态
-        this.currentDrawer = null;
-        this.hasUnsavedChanges = false;
-        this.isSubmitting = false;
+        setTimeout(() => {
+            this.currentDrawer = null;
+            this.hasUnsavedChanges = false;
+            this.isSubmitting = false;
+        }, 300);
     }
 
     // ========== 用户抽屉相关方法 ==========
@@ -1039,6 +1067,9 @@ class DrawerManager {
     // 打开用户抽屉
     openUserDrawer(userId = null) {
         this.currentDrawer = this.userDrawer;
+        
+        // 确保用户抽屉宽度类存在
+        this.userDrawer.classList.add('drawer-user');
         
         // 更新标题
         const titleText = this.userDrawer.querySelector('.drawer-title-text');
@@ -1182,6 +1213,25 @@ class DrawerManager {
         }
     }
     
+    // 更新账户状态卡片样式
+    updateAccountStatusCardStyle(card, isEnabled) {
+        const icon = card.querySelector('.role-icon');
+        const title = card.querySelector('.role-card-title');
+        const description = card.querySelector('.role-card-description');
+        
+        if (isEnabled) {
+            card.classList.add('selected');
+            if (icon) icon.textContent = '✅';
+            if (title) title.textContent = '启用此账户';
+            if (description) description.textContent = '用户可以正常登录和使用系统';
+        } else {
+            card.classList.remove('selected');
+            if (icon) icon.textContent = '❌';
+            if (title) title.textContent = '禁用此账户';
+            if (description) description.textContent = '用户无法登录系统';
+        }
+    }
+    
     // 保持向后兼容性
     updateServerItemVisual(checkbox) {
         const serverCard = checkbox.closest('.server-card, .server-item');
@@ -1240,12 +1290,20 @@ class DrawerManager {
         // 设置角色复选框
         form.querySelectorAll('[name="roles"]').forEach(checkbox => {
             checkbox.checked = false;
+            const roleCard = checkbox.closest('.role-card');
+            if (roleCard) {
+                this.updateRoleCardStyle(roleCard, false);
+            }
         });
         if (data.roles && Array.isArray(data.roles)) {
             data.roles.forEach(role => {
                 const checkbox = form.querySelector(`[name="roles"][value="${role}"]`);
                 if (checkbox) {
                     checkbox.checked = true;
+                    const roleCard = checkbox.closest('.role-card');
+                    if (roleCard) {
+                        this.updateRoleCardStyle(roleCard, true);
+                    }
                 }
             });
         }
@@ -1254,6 +1312,11 @@ class DrawerManager {
         const enabledCheckbox = form.querySelector('[name="enabled"]');
         if (enabledCheckbox) {
             enabledCheckbox.checked = data.enabled !== false;
+            // 更新账户状态卡片视觉
+            const accountCard = form.querySelector('.account-status-card');
+            if (accountCard) {
+                this.updateAccountStatusCardStyle(accountCard, data.enabled !== false);
+            }
         }
         
 
@@ -1303,8 +1366,22 @@ class DrawerManager {
         // 设置默认值
         const enabledCheckbox = form.querySelector('[name="enabled"]');
         const userRoleCheckbox = form.querySelector('#roleUser'); // 使用ID选择器更可靠
-        if (enabledCheckbox) enabledCheckbox.checked = true;
-        if (userRoleCheckbox) userRoleCheckbox.checked = true;
+        if (enabledCheckbox) {
+            enabledCheckbox.checked = true;
+            // 更新账户状态卡片视觉
+            const accountCard = form.querySelector('.account-status-card');
+            if (accountCard) {
+                this.updateAccountStatusCardStyle(accountCard, true);
+            }
+        }
+        if (userRoleCheckbox) {
+            userRoleCheckbox.checked = true;
+            // 更新角色卡片视觉
+            const roleCard = userRoleCheckbox.closest('.role-card');
+            if (roleCard) {
+                this.updateRoleCardStyle(roleCard, true);
+            }
+        }
         
         // 显示必填标记
         const passwordRequired = form.querySelector('#passwordRequired');
@@ -1613,8 +1690,8 @@ class DrawerManager {
             });
         }
         
-        // 角色卡片点击选择
-        const roleCards = form.querySelectorAll('.role-selection .role-card');
+        // 角色卡片点击选择（排除账户状态卡片）
+        const roleCards = form.querySelectorAll('.role-selection .role-card:not(.account-status-card)');
         roleCards.forEach(card => {
             card.addEventListener('click', (e) => {
                 if (e.target.type !== 'checkbox') {
@@ -1638,6 +1715,30 @@ class DrawerManager {
                 });
             }
         });
+        
+        // 账户状态卡片点击选择
+        const accountStatusCard = form.querySelector('.account-status-card');
+        if (accountStatusCard) {
+            accountStatusCard.addEventListener('click', (e) => {
+                if (e.target.type !== 'checkbox') {
+                    const checkbox = accountStatusCard.querySelector('input[type="checkbox"]');
+                    if (checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                        this.updateAccountStatusCardStyle(accountStatusCard, checkbox.checked);
+                        this.updateStatusInfo();
+                    }
+                }
+            });
+            
+            // 监听复选框变化
+            const enabledCheckbox = accountStatusCard.querySelector('input[type="checkbox"]');
+            if (enabledCheckbox) {
+                enabledCheckbox.addEventListener('change', (e) => {
+                    this.updateAccountStatusCardStyle(accountStatusCard, e.target.checked);
+                    this.updateStatusInfo();
+                });
+            }
+        }
         
         // 监听所有表单字段的变化以更新状态信息
         const allInputs = form.querySelectorAll('input, select, textarea');
@@ -1922,7 +2023,10 @@ class DrawerManager {
         const userRoleCheckbox = form.querySelector('#roleUser');
         if (userRoleCheckbox && !userRoleCheckbox.checked) {
             userRoleCheckbox.checked = true;
-            this.updateRoleCardVisual(userRoleCheckbox);
+            const roleCard = userRoleCheckbox.closest('.role-card');
+            if (roleCard) {
+                this.updateRoleCardStyle(roleCard, true);
+            }
         }
         
         this.updateStatusInfo();
@@ -1943,8 +2047,9 @@ class DrawerManager {
         form.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
             if (checkbox.id !== 'userEnabled') { // 保持启用状态复选框
                 checkbox.checked = false;
-                if (checkbox.closest('.role-card')) {
-                    this.updateRoleCardVisual(checkbox);
+                const roleCard = checkbox.closest('.role-card');
+                if (roleCard) {
+                    this.updateRoleCardStyle(roleCard, false);
                 }
             }
         });
