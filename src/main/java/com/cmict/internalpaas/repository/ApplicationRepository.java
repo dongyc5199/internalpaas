@@ -28,4 +28,9 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
      * 统计指定用户指定状态的应用数量
      */
     int countByUserIdAndStatus(Long userId, String status);
+    
+    /**
+     * 删除指定用户的所有应用
+     */
+    void deleteByUserId(Long userId);
 }

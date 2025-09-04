@@ -79,6 +79,7 @@ public class UserServiceImpl implements UserService {
     }
     
     @Override
+    @Transactional
     public User save(User user) {
         return userRepository.save(user);
     }
@@ -159,9 +160,12 @@ public class UserServiceImpl implements UserService {
     }
     
     @Override
+    @Transactional
     public void deleteUser(Long userId) {
         User userToDelete = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
+        
+        logger.info("开始删除用户: {} (ID: {})", userToDelete.getUsername(), userId);
         
         // 获取当前登录用户
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -171,19 +175,50 @@ public class UserServiceImpl implements UserService {
         
         // 检查是否删除自己
         if (currentUser.getId().equals(userId)) {
+            logger.warn("用户 {} 尝试删除自己的账号", currentUsername);
             throw new RuntimeException("不允许删除自己的账号");
         }
         
         // 检查要删除的用户是否是超级管理员
         if (userToDelete.getRoles().contains(User.Role.SUPER_ADMIN)) {
             // 如果是超级管理员，检查是否是最后一个超级管理员
-            if (userRepository.countByRolesContaining(User.Role.SUPER_ADMIN) <= 1) {
+            long superAdminCount = userRepository.countByRolesContaining(User.Role.SUPER_ADMIN);
+            if (superAdminCount <= 1) {
+                logger.warn("尝试删除最后一个超级管理员: {}", userToDelete.getUsername());
                 throw new RuntimeException("不能删除最后一个超级管理员");
             }
         }
         
+        // 清理用户相关的应用数据
+        long deletedApplications = applicationRepository.countByUserId(userId);
+        if (deletedApplications > 0) {
+            logger.info("删除用户 {} 的 {} 个应用", userToDelete.getUsername(), deletedApplications);
+            applicationRepository.deleteByUserId(userId);
+        }
+        
+        // 清理用户活动记录
+        long deletedActivities = userActivityRepository.countByUsername(userToDelete.getUsername());
+        if (deletedActivities > 0) {
+            logger.info("删除用户 {} 的 {} 条活动记录", userToDelete.getUsername(), deletedActivities);
+            userActivityRepository.deleteByUsername(userToDelete.getUsername());
+        }
+        
+        // 清理用户配置
+        userConfigRepository.findByUserId(userId).ifPresent(config -> {
+            logger.info("删除用户 {} 的配置信息", userToDelete.getUsername());
+            userConfigRepository.delete(config);
+        });
+        
+        // 清理用户与服务器的关联关系（ManyToMany关系会自动清理，但记录日志）
+        if (userToDelete.getAvailableServers() != null && !userToDelete.getAvailableServers().isEmpty()) {
+            logger.info("清理用户 {} 与 {} 个服务器的关联关系", userToDelete.getUsername(), 
+                       userToDelete.getAvailableServers().size());
+        }
+        
         // 执行删除操作
         userRepository.deleteById(userId);
+        
+        logger.info("成功删除用户: {} (ID: {})", userToDelete.getUsername(), userId);
     }
 
     @Override

@@ -132,6 +132,45 @@ public class AdminController {
             return ResponseEntity.internalServerError().body(error);
         }
     }
+
+    /**
+     * 获取可用服务器列表API - 用于用户管理中的服务器选择
+     */
+    @GetMapping("/api/servers/available")
+    @ResponseBody
+    public ResponseEntity<?> getAvailableServersApi() {
+        try {
+            // 首先尝试获取活跃服务器
+            List<Server> activeServers = serverService.getActiveServers();
+            
+            // 如果没有活跃服务器，则获取所有服务器
+            if (activeServers.isEmpty()) {
+                activeServers = serverService.getAllServers();
+                logger.warn("没有找到活跃服务器，返回所有服务器列表");
+            }
+            
+            // 转换为前端需要的格式，包含抽屉组件需要的字段
+            List<Map<String, Object>> responseData = activeServers.stream()
+                .map(server -> {
+                    Map<String, Object> serverData = new HashMap<>();
+                    serverData.put("id", server.getId());
+                    serverData.put("name", server.getName());
+                    serverData.put("hostname", server.getHostname());
+                    serverData.put("active", server.getActive() != null ? server.getActive() : true);
+                    serverData.put("connectionStatus", server.getConnectionStatus() != null ? 
+                        server.getConnectionStatus().name() : "UNKNOWN");
+                    return serverData;
+                })
+                .collect(java.util.stream.Collectors.toList());
+            
+            return ResponseEntity.ok(responseData);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", e.getMessage());
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
     
     /**
      * 创建服务器API - 用于抽屉提交
@@ -527,9 +566,28 @@ public class AdminController {
     @ResponseBody
     public ResponseEntity<?> createUserApi(@RequestBody Map<String, Object> userData) {
         try {
+            String username = (String) userData.get("username");
+            String email = (String) userData.get("email");
+            
+            // 检查用户名唯一性
+            if (userRepository.findByUsername(username).isPresent()) {
+                Map<String, String> error = new HashMap<>();
+                error.put("status", "error");
+                error.put("message", "用户名已存在: " + username);
+                return ResponseEntity.badRequest().body(error);
+            }
+            
+            // 检查邮箱唯一性
+            if (userRepository.findByEmail(email).isPresent()) {
+                Map<String, String> error = new HashMap<>();
+                error.put("status", "error");
+                error.put("message", "邮箱已存在: " + email);
+                return ResponseEntity.badRequest().body(error);
+            }
+            
             User user = new User();
-            user.setUsername((String) userData.get("username"));
-            user.setEmail((String) userData.get("email"));
+            user.setUsername(username);
+            user.setEmail(email);
             user.setWorkDirectory((String) userData.get("workDirectory"));
             user.setIsAccountLocked(!((Boolean) userData.getOrDefault("enabled", true)));
             
@@ -541,16 +599,22 @@ public class AdminController {
             
             // 设置角色
             List<String> roleNames = (List<String>) userData.get("roles");
+            logger.info("收到的角色数据: {}", roleNames);
             if (roleNames != null && !roleNames.isEmpty()) {
                 Set<User.Role> roles = new HashSet<>();
                 for (String roleName : roleNames) {
                     try {
-                        roles.add(User.Role.valueOf(roleName));
+                        User.Role role = User.Role.valueOf(roleName);
+                        roles.add(role);
+                        logger.info("添加角色: {}", role);
                     } catch (IllegalArgumentException e) {
-                        // 忽略无效角色
+                        logger.warn("无效角色: {}", roleName);
                     }
                 }
                 user.setRoles(roles);
+                logger.info("用户设置的角色集合: {}", roles);
+            } else {
+                logger.warn("没有收到角色数据或角色数据为空");
             }
             
             // 设置工作目录模板替换
@@ -561,6 +625,9 @@ public class AdminController {
                 // 如果未设置工作目录，自动生成
                 user.setWorkDirectory("/home/" + user.getUsername());
             }
+            
+            // 处理服务器分配
+            this.handleUserServerAssignment(user, userData);
             
             User savedUser = userService.save(user);
             
@@ -619,6 +686,9 @@ public class AdminController {
                 user.setWorkDirectory(workDir);
             }
             
+            // 处理服务器分配
+            this.handleUserServerAssignment(user, userData);
+            
             User updatedUser = userService.save(user);
             
             Map<String, Object> response = new HashMap<>();
@@ -634,94 +704,106 @@ public class AdminController {
         }
     }
     
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    @GetMapping("/users/new")
-    public String newUserForm(Model model) {
-        model.addAttribute("user", new User());
-        return "admin/user-form";
-    }
     
-    // 仅超级管理员可以创建新用户
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    @PostMapping("/users")
-    public String createUser(@ModelAttribute User user, 
-                            RedirectAttributes redirectAttributes) {
+    
+    /**
+     * 检查用户名可用性API - 用于实时验证
+     */
+    @GetMapping("/api/users/check-username")
+    @ResponseBody
+    public ResponseEntity<?> checkUsernameAvailability(@RequestParam String username) {
         try {
-            // 对密码进行加密处理
-            if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-                user.setPassword(passwordEncoder.encode(user.getPassword()));
-            }
+            // 检查用户名是否已存在
+            boolean exists = userRepository.findByUsername(username).isPresent();
             
-            // 处理工作目录模板
-            if (user.getWorkDirectory() != null) {
-                String workDir = user.getWorkDirectory().replace("{username}", user.getUsername());
-                user.setWorkDirectory(workDir);
-            }
+            Map<String, Object> response = new HashMap<>();
+            response.put("available", !exists);
+            response.put("message", exists ? "用户名已存在" : "用户名可用");
             
-            userService.save(user);
-            
-            redirectAttributes.addFlashAttribute("successMessage", "用户创建成功");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "用户创建失败: " + e.getMessage());
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.internalServerError().body(error);
         }
-        return "redirect:/admin/users";
-    }
-    
-    // 仅超级管理员可以编辑用户
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    @GetMapping("/users/{id}/edit")
-    public String editUserForm(@PathVariable Long id, Model model) {
-        User user = userService.findAllUsers().stream()
-                .filter(u -> u.getId().equals(id))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("用户未找到"));
-        model.addAttribute("user", user);
-        return "admin/user-form";
-    }
-    
-    // 仅超级管理员可以更新用户
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    @PostMapping("/users/{id}/update")
-    public String updateUser(@PathVariable Long id, 
-                            @ModelAttribute User user,
-                            RedirectAttributes redirectAttributes) {
-        try {
-            User existingUser = userService.findAllUsers().stream()
-                    .filter(u -> u.getId().equals(id))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("用户未找到"));
-            
-            // 更新用户信息，但不更新密码（除非提供了新密码）
-            existingUser.setEmail(user.getEmail());
-            existingUser.setRoles(user.getRoles());
-            existingUser.setIsFirstLogin(user.getIsFirstLogin());
-            
-            // 处理工作目录模板
-            if (user.getWorkDirectory() != null && !user.getWorkDirectory().isEmpty()) {
-                String workDir = user.getWorkDirectory().replace("{username}", existingUser.getUsername());
-                existingUser.setWorkDirectory(workDir);
-            }
-            
-            // 如果提供了新密码，则更新密码
-            if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-                existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
-            }
-            
-            userService.save(existingUser);
-            
-            redirectAttributes.addFlashAttribute("successMessage", "用户更新成功");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "用户更新失败: " + e.getMessage());
-        }
-        return "redirect:/admin/users";
     }
     
     /**
-     * 处理用户服务器分配（已删除）
+     * 检查邮箱可用性API - 用于实时验证
+     */
+    @GetMapping("/api/users/check-email")
+    @ResponseBody
+    public ResponseEntity<?> checkEmailAvailability(@RequestParam String email) {
+        try {
+            // 检查邮箱是否已存在
+            boolean exists = userRepository.findByEmail(email).isPresent();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("available", !exists);
+            response.put("message", exists ? "邮箱已存在" : "邮箱可用");
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    /**
+     * 获取用户已分配的服务器列表API - 用于抽屉编辑
+     */
+    @GetMapping("/api/users/{id}/servers")
+    @ResponseBody
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> getUserServersApi(@PathVariable Long id) {
+        try {
+            User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("用户未找到"));
+            
+            // 获取用户已分配的服务器
+            Set<Server> userServers = user.getAvailableServers();
+            
+            // 转换为前端需要的格式
+            List<Map<String, Object>> responseData = userServers.stream()
+                .map(server -> {
+                    Map<String, Object> serverData = new HashMap<>();
+                    serverData.put("id", server.getId());
+                    serverData.put("name", server.getName());
+                    serverData.put("hostname", server.getHostname());
+                    serverData.put("active", server.getActive() != null ? server.getActive() : true);
+                    return serverData;
+                })
+                .collect(java.util.stream.Collectors.toList());
+            
+            return ResponseEntity.ok(responseData);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(404).body(error);
+        }
+    }
+
+    /**
+     * 处理用户服务器分配
      */
     private void handleUserServerAssignment(User user, Map<String, Object> userData) {
-        // 服务器相关功能已删除
-        logger.info("用户 {} 信息更新完成", user.getUsername());
+        // 处理服务器分配
+        List<Integer> serverIds = (List<Integer>) userData.get("serverIds");
+        if (serverIds != null && !serverIds.isEmpty()) {
+            Set<Server> assignedServers = new HashSet<>();
+            for (Integer serverId : serverIds) {
+                serverService.findById(serverId.longValue()).ifPresent(assignedServers::add);
+            }
+            user.setAvailableServers(assignedServers);
+            
+            // 如果没有默认服务器，设置第一个为默认服务器
+            if (!assignedServers.isEmpty() && user.getDefaultServer() == null) {
+                user.setDefaultServer(assignedServers.iterator().next());
+            }
+        }
+        logger.info("用户 {} 信息更新完成，分配了 {} 个服务器", user.getUsername(), 
+            user.getAvailableServers().size());
     }
     
     /**

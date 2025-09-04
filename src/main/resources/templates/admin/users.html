@@ -985,8 +985,8 @@
             <!-- 现代化用户网格 -->
             <div th:unless="${users == null or #lists.isEmpty(users)}" class="modern-user-grid">
                 <div th:each="user : ${users}" class="modern-user-card" 
-                     th:classappend="${#sets.contains(user.roles, T(com.cmict.internalpaas.model.User.Role).SUPER_ADMIN) ? 'super-admin' : 
-                                     #sets.contains(user.roles, T(com.cmict.internalpaas.model.User.Role).ADMIN) ? 'admin' : 'developer'}">
+                     th:classappend="${user.roles.?[name() == 'SUPER_ADMIN'].size() > 0 ? 'super-admin' : 
+                                     user.roles.?[name() == 'ADMIN'].size() > 0 ? 'admin' : 'developer'}">
                     
                     <!-- 用户卡片头部 -->
                     <div class="user-card-header">

@@ -767,111 +767,26 @@
     line-height: var(--leading-normal);
 }
 
-/* 现代化服务器选择组件 */
-.server-selection {
-    max-height: 280px;
-    overflow-y: auto;
-    border: 1.5px solid var(--gray-200);
-    border-radius: 10px;
-    background: var(--gray-50);
-    padding: var(--space-2);
-}
-
-.server-item {
-    background: white;
-    border: 1px solid var(--gray-200);
-    border-radius: 8px;
-    margin-bottom: var(--space-2);
-    transition: all 0.2s ease;
-    overflow: hidden;
-}
-
-.server-item:last-child {
-    margin-bottom: 0;
-}
-
-.server-item:hover {
-    border-color: var(--primary-300);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.server-item.selected {
-    border-color: var(--primary-500);
-    background: var(--primary-50);
-    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.1);
-}
-
-.server-checkbox {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-3);
-    cursor: pointer;
-}
-
-.server-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.server-name {
-    font-size: var(--text-base);
-    font-weight: var(--font-medium);
-    color: var(--gray-800);
-    margin-bottom: var(--space-1);
-    line-height: var(--leading-tight);
-}
-
-.server-details {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    font-size: var(--text-sm);
-    color: var(--gray-600);
-    flex-wrap: wrap;
-}
-
-.server-status {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    padding: var(--space-1) var(--space-2);
-    border-radius: 4px;
-    font-size: var(--text-xs);
-    font-weight: var(--font-medium);
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
-}
-
-.server-status.connected {
-    background: var(--success-50);
-    color: var(--success-500);
-}
-
-.server-status.failed {
-    background: var(--error-50);
-    color: var(--error-500);
-}
-
-.server-status.monitoring {
-    background: var(--warning-50);
-    color: var(--warning-500);
-}
-
-.server-status.unknown {
-    background: var(--gray-100);
-    color: var(--gray-500);
-}
-
-/* 服务器选择复选框美化 */
+/* 服务器选择复选框美化（隐藏原生外观，只显示自定义勾） */
 .server-item input[type="checkbox"] {
+    /* 使服务器复选框与角色复选框保持一致 */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    display: inline-block;
     width: 18px;
     height: 18px;
+    box-sizing: border-box;
     border: 2px solid var(--gray-300);
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
-    flex-shrink: 0;
+    position: relative;
+    background: var(--card-background, #ffffff);
+    outline: none;
+    vertical-align: middle;
+    /* 禁用浏览器的 accent-color，避免原生勾与自定义勾同时显示 */
+    accent-color: transparent !important;
 }
 
 .server-item input[type="checkbox"]:checked {
@@ -879,12 +794,16 @@
     border-color: var(--primary-500);
 }
 
-.server-item input[type="checkbox"]:checked::after {
+.server-checkbox input[type="checkbox"]:checked::after {
     content: '✓';
     position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     color: white;
     font-size: 12px;
     font-weight: bold;
+    pointer-events: none;
 }
 
 /* 密码输入组 */
@@ -981,7 +900,9 @@
     background: var(--primary-50);
 }
 
-.form-check-input {
+.form-check-input,
+.ui-checkbox,
+.server-checkbox input[type="checkbox"] {
     width: 18px;
     height: 18px;
     border: 2px solid var(--gray-300);
@@ -989,9 +910,14 @@
     cursor: pointer;
     transition: all 0.2s ease;
     margin: 0;
+    display: inline-block;
+    vertical-align: middle;
+    background: var(--card-background, #ffffff);
 }
 
-.form-check-input:checked {
+.form-check-input:checked,
+.ui-checkbox:checked,
+.server-checkbox input[type="checkbox"]:checked {
     background: var(--primary-500);
     border-color: var(--primary-500);
 }
@@ -2691,24 +2617,58 @@
 
 /* 服务器复选框 */
 .server-checkbox {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
+    display: block;
     width: 100%;
+    line-height: 1.4;
+    min-height: 1.5rem;
 }
 
 .server-checkbox input[type="checkbox"] {
-    margin-top: 0.125rem;
-    accent-color: var(--primary-color, #3b82f6);
+    /* 使用与角色卡相同的外观 */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    box-sizing: border-box;
+    margin: 0;
+    margin-right: 0.5rem;
+    border: 2px solid var(--gray-300);
+    border-radius: 4px;
+    background: var(--card-background, #ffffff);
+    position: relative;
+    vertical-align: middle;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    accent-color: transparent !important;
+}
+
+.server-checkbox input[type="checkbox"]:checked {
+    background: var(--primary-500);
+    border-color: var(--primary-500);
+}
+
+.server-checkbox input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    pointer-events: none;
 }
 
 .server-label {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex: 1;
+    display: inline-block;
     cursor: pointer;
     margin: 0;
+    line-height: 1.4;
+    min-height: 1.5rem;
+    padding: 0.125rem 0;
+    vertical-align: middle;
 }
 
 /* 服务器信息 */
@@ -2716,22 +2676,9 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    flex: 1;
 }
 
-.server-name {
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: var(--text-color, #1f2937);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
 
-.server-name::before {
-    content: "🖥️";
-    font-size: 1rem;
-}
 
 .server-details {
     display: flex;
@@ -2739,6 +2686,9 @@
     gap: 0.75rem;
     font-size: 0.75rem;
     color: var(--text-muted, #6b7280);
+    line-height: 1.4;
+    min-height: 1.25rem;
+    padding: 0.125rem 0;
 }
 
 .server-host {
@@ -2747,6 +2697,10 @@
     padding: 0.125rem 0.375rem;
     border-radius: 4px;
     font-weight: 500;
+    line-height: 1.4;
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.25rem;
 }
 
 .server-status {
@@ -2759,6 +2713,8 @@
     font-size: 0.6875rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    line-height: 1.2;
+    min-height: 1.25rem;
 }
 
 .server-status.connected {
@@ -2832,4 +2788,35 @@
 
 .server-empty i {
     color: var(--warning-color, #d97706);
+}
+
+/* 通用复选框组件样式：供不同组件复用，保持一致的外观与尺寸 */
+.ui-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--gray-300);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 0;
+    display: inline-block;
+    vertical-align: middle;
+    background: var(--card-background, #ffffff);
+}
+
+.ui-checkbox:checked {
+    background: var(--primary-500);
+    border-color: var(--primary-500);
+}
+
+.ui-checkbox:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    pointer-events: none;
 }

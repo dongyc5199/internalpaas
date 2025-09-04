@@ -97,4 +97,9 @@ public interface UserActivityRepository extends JpaRepository<UserActivity, Long
      */
     @Query("SELECT MAX(ua.lastActivity) FROM UserActivity ua WHERE ua.username = :username")
     LocalDateTime findLastActivityByUsername(@Param("username") String username);
+    
+    /**
+     * 删除指定用户的所有活动记录
+     */
+    void deleteByUsername(String username);
 }
