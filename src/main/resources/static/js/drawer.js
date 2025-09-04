@@ -427,72 +427,39 @@ class DrawerManager {
                                     基本信息
                                 </h3>
                                 
-                                <div class="form-row">
-                                    <div class="col-6">
-                                        <div class="form-group compact">
-                                            <label class="form-label" for="userUsername">
-                                                <span class="form-label-text">用户名</span>
-                                                <span class="form-label-required">*</span>
-                                            </label>
-                                            <input type="text" id="userUsername" name="username" class="form-control" 
-                                                   placeholder="请输入用户名" required>
-                                            <div class="invalid-feedback"></div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="form-group compact">
-                                            <label class="form-label" for="userEmail">
-                                                <span class="form-label-text">邮箱地址</span>
-                                                <span class="form-label-required">*</span>
-                                            </label>
-                                            <input type="email" id="userEmail" name="email" class="form-control" 
-                                                   placeholder="请输入邮箱地址" required>
-                                            <div class="invalid-feedback"></div>
-                                        </div>
-                                    </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="userUsername">
+                                        用户名 <span class="required">*</span>
+                                    </label>
+                                    <input type="text" id="userUsername" name="username" class="form-control" 
+                                           placeholder="请输入用户名" required>
+                                    <div class="invalid-feedback"></div>
                                 </div>
                                 
-                            </div>
-                            
-                            <!-- 密码设置 -->
-                            <div class="form-section">
-                                <h3 class="form-section-title">
-                                    <div class="form-section-icon">🔐</div>
-                                    密码设置
-                                </h3>
+                                <div class="form-group">
+                                    <label class="form-label" for="userPassword">
+                                        登录密码 <span class="required" id="passwordRequired">*</span>
+                                    </label>
+                                    <div class="password-input-group">
+                                        <input type="password" id="userPassword" name="password" class="form-control" 
+                                               placeholder="请输入密码">
+                                        <button type="button" class="password-toggle" onclick="drawerManager.togglePasswordVisibility('userPassword')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text edit-mode-note" style="display: none;">
+                                        留空保持原密码不变
+                                    </div>
+                                    <div class="invalid-feedback"></div>
+                                </div>
                                 
-                                <div class="form-row">
-                                    <div class="col-6">
-                                        <div class="form-group compact">
-                                            <label class="form-label" for="userPassword">
-                                                <span class="form-label-text">登录密码</span>
-                                                <span class="form-label-required" id="passwordRequired">*</span>
-                                            </label>
-                                            <div class="password-input-group">
-                                                <input type="password" id="userPassword" name="password" class="form-control" 
-                                                       placeholder="请输入密码">
-                                                <button type="button" class="password-toggle" onclick="drawerManager.togglePasswordVisibility('userPassword')">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                            </div>
-                                            <div class="form-help edit-mode-note" style="display: none;">
-                                                <span class="form-help-icon">ℹ️</span>
-                                                <span class="form-help-text">留空保持原密码不变</span>
-                                            </div>
-                                            <div class="invalid-feedback"></div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="form-group compact">
-                                            <label class="form-label" for="userPasswordConfirm">
-                                                <span class="form-label-text">确认密码</span>
-                                                <span class="form-label-required" id="confirmRequired">*</span>
-                                            </label>
-                                            <input type="password" id="userPasswordConfirm" name="passwordConfirm" class="form-control" 
-                                                   placeholder="请再次输入密码">
-                                            <div class="invalid-feedback"></div>
-                                        </div>
-                                    </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="userPasswordConfirm">
+                                        确认密码 <span class="required" id="confirmRequired">*</span>
+                                    </label>
+                                    <input type="password" id="userPasswordConfirm" name="passwordConfirm" class="form-control" 
+                                           placeholder="请再次输入密码">
+                                    <div class="invalid-feedback"></div>
                                 </div>
                                 
                                 <div class="password-strength">
@@ -500,6 +467,15 @@ class DrawerManager {
                                         <div class="password-strength-fill"></div>
                                     </div>
                                     <span class="password-strength-text">密码强度</span>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label" for="userEmail">
+                                        邮箱地址 <span class="required">*</span>
+                                    </label>
+                                    <input type="email" id="userEmail" name="email" class="form-control" 
+                                           placeholder="请输入邮箱地址" required>
+                                    <div class="invalid-feedback"></div>
                                 </div>
                             </div>
                             
@@ -836,9 +812,6 @@ class DrawerManager {
     openServerDrawer(serverId = null) {
         this.currentDrawer = this.serverDrawer;
         
-        // 确保服务器抽屉宽度类存在
-        this.serverDrawer.classList.add('drawer-server');
-        
         // 更新标题
         const titleText = this.serverDrawer.querySelector('.drawer-title-text');
         const submitBtn = this.serverDrawer.querySelector('#serverSubmitBtn .submit-text');
@@ -1012,6 +985,7 @@ class DrawerManager {
         }
     }
 
+
     // 显示抽屉
     showDrawer(drawer) {
         // 隐藏其他抽屉
@@ -1043,12 +1017,6 @@ class DrawerManager {
         this.overlay.classList.remove('show');
         if (this.currentDrawer) {
             this.currentDrawer.classList.remove('show');
-            // 延迟移除宽度类，等待关闭动画完成
-            setTimeout(() => {
-                if (this.currentDrawer) {
-                    this.currentDrawer.classList.remove('drawer-user', 'drawer-server');
-                }
-            }, 300); // 与CSS transition时间一致
         }
         
         // 恢复背景滚动
@@ -1067,9 +1035,6 @@ class DrawerManager {
     // 打开用户抽屉
     openUserDrawer(userId = null) {
         this.currentDrawer = this.userDrawer;
-        
-        // 确保用户抽屉宽度类存在
-        this.userDrawer.classList.add('drawer-user');
         
         // 更新标题
         const titleText = this.userDrawer.querySelector('.drawer-title-text');
