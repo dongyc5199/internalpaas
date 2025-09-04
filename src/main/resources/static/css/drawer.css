@@ -1640,6 +1640,34 @@
 
 .input-group .form-control {
     padding-left: 2.5rem;
+    padding-right: 2.5rem; /* 为密码切换按钮留出空间 */
+}
+
+/* 密码切换按钮样式 */
+.password-toggle-btn {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-color-tertiary, #9ca3af);
+    cursor: pointer;
+    z-index: 5;
+    font-size: 0.875rem;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.password-toggle-btn:hover {
+    color: var(--primary-600, #0284c7);
+    background-color: var(--primary-50, #f0f9ff);
+}
+
+.password-toggle-btn:focus {
+    outline: 2px solid var(--primary-500, #0ea5e9);
+    outline-offset: 2px;
 }
 
 /* 表单行布局 */
@@ -2426,11 +2454,13 @@
 
 .input-group .form-control {
     padding-left: 3rem;
+    padding-right: 2.5rem; /* 为密码切换按钮留出空间 */
 }
 
 /* 紧凑模式下的输入组优化 */
 .drawer-compact .input-group .form-control {
     padding-left: 3.25rem;
+    padding-right: 2.75rem; /* 紧凑模式下为密码切换按钮留出更多空间 */
 }
 
 .drawer-compact .input-group-icon {

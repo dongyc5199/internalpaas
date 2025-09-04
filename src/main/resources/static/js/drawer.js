@@ -171,6 +171,9 @@ class DrawerManager {
                                        name="sshPassword" 
                                        placeholder="必填：密码认证" 
                                        required>
+                                <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('server-ssh-password')" title="显示/隐藏密码">
+                                    <i class="fas fa-eye"></i>
+                                </button>
                             </div>
                             <div class="form-text">仅支持密码认证，请填写SSH密码</div>
                             <div class="invalid-feedback"></div>
@@ -2354,4 +2357,23 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+// 密码显示/隐藏切换功能
+function togglePasswordVisibility(inputId) {
+    const passwordInput = document.getElementById(inputId);
+    const toggleButton = passwordInput.parentElement.querySelector('.password-toggle-btn');
+    const toggleIcon = toggleButton.querySelector('i');
+    
+    if (passwordInput.type === 'password') {
+        // 显示密码
+        passwordInput.type = 'text';
+        toggleIcon.className = 'fas fa-eye-slash';
+        toggleButton.title = '隐藏密码';
+    } else {
+        // 隐藏密码
+        passwordInput.type = 'password';
+        toggleIcon.className = 'fas fa-eye';
+        toggleButton.title = '显示密码';
+    }
 }
