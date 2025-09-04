@@ -7,14 +7,15 @@
 ## 🎨 设计特色
 
 ### 1. 现代化UI设计
-- **从右侧滑出的抽屉**：宽度500px，流畅的滑动动画
+- **自适应宽度抽屉**：用户抽屉900px（双栏布局），服务器抽屉500px（单栏布局）
+- **简洁分隔线设计**：渐变垂直分隔线，替代复杂图标
 - **半透明遮罩层**：带有4px的毛玻璃效果
 - **响应式设计**：移动端自动适配全屏显示
 - **现代化表单**：带有图标、验证提示和平滑动画
 - **主题一致性**：完全使用现有的CSS变量系统
 
 ### 2. 交互体验优化
-- **平滑动画过渡**：300ms缓动动画，支持硬件加速
+- **稳定的滑动动画**：每个抽屉使用固定宽度，无跳变问题
 - **智能表单验证**：实时验证，友好的错误提示
 - **密码强度指示**：可视化密码强度评估
 - **自动填充功能**：用户名自动生成工作目录路径
@@ -154,20 +155,50 @@ public class UserApiController {
 
 ### 1. 视觉设计
 ```css
-/* 现代化的抽屉动画 */
+/* 稳定的抽屉动画 - 关键优化 */
 .drawer {
     transform: translateX(100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* 注意：移除了width过渡，避免宽度跳变 */
 }
 
 .drawer.show {
     transform: translateX(0);
 }
 
+/* 不同类型抽屉的固定宽度 */
+.drawer.drawer-user {
+    width: 900px !important; /* 用户抽屉：双栏布局 */
+    max-width: 90vw !important;
+}
+
+.drawer.drawer-server {
+    width: 500px !important; /* 服务器抽屉：单栏布局 */
+    max-width: 85vw !important;
+}
+
 /* 毛玻璃遮罩效果 */
 .drawer-overlay {
     backdrop-filter: blur(4px);
     background: rgba(0, 0, 0, 0.5);
+}
+
+/* 简洁分隔线设计 */
+.drawer-separator {
+    width: 1px;
+    background: transparent;
+}
+
+.separator-line {
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(to bottom, 
+        transparent 0%, 
+        var(--gray-200) 10%, 
+        var(--gray-300) 50%, 
+        var(--gray-200) 90%, 
+        transparent 100%);
+    opacity: 0.6;
 }
 ```
 
@@ -360,6 +391,78 @@ const config = {
 ✅ **性能优化** - 硬件加速，内存优化  
 
 这个方案将大大提升您的管理后台的用户体验，让"添加服务器"和"添加用户"功能更加现代化、易用和高效。
+
+## 🔧 动画优化技术方案
+
+### 问题分析与解决
+
+#### 原始问题
+1. **首次打开轻微跳变**：抽屉从默认宽度过渡到目标宽度
+2. **第二次打开大幅跳变**：宽度类残留导致错误的初始宽度
+3. **关闭时宽度恢复**：关闭动画过程中宽度类被提前移除
+
+#### 最终解决方案
+```javascript
+// 核心原则：静态宽度 + 纯transform动画
+
+// 1. 创建时设置固定宽度类
+createServerDrawer() {
+    const drawer = document.createElement('div');
+    drawer.className = 'drawer drawer-server drawer-compact drawer-modern'; // 固定宽度
+}
+
+createUserDrawer() {
+    const drawer = document.createElement('div');
+    drawer.className = 'drawer drawer-user drawer-compact drawer-modern'; // 固定宽度
+}
+
+// 2. 只使用transform动画，避免width过渡
+.drawer {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    // 移除了: width 0.3s 过渡
+}
+
+// 3. 简化关闭逻辑，不清理宽度类
+closeDrawer() {
+    this.currentDrawer.classList.remove('show'); // 只移除show类
+    // 不再清理宽度类，保持固定宽度
+}
+```
+
+#### 技术要点
+1. **静态宽度策略**：每个抽屉从创建开始就有固定正确的宽度
+2. **单一动画属性**：只使用 `transform` 进行滑动，避免 `width` 过渡
+3. **类生命周期管理**：宽度类在创建时设置，整个生命周期保持不变
+4. **视觉一致性**：每次打开都使用相同宽度，确保动画稳定
+
+#### 测试验证
+- ✅ 服务器抽屉：首次打开500px平滑滑入
+- ✅ 服务器抽屉：多次打开无跳变 
+- ✅ 用户抽屉：首次打开900px平滑滑入
+- ✅ 用户抽屉：多次打开无跳变
+- ✅ 关闭动画：保持原宽度平滑滑出
+
+## 🎛️ 双栏布局设计
+
+### 用户抽屉布局优化
+```css
+/* 左栏固定宽度，右栏自适应 */
+.drawer.drawer-user .drawer-left-pane {
+    flex: 0 0 450px; /* 固定450px宽度 */
+    min-width: 450px;
+    max-width: 450px;
+}
+
+.drawer.drawer-user .drawer-right-pane {
+    flex: 1; /* 占用剩余空间 */
+    min-width: 320px;
+}
+```
+
+### 表单布局改进
+- **基本信息四行布局**：用户名 → 登录密码 → 确认密码 → 邮箱地址
+- **紧凑间距**：使用与服务器页面一致的 `form-group` 间距
+- **全宽输入框**：每个字段独占一行，提供充足的输入空间
 
 ## 🚀 下一步
 
