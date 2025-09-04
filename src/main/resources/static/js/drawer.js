@@ -985,6 +985,36 @@ class DrawerManager {
         }
     }
 
+    // 防止页面滚动但保持宽度不变
+    preventBodyScroll() {
+        // 记录当前滚动位置
+        this.scrollPosition = window.pageYOffset;
+        
+        // 获取滚动条宽度
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        
+        // 设置body样式，用padding-right补偿滚动条消失的宽度
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${this.scrollPosition}px`;
+        document.body.style.width = '100%';
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    // 恢复页面滚动
+    restoreBodyScroll() {
+        // 恢复body样式
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.paddingRight = '';
+        
+        // 恢复滚动位置
+        if (typeof this.scrollPosition === 'number') {
+            window.scrollTo(0, this.scrollPosition);
+        }
+    }
 
     // 显示抽屉
     showDrawer(drawer) {
@@ -999,8 +1029,8 @@ class DrawerManager {
         this.overlay.classList.add('show');
         drawer.classList.add('show');
         
-        // 防止背景滚动
-        document.body.style.overflow = 'hidden';
+        // 防止背景滚动，但保持页面宽度不变
+        this.preventBodyScroll();
         
         // 监听表单变化
         this.monitorFormChanges(drawer);
@@ -1020,7 +1050,7 @@ class DrawerManager {
         }
         
         // 恢复背景滚动
-        document.body.style.overflow = '';
+        this.restoreBodyScroll();
         
         // 重置状态
         setTimeout(() => {
