@@ -125,6 +125,9 @@ public class ServerService {
         if (server.getMonitorIntervalSeconds() == null) {
             server.setMonitorIntervalSeconds(60);
         }
+        
+        // 验证必填字段完整性
+        validateServerBeforeSave(server);
         return serverRepository.save(server);
     }
     
@@ -162,12 +165,16 @@ public class ServerService {
                     monitoringService.saveUserActivities(savedServer);
                 }
                 
+                // 验证必填字段完整性
+                validateServerBeforeSave(savedServer);
                 serverRepository.save(savedServer);
                 
             } catch (Exception e) {
                 logger.error("服务器自动检测失败: {}", savedServer.getName(), e);
                 savedServer.setConnectionStatus(Server.ConnectionStatus.FAILED);
                 savedServer.setLastConnectionCheck(LocalDateTime.now());
+                // 验证必填字段完整性
+                validateServerBeforeSave(savedServer);
                 serverRepository.save(savedServer);
             }
         }, serverCheckExecutor);
@@ -213,6 +220,8 @@ public class ServerService {
             server.setMonitorIntervalSeconds(serverDetails.getMonitorIntervalSeconds());
         }
         
+        // 验证必填字段完整性
+        validateServerBeforeSave(server);
         return serverRepository.save(server);
     }
     
@@ -242,6 +251,8 @@ public class ServerService {
             try {
                 ServerMetrics metrics = monitoringService.saveServerMetrics(server);
                 server.setLastMetricsUpdate(LocalDateTime.now());
+                // 验证必填字段完整性
+                validateServerBeforeSave(server);
                 serverRepository.save(server);
                 
                 // 更新用户活跃信息
@@ -303,6 +314,61 @@ public class ServerService {
             case UNKNOWN:
             default:
                 return "text-secondary";
+        }
+    }
+    
+    /**
+     * 验证服务器对象的必填字段，防止约束违反错误
+     */
+    private void validateServerBeforeSave(Server server) {
+        if (server == null) {
+            throw new IllegalArgumentException("服务器对象不能为null");
+        }
+        
+        // 检查必填字段
+        if (server.getName() == null || server.getName().trim().isEmpty()) {
+            logger.warn("服务器名称为空，使用默认值");
+            server.setName("Unknown Server");
+        }
+        
+        if (server.getHostname() == null || server.getHostname().trim().isEmpty()) {
+            logger.warn("服务器主机名为空，使用localhost");
+            server.setHostname("localhost");
+        }
+        
+        if (server.getPort() == null) {
+            logger.warn("服务器端口为空，使用默认值8080");
+            server.setPort(8080);
+        }
+        
+        if (server.getBaseWorkDirectory() == null || server.getBaseWorkDirectory().trim().isEmpty()) {
+            logger.warn("服务器工作目录为空，使用默认值");
+            server.setBaseWorkDirectory("/tmp");
+        }
+        
+        if (server.getActive() == null) {
+            server.setActive(true);
+        }
+        
+        if (server.getCreatedAt() == null) {
+            server.setCreatedAt(LocalDateTime.now());
+        }
+        
+        if (server.getUpdatedAt() == null) {
+            server.setUpdatedAt(LocalDateTime.now());
+        }
+        
+        // 验证字符串长度限制
+        if (server.getName().length() > 100) {
+            server.setName(server.getName().substring(0, 100));
+        }
+        
+        if (server.getHostname().length() > 100) {
+            server.setHostname(server.getHostname().substring(0, 100));
+        }
+        
+        if (server.getDescription() != null && server.getDescription().length() > 500) {
+            server.setDescription(server.getDescription().substring(0, 500));
         }
     }
     
