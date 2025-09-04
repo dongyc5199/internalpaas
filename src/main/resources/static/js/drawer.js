@@ -583,6 +583,9 @@ class DrawerManager {
                                 <h3 class="form-section-title">
                                     <div class="form-section-icon">🖥️</div>
                                     服务器资源分配
+                                    <button type="button" class="refresh-servers-btn" onclick="drawerManager.refreshServersStatus()" title="刷新服务器状态">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
                                 </h3>
                                 
                                 <div class="form-group">
@@ -1927,26 +1930,26 @@ class DrawerManager {
         const serverGroup = form.querySelector('#serverSelectionList');
         
         if (serverGroup) {
-            const feedback = serverGroup.querySelector('.invalid-feedback');
+            let feedback = serverGroup.querySelector('.invalid-feedback');
             if (!feedback) {
                 // 如果没有错误提示元素，则创建一个
-                const feedbackDiv = document.createElement('div');
-                feedbackDiv.className = 'invalid-feedback';
-                feedbackDiv.style.display = 'none';
-                serverGroup.appendChild(feedbackDiv);
+                feedback = document.createElement('div');
+                feedback.className = 'invalid-feedback';
+                serverGroup.appendChild(feedback);
                 
                 // 更新服务器组样式以支持错误提示
                 serverGroup.classList.add('has-feedback');
+            }
+            
+            // 统一设置反馈信息和样式
+            feedback.textContent = isValid ? '' : '请至少选择一个可用服务器';
+            feedback.style.display = isValid ? 'none' : 'block';
+            
+            // 更新服务器组样式
+            if (isValid) {
+                serverGroup.classList.remove('has-error');
             } else {
-                feedback.textContent = isValid ? '' : '请至少选择一个可用服务器';
-                feedback.style.display = isValid ? 'none' : 'block';
-                
-                // 更新服务器组样式
-                if (isValid) {
-                    serverGroup.classList.remove('has-error');
-                } else {
-                    serverGroup.classList.add('has-error');
-                }
+                serverGroup.classList.add('has-error');
             }
         }
         
@@ -2357,6 +2360,105 @@ class DrawerManager {
         }
         
         previewContent.innerHTML = previewHtml;
+    }
+    
+    // 刷新服务器状态
+    async refreshServersStatus() {
+        if (this.isRefreshingServers) {
+            console.log('服务器状态刷新中，跳过重复请求');
+            return;
+        }
+        
+        const refreshBtn = this.userDrawer.querySelector('.refresh-servers-btn');
+        const submitBtn = this.userDrawer.querySelector('#userSubmitBtn');
+        const serverCards = this.userDrawer.querySelectorAll('.server-card, .role-card[data-server]');
+        
+        try {
+            this.isRefreshingServers = true;
+            
+            // 设置刷新按钮状态
+            if (refreshBtn) {
+                refreshBtn.classList.add('refreshing');
+                refreshBtn.disabled = true;
+            }
+            
+            // 禁用保存按钮
+            if (submitBtn) {
+                submitBtn.disabled = true;
+            }
+            
+            // 给所有服务器卡片添加刷新动画
+            serverCards.forEach(card => {
+                card.classList.add('server-refreshing');
+            });
+            
+            // 获取所有服务器列表
+            const response = await fetch('/admin/api/servers/available');
+            if (!response.ok) {
+                throw new Error('获取服务器列表失败');
+            }
+            
+            const servers = await response.json();
+            
+            // 并发刷新所有服务器状态
+            const refreshPromises = servers.map(async (server) => {
+                try {
+                    const refreshResponse = await fetch(`/admin/servers/${server.id}/refresh`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            [this.getCSRFHeaderName()]: this.getCSRFToken()
+                        }
+                    });
+                    
+                    if (refreshResponse.ok) {
+                        const result = await refreshResponse.json();
+                        console.log(`服务器 ${server.name} 状态刷新成功:`, result.connectionStatus);
+                        return { serverId: server.id, success: true, status: result.connectionStatus };
+                    } else {
+                        console.warn(`服务器 ${server.name} 状态刷新失败`);
+                        return { serverId: server.id, success: false };
+                    }
+                } catch (error) {
+                    console.error(`刷新服务器 ${server.name} 状态时出错:`, error);
+                    return { serverId: server.id, success: false };
+                }
+            });
+            
+            await Promise.all(refreshPromises);
+            
+            // 重新加载服务器列表以显示最新状态
+            await this.loadAvailableServers();
+            
+            console.log('所有服务器状态刷新完成');
+            
+        } catch (error) {
+            console.error('刷新服务器状态时出错:', error);
+            
+            // 显示错误消息
+            const messageContainer = this.userDrawer.querySelector('.drawer-messages');
+            if (messageContainer) {
+                this.showMessage(messageContainer, 'error', '刷新服务器状态失败：' + error.message);
+            }
+        } finally {
+            this.isRefreshingServers = false;
+            
+            // 恢复按钮状态
+            if (refreshBtn) {
+                refreshBtn.classList.remove('refreshing');
+                refreshBtn.disabled = false;
+            }
+            
+            // 恢复保存按钮
+            if (submitBtn) {
+                submitBtn.disabled = false;
+            }
+            
+            // 移除所有服务器卡片的刷新动画
+            serverCards.forEach(card => {
+                card.classList.remove('server-refreshing');
+            });
+        }
     }
 }
 

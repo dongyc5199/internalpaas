@@ -646,6 +646,10 @@
     color: var(--gray-800);
     margin: 0;
     line-height: var(--leading-tight);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    position: relative;
 }
 
 .form-section-icon {
@@ -659,6 +663,58 @@
     justify-content: center;
     font-size: 16px;
     flex-shrink: 0;
+}
+
+/* 刷新服务器按钮 */
+.refresh-servers-btn {
+    position: absolute;
+    right: 0;
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    padding: var(--space-2);
+    color: var(--gray-600);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.refresh-servers-btn:hover:not(:disabled) {
+    background: var(--gray-200);
+    border-color: var(--gray-300);
+    color: var(--gray-700);
+    transform: translateY(-1px);
+}
+
+.refresh-servers-btn:active:not(:disabled) {
+    transform: translateY(0);
+    background: var(--gray-300);
+}
+
+.refresh-servers-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: var(--gray-100);
+}
+
+.refresh-servers-btn.refreshing {
+    color: var(--primary-600);
+    background: var(--primary-50);
+    border-color: var(--primary-200);
+}
+
+.refresh-servers-btn.refreshing i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 /* 现代化表单字段 */
@@ -849,6 +905,48 @@
     transform: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     border-color: var(--gray-300);
+}
+
+/* 服务器卡片刷新动画 */
+.role-card.server-refreshing {
+    position: relative;
+    pointer-events: none;
+}
+
+.role-card.server-refreshing::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: inherit;
+    z-index: 1;
+}
+
+.role-card.server-refreshing::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid var(--primary-200);
+    border-top-color: var(--primary-600);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 2;
+}
+
+.role-card.server-refreshing input[type="checkbox"] {
+    pointer-events: none;
+}
+
+.role-card.server-refreshing .role-card-title,
+.role-card.server-refreshing .role-card-description {
+    opacity: 0.6;
 }
 
 .role-card-header {
