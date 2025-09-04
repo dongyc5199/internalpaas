@@ -819,6 +819,38 @@
     box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
 }
 
+/* 离线服务器样式 */
+.role-card.server-offline {
+    opacity: 0.6;
+    background-color: var(--gray-100);
+    border-color: var(--gray-300);
+    cursor: not-allowed;
+}
+
+.role-card.server-offline .role-card-title {
+    color: var(--gray-500);
+}
+
+.role-card.server-offline .role-card-description {
+    color: var(--gray-400);
+}
+
+.role-card.server-offline .role-icon {
+    background: var(--gray-200);
+    color: var(--gray-400);
+}
+
+.role-card.server-offline input[type="checkbox"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.role-card.server-offline:hover {
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-color: var(--gray-300);
+}
+
 .role-card-header {
     display: flex;
     align-items: center;

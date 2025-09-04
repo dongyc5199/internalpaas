@@ -1157,10 +1157,36 @@ class DrawerManager {
                 const serverItem = document.createElement('div');
                 serverItem.className = 'role-card compact server-card';
                 serverItem.setAttribute('data-server', server.id);
+                
+                // 判断服务器是否在线
+                const isOnline = server.connectionStatus === 'CONNECTED' || server.connectionStatus === 'MONITORING';
                 const isChecked = assignedServerIds.includes(server.id.toString());
-                if (isChecked) {
+                
+                // 离线服务器不允许选中且添加禁用样式
+                if (!isOnline) {
+                    serverItem.classList.add('server-offline');
+                } else if (isChecked) {
                     serverItem.classList.add('selected');
                 }
+                
+                // 获取状态描述和图标
+                const getStatusInfo = (status) => {
+                    switch(status) {
+                        case 'CONNECTED':
+                        case 'MONITORING':
+                            return { text: '在线', icon: '🟢', color: '#10b981' };
+                        case 'FAILED':
+                            return { text: '连接失败', icon: '🔴', color: '#ef4444' };
+                        case 'TIMEOUT':
+                            return { text: '连接超时', icon: '🟡', color: '#f59e0b' };
+                        case 'AUTH_FAILED':
+                            return { text: '认证失败', icon: '🔴', color: '#ef4444' };
+                        default:
+                            return { text: '未知状态', icon: '⚪', color: '#6b7280' };
+                    }
+                };
+                
+                const statusInfo = getStatusInfo(server.connectionStatus);
                 
                 serverItem.innerHTML = `
                     <div class="role-card-header">
@@ -1168,35 +1194,44 @@ class DrawerManager {
                                name="drawerServerIds" 
                                value="${server.id}" 
                                id="drawer-server-${server.id}"
-                               ${isChecked ? 'checked' : ''}>
+                               ${isChecked && isOnline ? 'checked' : ''}
+                               ${!isOnline ? 'disabled' : ''}>
                         <div class="role-icon">🖥️</div>
                     </div>
                     <div class="role-card-body">
                         <h6 class="role-card-title">${server.name}</h6>
                         <p class="role-card-description">
-                            ${server.hostname} ${server.active ? '• 运行中' : '• 已停用'}
+                            ${server.hostname} • 
+                            <span class="server-status" style="color: ${statusInfo.color}">
+                                ${statusInfo.icon} ${statusInfo.text}
+                            </span>
+                            ${!isOnline ? '<br><small style="color: #ef4444;">离线服务器无法选择</small>' : ''}
                         </p>
                     </div>
                 `;
                 
-                // 添加点击事件（采用role-card的交互方式）
-                serverItem.addEventListener('click', (e) => {
-                    if (e.target.type !== 'checkbox') {
-                        const checkbox = serverItem.querySelector('input[type="checkbox"]');
-                        if (checkbox) {
-                            checkbox.checked = !checkbox.checked;
-                            this.updateServerCardStyle(serverItem, checkbox.checked);
+                // 添加点击事件（离线服务器不响应点击）
+                if (isOnline) {
+                    serverItem.addEventListener('click', (e) => {
+                        if (e.target.type !== 'checkbox') {
+                            const checkbox = serverItem.querySelector('input[type="checkbox"]');
+                            if (checkbox && !checkbox.disabled) {
+                                checkbox.checked = !checkbox.checked;
+                                this.updateServerCardStyle(serverItem, checkbox.checked);
+                            }
                         }
-                    }
-                });
-                
-                // 监听复选框变化
-                const checkbox = serverItem.querySelector('input[type="checkbox"]');
-                checkbox.addEventListener('change', (e) => {
-                    this.updateServerCardStyle(serverItem, e.target.checked);
-                });
-                
-                // 初始化样式（已在上面设置了selected类）
+                    });
+                    
+                    // 监听复选框变化
+                    const checkbox = serverItem.querySelector('input[type="checkbox"]');
+                    checkbox.addEventListener('change', (e) => {
+                        this.updateServerCardStyle(serverItem, e.target.checked);
+                    });
+                } else {
+                    // 离线服务器添加提示
+                    serverItem.title = '服务器离线，无法选择';
+                    serverItem.style.cursor = 'not-allowed';
+                }
                 
                 serverListContainer.appendChild(serverItem);
             });
@@ -1559,17 +1594,24 @@ class DrawerManager {
             isValid = false;
         }
         
-        // 验证服务器选择（只在有可用服务器时验证）
+        // 验证服务器选择（只在有在线服务器时验证）
         const allServerCheckboxes = this.userDrawer.querySelectorAll('[name="drawerServerIds"]');
+        const onlineServerCheckboxes = this.userDrawer.querySelectorAll('[name="drawerServerIds"]:not(:disabled)');
         const checkedServers = this.userDrawer.querySelectorAll('[name="drawerServerIds"]:checked');
         
-        if (allServerCheckboxes.length > 0 && checkedServers.length === 0) {
-            errors.servers = '请至少选择一个可用服务器';
+        if (onlineServerCheckboxes.length > 0 && checkedServers.length === 0) {
+            errors.servers = '请至少选择一个在线的服务器';
             isValid = false;
             // 显示服务器选择错误
             this.validateServerSelection();
-        } else if (allServerCheckboxes.length === 0) {
-            console.warn('没有可用的服务器进行选择，跳过服务器验证');
+        } else if (onlineServerCheckboxes.length === 0) {
+            if (allServerCheckboxes.length > 0) {
+                errors.servers = '当前没有在线的服务器可供选择，请联系管理员检查服务器状态';
+                isValid = false;
+                this.validateServerSelection();
+            } else {
+                console.warn('没有可用的服务器进行选择，跳过服务器验证');
+            }
         }
 
         // 显示字段验证错误
@@ -2126,14 +2168,19 @@ class DrawerManager {
             isValid = false;
         }
         
-        // 验证服务器选择（只在有可用服务器时验证）
+        // 验证服务器选择（只在有在线服务器时验证）
         const allServers = this.userDrawer.querySelectorAll('[name="drawerServerIds"]');
+        const onlineServers = this.userDrawer.querySelectorAll('[name="drawerServerIds"]:not(:disabled)');
         const servers = this.userDrawer.querySelectorAll('[name="drawerServerIds"]:checked');
         
-        if (allServers.length > 0 && servers.length === 0) {
-            errors.servers = '至少需要选择一个可用服务器';
+        if (onlineServers.length > 0 && servers.length === 0) {
+            errors.servers = '至少需要选择一个在线的服务器';
             isValid = false;
             this.validateServerSelection(); // 显示服务器选择错误
+        } else if (onlineServers.length === 0 && allServers.length > 0) {
+            errors.servers = '当前没有在线的服务器可供选择，请联系管理员检查服务器状态';
+            isValid = false;
+            this.validateServerSelection();
         } else {
             // 如果服务器选择有效或没有可选服务器，确保错误状态被清除
             const serverGroup = form.querySelector('#serverSelectionList');
