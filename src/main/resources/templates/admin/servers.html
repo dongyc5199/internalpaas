@@ -1709,8 +1709,7 @@
             if (typeof drawerManager !== 'undefined' && drawerManager) {
                 drawerManager.openServerDrawer();
             } else {
-                // 后备方案：跳转到原页面
-                window.location.href = '/admin/servers/new';
+                alert('抽屉组件未加载，请刷新页面后重试');
             }
         }
         
@@ -1851,8 +1850,7 @@
             if (typeof drawerManager !== 'undefined' && drawerManager) {
                 drawerManager.openServerDrawer(serverId);
             } else {
-                // 后备方案：跳转到原页面
-                window.location.href = '/admin/servers/' + serverId + '/edit';
+                alert('抽屉组件未加载，请刷新页面后重试');
             }
         }
         
@@ -1860,7 +1858,7 @@
             const serverId = element.getAttribute('data-id');
             if (confirm('确定要删除这个服务器吗？此操作不可撤销。')) {
                 fetch('/admin/servers/' + serverId + '/delete', {
-                    method: 'DELETE',
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         [csrfHeader]: csrfToken

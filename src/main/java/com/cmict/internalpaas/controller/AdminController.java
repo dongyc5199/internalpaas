@@ -80,11 +80,6 @@ public class AdminController {
         return "admin/servers";
     }
 
-    @GetMapping("/servers/new")
-    public String newServerForm(Model model) {
-        model.addAttribute("server", new Server());
-        return "admin/server-form";
-    }
 
     @GetMapping("/servers/{id}")
     public String serverDetail(@PathVariable Long id, Model model) {
@@ -198,13 +193,6 @@ public class AdminController {
         }
     }
 
-    @GetMapping("/servers/{id}/edit")
-    public String editServerForm(@PathVariable Long id, Model model) {
-        Server server = serverService.getServerById(id)
-            .orElseThrow(() -> new RuntimeException("Server not found"));
-        model.addAttribute("server", server);
-        return "admin/server-form";
-    }
     
     /**
      * 获取服务器数据API - 用于抽屉编辑
