@@ -554,6 +554,7 @@ public class AdminController {
     @ResponseBody
     public ResponseEntity<?> createUserApi(@RequestBody Map<String, Object> userData) {
         try {
+            logger.info("收到创建用户请求，数据: {}", userData);
             String username = (String) userData.get("username");
             String email = (String) userData.get("email");
             
@@ -605,17 +606,11 @@ public class AdminController {
                 logger.warn("没有收到角色数据或角色数据为空");
             }
             
-            // 设置工作目录模板替换
-            if (user.getWorkDirectory() != null && !user.getWorkDirectory().isEmpty()) {
-                String workDir = user.getWorkDirectory().replace("{username}", user.getUsername());
-                user.setWorkDirectory(workDir);
-            } else {
-                // 如果未设置工作目录，自动生成
-                user.setWorkDirectory("/home/" + user.getUsername());
-            }
-            
             // 处理服务器分配
             this.handleUserServerAssignment(user, userData);
+            
+            // 根据可用服务器生成工作目录路径
+            this.generateUserWorkDirectory(user);
             
             User savedUser = userService.save(user);
             
@@ -645,7 +640,6 @@ public class AdminController {
             // 更新基本信息
             user.setUsername((String) userData.get("username"));
             user.setEmail((String) userData.get("email"));
-            user.setWorkDirectory((String) userData.get("workDirectory"));
             user.setIsAccountLocked(!((Boolean) userData.getOrDefault("enabled", true)));
             
             // 更新密码（如果提供）
@@ -668,14 +662,11 @@ public class AdminController {
                 user.setRoles(roles);
             }
             
-            // 处理工作目录
-            if (user.getWorkDirectory() != null && !user.getWorkDirectory().isEmpty()) {
-                String workDir = user.getWorkDirectory().replace("{username}", user.getUsername());
-                user.setWorkDirectory(workDir);
-            }
-            
             // 处理服务器分配
             this.handleUserServerAssignment(user, userData);
+            
+            // 根据可用服务器重新生成工作目录路径
+            this.generateUserWorkDirectory(user);
             
             User updatedUser = userService.save(user);
             
@@ -778,6 +769,7 @@ public class AdminController {
     private void handleUserServerAssignment(User user, Map<String, Object> userData) {
         // 处理服务器分配
         List<Integer> serverIds = (List<Integer>) userData.get("serverIds");
+        logger.info("接收到的服务器ID列表: {}", serverIds);
         if (serverIds != null && !serverIds.isEmpty()) {
             Set<Server> assignedServers = new HashSet<>();
             for (Integer serverId : serverIds) {
@@ -795,9 +787,26 @@ public class AdminController {
     }
     
     /**
-     * 在用户可用的服务器上创建工作目录（已删除）
+     * 根据用户的可用服务器生成工作目录路径
      */
-    private void createWorkDirectoryOnServers(User user) {
-        // 服务器相关功能已删除
+    private void generateUserWorkDirectory(User user) {
+        if (user.getAvailableServers() != null && !user.getAvailableServers().isEmpty()) {
+            // 获取第一个服务器的基础工作目录作为主要工作目录
+            Server firstServer = user.getAvailableServers().iterator().next();
+            String baseWorkDirectory = firstServer.getBaseWorkDirectory();
+            
+            // 在基础工作目录下创建用户名目录
+            String userWorkDirectory = baseWorkDirectory + "/" + user.getUsername();
+            // 规范化路径，避免双斜杠
+            userWorkDirectory = userWorkDirectory.replaceAll("/+", "/");
+            
+            user.setWorkDirectory(userWorkDirectory);
+            
+            logger.info("为用户 {} 生成工作目录: {}", user.getUsername(), userWorkDirectory);
+        } else {
+            // 如果没有可用服务器，使用默认工作目录
+            user.setWorkDirectory("./workspaces/" + user.getUsername());
+            logger.warn("用户 {} 没有可用服务器，使用默认工作目录: {}", user.getUsername(), user.getWorkDirectory());
+        }
     }
 }

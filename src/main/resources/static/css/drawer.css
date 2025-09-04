@@ -613,6 +613,21 @@
     cursor: not-allowed;
 }
 
+.form-control.read-only,
+.form-control[readonly] {
+    background: var(--gray-50);
+    color: var(--gray-600);
+    cursor: not-allowed;
+    opacity: 1;
+}
+
+.form-control.read-only:focus,
+.form-control[readonly]:focus {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+    box-shadow: none;
+}
+
 /* 表单行布局 */
 .form-row {
     display: flex;
@@ -765,6 +780,33 @@
     color: var(--gray-600);
     margin: 0;
     line-height: var(--leading-normal);
+}
+
+/* 服务器卡片样式（继承角色卡片样式）*/
+.server-card {
+    margin-bottom: var(--space-2);
+}
+
+.server-card .role-icon {
+    color: var(--gray-600);
+}
+
+.server-card.selected .role-icon {
+    color: var(--primary-600);
+}
+
+.server-card .role-card-description {
+    color: var(--gray-500);
+    font-size: 0.75rem;
+}
+
+.server-card.selected .role-card-description {
+    color: var(--primary-700);
+}
+
+/* 服务器卡片复选框隐藏，使用角色卡片的selected样式 */
+.server-card input[type="checkbox"] {
+    display: none;
 }
 
 /* 服务器选择复选框美化（隐藏原生外观，只显示自定义勾） */

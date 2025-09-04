@@ -296,68 +296,7 @@ class DrawerManager {
                     line-height: 1.4;
                 }
 
-                /* 服务器列表项对齐样式修复 */
-                .server-selection-list {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 10px;
-                }
-
-                .server-item {
-                    display: flex;
-                    align-items: center; /* 垂直居中 */
-                    justify-content: space-between;
-                    padding: 10px 12px;
-                    border: 1px solid #e6e9ee;
-                    border-radius: 8px;
-                    background: #fff;
-                    cursor: pointer;
-                    transition: background 0.12s ease, box-shadow 0.12s ease;
-                }
-
-                .server-item.selected {
-                    background: #f8fafc;
-                    box-shadow: 0 1px 3px rgba(16,24,40,0.04);
-                    border-color: #d1e3ff;
-                }
-
-                .server-checkbox {
-                    display: flex;
-                    align-items: center; /* 让复选框和 label 垂直居中 */
-                    gap: 12px; /* 与角色卡片一致的间距 */
-                    flex: 1 1 auto; /* 允许占据剩余空间 */
-                }
-
-                .server-checkbox input[type="checkbox"] {
-                    width: 18px;
-                    height: 18px;
-                    margin: 0;
-                    flex: 0 0 auto;
-                }
-
-                .server-label {
-                    display: inline-block;
-                    vertical-align: middle;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-
-                .server-info {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    margin-left: 8px; /* 减小与复选框之间的距离 */
-                    flex: 0 0 auto;
-                }
-
-                .server-details {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    color: #6b7280;
-                    font-size: 13px;
-                }
+                /* 服务器选择现在使用role-card样式，移除旧的server-item样式 */
 
                 @media (max-width: 600px) {
                     .server-item {
@@ -513,18 +452,6 @@ class DrawerManager {
                                     </div>
                                 </div>
                                 
-                                <div class="form-group compact">
-                                    <label class="form-label" for="userWorkDirectory">
-                                        <span class="form-label-text">工作目录</span>
-                                    </label>
-                                    <input type="text" id="userWorkDirectory" name="workDirectory" class="form-control" 
-                                           placeholder="自动生成或手动输入">
-                                    <div class="form-help">
-                                        <span class="form-help-icon">💡</span>
-                                        <span class="form-help-text">留空将根据用户名自动生成</span>
-                                    </div>
-                                    <div class="invalid-feedback"></div>
-                                </div>
                             </div>
                             
                             <!-- 密码设置 -->
@@ -643,7 +570,7 @@ class DrawerManager {
                                         <span class="form-label-text">可用服务器</span>
                                     </label>
                                     <div class="server-selection">
-                                        <div id="serverSelectionList" class="server-selection-list">
+                                        <div id="serverSelectionList" class="role-selection">
                                             <!-- 服务器列表将通过JavaScript动态加载 -->
                                             <div class="server-loading">加载可用服务器...</div>
                                         </div>
@@ -1191,46 +1118,51 @@ class DrawerManager {
                 }
             }
             
-            // 创建服务器选项
+            // 创建服务器选项（采用role-card样式）
             servers.forEach(server => {
                 const serverItem = document.createElement('div');
-                serverItem.className = 'server-item';
+                serverItem.className = 'role-card compact server-card';
+                serverItem.setAttribute('data-server', server.id);
+                const isChecked = assignedServerIds.includes(server.id.toString());
+                if (isChecked) {
+                    serverItem.classList.add('selected');
+                }
+                
                 serverItem.innerHTML = `
-                    <div class="server-checkbox">
-               <input type="checkbox" 
-                   name="drawerServerIds" 
+                    <div class="role-card-header">
+                        <input type="checkbox" 
+                               name="drawerServerIds" 
                                value="${server.id}" 
                                id="drawer-server-${server.id}"
-                               ${assignedServerIds.includes(server.id.toString()) ? 'checked' : ''}>
-                        <label for="drawer-server-${server.id}" class="server-label">${server.name}</label>
+                               ${isChecked ? 'checked' : ''}>
+                        <div class="role-icon">🖥️</div>
                     </div>
-                    <div class="server-info">
-                        <div class="server-details">
-                            <span class="server-host">${server.hostname}</span>
-                            <span class="server-status ${server.active ? 'connected' : 'unknown'}">
-                                ${server.active ? '运行中' : '已停用'}
-                            </span>
-                        </div>
+                    <div class="role-card-body">
+                        <h6 class="role-card-title">${server.name}</h6>
+                        <p class="role-card-description">
+                            ${server.hostname} ${server.active ? '• 运行中' : '• 已停用'}
+                        </p>
                     </div>
                 `;
                 
-                // 添加点击事件（点击整个项目时切换复选框状态）
+                // 添加点击事件（采用role-card的交互方式）
                 serverItem.addEventListener('click', (e) => {
-                    if (!e.target.closest('.server-checkbox')) {
+                    if (e.target.type !== 'checkbox') {
                         const checkbox = serverItem.querySelector('input[type="checkbox"]');
-                        checkbox.checked = !checkbox.checked;
-                        this.updateServerItemVisual(checkbox);
+                        if (checkbox) {
+                            checkbox.checked = !checkbox.checked;
+                            this.updateServerCardStyle(serverItem, checkbox.checked);
+                        }
                     }
                 });
                 
                 // 监听复选框变化
                 const checkbox = serverItem.querySelector('input[type="checkbox"]');
-                checkbox.addEventListener('change', () => {
-                    this.updateServerItemVisual(checkbox);
+                checkbox.addEventListener('change', (e) => {
+                    this.updateServerCardStyle(serverItem, e.target.checked);
                 });
                 
-                // 初始化样式
-                this.updateServerItemVisual(checkbox);
+                // 初始化样式（已在上面设置了selected类）
                 
                 serverListContainer.appendChild(serverItem);
             });
@@ -1241,16 +1173,21 @@ class DrawerManager {
         }
     }
     
-    // 更新服务器选项的视觉效果
-    updateServerItemVisual(checkbox) {
-        const serverItem = checkbox.closest('.server-item');
-        if (!serverItem) return;
-        
-        if (checkbox.checked) {
-            serverItem.classList.add('selected');
+    // 更新服务器卡片样式（与角色卡片保持一致）
+    updateServerCardStyle(serverCard, isSelected) {
+        if (isSelected) {
+            serverCard.classList.add('selected');
         } else {
-            serverItem.classList.remove('selected');
+            serverCard.classList.remove('selected');
         }
+    }
+    
+    // 保持向后兼容性
+    updateServerItemVisual(checkbox) {
+        const serverCard = checkbox.closest('.server-card, .server-item');
+        if (!serverCard) return;
+        
+        this.updateServerCardStyle(serverCard, checkbox.checked);
     }
     
     // 加载用户数据
@@ -1330,6 +1267,13 @@ class DrawerManager {
         const confirmRequired = form.querySelector('#confirmRequired');
         if (passwordRequired) passwordRequired.style.display = 'none';
         if (confirmRequired) confirmRequired.style.display = 'none';
+        
+        // 编辑模式下用户名设为只读
+        const usernameField = form.querySelector('[name="username"]');
+        if (usernameField) {
+            usernameField.readOnly = true;
+            usernameField.classList.add('read-only');
+        }
     }
 
     // 重置用户表单
@@ -1367,6 +1311,13 @@ class DrawerManager {
         const confirmRequired = form.querySelector('#confirmRequired');
         if (passwordRequired) passwordRequired.style.display = 'inline';
         if (confirmRequired) confirmRequired.style.display = 'inline';
+        
+        // 新建模式下用户名不是只读
+        const usernameField = form.querySelector('[name="username"]');
+        if (usernameField) {
+            usernameField.readOnly = false;
+            usernameField.classList.remove('read-only');
+        }
     }
 
     // 提交用户表单
@@ -1378,6 +1329,7 @@ class DrawerManager {
         }
 
         const form = this.userDrawer.querySelector('#userDrawerForm');
+        const rightForm = this.userDrawer.querySelector('#userDrawerFormRight');
         const messageContainer = this.userDrawer.querySelector('.drawer-messages');
         
         // 清除之前的消息
@@ -1402,18 +1354,24 @@ class DrawerManager {
                 roles.push(checkbox.value);
             });
             
-            // 收集用户选择的服务器ID
+            // 收集用户选择的服务器ID（从右侧表单）
             const serverIds = [];
-            form.querySelectorAll('[name="drawerServerIds"]:checked').forEach(checkbox => {
-                serverIds.push(parseInt(checkbox.value));
-            });
+            if (rightForm) {
+                rightForm.querySelectorAll('[name="drawerServerIds"]:checked').forEach(checkbox => {
+                    serverIds.push(parseInt(checkbox.value));
+                });
+            } else {
+                // 备用查询，在整个抽屉中查找
+                this.userDrawer.querySelectorAll('[name="drawerServerIds"]:checked').forEach(checkbox => {
+                    serverIds.push(parseInt(checkbox.value));
+                });
+            }
             
             // 构建请求数据
             const userData = {
                 username: formData.get('username'),
                 email: formData.get('email'),
                 password: formData.get('password'),
-                workDirectory: formData.get('workDirectory'),
                 roles: roles,
                 serverIds: serverIds,
                 enabled: formData.get('enabled') === 'on'
@@ -1422,6 +1380,8 @@ class DrawerManager {
             // 调试日志
             console.log('发送的用户数据:', userData);
             console.log('选中的角色:', roles);
+            console.log('选中的服务器ID:', serverIds);
+            
             
             const url = userId ? `/admin/api/users/${userId}/update` : '/admin/api/users';
             const method = 'POST';
@@ -1520,8 +1480,8 @@ class DrawerManager {
         }
         
         // 验证服务器选择（只在有可用服务器时验证）
-        const allServerCheckboxes = form.querySelectorAll('[name="drawerServerIds"]');
-        const checkedServers = form.querySelectorAll('[name="drawerServerIds"]:checked');
+        const allServerCheckboxes = this.userDrawer.querySelectorAll('[name="drawerServerIds"]');
+        const checkedServers = this.userDrawer.querySelectorAll('[name="drawerServerIds"]:checked');
         
         if (allServerCheckboxes.length > 0 && checkedServers.length === 0) {
             errors.servers = '请至少选择一个可用服务器';
@@ -1610,11 +1570,6 @@ class DrawerManager {
                 const username = e.target.value.trim();
                 this.validateFieldReal(e.target, 'username');
                 
-                // 自动生成工作目录
-                if (workDirInput && username && (!workDirInput.value || workDirInput.value === `/home/${this.lastGeneratedUsername}`)) {
-                    workDirInput.value = `/home/${username}`;
-                    this.lastGeneratedUsername = username;
-                }
             });
             
             usernameInput.addEventListener('blur', (e) => {
@@ -1703,7 +1658,7 @@ class DrawerManager {
         if (serverContainer) {
             // 使用MutationObserver监听服务器选择的动态变化
             const observer = new MutationObserver(() => {
-                const serverCheckboxes = form.querySelectorAll('.server-item input[type="checkbox"]');
+                const serverCheckboxes = this.userDrawer.querySelectorAll('.server-card input[type="checkbox"], .server-item input[type="checkbox"]');
                 serverCheckboxes.forEach(checkbox => {
                     checkbox.addEventListener('change', () => {
                         this.updateStatusInfo();
@@ -1816,7 +1771,7 @@ class DrawerManager {
         const form = this.userDrawer.querySelector('form');
         if (!form) return true;
         
-        const checkedServers = form.querySelectorAll('[name="drawerServerIds"]:checked');
+        const checkedServers = this.userDrawer.querySelectorAll('[name="drawerServerIds"]:checked');
         const isValid = checkedServers.length > 0;
         const serverGroup = form.querySelector('#serverSelectionList');
         
@@ -2000,9 +1955,13 @@ class DrawerManager {
         });
         
         // 清空服务器选择
-        const serverCheckboxes = form.querySelectorAll('.server-item input[type="checkbox"]');
+        const serverCheckboxes = this.userDrawer.querySelectorAll('.server-card input[type="checkbox"], .server-item input[type="checkbox"]');
         serverCheckboxes.forEach(checkbox => {
             checkbox.checked = false;
+            const card = checkbox.closest('.server-card, .server-item');
+            if (card) {
+                card.classList.remove('selected');
+            }
         });
         
         this.updateStatusInfo();
@@ -2055,8 +2014,8 @@ class DrawerManager {
         }
         
         // 验证服务器选择（只在有可用服务器时验证）
-        const allServers = form.querySelectorAll('[name="drawerServerIds"]');
-        const servers = form.querySelectorAll('[name="drawerServerIds"]:checked');
+        const allServers = this.userDrawer.querySelectorAll('[name="drawerServerIds"]');
+        const servers = this.userDrawer.querySelectorAll('[name="drawerServerIds"]:checked');
         
         if (allServers.length > 0 && servers.length === 0) {
             errors.servers = '至少需要选择一个可用服务器';
@@ -2126,7 +2085,7 @@ class DrawerManager {
         
         // 更新服务器计数
         if (serverCountEl) {
-            const serverCount = form.querySelectorAll('[name="drawerServerIds"]:checked').length;
+            const serverCount = this.userDrawer.querySelectorAll('[name="drawerServerIds"]:checked').length;
             serverCountEl.textContent = `${serverCount} 个`;
         }
     }
@@ -2139,7 +2098,7 @@ class DrawerManager {
         const username = form.querySelector('#userUsername')?.value;
         const email = form.querySelector('#userEmail')?.value;
         const roles = form.querySelectorAll('input[name="roles"]:checked');
-        const servers = form.querySelectorAll('[name="drawerServerIds"]:checked');
+        const servers = this.userDrawer.querySelectorAll('[name="drawerServerIds"]:checked');
         
         const isEditMode = form.querySelector('input[name="id"]')?.value;
         let passwordValid = true;
@@ -2172,10 +2131,17 @@ class DrawerManager {
         const email = form.querySelector('#userEmail')?.value || '';
         const workDir = form.querySelector('#userWorkDirectory')?.value || '';
         const roles = Array.from(form.querySelectorAll('input[name="roles"]:checked')).map(cb => cb.value);
-        const servers = Array.from(form.querySelectorAll('[name="drawerServerIds"]:checked')).map(cb => {
-            const serverItem = cb.closest('.server-item');
-            const label = serverItem ? serverItem.querySelector('.server-label') : null;
-            return label ? label.textContent : cb.value;
+        const servers = Array.from(this.userDrawer.querySelectorAll('[name="drawerServerIds"]:checked')).map(cb => {
+            const serverCard = cb.closest('.server-card');
+            if (serverCard) {
+                const label = serverCard.querySelector('.role-card-title');
+                return label ? label.textContent : cb.value;
+            } else {
+                // 向后兼容旧的server-item结构
+                const serverItem = cb.closest('.server-item');
+                const label = serverItem ? serverItem.querySelector('.server-label') : null;
+                return label ? label.textContent : cb.value;
+            }
         });
         
         // 更新预览状态
@@ -2208,9 +2174,6 @@ class DrawerManager {
                 previewHtml += `<div class="preview-item"><strong>邮箱:</strong> ${email}</div>`;
             }
             
-            if (workDir) {
-                previewHtml += `<div class="preview-item"><strong>工作目录:</strong> ${workDir}</div>`;
-            }
             
             if (roles.length > 0) {
                 const roleNames = roles.map(role => {
