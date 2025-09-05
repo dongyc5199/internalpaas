@@ -49,6 +49,11 @@ public interface SSHSessionRepository extends JpaRepository<SSHSession, Long> {
     long countByServerId(Long serverId);
     
     /**
+     * 查找指定服务器的所有会话
+     */
+    List<SSHSession> findByServerId(Long serverId);
+    
+    /**
      * 查找指定服务器的所有会话（按开始时间降序）
      */
     List<SSHSession> findByServerIdOrderByStartTimeDesc(Long serverId);

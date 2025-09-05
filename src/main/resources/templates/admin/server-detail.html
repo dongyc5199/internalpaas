@@ -230,6 +230,35 @@
                 </div>
 
                 <!-- 远程命令执行面板 -->
+                <!-- 用户组管理面板 -->
+                <div class="command-panel" th:if="${server.active}">
+                    <div class="panel-header">
+                        <i class="fas fa-users"></i> 用户组管理
+                        <div class="float-end">
+                            <button class="btn btn-sm btn-light" onclick="loadUserGroups()" title="刷新用户组列表">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="btn btn-sm btn-success" onclick="initializeDefaultUserGroups()" title="初始化默认用户组">
+                                <i class="fas fa-plus"></i> 初始化默认组
+                            </button>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div id="userGroupsContainer">
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-spinner fa-spin"></i> 正在加载用户组...
+                            </div>
+                        </div>
+                        
+                        <!-- 用户组操作按钮 -->
+                        <div class="mt-3 text-end">
+                            <button class="btn btn-primary btn-sm" onclick="createUserGroup()" title="创建新用户组">
+                                <i class="fas fa-plus"></i> 创建用户组
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="command-panel" th:if="${server.active and server.sshUsername != null}">
                     <div class="panel-header">
                         <i class="fas fa-terminal"></i> 远程命令执行
@@ -456,6 +485,133 @@
                 button.disabled = false;
             });
         }
+
+        // 用户组管理相关函数
+        function loadUserGroups() {
+            const serverId = document.getElementById('serverData').dataset.id;
+            const container = document.getElementById('userGroupsContainer');
+            
+            container.innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin"></i> 正在加载用户组...</div>';
+            
+            fetch(`/api/server-user-groups/server/${serverId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayUserGroups(data.userGroups || []);
+                    } else {
+                        container.innerHTML = '<div class="text-danger py-3"><i class="fas fa-exclamation-triangle"></i> 加载用户组失败: ' + data.error + '</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    container.innerHTML = '<div class="text-danger py-3"><i class="fas fa-exclamation-triangle"></i> 网络错误或服务器无响应</div>';
+                });
+        }
+
+        function displayUserGroups(userGroups) {
+            const container = document.getElementById('userGroupsContainer');
+            
+            if (userGroups.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-users-slash"></i> 
+                        <p class="mb-2">该服务器暂无用户组</p>
+                        <small>点击"初始化默认组"创建默认用户组</small>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div class="row">';
+            userGroups.forEach(group => {
+                const badgeClass = group.isDefault ? 'bg-primary' : 'bg-secondary';
+                html += `
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="card-title mb-1">
+                                            ${group.groupName}
+                                            ${group.isDefault ? '<span class="badge bg-primary ms-2">默认</span>' : ''}
+                                        </h6>
+                                        <p class="card-text text-muted small mb-2">${group.groupDescription || '无描述'}</p>
+                                        <div class="small text-muted">
+                                            <i class="fas fa-shield-alt"></i> ${group.permissionLevel}
+                                        </div>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-cog"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="#" onclick="editUserGroup(${group.id})"><i class="fas fa-edit"></i> 编辑</a></li>
+                                            ${!group.isDefault ? '<li><a class="dropdown-item text-danger" href="#" onclick="deleteUserGroup(' + group.id + ')"><i class="fas fa-trash"></i> 删除</a></li>' : ''}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+
+        function initializeDefaultUserGroups() {
+            const serverId = document.getElementById('serverData').dataset.id;
+            const button = event.target;
+            const originalText = button.innerHTML;
+            
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 初始化中...';
+            button.disabled = true;
+            
+            fetch(`/api/server-user-groups/server/${serverId}/initialize-defaults`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`成功初始化 ${data.initializedCount} 个默认用户组`);
+                    loadUserGroups(); // 重新加载用户组列表
+                } else {
+                    alert('初始化失败: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('初始化失败: 网络错误或服务器无响应');
+            })
+            .finally(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
+
+        function createUserGroup() {
+            // TODO: 实现创建用户组功能
+            alert('创建用户组功能待实现');
+        }
+
+        function editUserGroup(groupId) {
+            // TODO: 实现编辑用户组功能
+            alert('编辑用户组功能待实现: ' + groupId);
+        }
+
+        function deleteUserGroup(groupId) {
+            if (!confirm('确定要删除这个用户组吗？')) {
+                return;
+            }
+            // TODO: 实现删除用户组功能
+            alert('删除用户组功能待实现: ' + groupId);
+        }
+
+        // 页面加载完成后自动加载用户组
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserGroups();
+        });
     </script>
 </body>
 </html>

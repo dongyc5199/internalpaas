@@ -6,6 +6,8 @@ import com.cmict.internalpaas.model.User;
 import com.cmict.internalpaas.service.MonitoringSchedulerService;
 import com.cmict.internalpaas.service.RemoteCommandService;
 import com.cmict.internalpaas.service.ServerService;
+import com.cmict.internalpaas.service.SshConnectionService;
+import com.cmict.internalpaas.service.UserServerCredentialService;
 import com.cmict.internalpaas.service.UserService;
 import com.cmict.internalpaas.repository.UserRepository;
 import org.slf4j.Logger;
@@ -46,6 +48,15 @@ public class AdminController {
     
     @Autowired
     private RemoteCommandService remoteCommandService;
+    
+    @Autowired
+    private com.cmict.internalpaas.service.ServerUserGroupService serverUserGroupService;
+    
+    @Autowired
+    private SshConnectionService sshConnectionService;
+    
+    @Autowired
+    private UserServerCredentialService credentialService;
 
     @GetMapping("/servers")
     public String serverManagement(Model model) {
@@ -180,10 +191,45 @@ public class AdminController {
             }
             
             Server savedServer = serverService.saveServer(server);
+            
+            // 检查并创建基础工作目录
+            Map<String, Object> directoryResult = ensureBaseWorkDirectory(savedServer);
+            boolean directoryCreated = (Boolean) directoryResult.get("created");
+            
+            // 自动初始化默认用户组
+            try {
+                int initializedCount = serverUserGroupService.initializeDefaultUserGroups(savedServer);
+                logger.info("为服务器 {} 成功初始化 {} 个默认用户组", savedServer.getName(), initializedCount);
+            } catch (Exception e) {
+                logger.error("为服务器 {} 初始化用户组失败: {}", savedServer.getName(), e.getMessage(), e);
+                // 不中断服务器创建流程，只记录错误
+            }
+            
+            // 自动刷新服务器状态和监控数据
+            try {
+                logger.info("开始为新创建的服务器 {} 执行状态刷新", savedServer.getName());
+                Server refreshedServer = serverService.checkServerConnectionAndMetrics(savedServer.getId());
+                logger.info("新服务器 {} 状态刷新完成，连接状态: {}", 
+                    refreshedServer.getName(), refreshedServer.getConnectionStatus());
+                savedServer = refreshedServer; // 更新服务器对象以获取最新状态
+            } catch (Exception e) {
+                logger.error("新服务器 {} 状态刷新失败: {}", savedServer.getName(), e.getMessage(), e);
+                // 不中断服务器创建流程，只记录错误
+            }
+            
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
-            response.put("message", "服务器创建成功");
+            
+            // 构建成功消息
+            StringBuilder message = new StringBuilder("服务器创建成功");
+            if (directoryCreated) {
+                message.append("并已创建基础工作目录");
+            }
+            message.append("并已初始化默认用户组");
+            
+            response.put("message", message.toString());
             response.put("server", savedServer);
+            response.put("directoryInfo", directoryResult);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
@@ -226,7 +272,18 @@ public class AdminController {
 
     @PostMapping("/servers/{id}/update")
     public String updateServer(@PathVariable Long id, @ModelAttribute Server server) {
-        serverService.updateServer(id, server);
+        Server updatedServer = serverService.updateServer(id, server);
+        
+        // 自动刷新服务器状态和监控数据
+        try {
+            logger.info("开始为更新后的服务器 {} 执行状态刷新", updatedServer.getName());
+            serverService.checkServerConnectionAndMetrics(updatedServer.getId());
+            logger.info("更新后服务器 {} 状态刷新完成", updatedServer.getName());
+        } catch (Exception e) {
+            logger.error("更新后服务器 {} 状态刷新失败: {}", updatedServer.getName(), e.getMessage(), e);
+            // 不中断服务器更新流程，只记录错误
+        }
+        
         return "redirect:/admin/servers";
     }
     
@@ -238,10 +295,36 @@ public class AdminController {
     public ResponseEntity<?> updateServerApi(@PathVariable Long id, @ModelAttribute Server server) {
         try {
             Server updatedServer = serverService.updateServer(id, server);
+            
+            // 检查并创建基础工作目录
+            Map<String, Object> directoryResult = ensureBaseWorkDirectory(updatedServer);
+            boolean directoryCreated = (Boolean) directoryResult.get("created");
+            
+            // 自动刷新服务器状态和监控数据
+            try {
+                logger.info("开始为更新后的服务器 {} 执行状态刷新", updatedServer.getName());
+                Server refreshedServer = serverService.checkServerConnectionAndMetrics(updatedServer.getId());
+                logger.info("更新后服务器 {} 状态刷新完成，连接状态: {}", 
+                    refreshedServer.getName(), refreshedServer.getConnectionStatus());
+                updatedServer = refreshedServer; // 更新服务器对象以获取最新状态
+            } catch (Exception e) {
+                logger.error("更新后服务器 {} 状态刷新失败: {}", updatedServer.getName(), e.getMessage(), e);
+                // 不中断服务器更新流程，只记录错误
+            }
+            
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
-            response.put("message", "服务器更新成功");
+            
+            // 构建成功消息
+            StringBuilder message = new StringBuilder("服务器更新成功");
+            if (directoryCreated) {
+                message.append("并已创建基础工作目录");
+            }
+            
+            response.put("message", message.toString());
             response.put("server", updatedServer);
+            response.put("directoryInfo", directoryResult);
+            
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
@@ -516,6 +599,62 @@ public class AdminController {
     }
     
     /**
+     * 检查并创建服务器基础工作目录
+     * @param server 服务器信息
+     * @return 检查和创建结果
+     */
+    private Map<String, Object> ensureBaseWorkDirectory(Server server) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", false);
+        result.put("created", false);
+        
+        try {
+            String baseWorkDir = server.getBaseWorkDirectory();
+            if (baseWorkDir == null || baseWorkDir.trim().isEmpty()) {
+                result.put("message", "基础工作目录路径为空，跳过检查");
+                result.put("success", true);
+                return result;
+            }
+            
+            // 检查目录是否存在
+            String checkCommand = String.format("[ -d '%s' ] && echo 'exists' || echo 'not_exists'", baseWorkDir);
+            logger.info("检查服务器 {} 基础工作目录是否存在: {}", server.getName(), baseWorkDir);
+            
+            String checkResult = sshConnectionService.executeCommand(server, checkCommand, 10000);
+            
+            if ("exists".equals(checkResult.trim())) {
+                result.put("success", true);
+                result.put("message", "基础工作目录已存在: " + baseWorkDir);
+                logger.info("服务器 {} 基础工作目录已存在: {}", server.getName(), baseWorkDir);
+            } else {
+                // 目录不存在，创建它
+                logger.info("服务器 {} 基础工作目录不存在，开始创建: {}", server.getName(), baseWorkDir);
+                String createCommand = String.format("mkdir -p '%s' && chmod 755 '%s'", baseWorkDir, baseWorkDir);
+                
+                sshConnectionService.executeCommand(server, createCommand, 15000);
+                
+                // 再次检查是否创建成功
+                String verifyResult = sshConnectionService.executeCommand(server, checkCommand, 5000);
+                if ("exists".equals(verifyResult.trim())) {
+                    result.put("success", true);
+                    result.put("created", true);
+                    result.put("message", "基础工作目录创建成功: " + baseWorkDir);
+                    logger.info("服务器 {} 基础工作目录创建成功: {}", server.getName(), baseWorkDir);
+                } else {
+                    result.put("message", "基础工作目录创建失败，验证时仍不存在");
+                    logger.error("服务器 {} 基础工作目录创建失败: {}", server.getName(), baseWorkDir);
+                }
+            }
+            
+        } catch (Exception e) {
+            result.put("message", "检查基础工作目录时发生错误: " + e.getMessage());
+            logger.error("检查服务器 {} 基础工作目录时发生错误: {}", server.getName(), e.getMessage(), e);
+        }
+        
+        return result;
+    }
+    
+    /**
      * 获取用户数据API - 用于抽屉编辑
      */
     @GetMapping("/users/{id}/data")
@@ -616,8 +755,16 @@ public class AdminController {
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
-            response.put("message", "用户创建成功");
+            
+            // 构建详细的成功消息
+            StringBuilder message = new StringBuilder("用户创建成功");
+            if (savedUser.getAvailableServers() != null && !savedUser.getAvailableServers().isEmpty()) {
+                message.append("，已在 ").append(savedUser.getAvailableServers().size()).append(" 台服务器上创建账户和工作目录");
+            }
+            
+            response.put("message", message.toString());
             response.put("user", savedUser);
+            response.put("serverCount", savedUser.getAvailableServers() != null ? savedUser.getAvailableServers().size() : 0);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
@@ -672,8 +819,16 @@ public class AdminController {
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
-            response.put("message", "用户更新成功");
+            
+            // 构建详细的成功消息
+            StringBuilder message = new StringBuilder("用户更新成功");
+            if (updatedUser.getAvailableServers() != null && !updatedUser.getAvailableServers().isEmpty()) {
+                message.append("，已在 ").append(updatedUser.getAvailableServers().size()).append(" 台服务器上更新账户和工作目录");
+            }
+            
+            response.put("message", message.toString());
             response.put("user", updatedUser);
+            response.put("serverCount", updatedUser.getAvailableServers() != null ? updatedUser.getAvailableServers().size() : 0);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
@@ -790,23 +945,151 @@ public class AdminController {
      * 根据用户的可用服务器生成工作目录路径
      */
     private void generateUserWorkDirectory(User user) {
+        String userWorkDirectory;
+        
         if (user.getAvailableServers() != null && !user.getAvailableServers().isEmpty()) {
             // 获取第一个服务器的基础工作目录作为主要工作目录
             Server firstServer = user.getAvailableServers().iterator().next();
             String baseWorkDirectory = firstServer.getBaseWorkDirectory();
             
             // 在基础工作目录下创建用户名目录
-            String userWorkDirectory = baseWorkDirectory + "/" + user.getUsername();
+            userWorkDirectory = baseWorkDirectory + "/" + user.getUsername();
             // 规范化路径，避免双斜杠
             userWorkDirectory = userWorkDirectory.replaceAll("/+", "/");
-            
-            user.setWorkDirectory(userWorkDirectory);
             
             logger.info("为用户 {} 生成工作目录: {}", user.getUsername(), userWorkDirectory);
         } else {
             // 如果没有可用服务器，使用默认工作目录
-            user.setWorkDirectory("./workspaces/" + user.getUsername());
-            logger.warn("用户 {} 没有可用服务器，使用默认工作目录: {}", user.getUsername(), user.getWorkDirectory());
+            userWorkDirectory = "./workspaces/" + user.getUsername();
+            logger.warn("用户 {} 没有可用服务器，使用默认工作目录: {}", user.getUsername(), userWorkDirectory);
         }
+        
+        user.setWorkDirectory(userWorkDirectory);
+        
+        // 在所有选中的服务器上创建用户账户和工作目录
+        createUserAccountsOnServers(user);
+        
+        // 本地创建备用工作目录
+        createLocalWorkDirectory(user);
+    }
+    
+    /**
+     * 在所有选中的服务器上创建用户账户和工作目录
+     */
+    private void createUserAccountsOnServers(User user) {
+        if (user.getAvailableServers() == null || user.getAvailableServers().isEmpty()) {
+            logger.warn("用户 {} 没有可用服务器，跳过远程账户创建", user.getUsername());
+            return;
+        }
+        
+        for (Server server : user.getAvailableServers()) {
+            try {
+                logger.info("开始在服务器 {} 上为用户 {} 创建账户和工作目录", server.getName(), user.getUsername());
+                
+                String username = user.getUsername();
+                String userWorkDir = server.getBaseWorkDirectory() + "/" + username;
+                userWorkDir = userWorkDir.replaceAll("/+", "/");
+                
+                // 1. 检查用户是否已存在
+                String checkUserCommand = String.format("id %s >/dev/null 2>&1 && echo 'exists' || echo 'not_exists'", username);
+                String userCheckResult = sshConnectionService.executeCommand(server, checkUserCommand, 10000);
+                
+                if ("exists".equals(userCheckResult.trim())) {
+                    logger.info("用户 {} 在服务器 {} 上已存在，跳过创建", username, server.getName());
+                } else {
+                    // 2. 创建用户账户
+                    String createUserCommand = String.format("useradd -m -d %s -s /bin/bash %s", userWorkDir, username);
+                    sshConnectionService.executeCommand(server, createUserCommand, 15000);
+                    logger.info("在服务器 {} 上成功创建用户 {}", server.getName(), username);
+                    
+                    // 3. 生成高安全性随机密码
+                    String randomPassword = generateSecurePassword();
+                    String setPasswordCommand = String.format("echo '%s:%s' | chpasswd", username, randomPassword);
+                    sshConnectionService.executeCommand(server, setPasswordCommand, 10000);
+                    logger.info("为用户 {} 在服务器 {} 上设置了高安全性随机密码", username, server.getName());
+                    
+                    // 4. 将加密密码保存到数据库中，供SSH自动登录使用
+                    credentialService.saveCredential(user, server, username, randomPassword);
+                    logger.info("已将用户 {} 在服务器 {} 上的SSH凭据保存到数据库", username, server.getName());
+                }
+                
+                // 5. 确保工作目录存在并设置正确权限
+                String ensureDirCommand = String.format(
+                    "mkdir -p %s && chown %s:%s %s && chmod 755 %s", 
+                    userWorkDir, username, username, userWorkDir, userWorkDir);
+                sshConnectionService.executeCommand(server, ensureDirCommand, 15000);
+                
+                // 6. 验证创建结果
+                String verifyCommand = String.format("[ -d %s ] && [ \"$(stat -c %%U %s)\" = \"%s\" ] && echo 'success' || echo 'failed'", 
+                    userWorkDir, userWorkDir, username);
+                String verifyResult = sshConnectionService.executeCommand(server, verifyCommand, 10000);
+                
+                if ("success".equals(verifyResult.trim())) {
+                    logger.info("在服务器 {} 上成功为用户 {} 创建工作目录: {}", server.getName(), username, userWorkDir);
+                } else {
+                    logger.error("在服务器 {} 上为用户 {} 创建工作目录失败: {}", server.getName(), username, userWorkDir);
+                }
+                
+            } catch (Exception e) {
+                logger.error("在服务器 {} 上为用户 {} 创建账户时发生错误: {}", server.getName(), user.getUsername(), e.getMessage(), e);
+                // 继续处理下一个服务器，不中断整个流程
+            }
+        }
+    }
+    
+    /**
+     * 创建本地备用工作目录
+     */
+    private void createLocalWorkDirectory(User user) {
+        String localWorkDir = "./workspaces/" + user.getUsername();
+        try {
+            java.nio.file.Path workPath = java.nio.file.Paths.get(localWorkDir);
+            if (!java.nio.file.Files.exists(workPath)) {
+                java.nio.file.Files.createDirectories(workPath);
+                logger.info("成功创建本地备用工作目录: {}", localWorkDir);
+            } else {
+                logger.info("本地备用工作目录已存在: {}", localWorkDir);
+            }
+        } catch (Exception e) {
+            logger.error("创建本地备用工作目录失败: {} - {}", localWorkDir, e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 生成高安全性随机密码
+     * 密码包含大写字母、小写字母、数字和特殊字符
+     * 长度为16位，确保足够的安全性
+     */
+    private String generateSecurePassword() {
+        String upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String lowerCase = "abcdefghijklmnopqrstuvwxyz";
+        String digits = "0123456789";
+        String specialChars = "!@#$%^&*()-_=+[]{}|;:,.<>?";
+        
+        String allChars = upperCase + lowerCase + digits + specialChars;
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        StringBuilder password = new StringBuilder(16);
+        
+        // 确保密码至少包含每种类型的字符
+        password.append(upperCase.charAt(random.nextInt(upperCase.length())));
+        password.append(lowerCase.charAt(random.nextInt(lowerCase.length())));
+        password.append(digits.charAt(random.nextInt(digits.length())));
+        password.append(specialChars.charAt(random.nextInt(specialChars.length())));
+        
+        // 填充剩余的12个字符
+        for (int i = 4; i < 16; i++) {
+            password.append(allChars.charAt(random.nextInt(allChars.length())));
+        }
+        
+        // 打乱字符顺序
+        char[] chars = password.toString().toCharArray();
+        for (int i = chars.length - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            char temp = chars[i];
+            chars[i] = chars[j];
+            chars[j] = temp;
+        }
+        
+        return new String(chars);
     }
 }

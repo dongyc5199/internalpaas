@@ -198,6 +198,52 @@ class DrawerManager {
                             </label>
                         </div>
                     </div>
+
+                    <!-- 用户组管理 -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <div class="form-section-icon users">👥</div>
+                            用户组管理
+                        </h3>
+                        
+                        <!-- 新建服务器时显示的初始化选项 -->
+                        <div class="usergroup-init-section" id="usergroupInitSection">
+                            <div class="form-check">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="server-auto-init-usergroups" 
+                                       name="autoInitUserGroups" 
+                                       checked>
+                                <label class="form-check-label" for="server-auto-init-usergroups">
+                                    创建后自动初始化默认用户组
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                系统将根据服务器类型和权限级别自动创建相应的默认用户组（管理员、开发者、访客等）
+                            </div>
+                        </div>
+                        
+                        <!-- 编辑服务器时显示的用户组列表 -->
+                        <div class="usergroup-list-section" id="usergroupListSection" style="display: none;">
+                            <div class="usergroup-header">
+                                <span class="usergroup-count">正在加载用户组...</span>
+                                <div class="usergroup-actions">
+                                    <button type="button" class="btn-refresh-usergroups" onclick="drawerManager.refreshServerUserGroups()" title="刷新用户组列表">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                    <button type="button" class="btn-init-usergroups" onclick="drawerManager.initializeServerUserGroups()" title="初始化默认用户组">
+                                        <i class="fas fa-plus"></i> 初始化
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="usergroup-container" id="usergroupContainer">
+                                <div class="usergroup-loading">
+                                    <i class="fas fa-spinner fa-spin"></i> 加载中...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="drawer-footer">
@@ -831,10 +877,16 @@ class DrawerManager {
             titleText.textContent = '编辑服务器';
             submitBtn.textContent = '更新服务器';
             this.loadServerData(serverId);
+            
+            // 编辑模式：显示用户组列表，隐藏初始化选项
+            this.toggleUserGroupSections(true, serverId);
         } else {
             titleText.textContent = '添加服务器';
             submitBtn.textContent = '保存服务器';
             this.resetServerForm();
+            
+            // 新建模式：显示初始化选项，隐藏用户组列表
+            this.toggleUserGroupSections(false);
         }
 
         // 设置CSRF令牌
@@ -918,6 +970,185 @@ class DrawerManager {
         // 设置默认值（仅设置必要的默认值）
         const activeField = form.querySelector('[name="active"]');
         if (activeField) activeField.checked = true;
+        
+        // 设置用户组初始化选项默认值
+        const autoInitField = form.querySelector('[name="autoInitUserGroups"]');
+        if (autoInitField) autoInitField.checked = true;
+    }
+
+    // 切换用户组管理部分的显示
+    toggleUserGroupSections(isEditMode, serverId = null) {
+        const initSection = this.serverDrawer.querySelector('#usergroupInitSection');
+        const listSection = this.serverDrawer.querySelector('#usergroupListSection');
+        
+        if (isEditMode) {
+            // 编辑模式：显示用户组列表，隐藏初始化选项
+            initSection.style.display = 'none';
+            listSection.style.display = 'block';
+            
+            // 加载用户组数据
+            if (serverId) {
+                this.loadServerUserGroups(serverId);
+            }
+        } else {
+            // 新建模式：显示初始化选项，隐藏用户组列表
+            initSection.style.display = 'block';
+            listSection.style.display = 'none';
+        }
+    }
+
+    // 加载服务器用户组
+    async loadServerUserGroups(serverId) {
+        const container = this.serverDrawer.querySelector('#usergroupContainer');
+        const countSpan = this.serverDrawer.querySelector('.usergroup-count');
+        
+        container.innerHTML = '<div class="usergroup-loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+        countSpan.textContent = '正在加载用户组...';
+        
+        try {
+            const response = await fetch(`/api/server-user-groups/server/${serverId}`);
+            if (!response.ok) {
+                throw new Error('获取用户组失败');
+            }
+            
+            const data = await response.json();
+            if (data.success) {
+                this.displayServerUserGroups(data.userGroups || []);
+                countSpan.textContent = `共 ${data.userGroups?.length || 0} 个用户组`;
+            } else {
+                throw new Error(data.error || '获取用户组失败');
+            }
+        } catch (error) {
+            console.error('加载用户组失败:', error);
+            container.innerHTML = `<div class="usergroup-empty"><i class="fas fa-exclamation-triangle"></i>加载失败: ${error.message}</div>`;
+            countSpan.textContent = '加载失败';
+        }
+    }
+
+    // 显示服务器用户组
+    displayServerUserGroups(userGroups) {
+        const container = this.serverDrawer.querySelector('#usergroupContainer');
+        
+        if (userGroups.length === 0) {
+            container.innerHTML = `
+                <div class="usergroup-empty">
+                    <i class="fas fa-users-slash"></i>
+                    <p>该服务器暂无用户组</p>
+                    <small>点击"初始化"创建默认用户组</small>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '<div class="usergroup-list">';
+        userGroups.forEach(group => {
+            html += `
+                <div class="usergroup-item">
+                    <div class="usergroup-info">
+                        <div class="usergroup-name ${group.isDefault ? 'default' : ''}">${group.groupName}</div>
+                        <div class="usergroup-meta">${group.groupDescription || '无描述'} • ${group.permissionLevel}</div>
+                    </div>
+                    <div class="usergroup-actions-mini">
+                        <button class="btn-edit-usergroup" onclick="drawerManager.editUserGroup(${group.id})" title="编辑">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        ${!group.isDefault ? `<button class="btn-delete-usergroup" onclick="drawerManager.deleteUserGroup(${group.id})" title="删除">
+                            <i class="fas fa-trash"></i>
+                        </button>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        
+        container.innerHTML = html;
+    }
+
+    // 刷新服务器用户组
+    refreshServerUserGroups() {
+        const form = this.serverDrawer.querySelector('#serverDrawerForm');
+        const serverId = form.querySelector('[name="id"]').value;
+        
+        if (serverId) {
+            this.loadServerUserGroups(serverId);
+        }
+    }
+
+    // 初始化服务器用户组
+    async initializeServerUserGroups() {
+        const form = this.serverDrawer.querySelector('#serverDrawerForm');
+        const serverId = form.querySelector('[name="id"]').value;
+        
+        if (!serverId) {
+            alert('请先保存服务器后再初始化用户组');
+            return;
+        }
+        
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 初始化中...';
+        btn.disabled = true;
+        
+        try {
+            const response = await fetch(`/api/server-user-groups/server/${serverId}/initialize-defaults`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': this.getCSRFToken()
+                }
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                alert(`成功初始化 ${data.initializedCount} 个默认用户组`);
+                this.loadServerUserGroups(serverId); // 重新加载用户组列表
+            } else {
+                alert('初始化失败: ' + data.error);
+            }
+        } catch (error) {
+            console.error('初始化用户组失败:', error);
+            alert('初始化失败: 网络错误或服务器无响应');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    // 编辑用户组
+    editUserGroup(groupId) {
+        // TODO: 实现编辑用户组功能
+        alert('编辑用户组功能待实现: ' + groupId);
+    }
+
+    // 删除用户组
+    async deleteUserGroup(groupId) {
+        if (!confirm('确定要删除这个用户组吗？此操作不可逆。')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/server-user-groups/${groupId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': this.getCSRFToken()
+                }
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                alert('用户组删除成功');
+                // 重新加载用户组列表
+                const form = this.serverDrawer.querySelector('#serverDrawerForm');
+                const serverId = form.querySelector('[name="id"]').value;
+                if (serverId) {
+                    this.loadServerUserGroups(serverId);
+                }
+            } else {
+                alert('删除失败: ' + data.error);
+            }
+        } catch (error) {
+            console.error('删除用户组失败:', error);
+            alert('删除失败: 网络错误或服务器无响应');
+        }
     }
 
     // 提交服务器表单
@@ -966,8 +1197,23 @@ class DrawerManager {
             // 处理成功响应
             const result = await response.json().catch(() => ({}));
             
-            this.showMessage(messageContainer, 'success', 
-                isEdit ? '服务器更新成功！' : '服务器创建成功！');
+            // 显示详细成功消息，包含目录信息
+            let successMessage = isEdit ? '服务器更新成功！' : '服务器创建成功！';
+            if (result.message) {
+                successMessage = result.message;
+            }
+            
+            // 如果有目录信息，添加额外提示
+            if (result.directoryInfo) {
+                const dirInfo = result.directoryInfo;
+                if (dirInfo.created) {
+                    successMessage += ' 🗂️ 已创建基础工作目录';
+                } else if (dirInfo.success && dirInfo.message) {
+                    console.log('基础工作目录状态:', dirInfo.message);
+                }
+            }
+            
+            this.showMessage(messageContainer, 'success', successMessage);
             
             // 添加成功动画
             form.classList.add('success-pulse');
@@ -1515,7 +1761,13 @@ class DrawerManager {
             const result = await response.json();
 
             if (response.ok && result.status === 'success') {
-                this.showMessage(messageContainer, 'success', result.message);
+                // 显示详细成功消息，包含服务器数量信息
+                let successMessage = result.message || '用户操作成功';
+                if (result.serverCount && result.serverCount > 0) {
+                    successMessage += ` 🖥️ 涉及 ${result.serverCount} 台服务器`;
+                }
+                
+                this.showMessage(messageContainer, 'success', successMessage);
                 this.hasUnsavedChanges = false;
                 
                 // 延迟关闭抽屉并刷新页面

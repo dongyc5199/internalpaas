@@ -30,6 +30,11 @@ public interface ServerMetricsRepository extends JpaRepository<ServerMetrics, Lo
     List<ServerMetrics> findTop10ByServerIdOrderByTimestampDesc(Long serverId);
     
     /**
+     * 根据服务器ID查找所有监控数据（按时间降序）
+     */
+    List<ServerMetrics> findByServerIdOrderByTimestampDesc(Long serverId);
+    
+    /**
      * 删除指定时间之前的历史数据
      */
     void deleteByTimestampBefore(LocalDateTime cutoffTime);

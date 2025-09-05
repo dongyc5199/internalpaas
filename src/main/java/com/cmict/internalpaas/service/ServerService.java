@@ -52,6 +52,15 @@ public class ServerService {
     @Autowired
     private UserSessionService userSessionService;
     
+    @Autowired
+    private com.cmict.internalpaas.repository.ServerUserGroupRepository serverUserGroupRepository;
+    
+    @Autowired
+    private com.cmict.internalpaas.repository.SSHSessionRepository sshSessionRepository;
+    
+    @Autowired
+    private com.cmict.internalpaas.repository.UserRepository userRepository;
+    
     public List<Server> getAllServers() {
         return serverRepository.findAll();
     }
@@ -191,7 +200,126 @@ public class ServerService {
     }
     
     public void deleteServer(Long id) {
-        serverRepository.deleteById(id);
+        logger.info("开始删除服务器，ID: {}", id);
+        
+        try {
+            // 首先检查服务器是否存在
+            Server server = serverRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("服务器不存在，ID: " + id));
+            
+            logger.info("准备删除服务器: {} ({})", server.getName(), server.getHostname());
+            
+            // 删除关联的用户组
+            deleteServerUserGroups(id);
+            
+            // 删除关联的监控指标
+            deleteServerMetrics(id);
+            
+            // 删除关联的SSH会话
+            deleteServerSshSessions(id);
+            
+            // 清理用户的服务器关联关系
+            clearUserServerAssociations(id);
+            
+            // 最后删除服务器本身
+            serverRepository.deleteById(id);
+            
+            logger.info("成功删除服务器: {} (ID: {})", server.getName(), id);
+            
+        } catch (Exception e) {
+            logger.error("删除服务器失败，ID: {} - {}", id, e.getMessage(), e);
+            throw new RuntimeException("删除服务器失败: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 删除服务器关联的用户组
+     */
+    @Transactional
+    private void deleteServerUserGroups(Long serverId) {
+        try {
+            // 注入ServerUserGroupRepository来删除用户组
+            if (serverUserGroupRepository != null) {
+                List<com.cmict.internalpaas.model.ServerUserGroup> userGroups = 
+                    serverUserGroupRepository.findByServerId(serverId);
+                
+                if (!userGroups.isEmpty()) {
+                    logger.info("删除服务器 {} 关联的 {} 个用户组", serverId, userGroups.size());
+                    serverUserGroupRepository.deleteAll(userGroups);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("删除服务器用户组失败: {}", e.getMessage(), e);
+            // 继续执行，不中断删除流程
+        }
+    }
+    
+    /**
+     * 删除服务器关联的监控指标
+     */
+    @Transactional
+    private void deleteServerMetrics(Long serverId) {
+        try {
+            if (metricsRepository != null) {
+                List<ServerMetrics> metrics = metricsRepository.findByServerIdOrderByTimestampDesc(serverId);
+                if (!metrics.isEmpty()) {
+                    logger.info("删除服务器 {} 关联的 {} 个监控指标记录", serverId, metrics.size());
+                    metricsRepository.deleteAll(metrics);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("删除服务器监控指标失败: {}", e.getMessage(), e);
+            // 继续执行，不中断删除流程
+        }
+    }
+    
+    /**
+     * 删除服务器关联的SSH会话
+     */
+    @Transactional
+    private void deleteServerSshSessions(Long serverId) {
+        try {
+            if (sshSessionRepository != null) {
+                List<com.cmict.internalpaas.model.SSHSession> sessions = 
+                    sshSessionRepository.findByServerId(serverId);
+                
+                if (!sessions.isEmpty()) {
+                    logger.info("删除服务器 {} 关联的 {} 个SSH会话", serverId, sessions.size());
+                    sshSessionRepository.deleteAll(sessions);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("删除SSH会话失败: {}", e.getMessage(), e);
+            // 继续执行，不中断删除流程
+        }
+    }
+    
+    /**
+     * 清理用户的服务器关联关系
+     */
+    @Transactional
+    private void clearUserServerAssociations(Long serverId) {
+        try {
+            if (userRepository != null) {
+                // 查找将此服务器设为默认服务器的用户
+                List<com.cmict.internalpaas.model.User> users = userRepository.findByDefaultServerId(serverId);
+                for (com.cmict.internalpaas.model.User user : users) {
+                    user.setDefaultServer(null);
+                    logger.info("清除用户 {} 的默认服务器设置", user.getUsername());
+                }
+                
+                if (!users.isEmpty()) {
+                    userRepository.saveAll(users);
+                }
+                
+                // 使用JPQL查询直接处理多对多关系，避免懒加载问题
+                logger.info("清理用户与服务器 {} 的关联关系", serverId);
+                userRepository.removeServerFromUsers(serverId);
+            }
+        } catch (Exception e) {
+            logger.error("清理用户服务器关联失败: {}", e.getMessage(), e);
+            // 继续执行，不中断删除流程
+        }
     }
     
     public Server updateServer(Long id, Server serverDetails) {

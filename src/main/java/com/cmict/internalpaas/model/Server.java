@@ -2,6 +2,8 @@ package com.cmict.internalpaas.model;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "servers")
@@ -61,6 +63,24 @@ public class Server {
     @Column
     private Integer monitorIntervalSeconds = 60;
     
+    // 服务器类型和权限管理相关字段
+    @Enumerated(EnumType.STRING)
+    @Column(name = "server_type")
+    private ServerType serverType = ServerType.DEVELOPMENT;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "privilege_level")
+    private PrivilegeLevel privilegeLevel = PrivilegeLevel.UNKNOWN;
+    
+    @Column(name = "last_privilege_check")
+    private LocalDateTime lastPrivilegeCheck;
+    
+    @Column(name = "privilege_check_details", columnDefinition = "TEXT")
+    private String privilegeCheckDetails;
+    
+    @Column(name = "default_user_group_id")
+    private Long defaultUserGroupId;
+    
     @Column(nullable = false)
     private LocalDateTime createdAt;
     
@@ -90,6 +110,44 @@ public class Server {
         private final String description;
         
         ConnectionStatus(String description) {
+            this.description = description;
+        }
+        
+        public String getDescription() {
+            return description;
+        }
+    }
+    
+    // 服务器类型枚举
+    public enum ServerType {
+        DEVELOPMENT("开发服务器"),
+        TESTING("测试服务器"),
+        STAGING("预生产服务器"),
+        PRODUCTION("生产服务器");
+        
+        private final String description;
+        
+        ServerType(String description) {
+            this.description = description;
+        }
+        
+        public String getDescription() {
+            return description;
+        }
+    }
+    
+    // 服务器权限级别枚举
+    public enum PrivilegeLevel {
+        ROOT_ACCESS("完整root权限"),
+        SUDO_FULL("完整sudo权限"),
+        SUDO_LIMITED("受限sudo权限"),
+        USER_ONLY("仅普通用户权限"),
+        NO_ACCESS("无权限"),
+        UNKNOWN("未检查");
+        
+        private final String description;
+        
+        PrivilegeLevel(String description) {
             this.description = description;
         }
         
@@ -155,4 +213,19 @@ public class Server {
     
     public Integer getMonitorIntervalSeconds() { return monitorIntervalSeconds; }
     public void setMonitorIntervalSeconds(Integer monitorIntervalSeconds) { this.monitorIntervalSeconds = monitorIntervalSeconds; }
+    
+    public ServerType getServerType() { return serverType; }
+    public void setServerType(ServerType serverType) { this.serverType = serverType; }
+    
+    public PrivilegeLevel getPrivilegeLevel() { return privilegeLevel; }
+    public void setPrivilegeLevel(PrivilegeLevel privilegeLevel) { this.privilegeLevel = privilegeLevel; }
+    
+    public LocalDateTime getLastPrivilegeCheck() { return lastPrivilegeCheck; }
+    public void setLastPrivilegeCheck(LocalDateTime lastPrivilegeCheck) { this.lastPrivilegeCheck = lastPrivilegeCheck; }
+    
+    public String getPrivilegeCheckDetails() { return privilegeCheckDetails; }
+    public void setPrivilegeCheckDetails(String privilegeCheckDetails) { this.privilegeCheckDetails = privilegeCheckDetails; }
+    
+    public Long getDefaultUserGroupId() { return defaultUserGroupId; }
+    public void setDefaultUserGroupId(Long defaultUserGroupId) { this.defaultUserGroupId = defaultUserGroupId; }
 }
