@@ -1,11 +1,39 @@
 /*!
- * Font Awesome Icons - Local Fallback
- * 包含项目中使用的主要图标的本地实现
+ * Font Awesome Icons - Local Implementation
+ * 完整的本地FontAwesome图标实现，支持内网环境
  */
 
-/* 通用图标字体基类 */
-.fas, .far, .fab {
-    font-family: "Font Awesome 6 Free", Arial, sans-serif;
+/* 字体定义 */
+@font-face {
+    font-family: "Font Awesome 6 Free";
+    font-style: normal;
+    font-weight: 400;
+    font-display: block;
+    src: url("../vendor/fontawesome/webfonts/fa-regular-400.woff2") format("woff2"), 
+         url("../vendor/fontawesome/webfonts/fa-regular-400.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Font Awesome 6 Free";
+    font-style: normal;
+    font-weight: 900;
+    font-display: block;
+    src: url("../vendor/fontawesome/webfonts/fa-solid-900.woff2") format("woff2"), 
+         url("../vendor/fontawesome/webfonts/fa-solid-900.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Font Awesome 6 Brands";
+    font-style: normal;
+    font-weight: 400;
+    font-display: block;
+    src: url("../vendor/fontawesome/webfonts/fa-brands-400.woff2") format("woff2"), 
+         url("../vendor/fontawesome/webfonts/fa-brands-400.woff") format("woff");
+}
+
+/* FontAwesome基础样式 */
+.fas, .fa-solid {
+    font-family: "Font Awesome 6 Free";
     font-weight: 900;
     font-style: normal;
     font-variant: normal;
@@ -13,9 +41,34 @@
     line-height: 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    display: inline-block;
 }
 
-/* 当Font Awesome CDN不可用时的图标替代方案 */
+.far, .fa-regular {
+    font-family: "Font Awesome 6 Free";
+    font-weight: 400;
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    display: inline-block;
+}
+
+.fab, .fa-brands {
+    font-family: "Font Awesome 6 Brands";
+    font-weight: 400;
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    display: inline-block;
+}
+
+/* 当Font Awesome字体不可用时的图标替代方案 */
 .icon-fallback {
     display: inline-block;
     text-align: center;
@@ -25,56 +78,77 @@
     line-height: 1;
 }
 
-/* 服务器相关图标 */
-.fa-server::before, .fas.fa-server::before { content: "🖥️"; }
-.fa-network-wired::before, .fas.fa-network-wired::before { content: "🌐"; }
-.fa-globe::before, .fas.fa-globe::before { content: "🌍"; }
-.fa-ethernet::before, .fas.fa-ethernet::before { content: "🔌"; }
+/* 核心导航和界面图标 */
+.fa-home::before, .fas.fa-home::before { content: "\f015"; }
+.fa-tachometer-alt::before, .fa-dashboard::before, .fas.fa-tachometer-alt::before { content: "\f3fd"; }
+.fa-server::before, .fas.fa-server::before { content: "\f233"; }
+.fa-users::before, .fas.fa-users::before { content: "\f0c0"; }
+.fa-user::before, .fas.fa-user::before { content: "\f007"; }
+.fa-user-shield::before, .fas.fa-user-shield::before { content: "\f505"; }
+.fa-code::before, .fas.fa-code::before { content: "\f121"; }
+.fa-clock::before, .fas.fa-clock::before { content: "\f017"; }
+
+/* 网络和连接图标 */
+.fa-network-wired::before, .fas.fa-network-wired::before { content: "\f6ff"; }
+.fa-globe::before, .fas.fa-globe::before { content: "\f0ac"; }
+.fa-ethernet::before, .fas.fa-ethernet::before { content: "\f796"; }
+.fa-wifi::before, .fas.fa-wifi::before { content: "\f1eb"; }
 
 /* 状态指示图标 */
-.fa-circle::before, .fas.fa-circle::before { content: "●"; }
-.fa-exclamation-triangle::before, .fas.fa-exclamation-triangle::before { content: "⚠️"; }
-.fa-check-circle::before, .fas.fa-check-circle::before { content: "✅"; }
-.fa-times-circle::before, .fas.fa-times-circle::before { content: "❌"; }
+.fa-circle::before, .fas.fa-circle::before { content: "\f111"; }
+.fa-exclamation-triangle::before, .fa-triangle-exclamation::before, .fas.fa-exclamation-triangle::before { content: "\f071"; }
+.fa-check-circle::before, .fas.fa-check-circle::before { content: "\f058"; }
+.fa-times-circle::before, .fa-xmark-circle::before, .fas.fa-times-circle::before { content: "\f057"; }
+.fa-info-circle::before, .fas.fa-info-circle::before { content: "\f05a"; }
 
-/* 箭头图标 */
-.fa-arrow-up::before, .fas.fa-arrow-up::before { content: "↑"; }
-.fa-arrow-down::before, .fas.fa-arrow-down::before { content: "↓"; }
-.fa-chevron-up::before, .fas.fa-chevron-up::before { content: "▲"; }
-.fa-chevron-down::before, .fas.fa-chevron-down::before { content: "▼"; }
-.fa-ellipsis-v::before, .fas.fa-ellipsis-v::before { content: "⋮"; }
+/* 箭头和导航图标 */
+.fa-arrow-up::before, .fas.fa-arrow-up::before { content: "\f062"; }
+.fa-arrow-down::before, .fas.fa-arrow-down::before { content: "\f063"; }
+.fa-chevron-up::before, .fas.fa-chevron-up::before { content: "\f077"; }
+.fa-chevron-down::before, .fas.fa-chevron-down::before { content: "\f078"; }
+.fa-chevron-left::before, .fas.fa-chevron-left::before { content: "\f053"; }
+.fa-chevron-right::before, .fas.fa-chevron-right::before { content: "\f054"; }
+.fa-ellipsis-v::before, .fa-ellipsis-vertical::before, .fas.fa-ellipsis-v::before { content: "\f142"; }
+.fa-ellipsis-h::before, .fa-ellipsis-horizontal::before, .fas.fa-ellipsis-h::before { content: "\f141"; }
 
 /* 系统监控图标 */
-.fa-chart-line::before, .fas.fa-chart-line::before { content: "📈"; }
-.fa-chart-area::before, .fas.fa-chart-area::before { content: "📊"; }
-.fa-microchip::before, .fas.fa-microchip::before { content: "🔧"; }
-.fa-memory::before, .fas.fa-memory::before { content: "💾"; }
-.fa-hdd::before, .fas.fa-hdd::before { content: "💿"; }
+.fa-chart-line::before, .fas.fa-chart-line::before { content: "\f201"; }
+.fa-chart-area::before, .fas.fa-chart-area::before { content: "\f1fe"; }
+.fa-chart-bar::before, .fas.fa-chart-bar::before { content: "\f080"; }
+.fa-microchip::before, .fas.fa-microchip::before { content: "\f2db"; }
+.fa-memory::before, .fas.fa-memory::before { content: "\f538"; }
+.fa-hdd::before, .fas.fa-hdd::before { content: "\f0a0"; }
+.fa-database::before, .fas.fa-database::before { content: "\f1c0"; }
 
 /* 操作图标 */
-.fa-terminal::before, .fas.fa-terminal::before { content: "💻"; }
-.fa-eye::before, .fas.fa-eye::before { content: "👁️"; }
-.fa-file-alt::before, .fas.fa-file-alt::before { content: "📄"; }
-.fa-edit::before, .fas.fa-edit::before { content: "✏️"; }
-.fa-trash::before, .fas.fa-trash::before { content: "🗑️"; }
-.fa-plus::before, .fas.fa-plus::before { content: "➕"; }
-.fa-sync-alt::before, .fas.fa-sync-alt::before { content: "🔄"; }
-.fa-info-circle::before, .fas.fa-info-circle::before { content: "ℹ️"; }
+.fa-terminal::before, .fas.fa-terminal::before { content: "\f120"; }
+.fa-eye::before, .fas.fa-eye::before { content: "\f06e"; }
+.fa-file-alt::before, .fa-file-text::before, .fas.fa-file-alt::before { content: "\f15c"; }
+.fa-edit::before, .fa-pen::before, .fas.fa-edit::before { content: "\f304"; }
+.fa-trash::before, .fa-trash-alt::before, .fas.fa-trash::before { content: "\f2ed"; }
+.fa-plus::before, .fas.fa-plus::before { content: "\f067"; }
+.fa-sync-alt::before, .fa-sync::before, .fas.fa-sync-alt::before { content: "\f2f1"; }
+.fa-key::before, .fas.fa-key::before { content: "\f084"; }
+.fa-cog::before, .fa-gear::before, .fas.fa-cog::before { content: "\f013"; }
 
-/* 文件夹和导航图标 */
-.fa-folder::before, .fas.fa-folder::before { content: "📁"; }
-.fa-home::before, .fas.fa-home::before { content: "🏠"; }
-.fa-cog::before, .fas.fa-cog::before { content: "⚙️"; }
-.fa-upload::before, .fas.fa-upload::before { content: "📤"; }
+/* 文件和存储图标 */
+.fa-folder::before, .fas.fa-folder::before { content: "\f07b"; }
+.fa-upload::before, .fas.fa-upload::before { content: "\f093"; }
+.fa-download::before, .fas.fa-download::before { content: "\f019"; }
+.fa-save::before, .fas.fa-save::before { content: "\f0c7"; }
+.fa-copy::before, .fas.fa-copy::before { content: "\f0c5"; }
 
-/* 用户相关图标 */
-.fa-user::before, .fas.fa-user::before { content: "👤"; }
-.fa-users::before, .fas.fa-users::before { content: "👥"; }
-.fa-sign-out-alt::before, .fas.fa-sign-out-alt::before { content: "🚪"; }
+/* 用户和认证图标 */
+.fa-sign-out-alt::before, .fa-sign-out::before, .fas.fa-sign-out-alt::before { content: "\f2f5"; }
+.fa-sign-in-alt::before, .fa-sign-in::before, .fas.fa-sign-in-alt::before { content: "\f2f6"; }
+.fa-lock::before, .fas.fa-lock::before { content: "\f023"; }
+.fa-unlock::before, .fas.fa-unlock::before { content: "\f09c"; }
 
 /* 主题和界面图标 */
-.fa-moon::before, .fas.fa-moon::before { content: "🌙"; }
-.fa-sun::before, .fas.fa-sun::before { content: "☀️"; }
+.fa-moon::before, .fas.fa-moon::before { content: "\f186"; }
+.fa-sun::before, .fas.fa-sun::before { content: "\f185"; }
+.fa-palette::before, .fas.fa-palette::before { content: "\f53f"; }
+.fa-rocket::before, .fas.fa-rocket::before { content: "\f135"; }
 
 /* 当Font Awesome不可用时，确保图标样式不会破坏布局 */
 @supports not (font-family: "Font Awesome 6 Free") {
@@ -85,13 +159,36 @@
 }
 
 /* 图标尺寸控制 */
-.fas.fa-lg, .far.fa-lg, .fab.fa-lg { font-size: 1.25em; }
-.fas.fa-2x, .far.fa-2x, .fab.fa-2x { font-size: 2em; }
-.fas.fa-3x, .far.fa-3x, .fab.fa-3x { font-size: 3em; }
+.fa-2xs { font-size: 0.625em; line-height: 0.1em; vertical-align: 0.225em; }
+.fa-xs { font-size: 0.75em; line-height: 0.08333em; vertical-align: 0.125em; }
+.fa-sm { font-size: 0.875em; line-height: 0.07143em; vertical-align: 0.05357em; }
+.fa-lg { font-size: 1.25em; line-height: 0.05em; vertical-align: -0.075em; }
+.fa-xl { font-size: 1.5em; line-height: 0.04167em; vertical-align: -0.125em; }
+.fa-2xl { font-size: 2em; line-height: 0.03125em; vertical-align: -0.1875em; }
+.fa-fw { text-align: center; width: 1.25em; }
+
+/* 图标动画 */
+.fa-spin { animation: fa-spin 2s infinite linear; }
+.fa-pulse { animation: fa-spin 1s infinite steps(8); }
+@keyframes fa-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 图标旋转 */
+.fa-rotate-90 { transform: rotate(90deg); }
+.fa-rotate-180 { transform: rotate(180deg); }
+.fa-rotate-270 { transform: rotate(270deg); }
 
 /* 确保图标在深色主题下也能正常显示 */
 .theme-dark .fas,
 .theme-dark .far,
 .theme-dark .fab {
     color: inherit;
+}
+
+/* 固定宽度对齐 */
+.fa-fw {
+    text-align: center;
+    width: 1.25em;
 }
