@@ -598,9 +598,9 @@ class DrawerManager {
                                             <div class="server-loading">加载可用服务器...</div>
                                         </div>
                                     </div>
-                                    <div class="form-help">
-                                        <span class="form-help-icon">💡</span>
-                                        <span class="form-help-text">请至少选择一个可用服务器</span>
+                                    <div class="form-help" style="margin-top: 8px;">
+                                        <span class="form-help-icon">⚠️</span>
+                                        <span class="form-help-text">离线服务器无法选择，请刷新重试</span>
                                     </div>
                                 </div>
                             </div>
@@ -1179,9 +1179,9 @@ class DrawerManager {
                         case 'MONITORING':
                             return { text: '在线', icon: '🟢', color: '#10b981' };
                         case 'FAILED':
-                            return { text: '连接失败', icon: '🔴', color: '#ef4444' };
+                            return { text: '离线', icon: '🔴', color: '#ef4444' };
                         case 'TIMEOUT':
-                            return { text: '连接超时', icon: '🟡', color: '#f59e0b' };
+                            return { text: '离线', icon: '🟡', color: '#f59e0b' };
                         case 'AUTH_FAILED':
                             return { text: '认证失败', icon: '🔴', color: '#ef4444' };
                         default:
@@ -1208,7 +1208,6 @@ class DrawerManager {
                             <span class="server-status" style="color: ${statusInfo.color}">
                                 ${statusInfo.icon} ${statusInfo.text}
                             </span>
-                            ${!isOnline ? '<br><small style="color: #ef4444;">离线服务器无法选择</small>' : ''}
                         </p>
                     </div>
                 `;

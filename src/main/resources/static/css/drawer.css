@@ -116,7 +116,7 @@
 
 /* 不同类型抽屉的宽度设置 */
 .drawer.drawer-user {
-    width: 900px !important; /* 增加100px宽度以容纳双栏布局 */
+    width: 950px !important; /* 增加150px宽度以容纳双栏布局 */
     max-width: 90vw !important;
 }
 
