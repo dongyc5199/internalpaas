@@ -7,7 +7,7 @@
     <meta name="_user" th:content="${#authentication.name}">
     <title>SSH终端管理器 - 内部平台</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/vendor/fontawesome/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/fontawesome-local.css">
     <link href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" rel="stylesheet">
     <style>
@@ -26,23 +26,6 @@
             padding: 0;
         }
         
-        /* 确保导航栏container-fluid正常显示 */
-        .navbar .container-fluid {
-            height: auto !important;
-            display: flex !important;
-            align-items: center !important;
-            padding: 0.5rem 1rem !important;
-            justify-content: space-between !important;
-        }
-        
-        .navbar-brand {
-            flex-shrink: 0 !important;
-        }
-        
-        .navbar-nav.d-flex.flex-row {
-            gap: 1.5rem !important;
-            margin-left: auto !important;
-        }
 
         .terminal-container {
             flex: 1;
@@ -53,57 +36,101 @@
 
         .terminal-tabs {
             display: flex;
-            background: #2d2d30;
-            border-bottom: 1px solid #3e3e42;
-            min-height: 40px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #242424 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            min-height: 42px;
+            padding: 8px 12px 0 12px;
+            gap: 4px;
+            overflow-x: auto;
+            scrollbar-width: thin;
         }
 
         .terminal-tab {
-            background: #2d2d30;
-            color: #cccccc;
+            background: rgba(45, 45, 48, 0.6);
+            color: rgba(255, 255, 255, 0.7);
             border: none;
-            padding: 8px 16px;
+            padding: 10px 16px;
             cursor: pointer;
             position: relative;
             display: inline-flex;
             align-items: center;
-            border-right: 1px solid #3e3e42;
-            min-width: 150px;
-            max-width: 250px;
+            border-radius: 8px 8px 0 0;
+            min-width: 140px;
+            max-width: 220px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: none;
+            margin-bottom: -1px;
         }
 
         .terminal-tab.active {
-            background: #1e1e1e;
+            background: linear-gradient(135deg, #2d2d30 0%, #383838 100%);
             color: #ffffff;
-            border-bottom: 2px solid #007acc;
+            box-shadow: 0 -2px 8px rgba(0, 122, 204, 0.3), 
+                       inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 122, 204, 0.5);
+            border-bottom: none;
+            transform: translateY(-2px);
         }
 
-        .terminal-tab:hover {
-            background: #3e3e42;
+        .terminal-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #007acc 0%, #00a1f1 100%);
+            border-radius: 1px;
+        }
+
+        .terminal-tab:hover:not(.active) {
+            background: rgba(62, 62, 66, 0.8);
+            color: rgba(255, 255, 255, 0.9);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .terminal-tab .tab-title {
+            flex: 1;
+            min-width: 0;
+            text-overflow: ellipsis;
+            overflow: hidden;
         }
 
         .terminal-tab .close-btn {
             margin-left: 8px;
             background: none;
             border: none;
-            color: #cccccc;
+            color: rgba(255, 255, 255, 0.6);
             cursor: pointer;
-            padding: 2px 4px;
-            width: 18px;
-            height: 18px;
-            border-radius: 3px;
-            font-size: 12px;
+            padding: 4px;
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            font-size: 11px;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.15s ease;
+            opacity: 0;
+        }
+
+        .terminal-tab:hover .close-btn,
+        .terminal-tab.active .close-btn {
+            opacity: 1;
         }
 
         .terminal-tab .close-btn:hover {
-            background: #e81123;
+            background: rgba(232, 17, 35, 0.9);
             color: white;
+            transform: scale(1.1);
         }
 
         .container,
@@ -157,67 +184,118 @@
         }
 
         .terminal-toolbar {
-            background: #3c3c3c;
-            padding: 8px 16px;
-            border-bottom: 1px solid #3e3e42;
+            background: linear-gradient(135deg, #2a2a2a 0%, #343434 100%);
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: #cccccc;
+            color: #e0e0e0;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
         }
 
         .server-selector {
-            background: #2d2d30;
-            color: #cccccc;
-            border: 1px solid #3e3e42;
-            padding: 6px 12px;
-            border-radius: 4px;
+            background: rgba(45, 45, 48, 0.8);
+            color: #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 14px;
+            border-radius: 8px;
             min-width: 200px;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .server-selector:focus {
+            outline: none;
+            border-color: rgba(0, 122, 204, 0.6);
+            box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
         }
 
         .btn-terminal {
-            background: #0e639c;
+            background: linear-gradient(135deg, #0e639c 0%, #1177bb 100%);
             color: white;
             border: none;
-            padding: 6px 16px;
-            border-radius: 4px;
-            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
             margin-left: 8px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(14, 99, 156, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-terminal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
         }
 
         .btn-terminal:hover {
-            background: #1177bb;
+            background: linear-gradient(135deg, #1177bb 0%, #1488cc 100%);
             color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(14, 99, 156, 0.4);
+        }
+        
+        .btn-terminal:hover::before {
+            left: 100%;
         }
 
         .btn-terminal:disabled {
-            background: #555;
+            background: rgba(85, 85, 85, 0.6);
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .status-indicator {
             display: inline-block;
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            margin-right: 8px;
+            margin-right: 10px;
             animation: pulse 2s infinite;
+            position: relative;
+            flex-shrink: 0;
+        }
+        
+        .status-indicator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: inherit;
         }
 
         .status-connected {
-            background: #4CAF50;
+            background: linear-gradient(45deg, #4CAF50, #66BB6A);
             animation: none;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
         }
 
         .status-connecting {
-            background: #FF9800;
+            background: linear-gradient(45deg, #FF9800, #FFB74D);
+            box-shadow: 0 0 8px rgba(255, 152, 0, 0.6);
         }
 
         .status-disconnected {
-            background: #F44336;
+            background: linear-gradient(45deg, #F44336, #EF5350);
             animation: none;
+            box-shadow: 0 0 8px rgba(244, 67, 54, 0.6);
         }
 
         @keyframes pulse {
@@ -252,19 +330,23 @@
         }
 
         .terminal-control-btn {
-            background: rgba(45, 45, 48, 0.9);
-            border: 1px solid #3e3e42;
-            color: #cccccc;
-            padding: 4px 8px;
-            border-radius: 3px;
+            background: rgba(45, 45, 48, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+            padding: 6px 10px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 11px;
+            font-weight: 500;
             opacity: 0;
-            transition: opacity 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
         .terminal-pane:hover .terminal-control-btn {
             opacity: 1;
+            transform: translateY(-1px);
         }
 
         .terminal-pane .xterm {
@@ -277,41 +359,36 @@
         }
 
         .terminal-control-btn:hover {
-            background: #0e639c;
+            background: linear-gradient(135deg, #0e639c, #1177bb);
             color: white;
+            box-shadow: 0 4px 12px rgba(14, 99, 156, 0.4);
+            transform: translateY(-2px);
         }
 
-        .terminal-tab {
-            padding: 8px 16px;
-            background: #2d2d30;
-            border-right: 1px solid #3e3e42;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            color: #cccccc;
-        }
 
-        .terminal-tab.active {
-            background: #1e1e1e;
-            border-bottom: 2px solid #007acc;
-        }
-
-        /* 滚动条样式 */
+        /* 现代化滚动条样式 */
         .terminal-tabs::-webkit-scrollbar {
-            height: 4px;
+            height: 3px;
         }
 
         .terminal-tabs::-webkit-scrollbar-track {
-            background: #2d2d30;
+            background: rgba(45, 45, 48, 0.3);
+            border-radius: 3px;
         }
 
         .terminal-tabs::-webkit-scrollbar-thumb {
-            background: #555;
-            border-radius: 2px;
+            background: linear-gradient(90deg, #007acc, #00a1f1);
+            border-radius: 3px;
+            transition: all 0.2s ease;
         }
 
         .terminal-tabs::-webkit-scrollbar-thumb:hover {
-            background: #777;
+            background: linear-gradient(90deg, #1177bb, #1488cc);
+        }
+        
+        /* Firefox 滚动条 */
+        .terminal-tabs {
+            scrollbar-color: #007acc rgba(45, 45, 48, 0.3);
         }
 
         #terminalContent {
@@ -319,38 +396,57 @@
             height: 100%;
             position: relative;
         }
+        
+        /* 欢迎消息样式优化 */
+        #welcomeMessage {
+            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+        }
+        
+        #welcomeMessage .text-center {
+            padding: 40px;
+            border-radius: 16px;
+            background: rgba(45, 45, 48, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        #welcomeMessage h5 {
+            color: #e0e0e0;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+        
+        #welcomeMessage p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+        }
+        
+        #welcomeMessage .fa-terminal {
+            color: #007acc;
+            filter: drop-shadow(0 0 10px rgba(0, 122, 204, 0.3));
+        }
+        
+        /* 连接信息样式优化 */
+        .connection-info {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .connection-info span {
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
     </style>
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid d-flex align-items-center">
-            <!-- 标题栏固定在最左侧 -->
-            <a class="navbar-brand me-4" href="/" style="min-width: fit-content;">
-                <i class="fas fa-server"></i> 内部平台
-            </a>
-            
-            <!-- 菜单栏在同一行 -->
-            <div class="navbar-nav d-flex flex-row gap-3 flex-grow-1">
-                <a class="nav-link" href="/apps">应用管理</a>
-                <a class="nav-link" href="/admin/servers">服务器管理</a>
-                <a class="nav-link" href="/admin/users">用户管理</a>
-                <a class="nav-link active" href="/terminal/manager?serverId=1">SSH终端</a>
-                <a class="nav-link" href="/admin/servers">服务器管理</a>
-            </div>
-            
-            <!-- 退出按钮在最右侧 -->
-            <div class="ms-auto">
-                <form th:action="@{/logout}" method="post" style="display: inline;">
-                    <button type="submit" class="nav-link btn btn-link text-light" style="background: none; border: none; cursor: pointer;">
-                        <i class="fas fa-sign-out-alt me-1"></i>退出
-                    </button>
-                </form>
-            </div>
-        </div>
-    </nav>
-
-    <div class="main-content" style="height: calc(100vh - 56px); display: flex; flex-direction: column;">
+    <div class="main-content" style="height: 100vh; display: flex; flex-direction: column;">
         <!-- 工具栏 -->
         <div class="terminal-toolbar" style="flex-shrink: 0; background: #2d2d30; padding: 10px;">
             <div class="d-flex align-items-center">
