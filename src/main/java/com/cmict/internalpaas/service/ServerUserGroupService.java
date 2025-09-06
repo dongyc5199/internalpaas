@@ -2,6 +2,7 @@ package com.cmict.internalpaas.service;
 
 import com.cmict.internalpaas.dto.CreateUserGroupRequest;
 import com.cmict.internalpaas.dto.ServerUserGroupDto;
+import com.cmict.internalpaas.dto.UserGroupSyncResultDto;
 import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerUserGroup;
 import com.cmict.internalpaas.repository.ServerUserGroupRepository;
@@ -33,6 +34,9 @@ public class ServerUserGroupService {
     @Autowired
     private ServerService serverService;
     
+    @Autowired
+    private ServerUserGroupSyncService syncService;
+    
     /**
      * 为服务器初始化默认用户组
      * @param server 目标服务器
@@ -46,7 +50,47 @@ public class ServerUserGroupService {
             // 检查是否已经有用户组
             List<ServerUserGroup> existingGroups = groupRepository.findByServerId(server.getId());
             if (!existingGroups.isEmpty()) {
-                logger.info("服务器 {} 已存在 {} 个用户组，跳过初始化", server.getName(), existingGroups.size());
+                logger.info("服务器 {} 已存在 {} 个用户组，检查是否需要同步到Linux系统", server.getName(), existingGroups.size());
+                
+                // 同步现有用户组到Linux系统
+                try {
+                    logger.info("开始同步现有用户组到服务器 {}", server.getName());
+                    List<UserGroupSyncResultDto> batchSyncResults = syncService.syncAllUserGroupsToServer(server, existingGroups);
+                    
+                    int totalSuccess = 0;
+                    int totalFailed = 0;
+                    
+                    for (UserGroupSyncResultDto syncResult : batchSyncResults) {
+                        if (syncResult.isSuccess()) {
+                            totalSuccess++;
+                            logger.info("用户组 {} 同步成功: 成功率={:.1f}%, 步骤={}/{}", 
+                                      syncResult.getGroupName(), syncResult.getSuccessRate() * 100,
+                                      syncResult.getSuccessfulSteps(), syncResult.getTotalSteps());
+                        } else {
+                            totalFailed++;
+                            logger.error("用户组 {} 同步失败: 错误={}, 成功率={:.1f}%, 步骤={}/{}", 
+                                       syncResult.getGroupName(), syncResult.getErrorMessage(),
+                                       syncResult.getSuccessRate() * 100,
+                                       syncResult.getSuccessfulSteps(), syncResult.getTotalSteps());
+                            
+                            // 记录详细的同步步骤结果
+                            for (UserGroupSyncResultDto.SyncStepResult stepResult : syncResult.getStepResults()) {
+                                if (!stepResult.isSuccess()) {
+                                    logger.error("同步步骤失败 [{}]: {} -> 退出码:{}, 错误:{}", 
+                                               stepResult.getStepName(), stepResult.getCommand(), 
+                                               stepResult.getExitCode(), stepResult.getError());
+                                }
+                            }
+                        }
+                    }
+                    
+                    logger.info("批量用户组同步完成: 服务器={}, 成功={}, 失败={}, 总数={}", 
+                              server.getName(), totalSuccess, totalFailed, batchSyncResults.size());
+                              
+                } catch (Exception e) {
+                    logger.error("同步现有用户组过程中发生异常: 服务器={}, 异常={}", server.getName(), e.getMessage(), e);
+                }
+                
                 return existingGroups.size();
             }
             
@@ -176,6 +220,36 @@ public class ServerUserGroupService {
             }
             
             logger.info("成功创建用户组: {} (ID: {})", saved.getGroupName(), saved.getId());
+            
+            // 同步用户组到服务器系统
+            try {
+                logger.info("开始同步新创建的用户组到服务器: {} -> {}", saved.getGroupName(), server.getName());
+                UserGroupSyncResultDto syncResult = syncService.syncUserGroupToServer(saved);
+                
+                if (syncResult.isSuccess()) {
+                    logger.info("用户组 {} 系统同步成功 (步骤: {}/{}, 成功率: {:.1f}%)", 
+                              saved.getGroupName(), syncResult.getSuccessfulSteps(), syncResult.getTotalSteps(), 
+                              syncResult.getSuccessRate() * 100);
+                } else {
+                    logger.error("用户组 {} 系统同步失败: {} (步骤: {}/{}, 成功率: {:.1f}%)", 
+                               saved.getGroupName(), syncResult.getErrorMessage(),
+                               syncResult.getSuccessfulSteps(), syncResult.getTotalSteps(), 
+                               syncResult.getSuccessRate() * 100);
+                    
+                    // 记录详细的同步步骤结果
+                    for (UserGroupSyncResultDto.SyncStepResult stepResult : syncResult.getStepResults()) {
+                        if (!stepResult.isSuccess()) {
+                            logger.error("同步步骤失败 [{}]: {} -> 退出码:{}, 错误:{}", 
+                                       stepResult.getStepName(), stepResult.getCommand(), 
+                                       stepResult.getExitCode(), stepResult.getError());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("用户组 {} 系统同步过程中发生异常: {}", saved.getGroupName(), e.getMessage(), e);
+                // 不影响数据库操作的成功，只记录同步失败
+            }
+            
             return saved;
             
         } catch (Exception e) {
@@ -229,6 +303,36 @@ public class ServerUserGroupService {
             }
             
             logger.info("成功更新用户组: {} (ID: {})", saved.getGroupName(), saved.getId());
+            
+            // 同步更新后的用户组到服务器系统
+            try {
+                logger.info("开始同步更新后的用户组到服务器: {} -> {}", saved.getGroupName(), group.getServer().getName());
+                UserGroupSyncResultDto syncResult = syncService.syncUserGroupToServer(saved);
+                
+                if (syncResult.isSuccess()) {
+                    logger.info("用户组 {} 更新同步成功 (步骤: {}/{}, 成功率: {:.1f}%)", 
+                              saved.getGroupName(), syncResult.getSuccessfulSteps(), syncResult.getTotalSteps(), 
+                              syncResult.getSuccessRate() * 100);
+                } else {
+                    logger.error("用户组 {} 更新同步失败: {} (步骤: {}/{}, 成功率: {:.1f}%)", 
+                               saved.getGroupName(), syncResult.getErrorMessage(),
+                               syncResult.getSuccessfulSteps(), syncResult.getTotalSteps(), 
+                               syncResult.getSuccessRate() * 100);
+                    
+                    // 记录详细的同步步骤结果
+                    for (UserGroupSyncResultDto.SyncStepResult stepResult : syncResult.getStepResults()) {
+                        if (!stepResult.isSuccess()) {
+                            logger.error("同步步骤失败 [{}]: {} -> 退出码:{}, 错误:{}", 
+                                       stepResult.getStepName(), stepResult.getCommand(), 
+                                       stepResult.getExitCode(), stepResult.getError());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("用户组 {} 更新同步过程中发生异常: {}", saved.getGroupName(), e.getMessage(), e);
+                // 不影响数据库操作的成功，只记录同步失败
+            }
+            
             return saved;
             
         } catch (Exception e) {
@@ -262,8 +366,45 @@ public class ServerUserGroupService {
             // 检查是否有用户正在使用此用户组
             // TODO: 实现用户关联检查
             
+            String groupName = group.getGroupName();
+            Server server = group.getServer();
+            
+            // 先从服务器系统中删除用户组
+            try {
+                logger.info("开始从服务器系统删除用户组: {} -> {}", groupName, server.getName());
+                UserGroupSyncResultDto syncResult = syncService.removeUserGroupFromServer(server, groupName);
+                
+                if (syncResult.isSuccess()) {
+                    logger.info("用户组 {} 系统删除成功 (步骤: {}/{}, 成功率: {:.1f}%)", 
+                              groupName, syncResult.getSuccessfulSteps(), syncResult.getTotalSteps(), 
+                              syncResult.getSuccessRate() * 100);
+                } else {
+                    logger.error("用户组 {} 系统删除失败: {} (步骤: {}/{}, 成功率: {:.1f}%)", 
+                               groupName, syncResult.getErrorMessage(),
+                               syncResult.getSuccessfulSteps(), syncResult.getTotalSteps(), 
+                               syncResult.getSuccessRate() * 100);
+                    
+                    // 记录详细的同步步骤结果
+                    for (UserGroupSyncResultDto.SyncStepResult stepResult : syncResult.getStepResults()) {
+                        if (!stepResult.isSuccess()) {
+                            logger.error("删除步骤失败 [{}]: {} -> 退出码:{}, 错误:{}", 
+                                       stepResult.getStepName(), stepResult.getCommand(), 
+                                       stepResult.getExitCode(), stepResult.getError());
+                        }
+                    }
+                    
+                    // 系统删除失败时，仍然继续删除数据库记录，但记录警告
+                    logger.warn("尽管系统删除失败，仍继续删除数据库中的用户组记录: {}", groupName);
+                }
+            } catch (Exception e) {
+                logger.error("用户组 {} 系统删除过程中发生异常: {}", groupName, e.getMessage(), e);
+                // 继续删除数据库记录，但记录异常
+                logger.warn("尽管系统删除异常，仍继续删除数据库中的用户组记录: {}", groupName);
+            }
+            
+            // 从数据库中删除用户组
             groupRepository.delete(group);
-            logger.info("成功删除用户组: {} (ID: {})", group.getGroupName(), groupId);
+            logger.info("成功删除用户组: {} (ID: {})", groupName, groupId);
             
         } catch (Exception e) {
             logger.error("删除用户组失败: {}", e.getMessage(), e);

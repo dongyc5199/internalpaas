@@ -250,4 +250,54 @@ public class PermissionTemplateService {
                 return "basic_user";
         }
     }
+    
+    /**
+     * 获取简化的默认用户组模板 - 固定配置
+     * 这是一个简化版本，适合大多数场景使用
+     * @return 默认用户组配置
+     */
+    public ServerUserGroupDto getSimpleDefaultTemplate() {
+        logger.info("获取简化的默认用户组模板");
+        
+        ServerUserGroupDto template = new ServerUserGroupDto();
+        template.setGroupName("default_users");
+        template.setGroupDescription("默认用户组 - 适用于所有用户的标准权限配置");
+        template.setPermissionLevel(ServerUserGroup.PermissionLevel.DEVELOPER);
+        
+        // 固定的系统组配置
+        Set<String> systemGroups = new HashSet<>();
+        systemGroups.add("users");
+        systemGroups.add("docker");
+        systemGroups.add("systemd-journal");
+        template.setSystemGroups(String.join(",", systemGroups));
+        
+        // 固定的sudo命令配置
+        Set<String> sudoCommands = new HashSet<>();
+        sudoCommands.add("/bin/systemctl start *");
+        sudoCommands.add("/bin/systemctl stop *");
+        sudoCommands.add("/bin/systemctl restart *");
+        sudoCommands.add("/usr/bin/docker *");
+        sudoCommands.add("/usr/local/bin/docker-compose *");
+        sudoCommands.add("/bin/ps *");
+        sudoCommands.add("/bin/netstat *");
+        sudoCommands.add("/usr/bin/tail *");
+        template.setSudoCommands(sudoCommands);
+        
+        template.setIsDefault(true);
+        template.setActive(true);
+        
+        logger.info("生成简化默认用户组模板: {}", template.getGroupName());
+        return template;
+    }
+    
+    /**
+     * 检查服务器是否已有默认用户组，如果没有则创建
+     * @param serverId 服务器ID
+     * @return 是否需要创建默认组
+     */
+    public boolean shouldCreateDefaultGroup(Long serverId) {
+        // 这里应该检查数据库中是否已存在默认用户组
+        // 为了简化，暂时返回true，实际使用时应该查询数据库
+        return true;
+    }
 }

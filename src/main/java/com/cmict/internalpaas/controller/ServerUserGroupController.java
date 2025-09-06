@@ -15,9 +15,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 /**
@@ -44,6 +43,7 @@ public class ServerUserGroupController {
      * 获取服务器的所有用户组
      */
     @GetMapping("/server/{serverId}")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> getServerUserGroups(@PathVariable Long serverId) {
         logger.info("获取服务器 {} 的用户组列表", serverId);
         
@@ -455,6 +455,79 @@ public class ServerUserGroupController {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
             errorResponse.put("error", "批量操作失败");
+            errorResponse.put("message", e.getMessage());
+            
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
+    }
+    
+    /**
+     * 一键创建默认用户组 - 简化版本
+     * 使用固定的配置模板，无需复杂选择
+     */
+    @PostMapping("/server/{serverId}/create-simple-default")
+    public ResponseEntity<?> createSimpleDefaultUserGroup(@PathVariable Long serverId) {
+        logger.info("为服务器 {} 创建简化的默认用户组", serverId);
+        
+        try {
+            // 检查服务器是否存在
+            Optional<Server> serverOpt = serverService.getServerById(serverId);
+            if (serverOpt.isEmpty()) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("error", "服务器不存在");
+                return ResponseEntity.notFound().build();
+            }
+            
+            // 检查是否已有默认用户组
+            Optional<ServerUserGroup> existingDefault = userGroupService.getDefaultUserGroup(serverId);
+            if (existingDefault.isPresent()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("message", "默认用户组已存在");
+                response.put("userGroup", userGroupService.convertToDto(existingDefault.get()));
+                return ResponseEntity.ok(response);
+            }
+            
+            // 获取简化的默认模板
+            ServerUserGroupDto template = templateService.getSimpleDefaultTemplate();
+            
+            // 创建请求对象
+            CreateUserGroupRequest request = new CreateUserGroupRequest();
+            request.setGroupName(template.getGroupName());
+            request.setGroupDescription(template.getGroupDescription());
+            request.setPermissionLevel(template.getPermissionLevel());
+            // 将逗号分隔的字符串转换为Set
+            if (template.getSystemGroups() != null && !template.getSystemGroups().isEmpty()) {
+                Set<String> systemGroupsSet = new HashSet<>(Arrays.asList(template.getSystemGroups().split(",")));
+                request.setSystemGroups(systemGroupsSet);
+            }
+            request.setSudoCommands(template.getSudoCommands());
+            request.setIsDefault(true);
+            request.setActive(true);
+            
+            // 创建用户组
+            ServerUserGroup group = userGroupService.createUserGroup(request, serverId);
+            ServerUserGroupDto groupDto = userGroupService.convertToDto(group);
+            
+            // 设置为默认用户组
+            userGroupService.setDefaultUserGroup(serverId, group.getId());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "默认用户组创建成功，所有新用户将自动加入此组");
+            response.put("userGroup", groupDto);
+            response.put("template", "simple_default");
+            
+            logger.info("成功为服务器 {} 创建简化默认用户组: {}", serverId, group.getGroupName());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("创建简化默认用户组失败", e);
+            
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", "创建默认用户组失败");
             errorResponse.put("message", e.getMessage());
             
             return ResponseEntity.internalServerError().body(errorResponse);

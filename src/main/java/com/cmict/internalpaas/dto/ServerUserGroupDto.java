@@ -27,6 +27,7 @@ public class ServerUserGroupDto {
     private Integer userCount; // 使用此用户组的用户数量
     private Boolean isSynced; // 是否已同步到服务器
     private String syncStatus; // 同步状态描述
+    private Boolean active; // 用户组是否活跃
     
     public ServerUserGroupDto() {}
     
@@ -81,4 +82,7 @@ public class ServerUserGroupDto {
     
     public String getSyncStatus() { return syncStatus; }
     public void setSyncStatus(String syncStatus) { this.syncStatus = syncStatus; }
+    
+    public Boolean getActive() { return active; }
+    public void setActive(Boolean active) { this.active = active; }
 }

@@ -5,6 +5,7 @@ import com.cmict.internalpaas.repository.ServerMetricsRepository;
 import com.cmict.internalpaas.service.MonitoringHistoryService;
 import com.cmict.internalpaas.service.UserService;
 import com.cmict.internalpaas.service.ServerService;
+import com.cmict.internalpaas.service.ServerUserGroupService;
 import com.cmict.internalpaas.dto.UserProfileDto;
 import com.cmict.internalpaas.dto.UserPreferencesDto;
 import com.cmict.internalpaas.model.Server;
@@ -37,6 +38,9 @@ public class DebugController {
     
     @Autowired
     private ServerService serverService;
+    
+    @Autowired
+    private ServerUserGroupService userGroupService;
 
     @GetMapping("/debug/check-root")
     public String checkRootUser() {
@@ -191,6 +195,48 @@ public class DebugController {
             return result.toString();
         } catch (Exception e) {
             return "检查服务器状态失败: " + e.getMessage();
+        }
+    }
+    
+    @GetMapping("/debug/check-user-groups")
+    public String checkUserGroups() {
+        try {
+            List<Server> servers = serverService.getAllServers();
+            StringBuilder result = new StringBuilder();
+            result.append("用户组状态检查:\n\n");
+            
+            for (Server server : servers) {
+                result.append("服务器: ").append(server.getName()).append(" (ID: ").append(server.getId()).append(")\n");
+                
+                // 获取用户组列表
+                var userGroups = userGroupService.getServerUserGroups(server.getId());
+                result.append("  用户组数量: ").append(userGroups.size()).append("\n");
+                
+                if (userGroups.isEmpty()) {
+                    result.append("  状态: 无用户组\n");
+                    
+                    // 尝试初始化默认用户组
+                    result.append("  尝试初始化默认用户组...\n");
+                    try {
+                        int createdCount = userGroupService.initializeDefaultUserGroups(server);
+                        result.append("  初始化结果: 创建了 ").append(createdCount).append(" 个用户组\n");
+                    } catch (Exception e) {
+                        result.append("  初始化失败: ").append(e.getMessage()).append("\n");
+                    }
+                } else {
+                    result.append("  用户组详情:\n");
+                    for (var group : userGroups) {
+                        result.append("    - ").append(group.getGroupName())
+                              .append(" (权限: ").append(group.getPermissionLevel())
+                              .append(", 默认: ").append(group.getIsDefault()).append(")\n");
+                    }
+                }
+                result.append("\n");
+            }
+            
+            return result.toString();
+        } catch (Exception e) {
+            return "检查用户组状态失败: " + e.getMessage() + "\n" + Arrays.toString(e.getStackTrace());
         }
     }
 }

@@ -29,6 +29,7 @@ public class CreateUserGroupRequest {
     private Set<String> sudoCommands = new HashSet<>();
     private Set<GroupFilePermissionDto> filePermissions = new HashSet<>();
     private Boolean isDefault = false;
+    private Boolean active = true;
     
     public CreateUserGroupRequest() {}
     
@@ -58,6 +59,9 @@ public class CreateUserGroupRequest {
     
     public Boolean getIsDefault() { return isDefault; }
     public void setIsDefault(Boolean isDefault) { this.isDefault = isDefault; }
+    
+    public Boolean getActive() { return active; }
+    public void setActive(Boolean active) { this.active = active; }
     
     // Helper methods
     public void addSystemGroup(String group) {

@@ -57,6 +57,9 @@ public class AdminController {
     
     @Autowired
     private UserServerCredentialService credentialService;
+    
+    @Autowired
+    private com.cmict.internalpaas.service.UserServerAccountService userServerAccountService;
 
     @GetMapping("/servers")
     public String serverManagement(Model model) {
@@ -753,6 +756,9 @@ public class AdminController {
             
             User savedUser = userService.save(user);
             
+            // 自动将用户加入服务器的默认用户组
+            autoAssignUserToDefaultGroups(savedUser);
+            
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
             
@@ -760,6 +766,7 @@ public class AdminController {
             StringBuilder message = new StringBuilder("用户创建成功");
             if (savedUser.getAvailableServers() != null && !savedUser.getAvailableServers().isEmpty()) {
                 message.append("，已在 ").append(savedUser.getAvailableServers().size()).append(" 台服务器上创建账户和工作目录");
+                message.append("，已自动加入对应的默认用户组");
             }
             
             response.put("message", message.toString());
@@ -816,6 +823,9 @@ public class AdminController {
             this.generateUserWorkDirectory(user);
             
             User updatedUser = userService.save(user);
+            
+            // 重新分配用户到服务器的默认用户组（如果服务器分配发生了变化）
+            autoAssignUserToDefaultGroups(updatedUser);
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
@@ -1091,5 +1101,82 @@ public class AdminController {
         }
         
         return new String(chars);
+    }
+    
+    /**
+     * 自动将用户分配到服务器的默认用户组
+     * 如果服务器没有默认用户组，将尝试创建一个简化的默认用户组
+     */
+    private void autoAssignUserToDefaultGroups(User user) {
+        logger.info("开始为用户 {} 自动分配默认用户组", user.getUsername());
+        
+        if (user.getAvailableServers() == null || user.getAvailableServers().isEmpty()) {
+            logger.info("用户 {} 没有可用的服务器，跳过用户组分配", user.getUsername());
+            return;
+        }
+        
+        for (Server server : user.getAvailableServers()) {
+            try {
+                logger.info("处理服务器 {} 的用户组分配", server.getName());
+                
+                // 检查服务器是否有默认用户组
+                Optional<com.cmict.internalpaas.model.ServerUserGroup> defaultGroup = 
+                    serverUserGroupService.getDefaultUserGroup(server.getId());
+                    
+                if (defaultGroup.isPresent()) {
+                    logger.info("服务器 {} 已有默认用户组: {}", server.getName(), defaultGroup.get().getGroupName());
+                    
+                    // 创建用户服务器账户并分配到默认用户组
+                    try {
+                        com.cmict.internalpaas.model.UserServerAccount account = 
+                            userServerAccountService.createUserAccount(user, server, defaultGroup.get());
+                        logger.info("成功为用户 {} 在服务器 {} 上创建账户并加入用户组 {}", 
+                            user.getUsername(), server.getName(), defaultGroup.get().getGroupName());
+                    } catch (Exception e) {
+                        logger.warn("为用户 {} 在服务器 {} 上创建账户或分配用户组失败: {}", 
+                            user.getUsername(), server.getName(), e.getMessage());
+                    }
+                } else {
+                    logger.info("服务器 {} 没有默认用户组，尝试创建简化默认用户组", server.getName());
+                    
+                    // 检查服务器类型，如果为空则设置为开发环境
+                    if (server.getServerType() == null) {
+                        server.setServerType(Server.ServerType.DEVELOPMENT);
+                        serverService.saveServer(server);
+                        logger.info("服务器 {} 类型为空，已设置为开发环境", server.getName());
+                    }
+                    
+                    // 尝试为服务器创建简化的默认用户组
+                    try {
+                        int createdCount = serverUserGroupService.initializeDefaultUserGroups(server);
+                        logger.info("为服务器 {} 成功创建了 {} 个默认用户组", server.getName(), createdCount);
+                        
+                        // 重新获取默认用户组
+                        Optional<com.cmict.internalpaas.model.ServerUserGroup> newDefaultGroup = 
+                            serverUserGroupService.getDefaultUserGroup(server.getId());
+                        if (newDefaultGroup.isPresent()) {
+                            // 创建用户服务器账户并分配到新创建的默认用户组
+                            try {
+                                com.cmict.internalpaas.model.UserServerAccount account = 
+                                    userServerAccountService.createUserAccount(user, server, newDefaultGroup.get());
+                                logger.info("成功为用户 {} 在服务器 {} 上创建账户并加入新的默认用户组 {}", 
+                                    user.getUsername(), server.getName(), newDefaultGroup.get().getGroupName());
+                            } catch (Exception createAccountException) {
+                                logger.warn("为用户 {} 在服务器 {} 上创建账户或分配用户组失败: {}", 
+                                    user.getUsername(), server.getName(), createAccountException.getMessage());
+                            }
+                        }
+                    } catch (Exception e) {
+                        logger.warn("为服务器 {} 创建默认用户组失败: {}", server.getName(), e.getMessage());
+                    }
+                }
+                
+            } catch (Exception e) {
+                logger.error("为用户 {} 在服务器 {} 上分配用户组时出错: {}", 
+                    user.getUsername(), server.getName(), e.getMessage(), e);
+            }
+        }
+        
+        logger.info("完成为用户 {} 的用户组分配处理", user.getUsername());
     }
 }

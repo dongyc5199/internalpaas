@@ -40,7 +40,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf
                 .ignoringAntMatchers("/h2-console/**", "/ws/**", "/test/**", 
                     "/monitoring/server/*/refresh", "/monitoring/trigger-health-check",
-                    "/monitoring/history/api/**", "/monitoring/thresholds/api/**") // 禁用H2控制台、WebSocket、测试接口和监控接口的CSRF保护
+                    "/monitoring/history/api/**", "/monitoring/thresholds/api/**",
+                    "/api/server-user-groups/**", "/api/permission-test/**") // 禁用H2控制台、WebSocket、测试接口和监控接口的CSRF保护
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // 使用Cookie存储CSRF token
             )
             .headers(headers -> headers
