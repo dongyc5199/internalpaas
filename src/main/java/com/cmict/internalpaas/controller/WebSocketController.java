@@ -14,6 +14,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
@@ -175,6 +176,58 @@ public class WebSocketController {
             default:
                 return "未知状态";
         }
+    }
+    
+    /**
+     * 处理服务器日志订阅请求
+     */
+    @SubscribeMapping("/server-logs/{serverId}")
+    public Map<String, Object> handleServerLogSubscription(@PathVariable Long serverId,
+                                                          SimpMessageHeaderAccessor headerAccessor,
+                                                          Principal principal) {
+        String username = principal != null ? principal.getName() : "Anonymous";
+        String sessionId = headerAccessor.getSessionId();
+        
+        logger.info("用户 {} 订阅服务器 {} 日志流, Session: {}", username, serverId, sessionId);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("type", "server_log_subscription");
+        response.put("serverId", serverId);
+        response.put("status", "success");
+        response.put("message", "服务器日志流订阅成功");
+        response.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        
+        return response;
+    }
+    
+    /**
+     * 发送服务器日志消息给特定用户
+     */
+    public void sendServerLogToUser(String username, Long serverId, String filePath, Object logData) {
+        Map<String, Object> message = new HashMap<>();
+        message.put("type", "server_log");
+        message.put("serverId", serverId);
+        message.put("filePath", filePath);
+        message.put("data", logData);
+        message.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        
+        sendToUser(username, "/topic/server-logs", message);
+        logger.debug("发送服务器日志到用户 {}: 服务器={}, 文件={}", username, serverId, filePath);
+    }
+    
+    /**
+     * 广播服务器日志状态更新
+     */
+    public void broadcastServerLogStatus(Long serverId, String filePath, String status, String message) {
+        Map<String, Object> statusMessage = new HashMap<>();
+        statusMessage.put("type", "server_log_status");
+        statusMessage.put("serverId", serverId);
+        statusMessage.put("filePath", filePath);
+        statusMessage.put("status", status);
+        statusMessage.put("message", message);
+        statusMessage.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        
+        broadcast("/topic/server-logs-status", statusMessage);
     }
     
     /**

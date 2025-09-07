@@ -477,6 +477,23 @@ public class AdminController {
         }
     }
 
+    /**
+     * 获取服务器日志页面
+     */
+    @GetMapping("/servers/{id}/logs")
+    public String serverLogs(@PathVariable Long id, Model model) {
+        Optional<Server> serverOpt = serverService.getServerById(id);
+        if (serverOpt.isEmpty()) {
+            model.addAttribute("errorMessage", "服务器不存在");
+            return "redirect:/admin/servers";
+        }
+        
+        Server server = serverOpt.get();
+        model.addAttribute("server", server);
+        
+        return "admin/server-logs";
+    }
+
     @GetMapping("/users")
     @Transactional(readOnly = true)
     public String userManagement(Model model) {
