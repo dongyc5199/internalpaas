@@ -187,6 +187,20 @@ public class UserActivityService {
     }
     
     /**
+     * 获取服务器活跃用户数量
+     */
+    public int getActiveUserCount(Long serverId) {
+        return (int) countActiveUsers(serverId);
+    }
+    
+    /**
+     * 获取服务器活跃会话数量
+     */
+    public int getActiveSessionCount(Long serverId) {
+        return (int) sshSessionRepository.countByServerIdAndIsActiveTrue(serverId);
+    }
+    
+    /**
      * 用户活动摘要数据类
      */
     public static class UserActivitySummary {

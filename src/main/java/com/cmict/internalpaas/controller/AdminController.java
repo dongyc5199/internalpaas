@@ -2,14 +2,18 @@ package com.cmict.internalpaas.controller;
 
 import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerMetrics;
+import com.cmict.internalpaas.model.ServerStatusTag;
 import com.cmict.internalpaas.model.User;
 import com.cmict.internalpaas.service.MonitoringSchedulerService;
 import com.cmict.internalpaas.service.RemoteCommandService;
 import com.cmict.internalpaas.service.ServerService;
+import com.cmict.internalpaas.service.ServerStatusTagService;
 import com.cmict.internalpaas.service.SshConnectionService;
 import com.cmict.internalpaas.service.UserServerCredentialService;
 import com.cmict.internalpaas.service.UserService;
 import com.cmict.internalpaas.repository.UserRepository;
+
+import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +64,15 @@ public class AdminController {
     
     @Autowired
     private com.cmict.internalpaas.service.UserServerAccountService userServerAccountService;
+    
+    @Autowired
+    private ServerStatusTagService statusTagService;
+    
+    @Autowired
+    private WebSocketController webSocketController;
+    
+    @Autowired
+    private com.cmict.internalpaas.service.ServerStatusTagSchedulerService statusTagSchedulerService;
 
     @GetMapping("/servers")
     public String serverManagement(Model model) {
@@ -1195,5 +1208,187 @@ public class AdminController {
         }
         
         logger.info("完成为用户 {} 的用户组分配处理", user.getUsername());
+    }
+    
+    /**
+     * 获取服务器状态标签API - 用于前端页面动态显示
+     */
+    @GetMapping("/api/servers/{serverId}/status-tags")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getServerStatusTags(@PathVariable Long serverId) {
+        try {
+            List<ServerStatusTag> tags = statusTagService.getServerStatusTags(serverId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("serverId", serverId);
+            response.put("tags", tags.stream().map(this::convertTagToMap).toArray());
+            response.put("timestamp", System.currentTimeMillis());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("获取服务器 {} 状态标签失败: {}", serverId, e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("status", "error", "message", "获取状态标签失败: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 获取所有服务器的状态标签API
+     */
+    @GetMapping("/api/servers/status-tags")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getAllServersStatusTags() {
+        try {
+            List<Server> servers = serverService.findAllActive();
+            Map<String, Object> serverStatusMap = new HashMap<>();
+            
+            for (Server server : servers) {
+                List<ServerStatusTag> tags = statusTagService.getServerStatusTags(server.getId());
+                Map<String, Object> serverStatus = new HashMap<>();
+                serverStatus.put("serverId", server.getId());
+                serverStatus.put("serverName", server.getName());
+                serverStatus.put("tags", tags.stream().map(this::convertTagToMap).toArray());
+                serverStatusMap.put(String.valueOf(server.getId()), serverStatus);
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("servers", serverStatusMap);
+            response.put("timestamp", System.currentTimeMillis());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("获取所有服务器状态标签失败: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("status", "error", "message", "获取所有服务器状态标签失败: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 刷新服务器状态标签API
+     */
+    /**
+     * 刷新指定服务器的状态标签（异步处理，立即返回）
+     */
+    @PostMapping("/api/servers/{serverId}/refresh-status")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> refreshServerStatus(@PathVariable Long serverId) {
+        try {
+            // 验证服务器是否存在
+            Optional<Server> serverOpt = serverService.findById(serverId);
+            if (!serverOpt.isPresent()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Server server = serverOpt.get();
+            
+            // 获取当前的状态标签（从数据库读取）
+            List<ServerStatusTag> currentTags = statusTagService.getServerStatusTags(serverId);
+            
+            // 异步执行状态刷新（提交到后台任务队列）
+            CompletableFuture.runAsync(() -> {
+                try {
+                    statusTagService.refreshAllServerTags(serverId);
+                    logger.info("✅ 异步刷新服务器 {} 状态完成", server.getName());
+                    
+                    // 通知前端更新
+                    webSocketController.broadcast("/topic/server-status", Map.of(
+                        "type", "SERVER_STATUS_REFRESHED",
+                        "serverId", serverId,
+                        "serverName", server.getName(),
+                        "timestamp", System.currentTimeMillis()
+                    ));
+                    
+                } catch (Exception e) {
+                    logger.error("❌ 异步刷新服务器 {} 状态失败: {}", server.getName(), e.getMessage(), e);
+                }
+            });
+            
+            // 立即返回当前状态，不等待刷新完成
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("serverId", serverId);
+            response.put("serverName", server.getName());
+            response.put("tags", currentTags.stream().map(this::convertTagToMap).toArray());
+            response.put("message", "状态刷新已提交，将在后台异步执行");
+            response.put("refreshType", "async");
+            response.put("timestamp", System.currentTimeMillis());
+            
+            logger.info("🚀 服务器 {} 状态刷新任务已提交到后台执行", server.getName());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("提交服务器 {} 状态刷新任务失败: {}", serverId, e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("status", "error", "message", "提交刷新任务失败: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 获取服务器状态标签调度服务统计信息
+     */
+    @GetMapping("/api/servers/status-scheduler/statistics")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getSchedulerStatistics() {
+        try {
+            Map<String, Object> statistics = statusTagSchedulerService.getSchedulerStatistics();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("scheduler", statistics);
+            response.put("timestamp", System.currentTimeMillis());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("获取调度服务统计信息失败: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("status", "error", "message", "获取统计信息失败: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 删除所有监控异常标签
+     */
+    @PostMapping("/api/servers/cleanup-monitoring-tags")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> cleanupMonitoringTags() {
+        try {
+            statusTagService.deleteAllMonitoringTags();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "监控异常标签已删除");
+            response.put("timestamp", System.currentTimeMillis());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("删除监控异常标签失败: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("status", "error", "message", "删除监控异常标签失败: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 转换标签为前端所需的Map格式
+     */
+    private Map<String, Object> convertTagToMap(ServerStatusTag tag) {
+        Map<String, Object> tagMap = new HashMap<>();
+        tagMap.put("id", tag.getId());
+        tagMap.put("tagType", tag.getTagType());
+        tagMap.put("status", tag.getStatus());
+        tagMap.put("displayText", tag.getDisplayText());
+        tagMap.put("value", tag.getValue());
+        tagMap.put("colorScheme", tag.getColorScheme());
+        tagMap.put("priority", tag.getPriority());
+        tagMap.put("details", tag.getDetails());
+        tagMap.put("isAlert", tag.isAlert());
+        tagMap.put("lastUpdated", tag.getLastUpdated());
+        return tagMap;
     }
 }

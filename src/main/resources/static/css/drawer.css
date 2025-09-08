@@ -1004,6 +1004,23 @@
     color: var(--gray-800);
     margin: 0 0 var(--space-1) 0;
     line-height: var(--leading-tight);
+    max-width: 12ch;
+    white-space: nowrap;
+    overflow: hidden;
+    display: inline-block;
+}
+
+/* 为长文本自动添加滚动动画 */
+.role-card-title.long-text {
+    animation: drawerAutoScrollText 6s ease-in-out infinite;
+}
+
+@keyframes drawerAutoScrollText {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(0); }
+    50% { transform: translateX(calc(-100% + 12ch)); }
+    70% { transform: translateX(calc(-100% + 12ch)); }
+    100% { transform: translateX(0); }
 }
 
 .role-card-description {

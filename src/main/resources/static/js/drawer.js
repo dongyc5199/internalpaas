@@ -180,25 +180,6 @@ class DrawerManager {
                         </div>
                     </div>
 
-                    <!-- 服务器设置 -->
-                    <div class="form-section">
-                        <h3 class="form-section-title">
-                            <div class="form-section-icon settings">⚙️</div>
-                            服务器设置
-                        </h3>
-                        
-                        <div class="form-check">
-                            <input class="form-check-input" 
-                                   type="checkbox" 
-                                   id="server-active" 
-                                   name="active" 
-                                   checked>
-                            <label class="form-check-label" for="server-active">
-                                启用此服务器
-                            </label>
-                        </div>
-                    </div>
-
                     <!-- 用户组管理 -->
                     <div class="form-section">
                         <h3 class="form-section-title">
@@ -241,6 +222,52 @@ class DrawerManager {
                                 <div class="usergroup-loading">
                                     <i class="fas fa-spinner fa-spin"></i> 加载中...
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 服务器设置 -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <div class="form-section-icon settings">⚙️</div>
+                            服务器设置
+                        </h3>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="server-active" 
+                                   name="active" 
+                                   checked>
+                            <label class="form-check-label" for="server-active">
+                                启用此服务器
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- 服务器状态 -->
+                    <div class="form-section" id="serverStatusSection" style="display: none;">
+                        <h3 class="form-section-title">
+                            <div class="form-section-icon status">📊</div>
+                            服务器状态
+                        </h3>
+                        
+                        <div class="server-status-display">
+                            <div class="status-loading" id="serverStatusLoading">
+                                <i class="fas fa-spinner fa-spin"></i> 正在加载服务器状态...
+                            </div>
+                            
+                            <div class="status-content" id="serverStatusContent" style="display: none;">
+                                <!-- 状态标签容器 -->
+                                <div class="server-status-tags" id="drawerServerStatusTags">
+                                    <!-- 状态标签将在这里动态加载 -->
+                                </div>
+                            </div>
+                            
+                            <div class="status-error" id="serverStatusError" style="display: none;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>无法获取服务器状态信息</span>
+                                <button type="button" class="btn-retry-status" onclick="drawerManager.loadServerStatus()">重试</button>
                             </div>
                         </div>
                     </div>
@@ -880,6 +907,9 @@ class DrawerManager {
             
             // 编辑模式：显示用户组列表，隐藏初始化选项
             this.toggleUserGroupSections(true, serverId);
+            
+            // 编辑模式：显示服务器状态区域
+            this.toggleServerStatusSection(true, serverId);
         } else {
             titleText.textContent = '添加服务器';
             submitBtn.textContent = '保存服务器';
@@ -887,6 +917,9 @@ class DrawerManager {
             
             // 新建模式：显示初始化选项，隐藏用户组列表
             this.toggleUserGroupSections(false);
+            
+            // 新建模式：隐藏服务器状态区域
+            this.toggleServerStatusSection(false);
         }
 
         // 设置CSRF令牌
@@ -1457,6 +1490,12 @@ class DrawerManager {
                         </p>
                     </div>
                 `;
+                
+                // 检查服务器名称长度并添加滚动动画类
+                const titleElement = serverItem.querySelector('.role-card-title');
+                if (titleElement && server.name.length > 12) {
+                    titleElement.classList.add('long-text');
+                }
                 
                 // 添加点击事件（离线服务器不响应点击）
                 if (isOnline) {
@@ -2709,6 +2748,170 @@ class DrawerManager {
             serverCards.forEach(card => {
                 card.classList.remove('server-refreshing');
             });
+        }
+    }
+
+    // 服务器状态管理方法
+    async loadServerStatus(serverId = null) {
+        if (!serverId) {
+            serverId = this.getCurrentServerId();
+        }
+        
+        if (!serverId) {
+            this.showServerStatusError('无法获取服务器ID');
+            return;
+        }
+
+        try {
+            this.showServerStatusLoading(true);
+            
+            const response = await fetch(`/admin/api/servers/${serverId}/status-tags`);
+            if (!response.ok) {
+                throw new Error('获取服务器状态失败');
+            }
+            
+            const statusData = await response.json();
+            if (statusData.status === 'success') {
+                this.displayServerStatus(statusData);
+            } else {
+                throw new Error(statusData.message || '获取状态数据失败');
+            }
+            
+        } catch (error) {
+            console.error('加载服务器状态失败:', error);
+            this.showServerStatusError(error.message);
+        } finally {
+            this.showServerStatusLoading(false);
+        }
+    }
+
+    displayServerStatus(statusData) {
+        const statusContainer = document.getElementById('drawerServerStatusTags');
+        
+        if (!statusContainer) return;
+        
+        // 清空容器
+        statusContainer.innerHTML = '';
+        
+        if (statusData.tags && statusData.tags.length > 0) {
+            statusData.tags.forEach(tag => {
+                const tagElement = this.createStatusTagElement(tag);
+                statusContainer.appendChild(tagElement);
+            });
+            
+            // 显示状态内容
+            this.showServerStatusContent(true);
+        } else {
+            statusContainer.innerHTML = '<div class="status-empty">暂无异常状态</div>';
+            this.showServerStatusContent(true);
+        }
+    }
+
+    createStatusTagElement(tag) {
+        const tagDiv = document.createElement('div');
+        tagDiv.className = `status-tag tag-${tag.colorScheme}`;
+        
+        // 添加特殊样式
+        if (tag.isAlert) {
+            tagDiv.classList.add('is-alert');
+        }
+        if (tag.tagType === 'MEMORY_USAGE' && tag.status === 'CRITICAL') {
+            tagDiv.classList.add('memory-critical');
+        }
+        
+        tagDiv.innerHTML = `
+            <i class="fas ${this.getTagIcon(tag.tagType)}"></i>
+            <span class="tag-text">${tag.displayText}</span>
+            ${tag.value ? `<span class="tag-value">${tag.value}</span>` : ''}
+        `;
+        
+        if (tag.details) {
+            tagDiv.title = tag.details;
+        }
+        
+        return tagDiv;
+    }
+
+    getTagIcon(tagType) {
+        const iconMap = {
+            'CONNECTION': 'fa-plug',
+            'WORK_DIRECTORY': 'fa-folder',
+            'ACTIVE_USERS': 'fa-users',
+            'MONITORING': 'fa-chart-line',
+            'PERMISSION': 'fa-lock',
+            'MEMORY_USAGE': 'fa-memory',
+            'CPU_USAGE': 'fa-microchip',
+            'DISK_USAGE': 'fa-hdd',
+            'SYSTEM_LOAD': 'fa-tachometer-alt',
+            'SECURITY': 'fa-shield-alt',
+            'MAINTENANCE': 'fa-tools'
+        };
+        return iconMap[tagType] || 'fa-info-circle';
+    }
+
+
+    async refreshServerStatus() {
+        const serverId = this.getCurrentServerId();
+        if (serverId) {
+            await this.loadServerStatus(serverId);
+        }
+    }
+
+    getCurrentServerId() {
+        const idInput = this.serverDrawer.querySelector('input[name="id"]');
+        return idInput ? idInput.value : null;
+    }
+
+    showServerStatusLoading(show) {
+        const loadingElement = document.getElementById('serverStatusLoading');
+        const contentElement = document.getElementById('serverStatusContent');
+        const errorElement = document.getElementById('serverStatusError');
+        
+        if (show) {
+            if (loadingElement) loadingElement.style.display = 'block';
+            if (contentElement) contentElement.style.display = 'none';
+            if (errorElement) errorElement.style.display = 'none';
+        } else {
+            if (loadingElement) loadingElement.style.display = 'none';
+        }
+    }
+
+    showServerStatusContent(show) {
+        const contentElement = document.getElementById('serverStatusContent');
+        const loadingElement = document.getElementById('serverStatusLoading');
+        const errorElement = document.getElementById('serverStatusError');
+        
+        if (show) {
+            if (contentElement) contentElement.style.display = 'block';
+            if (loadingElement) loadingElement.style.display = 'none';
+            if (errorElement) errorElement.style.display = 'none';
+        }
+    }
+
+    showServerStatusError(errorMessage) {
+        const errorElement = document.getElementById('serverStatusError');
+        const contentElement = document.getElementById('serverStatusContent');
+        const loadingElement = document.getElementById('serverStatusLoading');
+        
+        if (errorElement) {
+            errorElement.style.display = 'block';
+            errorElement.querySelector('span').textContent = errorMessage;
+        }
+        if (contentElement) contentElement.style.display = 'none';
+        if (loadingElement) loadingElement.style.display = 'none';
+    }
+
+    toggleServerStatusSection(show, serverId = null) {
+        const statusSection = document.getElementById('serverStatusSection');
+        if (statusSection) {
+            statusSection.style.display = show ? 'block' : 'none';
+            
+            if (show && serverId) {
+                // 延迟加载状态，确保抽屉已完全打开
+                setTimeout(() => {
+                    this.loadServerStatus(serverId);
+                }, 300);
+            }
         }
     }
 }

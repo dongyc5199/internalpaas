@@ -69,12 +69,24 @@ public class ServerService {
         return serverRepository.findByActiveTrueOrderByName();
     }
     
+    public List<Server> findAllActive() {
+        return serverRepository.findByActiveTrueOrderByName();
+    }
+    
+    public List<Server> findAll() {
+        return serverRepository.findAll();
+    }
+    
     public Optional<Server> getServerById(Long id) {
         return serverRepository.findById(id);
     }
     
     public Optional<Server> findById(Long id) {
         return serverRepository.findById(id);
+    }
+
+    public List<Server> findByConnectionStatusIn(List<Server.ConnectionStatus> connectionStatuses) {
+        return serverRepository.findByConnectionStatusIn(connectionStatuses);
     }
     
     /**

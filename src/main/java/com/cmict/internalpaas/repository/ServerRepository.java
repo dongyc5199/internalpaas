@@ -10,4 +10,5 @@ import java.util.List;
 public interface ServerRepository extends JpaRepository<Server, Long> {
     List<Server> findByActiveTrue();
     List<Server> findByActiveTrueOrderByName();
+    List<Server> findByConnectionStatusIn(List<Server.ConnectionStatus> connectionStatuses);
 }

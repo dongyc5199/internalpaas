@@ -134,4 +134,44 @@ public class ServerMetrics {
     
     public String getOsVersion() { return osVersion; }
     public void setOsVersion(String osVersion) { this.osVersion = osVersion; }
+    
+    // 计算百分比的方法
+    public Double getMemoryUsagePercent() {
+        if (memoryUsage != null) {
+            return memoryUsage;
+        }
+        if (memoryTotal != null && memoryTotal > 0 && memoryUsed != null) {
+            return (memoryUsed.doubleValue() / memoryTotal.doubleValue()) * 100.0;
+        }
+        return 0.0;
+    }
+    
+    public Double getCpuUsagePercent() {
+        return cpuUsage != null ? cpuUsage : 0.0;
+    }
+    
+    public Double getDiskUsagePercent() {
+        if (diskUsage != null) {
+            return diskUsage;
+        }
+        if (diskTotal != null && diskTotal > 0 && diskUsed != null) {
+            return (diskUsed.doubleValue() / diskTotal.doubleValue()) * 100.0;
+        }
+        return 0.0;
+    }
+    
+    public Double getLoadAverageValue() {
+        if (loadAverage != null && !loadAverage.trim().isEmpty()) {
+            try {
+                // 解析负载平均值，通常格式为 "1.23 1.45 1.67"
+                String[] parts = loadAverage.trim().split("\\s+");
+                if (parts.length > 0) {
+                    return Double.parseDouble(parts[0]);
+                }
+            } catch (NumberFormatException e) {
+                // 忽略解析错误
+            }
+        }
+        return 0.0;
+    }
 }
