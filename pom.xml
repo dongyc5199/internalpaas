@@ -124,4 +124,79 @@
 		</plugins>
 	</build>
 
+	<!-- Maven Profiles for different deployment scenarios -->
+	<profiles>
+		<!-- 开发环境 - 默认使用CDN -->
+		<profile>
+			<id>dev</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<spring.profiles.active>dev</spring.profiles.active>
+				<offline.mode>false</offline.mode>
+			</properties>
+		</profile>
+
+		<!-- 生产环境 - 在线模式 -->
+		<profile>
+			<id>prod</id>
+			<properties>
+				<spring.profiles.active>prod</spring.profiles.active>
+				<offline.mode>false</offline.mode>
+			</properties>
+		</profile>
+
+		<!-- 离线部署环境 - 内网环境 -->
+		<profile>
+			<id>offline</id>
+			<properties>
+				<spring.profiles.active>offline</spring.profiles.active>
+				<offline.mode>true</offline.mode>
+			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-resources-plugin</artifactId>
+						<version>3.3.0</version>
+						<executions>
+							<execution>
+								<id>copy-offline-resources</id>
+								<phase>prepare-package</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${project.build.outputDirectory}/static/vendor</outputDirectory>
+									<resources>
+										<resource>
+											<directory>src/main/resources/static/vendor</directory>
+											<filtering>false</filtering>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.springframework.boot</groupId>
+						<artifactId>spring-boot-maven-plugin</artifactId>
+						<configuration>
+							<excludes>
+								<exclude>
+									<groupId>org.projectlombok</groupId>
+									<artifactId>lombok</artifactId>
+								</exclude>
+							</excludes>
+							<profiles>
+								<profile>offline</profile>
+							</profiles>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
 </project>

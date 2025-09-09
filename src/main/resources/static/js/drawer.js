@@ -10,12 +10,28 @@ class DrawerManager {
     }
 
     init() {
-        this.bindEvents();
-        this.createDrawerContainers();
+        try {
+            this.bindEvents();
+            const success = this.createDrawerContainers();
+            if (!success) {
+                console.error('抽屉容器创建失败');
+                return false;
+            }
+            return true;
+        } catch (error) {
+            console.error('DrawerManager初始化失败:', error);
+            return false;
+        }
     }
 
     // 创建抽屉容器
     createDrawerContainers() {
+        // 检查body是否存在
+        if (!document.body) {
+            console.error('document.body不存在，无法初始化抽屉组件');
+            return false;
+        }
+        
         // 创建遮罩层
         this.overlay = document.createElement('div');
         this.overlay.className = 'drawer-overlay';
@@ -29,6 +45,8 @@ class DrawerManager {
         // 创建用户抽屉
         this.userDrawer = this.createUserDrawer();
         document.body.appendChild(this.userDrawer);
+        
+        return true; // 创建成功
     }
 
     // 创建服务器抽屉HTML
@@ -284,7 +302,10 @@ class DrawerManager {
                 </button>
             </div>
             <div class="drawer-loading">
-                <div class="loading-spinner"></div>
+                <div class="loading-content">
+                    <div class="loading-spinner"></div>
+                    <span class="loading-text">保存中...</span>
+                </div>
             </div>
         `;
         return drawer;
@@ -2919,37 +2940,96 @@ class DrawerManager {
 // 全局函数定义
 let drawerManager;
 
-// 初始化抽屉管理器
+// 初始化抽屉管理器的函数
+function initDrawerManager() {
+    if (!drawerManager) {
+        try {
+            drawerManager = new DrawerManager();
+            // 检查初始化是否成功
+            if (!drawerManager.overlay || !drawerManager.serverDrawer || !drawerManager.userDrawer) {
+                console.error('DrawerManager组件创建不完整');
+                drawerManager = null;
+                return null;
+            }
+        } catch (error) {
+            console.error('DrawerManager创建失败:', error);
+            drawerManager = null;
+            return null;
+        }
+    }
+    return drawerManager;
+}
+
+// DOM加载完成时初始化
 document.addEventListener('DOMContentLoaded', function() {
-    drawerManager = new DrawerManager();
+    initDrawerManager();
 });
+
+// 如果DOM已经加载完成，立即初始化
+if (document.readyState === 'loading') {
+    // DOM还在加载中
+} else {
+    // DOM已经加载完成
+    initDrawerManager();
+}
+
+// 调试函数
+function debugDrawer() {
+    console.log('drawerManager状态:', drawerManager);
+    console.log('document.body存在:', !!document.body);
+    console.log('尝试初始化drawerManager...');
+    const manager = initDrawerManager();
+    console.log('初始化结果:', manager);
+    return manager;
+}
 
 // 全局函数供HTML调用
 function addServer() {
-    if (drawerManager) {
-        drawerManager.openServerDrawer();
+    console.log('addServer被调用');
+    const manager = drawerManager || initDrawerManager();
+    console.log('获取到的manager:', manager);
+    if (manager) {
+        console.log('尝试打开服务器抽屉');
+        manager.openServerDrawer();
+    } else {
+        console.error('DrawerManager初始化失败');
+        alert('功能初始化失败，请刷新页面后重试');
     }
 }
 
 function editServer(element) {
-    if (drawerManager && element) {
+    const manager = drawerManager || initDrawerManager();
+    if (manager && element) {
         const serverId = element.getAttribute('data-id') || 
                         element.closest('[data-id]')?.getAttribute('data-id');
         if (serverId) {
-            drawerManager.openServerDrawer(serverId);
+            manager.openServerDrawer(serverId);
         }
+    } else if (!element) {
+        console.error('editServer调用时没有传入element参数');
     }
 }
 
 function addUser() {
-    if (drawerManager) {
-        drawerManager.openUserDrawer();
+    console.log('addUser被调用');
+    const manager = drawerManager || initDrawerManager();
+    console.log('获取到的manager:', manager);
+    if (manager) {
+        console.log('尝试打开用户抽屉');
+        manager.openUserDrawer();
+    } else {
+        console.error('DrawerManager初始化失败');
+        alert('功能初始化失败，请刷新页面后重试');
     }
 }
 
 function editUser(userId) {
-    if (drawerManager) {
-        drawerManager.openUserDrawer(userId);
+    const manager = drawerManager || initDrawerManager();
+    if (manager) {
+        manager.openUserDrawer(userId);
+    } else {
+        console.error('DrawerManager初始化失败');
+        alert('功能初始化失败，请刷新页面后重试');
     }
 }
 

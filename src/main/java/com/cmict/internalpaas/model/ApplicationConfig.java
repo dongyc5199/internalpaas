@@ -127,6 +127,14 @@ public class ApplicationConfig {
         }
     }
     
+    /**
+     * 将此配置标记为活跃配置
+     */
+    public void markAsActive() {
+        this.isActive = true;
+        this.appliedAt = LocalDateTime.now();
+    }
+    
     // Helper methods for configuration management
     public boolean isActiveConfig() {
         return Boolean.TRUE.equals(this.isActive);
@@ -134,11 +142,6 @@ public class ApplicationConfig {
     
     public boolean isTemplateConfig() {
         return Boolean.TRUE.equals(this.isTemplate);
-    }
-    
-    public void markAsActive() {
-        this.isActive = true;
-        this.appliedAt = LocalDateTime.now();
     }
     
     public void markAsInactive() {

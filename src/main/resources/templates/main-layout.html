@@ -50,6 +50,8 @@
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/common-dashboard.css">
     <link rel="stylesheet" href="/css/dashboard-theme.css">
+    <link rel="stylesheet" href="/css/drawer.css">
+    <link rel="stylesheet" href="/css/server-status-tags.css">
     <style>
         :root {
             --primary-color: #6366f1;
@@ -590,6 +592,8 @@
         }
     </style>
     <script src="/js/theme.js"></script>
+    <script src="/js/drawer.js"></script>
+    <script src="/js/server-status-tags.js"></script>
 </head>
 <body class="dashboard-body admin-theme theme-body">
     <!-- 顶部导航栏 -->
@@ -645,19 +649,20 @@
                         <span>用户管理</span>
                     </a>
                 </div>
-                <div class="nav-item">
+                <!-- 开发者功能 - 只有非管理员用户显示 -->
+                <div class="nav-item" th:if="${!isAdmin}">
                     <a href="javascript:void(0)" class="nav-link" data-page="applications" onclick="loadContent('applications')">
                         <span class="nav-icon"><i class="fas fa-rocket"></i></span>
                         <span>应用管理</span>
                     </a>
                 </div>
-                <div class="nav-item">
+                <div class="nav-item" th:if="${!isAdmin}">
                     <a href="javascript:void(0)" class="nav-link" data-page="monitoring" onclick="loadContent('monitoring')">
                         <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
                         <span>系统监控</span>
                     </a>
                 </div>
-                <div class="nav-item">
+                <div class="nav-item" th:if="${!isAdmin}">
                     <a href="javascript:void(0)" class="nav-link" data-page="terminal" onclick="loadContent('terminal')">
                         <span class="nav-icon"><i class="fas fa-terminal"></i></span>
                         <span>终端管理</span>
@@ -750,6 +755,16 @@
                         break;
                     case 'servers':
                         content = await loadServersContent();
+                        // 加载完服务器内容后，加载状态标签
+                        setTimeout(() => {
+                            const serverCards = document.querySelectorAll('[data-server-id]');
+                            serverCards.forEach(card => {
+                                const serverId = card.getAttribute('data-server-id');
+                                if (serverId) {
+                                    loadServerStatusTags(serverId);
+                                }
+                            });
+                        }, 100);
                         break;
                     case 'users':
                         content = await loadUsersContent();
@@ -804,10 +819,33 @@
             wrapper.innerHTML = content;
             wrapper.classList.add('content-fade-in');
             
+            // 执行新加载内容中的JavaScript
+            executeScriptsInElement(wrapper);
+            
             // 移除动画类，为下次使用准备
             setTimeout(() => {
                 wrapper.classList.remove('content-fade-in');
             }, 300);
+        }
+        
+        // 执行元素中的JavaScript代码
+        function executeScriptsInElement(element) {
+            const scripts = element.querySelectorAll('script');
+            scripts.forEach(script => {
+                if (script.src) {
+                    // 外部脚本，创建新的script标签
+                    const newScript = document.createElement('script');
+                    newScript.src = script.src;
+                    document.head.appendChild(newScript);
+                } else {
+                    // 内联脚本，直接执行
+                    try {
+                        eval(script.innerHTML);
+                    } catch (error) {
+                        console.error('执行脚本出错:', error);
+                    }
+                }
+            });
         }
 
         // 更新菜单激活状态
@@ -822,6 +860,228 @@
             if (currentItem) {
                 currentItem.closest('.nav-item').classList.add('active');
             }
+        }
+        
+        // 全局下拉菜单函数
+        function toggleDropdown(button) {
+            const dropdown = button.nextElementSibling;
+            const isOpen = dropdown.classList.contains('show');
+            
+            // 关闭所有其他下拉菜单
+            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
+            
+            if (!isOpen) {
+                dropdown.classList.add('show');
+            }
+        }
+        
+        // 点击外部关闭下拉菜单
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.server-actions-dropdown')) {
+                document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+        });
+        
+        // 全局服务器操作函数
+        function toggleServerMetrics(element) {
+            const serverId = element.getAttribute('data-id');
+            const card = element.closest('.modern-server-card');
+            const metricsContent = card.querySelector('.metrics-content');
+            const toggleIcon = element.querySelector('i');
+            const isHidden = metricsContent.style.display === 'none';
+            
+            if (isHidden) {
+                metricsContent.style.display = 'block';
+                toggleIcon.className = 'fas fa-chevron-up';
+                // 加载监控数据
+                fetchServerMetrics(serverId);
+            } else {
+                metricsContent.style.display = 'none';
+                toggleIcon.className = 'fas fa-chevron-down';
+            }
+        }
+        
+        function openTerminal(element) {
+            const serverId = element.getAttribute('data-id');
+            window.open('/terminal/manager?serverId=' + serverId, '_blank');
+        }
+        
+        function viewServer(element) {
+            const serverId = element.getAttribute('data-id');
+            window.location.href = '/admin/servers/' + serverId;
+        }
+        
+        function viewLogs(element) {
+            const serverId = element.getAttribute('data-id');
+            window.location.href = '/admin/servers/' + serverId + '/logs';
+        }
+        
+        function fetchServerMetrics(serverId) {
+            const card = document.querySelector(`[data-server-id="${serverId}"]`);
+            if (!card) return;
+            
+            fetch(`/admin/servers/${serverId}/metrics`, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [getCSRFHeaderName()]: getCSRFToken()
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    updateMetricsDisplay(card, data.metrics);
+                }
+            })
+            .catch(error => {
+                console.error('获取监控数据失败:', error);
+            });
+        }
+        
+        function updateMetricsDisplay(card, metrics) {
+            const cpuUsage = card.querySelector('.cpu-usage');
+            const memoryUsage = card.querySelector('.memory-usage');
+            const diskUsage = card.querySelector('.disk-usage');
+            const cpuFill = card.querySelector('.cpu-fill');
+            const memoryFill = card.querySelector('.memory-fill');
+            const diskFill = card.querySelector('.disk-fill');
+            const lastUpdate = card.querySelector('.last-update-time');
+            
+            if (cpuUsage && metrics.cpuUsage !== undefined) {
+                cpuUsage.textContent = `${metrics.cpuUsage.toFixed(1)}%`;
+                cpuFill.style.width = `${metrics.cpuUsage}%`;
+            }
+            
+            if (memoryUsage && metrics.memoryUsage !== undefined) {
+                memoryUsage.textContent = `${metrics.memoryUsage.toFixed(1)}%`;
+                memoryFill.style.width = `${metrics.memoryUsage}%`;
+            }
+            
+            if (diskUsage && metrics.diskUsage !== undefined) {
+                diskUsage.textContent = `${metrics.diskUsage.toFixed(1)}%`;
+                diskFill.style.width = `${metrics.diskUsage}%`;
+            }
+            
+            if (lastUpdate) {
+                lastUpdate.textContent = `最后更新: ${new Date().toLocaleTimeString()}`;
+            }
+        }
+        
+        // 加载服务器状态标签
+        function loadServerStatusTags(serverId) {
+            // 首先查找HTML模板中的server-status-tags-row类，然后查找备用的server-status-tags类
+            let tagsContainer = document.querySelector(`.server-status-tags-row[data-server-id="${serverId}"]`);
+            if (!tagsContainer) {
+                tagsContainer = document.querySelector(`.server-status-tags[data-server-id="${serverId}"]`);
+            }
+            if (!tagsContainer) return;
+            
+            fetch(`/admin/api/servers/${serverId}/status-tags`, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [getCSRFHeaderName()]: getCSRFToken()
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    displayServerStatusTags(tagsContainer, data.tags);
+                } else {
+                    tagsContainer.innerHTML = '<div class="status-tags-empty">无状态信息</div>';
+                }
+            })
+            .catch(error => {
+                console.error('加载状态标签失败:', error);
+                tagsContainer.innerHTML = '<div class="status-tags-empty">加载失败</div>';
+            });
+        }
+        
+        function displayServerStatusTags(container, tags) {
+            if (!tags || tags.length === 0) {
+                container.innerHTML = '<div class="status-tags-empty">无状态信息</div>';
+                return;
+            }
+            
+            const tagsHtml = tags.map(tag => {
+                const tagClass = getTagClass(tag);
+                const iconClass = getTagIcon(tag);
+                
+                // 调试日志
+                console.log('标签调试信息:', {
+                    displayText: tag.displayText,
+                    status: tag.status,
+                    colorScheme: tag.colorScheme,
+                    tagType: tag.tagType,
+                    computedClass: tagClass
+                });
+                
+                return `<span class="status-tag ${tagClass}" title="${tag.details || tag.displayText}" data-debug-class="${tagClass}">
+                    <i class="${iconClass}"></i>
+                    <span class="tag-text">${tag.displayText}</span>
+                </span>`;
+            }).join('');
+            
+            container.innerHTML = tagsHtml;
+            
+            // 验证DOM结构
+            setTimeout(() => {
+                const appliedTags = container.querySelectorAll('.status-tag');
+                appliedTags.forEach((tagElement, index) => {
+                    console.log(`标签 ${index + 1} DOM检查:`, {
+                        text: tagElement.textContent.trim(),
+                        className: tagElement.className,
+                        debugClass: tagElement.getAttribute('data-debug-class'),
+                        computedBg: window.getComputedStyle(tagElement).backgroundColor
+                    });
+                });
+            }, 100);
+        }
+        
+        function getTagClass(tag) {
+            // 根据服务端返回的字段判断标签类型
+            if (tag.status === 'CRITICAL' || tag.colorScheme === 'danger') {
+                // 系统资源紧张标签使用特殊样式
+                if (tag.displayText && tag.displayText.includes('系统资源紧张')) {
+                    return 'tag-danger memory-critical';
+                }
+                return 'tag-danger';
+            }
+            if (tag.status === 'WARNING' || tag.colorScheme === 'warning') return 'tag-warning';
+            if (tag.status === 'OK' || tag.colorScheme === 'success') return 'tag-success';
+            if (tag.colorScheme === 'info') return 'tag-info';
+            if (tag.colorScheme === 'secondary') return 'tag-secondary';
+            
+            // 回退：基于标签类型判断
+            switch(tag.tagType) {
+                case 'CONNECTION': return tag.status === 'OK' ? 'tag-success' : 'tag-danger';
+                case 'SYSTEM_RESOURCE': return 'tag-danger memory-critical';
+                case 'MEMORY_USAGE': 
+                case 'CPU_USAGE':
+                case 'DISK_USAGE':
+                    if (tag.isAlert) return 'tag-warning';
+                    return 'tag-info';
+                default: return 'tag-secondary';
+            }
+        }
+        
+        function getTagIcon(tag) {
+            const typeIcons = {
+                'CONNECTION': 'fas fa-wifi',
+                'MEMORY_USAGE': 'fas fa-memory',
+                'CPU_USAGE': 'fas fa-microchip',
+                'DISK_USAGE': 'fas fa-hdd',
+                'PROCESS_STATUS': 'fas fa-cogs',
+                'USER_ACTIVITY': 'fas fa-user',
+                'WORKING_DIRECTORY': 'fas fa-folder'
+            };
+            return typeIcons[tag.tagType] || 'fas fa-info-circle';
         }
 
         // 全局变量用于存储用户类型
@@ -840,6 +1100,7 @@
             
             const response = await fetch(apiUrl, {
                 method: 'GET',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     [getCSRFHeaderName()]: getCSRFToken()
@@ -856,6 +1117,7 @@
         async function loadServersContent() {
             const response = await fetch('/admin/api/servers-content', {
                 method: 'GET',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     [getCSRFHeaderName()]: getCSRFToken()
@@ -872,6 +1134,7 @@
         async function loadUsersContent() {
             const response = await fetch('/admin/api/users-content', {
                 method: 'GET',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     [getCSRFHeaderName()]: getCSRFToken()
@@ -886,8 +1149,9 @@
         }
 
         async function loadApplicationsContent() {
-            const response = await fetch('/api/apps/content', {
+            const response = await fetch('/apps/api/content', {
                 method: 'GET',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     [getCSRFHeaderName()]: getCSRFToken()

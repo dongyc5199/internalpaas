@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Service
 public class ServerStatusScheduler {
@@ -45,7 +46,7 @@ public class ServerStatusScheduler {
             // 并行检查所有活跃服务器
             List<CompletableFuture<Void>> futures = activeServers.stream()
                 .map(server -> refreshCriticalServerStatusAsync(server.getId()))
-                .toList();
+                .collect(java.util.stream.Collectors.toList());
             
             // 等待所有检查完成
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
@@ -70,7 +71,7 @@ public class ServerStatusScheduler {
             // 并行刷新所有服务器状态
             List<CompletableFuture<Void>> futures = activeServers.stream()
                 .map(server -> refreshAllServerStatusAsync(server.getId()))
-                .toList();
+                .collect(Collectors.toList());
             
             // 等待所有检查完成
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))

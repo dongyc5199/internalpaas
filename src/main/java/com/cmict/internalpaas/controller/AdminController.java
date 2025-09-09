@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,6 +68,7 @@ public class AdminController {
     
     @Autowired
     private ServerStatusTagService statusTagService;
+    
     
     @Autowired
     private WebSocketController webSocketController;
@@ -1502,48 +1504,53 @@ public class AdminController {
         }
     }
     
+
     /**
      * AJAX API: 获取服务器管理内容片段
      */
     @GetMapping("/api/servers-content")
-    @ResponseBody
-    public ResponseEntity<String> getServersContent() {
-        try {
-            String content = "<div class=\"content-header\">\n" +
-                           "    <h1 class=\"page-title\"><i class=\"fas fa-server\"></i> 服务器管理</h1>\n" +
-                           "</div>\n" +
-                           "<div class=\"alert alert-info\">\n" +
-                           "    <i class=\"fas fa-info-circle\"></i> 服务器管理功能正在加载中...\n" +
-                           "    <br><small>这里将显示服务器列表、状态监控等功能</small>\n" +
-                           "</div>";
-            return ResponseEntity.ok(content);
-        } catch (Exception e) {
-            logger.error("获取服务器内容失败", e);
-            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载服务器内容失败: " + e.getMessage() + "</div>";
-            return ResponseEntity.status(500).body(errorContent);
-        }
+    public String getServersContent(Model model) {
+        List<Server> servers = serverService.getAllServers();
+        model.addAttribute("servers", servers);
+        
+        // 统计活跃和非活跃服务器
+        long activeCount = servers.stream()
+            .filter(server -> server.getConnectionStatus() != null && 
+                    (server.getConnectionStatus() == Server.ConnectionStatus.CONNECTED || 
+                     server.getConnectionStatus() == Server.ConnectionStatus.MONITORING))
+            .count();
+        long inactiveCount = servers.size() - activeCount;
+        
+        model.addAttribute("totalServers", servers.size());
+        model.addAttribute("activeServers", activeCount);
+        model.addAttribute("inactiveServers", inactiveCount);
+        model.addAttribute("monitoringServers", activeCount); // 简化处理
+        
+        // 返回服务器管理内容片段
+        return "admin/servers :: servers-content";
     }
     
     /**
      * AJAX API: 获取用户管理内容片段
      */
     @GetMapping("/api/users-content")
-    @ResponseBody
-    public ResponseEntity<String> getUsersContent() {
-        try {
-            String content = "<div class=\"content-header\">\n" +
-                           "    <h1 class=\"page-title\"><i class=\"fas fa-users\"></i> 用户管理</h1>\n" +
-                           "</div>\n" +
-                           "<div class=\"alert alert-info\">\n" +
-                           "    <i class=\"fas fa-info-circle\"></i> 用户管理功能正在加载中...\n" +
-                           "    <br><small>这里将显示用户列表、权限管理等功能</small>\n" +
-                           "</div>";
-            return ResponseEntity.ok(content);
-        } catch (Exception e) {
-            logger.error("获取用户内容失败", e);
-            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载用户内容失败: " + e.getMessage() + "</div>";
-            return ResponseEntity.status(500).body(errorContent);
-        }
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public String getUsersContent(Model model) {
+        List<User> users = userService.findAllUsers();
+        model.addAttribute("users", users);
+        
+        // 计算统计数据
+        long adminCount = users.stream().filter(u -> u.getRoles().contains(User.Role.ADMIN) || u.getRoles().contains(User.Role.SUPER_ADMIN)).count();
+        long developerCount = users.stream().filter(u -> u.getRoles().contains(User.Role.USER)).count();
+        long activeCount = users.size(); // 简化处理，所有用户都是活跃的
+        
+        model.addAttribute("totalUsers", users.size());
+        model.addAttribute("adminCount", adminCount);
+        model.addAttribute("developerCount", developerCount);
+        model.addAttribute("activeCount", activeCount);
+        
+        // 返回用户管理内容片段
+        return "admin/users :: users-content";
     }
 
     /**

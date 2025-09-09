@@ -113,11 +113,18 @@ class ServerStatusManager {
             return;
         }
         
-        let statusContainer = serverCard.querySelector('.server-status-tags');
+        // 首先查找HTML模板中已存在的状态标签行
+        let statusContainer = serverCard.querySelector('.server-status-tags-row');
         if (!statusContainer) {
-            // 创建状态标签容器
+            // 如果没找到，尝试查找旧的选择器作为备用
+            statusContainer = serverCard.querySelector('.server-status-tags');
+        }
+        
+        if (!statusContainer) {
+            // 创建状态标签容器，使用与HTML模板一致的类名
             statusContainer = document.createElement('div');
-            statusContainer.className = 'server-status-tags';
+            statusContainer.className = 'server-status-tags-row';
+            statusContainer.setAttribute('data-server-id', serverId);
             
             // 插入到服务器元信息后面
             const serverMeta = serverCard.querySelector('.server-meta');
@@ -291,10 +298,17 @@ class ServerStatusManager {
         const serverCard = document.querySelector(`.modern-server-card[data-server-id="${serverId}"]`);
         if (!serverCard) return;
         
-        let statusContainer = serverCard.querySelector('.server-status-tags');
+        // 首先查找HTML模板中已存在的状态标签行
+        let statusContainer = serverCard.querySelector('.server-status-tags-row');
+        if (!statusContainer) {
+            // 如果没找到，尝试查找旧的选择器作为备用
+            statusContainer = serverCard.querySelector('.server-status-tags');
+        }
+        
         if (!statusContainer) {
             statusContainer = document.createElement('div');
-            statusContainer.className = 'server-status-tags';
+            statusContainer.className = 'server-status-tags-row';
+            statusContainer.setAttribute('data-server-id', serverId);
             const serverInfo = serverCard.querySelector('.server-info');
             if (serverInfo) {
                 serverInfo.appendChild(statusContainer);

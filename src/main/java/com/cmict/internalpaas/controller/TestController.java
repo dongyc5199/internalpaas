@@ -1,10 +1,13 @@
 package com.cmict.internalpaas.controller;
 
 import com.cmict.internalpaas.test.ServerManagementTester;
+import com.cmict.internalpaas.service.ServerStatusTagService;
+import com.cmict.internalpaas.model.ServerStatusTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -23,6 +26,9 @@ public class TestController {
 
     @Autowired
     private ServerManagementTester serverManagementTester;
+    
+    @Autowired
+    private ServerStatusTagService statusTagService;
 
     /**
      * 显示服务器管理测试页面
@@ -65,6 +71,53 @@ public class TestController {
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "测试过程中发生错误: " + e.getMessage());
+            response.put("error", e.toString());
+            response.put("timestamp", System.currentTimeMillis());
+            
+            return ResponseEntity.ok(response);
+        }
+    }
+    
+    /**
+     * 测试服务器状态标签数据格式
+     */
+    @GetMapping("/server-tags/{serverId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> testServerTags(@PathVariable Long serverId) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            java.util.List<ServerStatusTag> tags = statusTagService.getServerStatusTags(serverId);
+            
+            response.put("success", true);
+            response.put("serverId", serverId);
+            response.put("tagCount", tags.size());
+            
+            // 转换标签数据格式，模拟AdminController中的convertTagToMap方法
+            java.util.List<Map<String, Object>> tagMaps = new java.util.ArrayList<>();
+            for (ServerStatusTag tag : tags) {
+                Map<String, Object> tagMap = new HashMap<>();
+                tagMap.put("id", tag.getId());
+                tagMap.put("tagType", tag.getTagType());
+                tagMap.put("status", tag.getStatus());
+                tagMap.put("displayText", tag.getDisplayText());
+                tagMap.put("value", tag.getValue());
+                tagMap.put("colorScheme", tag.getColorScheme());
+                tagMap.put("priority", tag.getPriority());
+                tagMap.put("details", tag.getDetails());
+                tagMap.put("isAlert", tag.isAlert());
+                tagMap.put("lastUpdated", tag.getLastUpdated());
+                tagMaps.add(tagMap);
+            }
+            
+            response.put("tags", tagMaps);
+            response.put("timestamp", System.currentTimeMillis());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "获取服务器标签失败: " + e.getMessage());
             response.put("error", e.toString());
             response.put("timestamp", System.currentTimeMillis());
             

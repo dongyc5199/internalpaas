@@ -13,7 +13,8 @@
 }
 
 /* 状态标签容器 */
-.server-status-tags {
+.server-status-tags,
+.server-status-tags-row {
     display: flex;
     flex-wrap: wrap;
     gap: var(--tag-gap);
@@ -153,12 +154,14 @@
 }
 
 /* 标签数量限制和省略 */
-.server-status-tags.collapsed {
+.server-status-tags.collapsed,
+.server-status-tags-row.collapsed {
     max-height: 2.5rem;
     overflow: hidden;
 }
 
-.server-status-tags.collapsed::after {
+.server-status-tags.collapsed::after,
+.server-status-tags-row.collapsed::after {
     content: '...';
     display: inline-block;
     padding: var(--tag-padding);
@@ -214,13 +217,15 @@
 }
 
 /* 服务器卡片内的状态标签特殊样式 */
-.modern-server-card .server-status-tags {
+.modern-server-card .server-status-tags,
+.modern-server-card .server-status-tags-row {
     margin-top: 1rem;
     padding-top: 1rem;
     border-top: 1px solid var(--border-color);
 }
 
-.modern-server-card .server-status-tags .status-tag {
+.modern-server-card .server-status-tags .status-tag,
+.modern-server-card .server-status-tags-row .status-tag {
     font-size: 0.7rem;
     padding: 3px 6px;
 }
@@ -258,7 +263,8 @@
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
-.theme-dark .modern-server-card .server-status-tags {
+.theme-dark .modern-server-card .server-status-tags,
+.theme-dark .modern-server-card .server-status-tags-row {
     border-top-color: var(--border-color-dark);
 }
 
@@ -413,7 +419,8 @@
 }
 
 /* 抽屉中状态标签特定样式 */
-.drawer .server-status-tags .status-tag {
+.drawer .server-status-tags .status-tag,
+.drawer .server-status-tags-row .status-tag {
     font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
     margin-bottom: 0.25rem;
@@ -438,7 +445,8 @@
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-    .server-status-tags {
+    .server-status-tags,
+    .server-status-tags-row {
         gap: 2px;
     }
     

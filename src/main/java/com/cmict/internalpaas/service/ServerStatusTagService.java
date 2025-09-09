@@ -109,31 +109,38 @@ public class ServerStatusTagService {
      * 刷新服务器的所有状态标签
      */
     public void refreshAllServerTags(Long serverId) {
-        logger.debug("开始刷新服务器 {} 的状态标签", serverId);
+        logger.info("🔄 开始刷新服务器 {} 的状态标签", serverId);
         
         try {
             // 删除监控异常标签
             deleteTagByType(serverId, TagType.MONITORING);
             
             // 检查连接状态
-            checkConnectionStatus(serverId);
+            ServerStatusTag connTag = checkConnectionStatus(serverId);
+            logger.info("✅ 服务器 {} 连接检查结果: {}", serverId, connTag != null ? connTag.getDisplayText() : "正常(无标签)");
             
             // 检查工作目录状态
-            checkWorkDirectoryStatus(serverId);
+            ServerStatusTag workDirTag = checkWorkDirectoryStatus(serverId);
+            logger.info("📁 服务器 {} 工作目录检查结果: {}", serverId, workDirTag != null ? workDirTag.getDisplayText() : "正常(无标签)");
             
             // 检查活跃用户状态
-            checkActiveUsersStatus(serverId);
+            ServerStatusTag usersTag = checkActiveUsersStatus(serverId);
+            logger.info("👥 服务器 {} 用户状态检查结果: {}", serverId, usersTag != null ? usersTag.getDisplayText() : "正常(无标签)");
             
             // 跳过监控状态检查，不再创建监控相关标签
             // checkMonitoringStatus(serverId);
             
             // 检查权限状态
-            checkPermissionStatus(serverId);
+            ServerStatusTag permTag = checkPermissionStatus(serverId);
+            logger.info("🔐 服务器 {} 权限检查结果: {}", serverId, permTag != null ? permTag.getDisplayText() : "正常(无标签)");
             
             // 检查系统资源状态（内存和磁盘80%阈值）
-            checkSystemResourceStatus(serverId);
+            ServerStatusTag resourceTag = checkSystemResourceStatus(serverId);
+            logger.info("💾 服务器 {} 资源检查结果: {}", serverId, resourceTag != null ? resourceTag.getDisplayText() : "正常(无标签)");
             
-            logger.debug("服务器 {} 状态标签刷新完成", serverId);
+            // 获取该服务器当前的所有标签并输出总数
+            List<ServerStatusTag> allTags = getServerStatusTags(serverId);
+            logger.info("🏷️  服务器 {} 状态标签刷新完成，当前共有 {} 个标签", serverId, allTags.size());
             
         } catch (Exception e) {
             logger.error("刷新服务器 {} 状态标签失败: {}", serverId, e.getMessage(), e);
