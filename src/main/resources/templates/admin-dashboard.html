@@ -470,7 +470,7 @@
     <!-- 顶部导航栏 -->
     <nav class="top-nav">
         <div class="nav-brand">
-            <div class="brand-icon">🚀</div>
+            <div class="brand-icon"><i class="fas fa-rocket"></i></div>
             <span class="brand-text">Dev Debug Platform</span>
         </div>
         <div class="nav-menu">
@@ -485,11 +485,11 @@
             </a>
             <div class="nav-actions">
                 <div class="theme-toggle" onclick="toggleTheme()" title="切换主题">
-                    <span class="theme-icon">🌙</span>
+                    <span class="theme-icon"><i class="fas fa-moon"></i></span>
                 </div>
                 <form th:action="@{/logout}" method="post" style="display: inline;">
                     <button type="submit" class="logout-btn" title="安全退出">
-                        <span class="logout-icon">🚪</span>
+                        <span class="logout-icon"><i class="fas fa-sign-out-alt"></i></span>
                     </button>
                 </form>
             </div>
@@ -503,19 +503,19 @@
             <nav>
                 <div class="nav-item active">
                     <a href="/admin/dashboard" class="nav-link">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"><i class="fas fa-tachometer-alt"></i></span>
                         <span>工作台概览</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="/admin/servers" class="nav-link">
-                        <span class="nav-icon">🖥️</span>
+                        <span class="nav-icon"><i class="fas fa-server"></i></span>
                         <span>服务器管理</span>
                     </a>
                 </div>
                 <div class="nav-item">
                     <a href="/admin/users" class="nav-link">
-                        <span class="nav-icon">👥</span>
+                        <span class="nav-icon"><i class="fas fa-users"></i></span>
                         <span>用户管理</span>
                     </a>
                 </div>
@@ -534,7 +534,7 @@
             <section class="modern-stats-grid">
                 <div class="modern-stat-card servers">
                     <div class="stat-header">
-                        <div class="stat-icon-wrapper servers">🖥️</div>
+                        <div class="stat-icon-wrapper servers"><i class="fas fa-server"></i></div>
                         <div class="stat-trend positive">+</div>
                     </div>
                     <div class="stat-body">
@@ -546,7 +546,7 @@
                 
                 <div class="modern-stat-card users">
                     <div class="stat-header">
-                        <div class="stat-icon-wrapper users">👥</div>
+                        <div class="stat-icon-wrapper users"><i class="fas fa-users"></i></div>
                         <div class="stat-trend neutral">~</div>
                     </div>
                     <div class="stat-body">
@@ -558,7 +558,7 @@
                 
                 <div class="modern-stat-card monitoring">
                     <div class="stat-header">
-                        <div class="stat-icon-wrapper monitoring">⚡</div>
+                        <div class="stat-icon-wrapper monitoring"><i class="fas fa-microchip"></i></div>
                         <div class="stat-trend neutral">~</div>
                     </div>
                     <div class="stat-body">
@@ -570,7 +570,7 @@
                 
                 <div class="modern-stat-card activity">
                     <div class="stat-header">
-                        <div class="stat-icon-wrapper activity">📈</div>
+                        <div class="stat-icon-wrapper activity"><i class="fas fa-chart-line"></i></div>
                         <div class="stat-trend positive">↗</div>
                     </div>
                     <div class="stat-body">
@@ -586,7 +586,7 @@
                 <h2>最近活动</h2>
                 <div class="activity-timeline">
                     <div class="activity-item">
-                        <div class="activity-icon">👤</div>
+                        <div class="activity-icon"><i class="fas fa-user"></i></div>
                         <div class="activity-content">
                             <h4>用户登录</h4>
                             <p>管理员 <strong>admin</strong> 登录系统</p>
@@ -595,7 +595,7 @@
                     </div>
                     
                     <div class="activity-item">
-                        <div class="activity-icon">🖥️</div>
+                        <div class="activity-icon"><i class="fas fa-server"></i></div>
                         <div class="activity-content">
                             <h4>服务器状态变更</h4>
                             <p>服务器 <strong>dev-server-01</strong> 状态变为活跃</p>
@@ -604,7 +604,7 @@
                     </div>
                     
                     <div class="activity-item">
-                        <div class="activity-icon">➕</div>
+                        <div class="activity-icon"><i class="fas fa-plus"></i></div>
                         <div class="activity-content">
                             <h4>新用户注册</h4>
                             <p>用户 <strong>developer01</strong> 注册成功</p>
@@ -618,7 +618,7 @@
             <section class="modern-actions-grid">
                 <a href="/admin/servers" class="modern-action-card servers">
                     <div class="action-card-content">
-                        <div class="action-icon-wrapper">🖥️</div>
+                        <div class="action-icon-wrapper"><i class="fas fa-server"></i></div>
                         <h3 class="action-title">服务器管理</h3>
                         <p class="action-description">管理和监控所有服务器的状态</p>
                     </div>
@@ -626,7 +626,7 @@
                 
                 <a href="/admin/users" class="modern-action-card users">
                     <div class="action-card-content">
-                        <div class="action-icon-wrapper">👥</div>
+                        <div class="action-icon-wrapper"><i class="fas fa-users"></i></div>
                         <h3 class="action-title">用户管理</h3>
                         <p class="action-description">管理用户账户和权限设置</p>
                     </div>
@@ -634,7 +634,7 @@
                 
                 <a href="/admin/servers/new" class="modern-action-card servers">
                     <div class="action-card-content">
-                        <div class="action-icon-wrapper">➕</div>
+                        <div class="action-icon-wrapper"><i class="fas fa-plus"></i></div>
                         <h3 class="action-title">添加服务器</h3>
                         <p class="action-description">向系统添加新的服务器</p>
                     </div>
@@ -642,7 +642,7 @@
                 
                 <a href="/admin/users/new" class="modern-action-card users">
                     <div class="action-card-content">
-                        <div class="action-icon-wrapper">👤</div>
+                        <div class="action-icon-wrapper"><i class="fas fa-user-plus"></i></div>
                         <h3 class="action-title">创建用户</h3>
                         <p class="action-description">添加新的用户账户</p>
                     </div>

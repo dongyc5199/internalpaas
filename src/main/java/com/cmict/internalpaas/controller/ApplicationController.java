@@ -526,4 +526,218 @@ public class ApplicationController {
         List<Application> applications = applicationService.getUserApplications(user);
         return ResponseEntity.ok(applications);
     }
+    
+    /**
+     * AJAX API: 获取应用管理内容片段
+     */
+    @GetMapping("/api/content")
+    @ResponseBody
+    public ResponseEntity<String> getApplicationsContent(Authentication authentication) {
+        try {
+            if (authentication == null) {
+                return ResponseEntity.status(401).body("<div class=\"alert alert-warning\">请先登录</div>");
+            }
+            
+            User user = userService.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+                
+            List<Application> applications = applicationService.getUserApplications(user);
+            
+            StringBuilder content = new StringBuilder();
+            content.append("<div class=\"content-header\">\n");
+            content.append("    <div class=\"d-flex justify-content-between align-items-center mb-4\">\n");
+            content.append("        <h2><i class=\"fas fa-rocket\"></i> 应用管理控制面板</h2>\n");
+            content.append("        <div>\n");
+            content.append("            <button class=\"btn btn-outline-primary\" onclick=\"refreshApps()\">\n");
+            content.append("                <i class=\"fas fa-sync-alt\"></i> 刷新数据\n");
+            content.append("            </button>\n");
+            content.append("            <button class=\"btn btn-outline-success\" onclick=\"checkHealth()\">\n");
+            content.append("                <i class=\"fas fa-heartbeat\"></i> 健康检查\n");
+            content.append("            </button>\n");
+            content.append("        </div>\n");
+            content.append("    </div>\n");
+            content.append("</div>\n\n");
+            
+            // 应用状态统计
+            long runningCount = applications.stream().filter(app -> "RUNNING".equals(app.getStatus())).count();
+            long stoppedCount = applications.stream().filter(app -> "STOPPED".equals(app.getStatus())).count();
+            long startingCount = applications.stream().filter(app -> "STARTING".equals(app.getStatus())).count();
+            long totalCount = applications.size();
+            
+            content.append("<div class=\"row mb-4\">\n");
+            content.append("    <div class=\"col-md-3 col-sm-6 mb-3\">\n");
+            content.append("        <div class=\"card metric-card bg-success text-white\">\n");
+            content.append("            <div class=\"card-body\">\n");
+            content.append("                <div class=\"d-flex justify-content-between\">\n");
+            content.append("                    <div>\n");
+            content.append("                        <h4>").append(runningCount).append("</h4>\n");
+            content.append("                        <p>运行中</p>\n");
+            content.append("                    </div>\n");
+            content.append("                    <i class=\"fas fa-check-circle fa-2x align-self-center\"></i>\n");
+            content.append("                </div>\n");
+            content.append("            </div>\n");
+            content.append("        </div>\n");
+            content.append("    </div>\n");
+            content.append("    <div class=\"col-md-3 col-sm-6 mb-3\">\n");
+            content.append("        <div class=\"card metric-card bg-danger text-white\">\n");
+            content.append("            <div class=\"card-body\">\n");
+            content.append("                <div class=\"d-flex justify-content-between\">\n");
+            content.append("                    <div>\n");
+            content.append("                        <h4>").append(stoppedCount).append("</h4>\n");
+            content.append("                        <p>已停止</p>\n");
+            content.append("                    </div>\n");
+            content.append("                    <i class=\"fas fa-times-circle fa-2x align-self-center\"></i>\n");
+            content.append("                </div>\n");
+            content.append("            </div>\n");
+            content.append("        </div>\n");
+            content.append("    </div>\n");
+            content.append("    <div class=\"col-md-3 col-sm-6 mb-3\">\n");
+            content.append("        <div class=\"card metric-card bg-primary text-white\">\n");
+            content.append("            <div class=\"card-body\">\n");
+            content.append("                <div class=\"d-flex justify-content-between\">\n");
+            content.append("                    <div>\n");
+            content.append("                        <h4>").append(startingCount).append("</h4>\n");
+            content.append("                        <p>启动中</p>\n");
+            content.append("                    </div>\n");
+            content.append("                    <i class=\"fas fa-spinner fa-2x align-self-center\"></i>\n");
+            content.append("                </div>\n");
+            content.append("            </div>\n");
+            content.append("        </div>\n");
+            content.append("    </div>\n");
+            content.append("    <div class=\"col-md-3 col-sm-6 mb-3\">\n");
+            content.append("        <div class=\"card metric-card bg-secondary text-white\">\n");
+            content.append("            <div class=\"card-body\">\n");
+            content.append("                <div class=\"d-flex justify-content-between\">\n");
+            content.append("                    <div>\n");
+            content.append("                        <h4>").append(totalCount).append("</h4>\n");
+            content.append("                        <p>总应用数</p>\n");
+            content.append("                    </div>\n");
+            content.append("                    <i class=\"fas fa-rocket fa-2x align-self-center\"></i>\n");
+            content.append("                </div>\n");
+            content.append("            </div>\n");
+            content.append("        </div>\n");
+            content.append("    </div>\n");
+            content.append("</div>\n\n");
+            
+            // 应用列表
+            content.append("<div class=\"row\">\n");
+            content.append("    <div class=\"col-12\">\n");
+            content.append("        <div class=\"card\">\n");
+            content.append("            <div class=\"card-header d-flex justify-content-between align-items-center\">\n");
+            content.append("                <h5 class=\"mb-0\"><i class=\"fas fa-list\"></i> 应用状态</h5>\n");
+            content.append("                <button class=\"btn btn-primary btn-sm\" onclick=\"uploadApp()\">\n");
+            content.append("                    <i class=\"fas fa-plus\"></i> 上传新应用\n");
+            content.append("                </button>\n");
+            content.append("            </div>\n");
+            content.append("            <div class=\"card-body\">\n");
+            
+            if (applications.isEmpty()) {
+                content.append("                <div class=\"row\">\n");
+                content.append("                    <div class=\"col-12 text-center py-4\">\n");
+                content.append("                        <i class=\"fas fa-rocket fa-3x text-muted mb-3\"></i>\n");
+                content.append("                        <p class=\"text-muted\">还没有应用，上传您的第一个应用开始使用管理功能</p>\n");
+                content.append("                        <button class=\"btn btn-primary\" onclick=\"uploadApp()\">\n");
+                content.append("                            <i class=\"fas fa-plus\"></i> 上传应用\n");
+                content.append("                        </button>\n");
+                content.append("                    </div>\n");
+                content.append("                </div>\n");
+            } else {
+                content.append("                <div class=\"row\">\n");
+                for (Application app : applications) {
+                    String statusClass = getStatusClass(app.getStatus());
+                    String statusText = getStatusText(app.getStatus());
+                    String badgeClass = getBadgeClass(app.getStatus());
+                    
+                    content.append("                    <div class=\"col-lg-6 col-xl-4 mb-3\">\n");
+                    content.append("                        <div class=\"card app-card ").append(statusClass).append("\">\n");
+                    content.append("                            <div class=\"card-body\">\n");
+                    content.append("                                <div class=\"d-flex justify-content-between align-items-start mb-2\">\n");
+                    content.append("                                    <h6 class=\"card-title mb-0\">").append(escapeHtml(app.getName())).append("</h6>\n");
+                    content.append("                                    <span class=\"badge ").append(badgeClass).append("\">").append(statusText).append("</span>\n");
+                    content.append("                                </div>\n");
+                    content.append("                                <p class=\"card-text small text-muted mb-2\">\n");
+                    content.append("                                    <i class=\"fas fa-plug\"></i> 端口: <span>").append(app.getPort() != null ? app.getPort() : "N/A").append("</span>\n");
+                    content.append("                                </p>\n");
+                    if (app.getLastStartedAt() != null) {
+                        content.append("                                <p class=\"card-text small text-muted mb-3\">\n");
+                        content.append("                                    <i class=\"fas fa-clock\"></i> 最后启动: <span>").append(app.getLastStartedAt().toString()).append("</span>\n");
+                        content.append("                                </p>\n");
+                    }
+                    content.append("                                <div class=\"mt-3\">\n");
+                    content.append("                                    <button class=\"btn btn-sm btn-outline-primary\" onclick=\"viewDetails('").append(app.getId()).append("')\">\n");
+                    content.append("                                        <i class=\"fas fa-info-circle\"></i> 详细信息\n");
+                    content.append("                                    </button>\n");
+                    content.append("                                    <button class=\"btn btn-sm btn-outline-secondary\" onclick=\"editConfig('").append(app.getId()).append("')\">\n");
+                    content.append("                                        <i class=\"fas fa-cogs\"></i> 配置\n");
+                    content.append("                                    </button>\n");
+                    content.append("                                    <button class=\"btn btn-sm btn-outline-success\" onclick=\"refreshApp('").append(app.getId()).append("')\">\n");
+                    content.append("                                        <i class=\"fas fa-sync-alt\"></i> 刷新\n");
+                    content.append("                                    </button>\n");
+                    content.append("                                </div>\n");
+                    content.append("                            </div>\n");
+                    content.append("                        </div>\n");
+                    content.append("                    </div>\n");
+                }
+                content.append("                </div>\n");
+            }
+            
+            content.append("            </div>\n");
+            content.append("        </div>\n");
+            content.append("    </div>\n");
+            content.append("</div>\n\n");
+            
+            // 添加必要的JavaScript函数
+            content.append("<script>\n");
+            content.append("function refreshApps() { loadContent('applications'); }\n");
+            content.append("function checkHealth() { console.log('执行健康检查...'); }\n");
+            content.append("function uploadApp() { alert('上传功能开发中...'); }\n");
+            content.append("function viewDetails(appId) { alert('查看详情: ' + appId); }\n");
+            content.append("function editConfig(appId) { alert('编辑配置: ' + appId); }\n");
+            content.append("function refreshApp(appId) { alert('刷新应用: ' + appId); }\n");
+            content.append("</script>\n");
+            
+            return ResponseEntity.ok(content.toString());
+            
+        } catch (Exception e) {
+            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载应用内容失败: " + e.getMessage() + "</div>";
+            return ResponseEntity.status(500).body(errorContent);
+        }
+    }
+    
+    // 辅助方法
+    private String getStatusClass(String status) {
+        switch (status != null ? status.toUpperCase() : "UNKNOWN") {
+            case "RUNNING": return "running";
+            case "STOPPED": return "stopped";
+            case "STARTING": return "starting";
+            default: return "stopped";
+        }
+    }
+    
+    private String getStatusText(String status) {
+        switch (status != null ? status.toUpperCase() : "UNKNOWN") {
+            case "RUNNING": return "运行中";
+            case "STOPPED": return "已停止";
+            case "STARTING": return "启动中";
+            default: return "未知";
+        }
+    }
+    
+    private String getBadgeClass(String status) {
+        switch (status != null ? status.toUpperCase() : "UNKNOWN") {
+            case "RUNNING": return "bg-success";
+            case "STOPPED": return "bg-danger";
+            case "STARTING": return "bg-primary";
+            default: return "bg-secondary";
+        }
+    }
+    
+    private String escapeHtml(String text) {
+        if (text == null) return "";
+        return text.replace("&", "&amp;")
+                   .replace("<", "&lt;")
+                   .replace(">", "&gt;")
+                   .replace("\"", "&quot;")
+                   .replace("'", "&#x27;");
+    }
 }

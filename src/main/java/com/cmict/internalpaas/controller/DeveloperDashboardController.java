@@ -19,13 +19,7 @@ public class DeveloperDashboardController {
 
     @GetMapping
     public String developerDashboard(Authentication authentication, Model model) {
-        if (authentication != null) {
-            model.addAttribute("username", authentication.getName());
-            
-            // 获取研发工作台数据
-            DeveloperDashboardDto developerData = dashboardService.getDeveloperDashboardData(authentication.getName());
-            model.addAttribute("developerData", developerData);
-        }
-        return "developer-dashboard";
+        // 重定向到新的研发工作空间
+        return "redirect:/developer/workspace";
     }
 }

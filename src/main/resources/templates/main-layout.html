@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity" class="theme-light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dev Debug Platform - 统一管理平台</title>
+    <!-- CSRF Meta Tags -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    
+    <!-- 更强的防闪烁策略 - 立即执行 -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.remove('theme-light');
+                document.documentElement.classList.add('theme-dark');
+                document.documentElement.style.setProperty('--background-color', '#121212');
+                document.documentElement.style.setProperty('--background-light', '#1e1e1e');
+                document.documentElement.style.setProperty('--text-color', '#e0e0e0');
+                // 监听body可用时立即应用
+                function applyToBody() {
+                    if (document.body) {
+                        document.body.classList.add('dark-theme');
+                    } else {
+                        setTimeout(applyToBody, 1);
+                    }
+                }
+                applyToBody();
+            }
+        })();
+    </script>
+    
+    <style>
+        /* 预设暗色主题样式避免闪烁 */
+        .theme-dark {
+            background-color: #121212 !important;
+            color: #e0e0e0 !important;
+        }
+        .theme-dark * {
+            transition: none !important;
+        }
+    </style>
+    
+    <!-- 预加载关键字体 -->
+    <link rel="preload" href="/vendor/fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/vendor/fontawesome/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin>
+    
+    <link rel="stylesheet" href="/css/fontawesome-local.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/common-dashboard.css">
+    <link rel="stylesheet" href="/css/dashboard-theme.css">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-light: #e0e7ff;
+            --primary-dark: #4f46e5;
+            --success-color: #10b981;
+            --success-light: #d1fae5;
+            --danger-color: #ef4444;
+            --danger-light: #fee2e2;
+            --warning-color: #f59e0b;
+            --warning-light: #fef3c7;
+            --info-color: #3b82f6;
+            --info-light: #dbeafe;
+            --text-color: #1f2937;
+            --text-color-secondary: #6b7280;
+            --text-color-tertiary: #9ca3af;
+            --background-color: #f9fafb;
+            --background-light: #ffffff;
+            --background-dark: #f3f4f6;
+            --background-hover: #f3f4f6;
+            --card-background: #ffffff;
+            --card-background-hover: #f8fafc;
+            --card-border: #e5e7eb;
+            --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --card-shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.15);
+            --border-color: #e5e7eb;
+            --border-color-dark: #d1d5db;
+            --border-radius-sm: 4px;
+            --border-radius-md: 8px;
+            --border-radius-lg: 12px;
+            --border-radius-xl: 16px;
+            --border-radius-full: 9999px;
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.3s ease;
+            --nav-background: #ffffff;
+            --nav-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --sidebar-background: #ffffff;
+            --sidebar-shadow: 1px 0 3px rgba(0, 0, 0, 0.1);
+            --heading-color: #111827;
+            --heading-color-secondary: #374151;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* 主容器布局 */
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* 顶部导航栏 - 固定位置，避免闪烁 */
+        .top-nav {
+            background: var(--nav-background);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1001;
+            box-shadow: var(--nav-shadow);
+            height: 60px;
+            box-sizing: border-box;
+        }
+
+        /* 左侧边栏 - 固定位置，避免闪烁 */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-background);
+            border-right: 1px solid var(--border-color);
+            padding: 1rem 0;
+            position: fixed;
+            top: 60px;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: var(--sidebar-shadow);
+        }
+
+        /* 右侧内容区域 */
+        .content-area {
+            flex: 1;
+            margin-left: 260px;
+            margin-top: 60px;
+            min-height: calc(100vh - 60px);
+            background-color: var(--background-color);
+            position: relative;
+        }
+
+        /* 内容加载区域 */
+        .content-wrapper {
+            padding: 2rem;
+            min-height: calc(100vh - 120px);
+        }
+
+        /* 导航品牌 */
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .brand-icon {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .brand-text {
+            font-size: 1.125rem;
+        }
+
+        /* 用户信息区域 */
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            border-radius: var(--border-radius-md);
+            text-decoration: none;
+            color: var(--text-color);
+            transition: background-color 0.2s ease;
+        }
+
+        .user-profile:hover {
+            background: var(--background-hover);
+            text-decoration: none;
+            color: var(--text-color);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .greeting {
+            font-size: 0.75rem;
+            color: var(--text-color-secondary);
+        }
+
+        .username {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .theme-toggle, .logout-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: none;
+            background: var(--background-hover);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color);
+        }
+
+        .theme-toggle:hover, .logout-btn:hover {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        /* 侧边栏菜单 */
+        .nav-item {
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-color-secondary);
+            text-decoration: none;
+            border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+            margin: 0 0.5rem;
+            transition: all var(--transition-fast);
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            background-color: var(--background-hover);
+            color: var(--text-color);
+            text-decoration: none;
+        }
+
+        .nav-link.active,
+        .nav-item.active .nav-link {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            margin-right: 0.75rem;
+            width: 20px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        /* 加载动画 */
+        .loading-spinner {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .loading-spinner.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 内容淡入动画 */
+        .content-fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 需要从其他CSS文件中继承的样式 */
+        .modern-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .modern-stat-card {
+            background: linear-gradient(135deg, var(--card-background) 0%, var(--background-light) 100%);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modern-stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+        }
+
+        .modern-stat-card.servers::before { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+        .modern-stat-card.users::before { background: linear-gradient(90deg, #10b981, #059669); }
+        .modern-stat-card.monitoring::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
+        .modern-stat-card.activity::before { background: linear-gradient(90deg, #8b5cf6, #7c3aed); }
+
+        .modern-stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-light);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon-wrapper {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.25rem;
+        }
+
+        .stat-icon-wrapper.servers { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .stat-icon-wrapper.users { background: linear-gradient(135deg, #10b981, #059669); }
+        .stat-icon-wrapper.monitoring { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .stat-icon-wrapper.activity { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+        .stat-trend {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+        }
+
+        .stat-trend.positive { background: rgba(16, 185, 129, 0.1); color: #059669; }
+        .stat-trend.negative { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+        .stat-trend.neutral { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
+
+        .stat-body {
+            text-align: left;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-color);
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 0.125rem;
+        }
+
+        .stat-sublabel {
+            font-size: 0.75rem;
+            color: var(--text-color-secondary);
+        }
+
+        .modern-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .modern-action-card {
+            background: var(--card-background);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            position: relative;
+            text-decoration: none;
+            color: var(--text-color);
+        }
+
+        .modern-action-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+            border-color: var(--primary-light);
+            color: var(--text-color);
+            text-decoration: none;
+        }
+
+        .action-card-content {
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .action-icon-wrapper {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+        }
+
+        .modern-action-card.servers .action-icon-wrapper {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        .modern-action-card.users .action-icon-wrapper {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .action-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .action-description {
+            font-size: 0.875rem;
+            color: var(--text-color-secondary);
+            line-height: 1.5;
+        }
+
+        /* 应用管理相关样式 */
+        .metric-card { transition: transform 0.2s; }
+        .metric-card:hover { transform: translateY(-2px); }
+        .app-card { border-left: 4px solid #dee2e6; }
+        .app-card.running { border-left-color: #28a745; }
+        .app-card.stopped { border-left-color: #dc3545; }
+        .app-card.starting { border-left-color: #007bff; }
+
+        /* 通用内容区域样式 */
+        .content-header {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--heading-color);
+            margin: 0;
+        }
+
+        .alert {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: var(--border-radius-md);
+        }
+
+        .alert-info {
+            color: #0c5460;
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .alert-warning {
+            color: #856404;
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            
+            .content-area {
+                margin-left: 0;
+            }
+            
+            .mobile-overlay {
+                display: none;
+                position: fixed;
+                top: 60px;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+            }
+            
+            .mobile-overlay.active {
+                display: block;
+            }
+            
+            .modern-stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 1rem;
+            }
+            
+            .modern-actions-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+    </style>
+    <script src="/js/theme.js"></script>
+</head>
+<body class="dashboard-body admin-theme theme-body">
+    <!-- 顶部导航栏 -->
+    <nav class="top-nav">
+        <div class="nav-brand">
+            <div class="brand-icon"><i class="fas fa-rocket"></i></div>
+            <span class="brand-text">Dev Debug Platform</span>
+        </div>
+        <div class="nav-menu">
+            <a href="/profile" class="user-profile" title="查看个人档案">
+                <div class="user-avatar">
+                    <span th:text="${#strings.substring(username, 0, 1)}">A</span>
+                </div>
+                <div class="user-info">
+                    <span class="greeting">欢迎回来</span>
+                    <span class="username" th:text="${username}">管理员</span>
+                </div>
+            </a>
+            <div class="nav-actions">
+                <div class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+                    <span class="theme-icon"><i class="fas fa-moon"></i></span>
+                </div>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="logout-btn" title="安全退出">
+                        <span class="logout-icon"><i class="fas fa-sign-out-alt"></i></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要容器 -->
+    <div class="main-container">
+        <!-- 侧边栏导航 -->
+        <aside class="sidebar">
+            <nav>
+                <div class="nav-item active">
+                    <a href="javascript:void(0)" class="nav-link" data-page="dashboard" onclick="loadContent('dashboard')">
+                        <span class="nav-icon"><i class="fas fa-tachometer-alt"></i></span>
+                        <span>工作台概览</span>
+                    </a>
+                </div>
+                <!-- 管理员功能 -->
+                <div class="nav-item" th:if="${isAdmin}">
+                    <a href="javascript:void(0)" class="nav-link" data-page="servers" onclick="loadContent('servers')">
+                        <span class="nav-icon"><i class="fas fa-server"></i></span>
+                        <span>服务器管理</span>
+                    </a>
+                </div>
+                <div class="nav-item" th:if="${isAdmin}">
+                    <a href="javascript:void(0)" class="nav-link" data-page="users" onclick="loadContent('users')">
+                        <span class="nav-icon"><i class="fas fa-users"></i></span>
+                        <span>用户管理</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="javascript:void(0)" class="nav-link" data-page="applications" onclick="loadContent('applications')">
+                        <span class="nav-icon"><i class="fas fa-rocket"></i></span>
+                        <span>应用管理</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="javascript:void(0)" class="nav-link" data-page="monitoring" onclick="loadContent('monitoring')">
+                        <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
+                        <span>系统监控</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="javascript:void(0)" class="nav-link" data-page="terminal" onclick="loadContent('terminal')">
+                        <span class="nav-icon"><i class="fas fa-terminal"></i></span>
+                        <span>终端管理</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- 右侧内容区域 -->
+        <main class="content-area">
+            <!-- 加载动画 -->
+            <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner"></div>
+            </div>
+            
+            <!-- 内容容器 -->
+            <div class="content-wrapper" id="contentWrapper">
+                <!-- 默认加载工作台内容 -->
+                <div id="content-dashboard" class="content-section active">
+                    <div class="content-header">
+                        <div class="page-title-group">
+                            <h1 class="page-title">管理员工作台</h1>
+                        </div>
+                    </div>
+                    
+                    <!-- 这里将加载工作台的具体内容 -->
+                    <div class="loading-placeholder">
+                        <p>正在加载工作台内容...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 移动端遮罩 -->
+    <div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileMenu()"></div>
+
+    <!-- 主要的JavaScript逻辑 -->
+    <script>
+        // 全局变量
+        let currentPage = 'dashboard';
+        let isLoading = false;
+        
+        // CSRF Token Helper Functions
+        function getCSRFToken() {
+            const csrfToken = document.querySelector('meta[name="_csrf"]');
+            return csrfToken ? csrfToken.getAttribute('content') : null;
+        }
+        
+        function getCSRFHeaderName() {
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+            return csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载默认页面内容
+            loadContent('dashboard', false);
+            
+            // 初始化移动端菜单
+            initMobileMenu();
+            
+            // 监听浏览器后退/前进按钮
+            window.addEventListener('popstate', function(e) {
+                if (e.state && e.state.page) {
+                    loadContent(e.state.page, false);
+                }
+            });
+            
+            // 设置初始状态
+            history.replaceState({ page: 'dashboard' }, '', '#dashboard');
+        });
+
+        // 核心内容加载函数
+        async function loadContent(page, addToHistory = true) {
+            if (isLoading || page === currentPage) return;
+            
+            isLoading = true;
+            showLoading();
+            
+            try {
+                // 更新菜单激活状态
+                updateActiveMenu(page);
+                
+                // 根据页面类型决定加载方式
+                let content;
+                switch (page) {
+                    case 'dashboard':
+                        content = await loadDashboardContent();
+                        break;
+                    case 'servers':
+                        content = await loadServersContent();
+                        break;
+                    case 'users':
+                        content = await loadUsersContent();
+                        break;
+                    case 'applications':
+                        content = await loadApplicationsContent();
+                        break;
+                    case 'monitoring':
+                        content = await loadMonitoringContent();
+                        break;
+                    case 'terminal':
+                        content = await loadTerminalContent();
+                        break;
+                    default:
+                        content = '<p>页面不存在</p>';
+                }
+                
+                // 更新内容
+                updateContent(content);
+                
+                // 更新浏览器历史
+                if (addToHistory) {
+                    history.pushState({ page: page }, '', `#${page}`);
+                }
+                
+                currentPage = page;
+                
+            } catch (error) {
+                console.error('加载内容失败:', error);
+                updateContent(`<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> 加载失败: ${error.message}</div>`);
+            } finally {
+                hideLoading();
+                isLoading = false;
+            }
+        }
+
+        // 显示加载动画
+        function showLoading() {
+            document.getElementById('loadingSpinner').classList.add('active');
+            document.getElementById('contentWrapper').style.opacity = '0.3';
+        }
+
+        // 隐藏加载动画
+        function hideLoading() {
+            document.getElementById('loadingSpinner').classList.remove('active');
+            document.getElementById('contentWrapper').style.opacity = '1';
+        }
+
+        // 更新内容
+        function updateContent(content) {
+            const wrapper = document.getElementById('contentWrapper');
+            wrapper.innerHTML = content;
+            wrapper.classList.add('content-fade-in');
+            
+            // 移除动画类，为下次使用准备
+            setTimeout(() => {
+                wrapper.classList.remove('content-fade-in');
+            }, 300);
+        }
+
+        // 更新菜单激活状态
+        function updateActiveMenu(page) {
+            // 移除所有激活状态
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // 设置当前页面为激活状态
+            const currentItem = document.querySelector(`[data-page="${page}"]`);
+            if (currentItem) {
+                currentItem.closest('.nav-item').classList.add('active');
+            }
+        }
+
+        // 全局变量用于存储用户类型
+        const userType = '[[${userType}]]';
+        const isAdmin = [[${isAdmin}]] || false;
+
+        // 各个页面的内容加载函数
+        async function loadDashboardContent() {
+            // 根据用户类型选择正确的API端点
+            let apiUrl;
+            if (userType === 'admin' || isAdmin) {
+                apiUrl = '/admin/api/workspace-dashboard-content';
+            } else {
+                apiUrl = '/developer/api/workspace-dashboard-content';
+            }
+            
+            const response = await fetch(apiUrl, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [getCSRFHeaderName()]: getCSRFToken()
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            return await response.text();
+        }
+
+        async function loadServersContent() {
+            const response = await fetch('/admin/api/servers-content', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [getCSRFHeaderName()]: getCSRFToken()
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            return await response.text();
+        }
+
+        async function loadUsersContent() {
+            const response = await fetch('/admin/api/users-content', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [getCSRFHeaderName()]: getCSRFToken()
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            return await response.text();
+        }
+
+        async function loadApplicationsContent() {
+            const response = await fetch('/api/apps/content', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [getCSRFHeaderName()]: getCSRFToken()
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            return await response.text();
+        }
+
+        async function loadMonitoringContent() {
+            return `
+                <div class="content-header">
+                    <h1 class="page-title"><i class="fas fa-chart-line"></i> 系统监控</h1>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 监控功能正在开发中...
+                </div>
+            `;
+        }
+
+        async function loadTerminalContent() {
+            return `
+                <div class="content-header">
+                    <h1 class="page-title"><i class="fas fa-terminal"></i> 终端管理</h1>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 终端功能正在开发中...
+                </div>
+            `;
+        }
+
+        // 移动端菜单管理
+        function initMobileMenu() {
+            const mediaQuery = window.matchMedia('(max-width: 768px)');
+            
+            // 添加菜单切换按钮（在移动端）
+            if (mediaQuery.matches) {
+                addMobileMenuToggle();
+            }
+            
+            // 监听屏幕尺寸变化
+            mediaQuery.addEventListener('change', function(e) {
+                if (e.matches) {
+                    addMobileMenuToggle();
+                } else {
+                    removeMobileMenuToggle();
+                    closeMobileMenu();
+                }
+            });
+        }
+
+        function addMobileMenuToggle() {
+            const navBrand = document.querySelector('.nav-brand');
+            let menuToggle = document.getElementById('mobileMenuToggle');
+            
+            if (!menuToggle) {
+                menuToggle = document.createElement('button');
+                menuToggle.id = 'mobileMenuToggle';
+                menuToggle.className = 'mobile-menu-toggle';
+                menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
+                menuToggle.onclick = toggleMobileMenu;
+                navBrand.parentNode.insertBefore(menuToggle, navBrand);
+                
+                // 添加样式
+                const style = document.createElement('style');
+                style.textContent = `
+                    .mobile-menu-toggle {
+                        display: block;
+                        width: 32px;
+                        height: 32px;
+                        background: none;
+                        border: none;
+                        color: var(--text-color);
+                        font-size: 1.2rem;
+                        cursor: pointer;
+                        margin-right: 1rem;
+                    }
+                    @media (min-width: 769px) {
+                        .mobile-menu-toggle {
+                            display: none;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+
+        function removeMobileMenuToggle() {
+            const menuToggle = document.getElementById('mobileMenuToggle');
+            if (menuToggle) {
+                menuToggle.remove();
+            }
+        }
+
+        function toggleMobileMenu() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('active');
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+        }
+
+        // 错误处理
+        window.addEventListener('error', function(e) {
+            console.error('页面错误:', e.error);
+        });
+
+        // 全局样式类
+        window.addEventListener('load', function() {
+            document.body.classList.add('layout-loaded');
+        });
+    </script>
+</body>
+</html>

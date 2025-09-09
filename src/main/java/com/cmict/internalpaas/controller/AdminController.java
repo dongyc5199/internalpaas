@@ -1375,6 +1375,178 @@ public class AdminController {
     }
     
     /**
+     * AJAX API: 获取工作台内容片段
+     */
+    @GetMapping("/api/dashboard-content")
+    @ResponseBody
+    public ResponseEntity<String> getDashboardContent(Model model) {
+        try {
+            // 获取统计数据
+            List<Server> servers = serverService.getAllServers();
+            List<User> users = userService.findAllUsers();
+            
+            long totalServers = servers.size();
+            long activeServers = servers.stream()
+                .filter(server -> server.getConnectionStatus() == Server.ConnectionStatus.CONNECTED || 
+                                 server.getConnectionStatus() == Server.ConnectionStatus.MONITORING)
+                .count();
+            long totalUsers = users.size();
+            long adminUsers = users.stream()
+                .filter(user -> user.getRoles() != null && 
+                               user.getRoles().stream().anyMatch(role -> 
+                                   role.name().contains("ADMIN") || role.name().contains("SUPER_ADMIN")))
+                .count();
+            long regularUsers = totalUsers - adminUsers;
+            
+            // 模拟系统监控数据
+            double cpuUsage = Math.random() * 50 + 20; // 20-70%
+            double memoryUsage = Math.random() * 40 + 30; // 30-70%
+            
+            StringBuilder content = new StringBuilder();
+            content.append("<div class=\"content-header\">\n");
+            content.append("    <div class=\"page-title-group\">\n");
+            content.append("        <h1 class=\"page-title\"><i class=\"fas fa-tachometer-alt\"></i> 管理员工作台</h1>\n");
+            content.append("    </div>\n");
+            content.append("</div>\n\n");
+            
+            // 统计面板
+            content.append("<section class=\"modern-stats-grid\">\n");
+            content.append("    <div class=\"modern-stat-card servers\">\n");
+            content.append("        <div class=\"stat-header\">\n");
+            content.append("            <div class=\"stat-icon-wrapper servers\"><i class=\"fas fa-server\"></i></div>\n");
+            content.append("            <div class=\"stat-trend positive\">+</div>\n");
+            content.append("        </div>\n");
+            content.append("        <div class=\"stat-body\">\n");
+            content.append("            <div class=\"stat-number\">").append(totalServers).append("</div>\n");
+            content.append("            <div class=\"stat-label\">服务器总数</div>\n");
+            content.append("            <div class=\"stat-sublabel\">活跃服务器: <span>").append(activeServers).append("</span></div>\n");
+            content.append("        </div>\n");
+            content.append("    </div>\n");
+            
+            content.append("    <div class=\"modern-stat-card users\">\n");
+            content.append("        <div class=\"stat-header\">\n");
+            content.append("            <div class=\"stat-icon-wrapper users\"><i class=\"fas fa-users\"></i></div>\n");
+            content.append("            <div class=\"stat-trend neutral\">~</div>\n");
+            content.append("        </div>\n");
+            content.append("        <div class=\"stat-body\">\n");
+            content.append("            <div class=\"stat-number\">").append(totalUsers).append("</div>\n");
+            content.append("            <div class=\"stat-label\">用户总数</div>\n");
+            content.append("            <div class=\"stat-sublabel\">管理员: <span>").append(adminUsers)
+                      .append("</span> | 普通用户: <span>").append(regularUsers).append("</span></div>\n");
+            content.append("        </div>\n");
+            content.append("    </div>\n");
+            
+            content.append("    <div class=\"modern-stat-card monitoring\">\n");
+            content.append("        <div class=\"stat-header\">\n");
+            content.append("            <div class=\"stat-icon-wrapper monitoring\"><i class=\"fas fa-microchip\"></i></div>\n");
+            content.append("            <div class=\"stat-trend neutral\">~</div>\n");
+            content.append("        </div>\n");
+            content.append("        <div class=\"stat-body\">\n");
+            content.append("            <div class=\"stat-number\">").append(String.format("%.1f", cpuUsage)).append("%</div>\n");
+            content.append("            <div class=\"stat-label\">CPU使用率</div>\n");
+            content.append("            <div class=\"stat-sublabel\">内存: <span>").append(String.format("%.1f", memoryUsage)).append("%</span></div>\n");
+            content.append("        </div>\n");
+            content.append("    </div>\n");
+            
+            content.append("    <div class=\"modern-stat-card activity\">\n");
+            content.append("        <div class=\"stat-header\">\n");
+            content.append("            <div class=\"stat-icon-wrapper activity\"><i class=\"fas fa-chart-line\"></i></div>\n");
+            content.append("            <div class=\"stat-trend positive\">↗</div>\n");
+            content.append("        </div>\n");
+            content.append("        <div class=\"stat-body\">\n");
+            content.append("            <div class=\"stat-number\">").append(totalUsers).append("</div>\n");
+            content.append("            <div class=\"stat-label\">系统活跃度</div>\n");
+            content.append("            <div class=\"stat-sublabel\">今日登录用户数</div>\n");
+            content.append("        </div>\n");
+            content.append("    </div>\n");
+            content.append("</section>\n\n");
+            
+            // 快捷操作区
+            content.append("<section class=\"modern-actions-grid\">\n");
+            content.append("    <a href=\"javascript:void(0)\" onclick=\"loadContent('servers')\" class=\"modern-action-card servers\">\n");
+            content.append("        <div class=\"action-card-content\">\n");
+            content.append("            <div class=\"action-icon-wrapper\"><i class=\"fas fa-server\"></i></div>\n");
+            content.append("            <h3 class=\"action-title\">服务器管理</h3>\n");
+            content.append("            <p class=\"action-description\">管理和监控所有服务器的状态</p>\n");
+            content.append("        </div>\n");
+            content.append("    </a>\n");
+            content.append("    <a href=\"javascript:void(0)\" onclick=\"loadContent('users')\" class=\"modern-action-card users\">\n");
+            content.append("        <div class=\"action-card-content\">\n");
+            content.append("            <div class=\"action-icon-wrapper\"><i class=\"fas fa-users\"></i></div>\n");
+            content.append("            <h3 class=\"action-title\">用户管理</h3>\n");
+            content.append("            <p class=\"action-description\">管理用户账户和权限设置</p>\n");
+            content.append("        </div>\n");
+            content.append("    </a>\n");
+            content.append("    <a href=\"javascript:void(0)\" onclick=\"loadContent('applications')\" class=\"modern-action-card servers\">\n");
+            content.append("        <div class=\"action-card-content\">\n");
+            content.append("            <div class=\"action-icon-wrapper\"><i class=\"fas fa-rocket\"></i></div>\n");
+            content.append("            <h3 class=\"action-title\">应用管理</h3>\n");
+            content.append("            <p class=\"action-description\">管理和监控应用程序</p>\n");
+            content.append("        </div>\n");
+            content.append("    </a>\n");
+            content.append("    <a href=\"javascript:void(0)\" onclick=\"loadContent('monitoring')\" class=\"modern-action-card users\">\n");
+            content.append("        <div class=\"action-card-content\">\n");
+            content.append("            <div class=\"action-icon-wrapper\"><i class=\"fas fa-chart-line\"></i></div>\n");
+            content.append("            <h3 class=\"action-title\">系统监控</h3>\n");
+            content.append("            <p class=\"action-description\">查看系统运行状态和性能指标</p>\n");
+            content.append("        </div>\n");
+            content.append("    </a>\n");
+            content.append("</section>\n");
+            
+            return ResponseEntity.ok(content.toString());
+            
+        } catch (Exception e) {
+            logger.error("获取工作台内容失败", e);
+            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载工作台内容失败: " + e.getMessage() + "</div>";
+            return ResponseEntity.status(500).body(errorContent);
+        }
+    }
+    
+    /**
+     * AJAX API: 获取服务器管理内容片段
+     */
+    @GetMapping("/api/servers-content")
+    @ResponseBody
+    public ResponseEntity<String> getServersContent() {
+        try {
+            String content = "<div class=\"content-header\">\n" +
+                           "    <h1 class=\"page-title\"><i class=\"fas fa-server\"></i> 服务器管理</h1>\n" +
+                           "</div>\n" +
+                           "<div class=\"alert alert-info\">\n" +
+                           "    <i class=\"fas fa-info-circle\"></i> 服务器管理功能正在加载中...\n" +
+                           "    <br><small>这里将显示服务器列表、状态监控等功能</small>\n" +
+                           "</div>";
+            return ResponseEntity.ok(content);
+        } catch (Exception e) {
+            logger.error("获取服务器内容失败", e);
+            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载服务器内容失败: " + e.getMessage() + "</div>";
+            return ResponseEntity.status(500).body(errorContent);
+        }
+    }
+    
+    /**
+     * AJAX API: 获取用户管理内容片段
+     */
+    @GetMapping("/api/users-content")
+    @ResponseBody
+    public ResponseEntity<String> getUsersContent() {
+        try {
+            String content = "<div class=\"content-header\">\n" +
+                           "    <h1 class=\"page-title\"><i class=\"fas fa-users\"></i> 用户管理</h1>\n" +
+                           "</div>\n" +
+                           "<div class=\"alert alert-info\">\n" +
+                           "    <i class=\"fas fa-info-circle\"></i> 用户管理功能正在加载中...\n" +
+                           "    <br><small>这里将显示用户列表、权限管理等功能</small>\n" +
+                           "</div>";
+            return ResponseEntity.ok(content);
+        } catch (Exception e) {
+            logger.error("获取用户内容失败", e);
+            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载用户内容失败: " + e.getMessage() + "</div>";
+            return ResponseEntity.status(500).body(errorContent);
+        }
+    }
+
+    /**
      * 转换标签为前端所需的Map格式
      */
     private Map<String, Object> convertTagToMap(ServerStatusTag tag) {

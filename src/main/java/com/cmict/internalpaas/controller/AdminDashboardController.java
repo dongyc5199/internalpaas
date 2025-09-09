@@ -19,13 +19,7 @@ public class AdminDashboardController {
 
     @GetMapping
     public String adminDashboard(Authentication authentication, Model model) {
-        if (authentication != null) {
-            model.addAttribute("username", authentication.getName());
-            
-            // 获取管理员工作台数据
-            AdminDashboardDto adminData = dashboardService.getAdminDashboardData();
-            model.addAttribute("adminData", adminData);
-        }
-        return "admin-dashboard";
+        // 重定向到新的管理员工作空间
+        return "redirect:/admin/workspace";
     }
 }

@@ -40,13 +40,13 @@ public class PageController {
             if (user != null) {
                 logger.info("用户角色: {}", user.getRoles());
                 if (userService.hasRole(user, User.Role.SUPER_ADMIN) || userService.hasRole(user, User.Role.ADMIN)) {
-                    // 管理员角色重定向到管理员工作台
-                    logger.info("重定向到管理员工作台");
-                    return "redirect:/admin/dashboard";
+                    // 管理员角色重定向到管理员工作空间
+                    logger.info("重定向到管理员工作空间");
+                    return "redirect:/admin/workspace";
                 } else {
-                    // 研发人员角色重定向到研发工作台
-                    logger.info("重定向到研发工作台");
-                    return "redirect:/developer/dashboard";
+                    // 研发人员角色重定向到研发工作空间
+                    logger.info("重定向到研发工作空间");
+                    return "redirect:/developer/workspace";
                 }
             }
         }
