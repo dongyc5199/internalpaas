@@ -590,9 +590,104 @@
                 gap: 1rem;
             }
         }
+
+        /* 服务器卡片刷新等待效果 */
+        .server-card-refreshing {
+            position: relative;
+            pointer-events: none;
+        }
+
+        .server-card-refreshing::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(2px);
+            z-index: 10;
+            animation: refreshPulse 2s ease-in-out infinite;
+        }
+
+        .theme-dark .server-card-refreshing::after {
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        @keyframes refreshPulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 0.9; }
+        }
+
+        .refresh-loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 11;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .refresh-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 禁用卡片内所有按钮 */
+        .server-card-refreshing .quick-action-btn,
+        .server-card-refreshing button {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        /* 服务器名称滚动动画 */
+        .server-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0;
+            white-space: nowrap;
+            display: inline-block;
+        }
+
+        .server-name-container {
+            width: 12ch;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 只有当文本长度超过12个字符时才应用滚动动画 */
+        .server-name.long-text {
+            animation: autoScrollText 6s ease-in-out infinite;
+        }
+
+        @keyframes autoScrollText {
+            0% { transform: translateX(0); }
+            20% { transform: translateX(0); }
+            50% { transform: translateX(calc(-100% + 12ch)); }
+            70% { transform: translateX(calc(-100% + 12ch)); }
+            100% { transform: translateX(0); }
+        }
     </style>
     <script src="/js/theme.js"></script>
     <script src="/js/drawer.js"></script>
+    <!-- WebSocket依赖库 -->
+    <script src="/vendor/sockjs/sockjs.min.js"></script>
+    <script src="/vendor/sockjs/stomp.min.js"></script>
     <script src="/js/server-status-tags.js"></script>
 </head>
 <body class="dashboard-body admin-theme theme-body">
@@ -755,22 +850,42 @@
                         break;
                     case 'servers':
                         content = await loadServersContent();
-                        // 加载完服务器内容后，加载状态标签
+                        // 加载完服务器内容后，绑定事件处理器并加载状态标签
                         setTimeout(() => {
-                            const serverCards = document.querySelectorAll('[data-server-id]');
-                            serverCards.forEach(card => {
-                                const serverId = card.getAttribute('data-server-id');
-                                if (serverId) {
-                                    loadServerStatusTags(serverId);
-                                }
-                            });
+                            // 绑定服务器事件处理器
+                            bindServerEvents();
+                            
+                            // 初始化服务器名称滚动效果
+                            initServerNameScrolling();
+                            
+                            // 加载服务器状态标签
+                            if (serverStatusManager) {
+                                serverStatusManager.loadAllServerStatus();
+                            } else {
+                                // 如果状态管理器还未初始化，使用备用方法
+                                const serverCards = document.querySelectorAll('[data-server-id]');
+                                serverCards.forEach(card => {
+                                    const serverId = card.getAttribute('data-server-id');
+                                    if (serverId) {
+                                        loadServerStatusTagsFallback(serverId);
+                                    }
+                                });
+                            }
                         }, 100);
                         break;
                     case 'users':
                         content = await loadUsersContent();
+                        // 加载完用户内容后，绑定事件处理器
+                        setTimeout(() => {
+                            bindContentEvents();
+                        }, 100);
                         break;
                     case 'applications':
                         content = await loadApplicationsContent();
+                        // 加载完应用内容后，绑定事件处理器
+                        setTimeout(() => {
+                            bindContentEvents();
+                        }, 100);
                         break;
                     case 'monitoring':
                         content = await loadMonitoringContent();
@@ -1266,14 +1381,656 @@
             overlay.classList.remove('active');
         }
 
+        // ===================
+        // 服务器管理相关函数
+        // ===================
+        
+        // 服务器刷新状态管理器
+        class ServerRefreshManager {
+            constructor() {
+                this.storageKey = 'serverRefreshStates';
+                this.refreshStates = this.loadStates();
+                this.cleanExpiredStates();
+            }
+            
+            loadStates() {
+                try {
+                    const stored = localStorage.getItem(this.storageKey);
+                    return stored ? JSON.parse(stored) : {};
+                } catch (e) {
+                    console.warn('无法加载服务器刷新状态:', e);
+                    return {};
+                }
+            }
+            
+            saveStates() {
+                try {
+                    localStorage.setItem(this.storageKey, JSON.stringify(this.refreshStates));
+                } catch (e) {
+                    console.warn('无法保存服务器刷新状态:', e);
+                }
+            }
+            
+            startRefresh(serverId) {
+                this.refreshStates[serverId] = {
+                    isRefreshing: true,
+                    startTime: Date.now(),
+                    status: 'running'
+                };
+                this.saveStates();
+            }
+            
+            finishRefresh(serverId, success = true, message = '') {
+                if (this.refreshStates[serverId]) {
+                    this.refreshStates[serverId] = {
+                        isRefreshing: false,
+                        startTime: this.refreshStates[serverId].startTime,
+                        endTime: Date.now(),
+                        status: success ? 'completed' : 'failed',
+                        message: message
+                    };
+                    this.saveStates();
+                    
+                    // 30秒后清理状态
+                    setTimeout(() => {
+                        delete this.refreshStates[serverId];
+                        this.saveStates();
+                    }, 30000);
+                }
+            }
+            
+            isRefreshing(serverId) {
+                const state = this.refreshStates[serverId];
+                if (!state || !state.isRefreshing) return false;
+                
+                // 检查是否超时 (超过40秒认为异常)
+                const elapsed = Date.now() - state.startTime;
+                if (elapsed > 40000) {
+                    this.finishRefresh(serverId, false, '刷新超时');
+                    return false;
+                }
+                
+                return true;
+            }
+            
+            cleanExpiredStates() {
+                const now = Date.now();
+                Object.keys(this.refreshStates).forEach(serverId => {
+                    const state = this.refreshStates[serverId];
+                    // 清理超过5分钟的状态
+                    if (state.startTime && (now - state.startTime) > 300000) {
+                        delete this.refreshStates[serverId];
+                    }
+                });
+                this.saveStates();
+            }
+
+            applyRefreshingState(serverId) {
+                const serverCard = document.querySelector(`[data-server-id="${serverId}"]`)?.closest('.modern-server-card');
+                if (!serverCard) {
+                    // 尝试其他选择器
+                    const altCard = document.querySelector(`[data-id="${serverId}"]`)?.closest('.modern-server-card');
+                    if (altCard) {
+                        this._applyRefreshingToCard(altCard, serverId);
+                    }
+                    return;
+                }
+                
+                this._applyRefreshingToCard(serverCard, serverId);
+            }
+            
+            _applyRefreshingToCard(serverCard, serverId) {
+                // 添加刷新状态样式
+                serverCard.classList.add('server-card-refreshing');
+                
+                // 创建加载指示器
+                if (!serverCard.querySelector('.refresh-loading-indicator')) {
+                    const loadingIndicator = document.createElement('div');
+                    loadingIndicator.className = 'refresh-loading-indicator';
+                    loadingIndicator.innerHTML = `
+                        <div class="refresh-spinner"></div>
+                        <span>正在刷新服务器状态...</span>
+                    `;
+                    serverCard.appendChild(loadingIndicator);
+                }
+            }
+            
+            clearRefreshingState(serverId) {
+                const serverCard = document.querySelector(`[data-server-id="${serverId}"]`)?.closest('.modern-server-card');
+                if (!serverCard) {
+                    // 尝试其他选择器
+                    const altCard = document.querySelector(`[data-id="${serverId}"]`)?.closest('.modern-server-card');
+                    if (altCard) {
+                        this._clearRefreshingFromCard(altCard);
+                    }
+                    return;
+                }
+                
+                this._clearRefreshingFromCard(serverCard);
+            }
+            
+            _clearRefreshingFromCard(serverCard) {
+                // 移除刷新状态
+                serverCard.classList.remove('server-card-refreshing');
+                const indicator = serverCard.querySelector('.refresh-loading-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            }
+        }
+        
+        // 初始化刷新管理器
+        const refreshManager = new ServerRefreshManager();
+        
+        // 服务器相关函数
+        function refreshServer(element) {
+            const serverId = element.getAttribute('data-id');
+            
+            // 防止重复刷新
+            if (refreshManager.isRefreshing(serverId)) {
+                alert('服务器正在刷新中，请等待完成');
+                return;
+            }
+            
+            // 开始刷新状态管理
+            refreshManager.startRefresh(serverId);
+            
+            // 应用服务器卡片刷新状态
+            refreshManager.applyRefreshingState(serverId);
+            
+            // 添加按钮视觉反馈
+            const originalText = element.innerHTML;
+            element.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 刷新中...';
+            element.disabled = true;
+            
+            // 添加30秒超时控制
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                controller.abort();
+            }, 30000);
+            
+            fetch('/admin/servers/' + serverId + '/refresh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [getCSRFHeaderName()]: getCSRFToken()
+                },
+                signal: controller.signal
+            }).then(response => {
+                clearTimeout(timeoutId);
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('服务器响应错误: ' + response.status);
+                }
+            }).then(data => {
+                // 标记刷新完成
+                refreshManager.finishRefresh(serverId, true, '刷新成功');
+                
+                alert('服务器状态已刷新');
+                // 重新加载服务器内容
+                loadContent('servers');
+            }).catch(error => {
+                clearTimeout(timeoutId);
+                console.error('刷新服务器状态失败:', error);
+                
+                let errorMessage = '刷新失败';
+                if (error.name === 'AbortError') {
+                    errorMessage = '刷新超时(30秒)，请检查服务器SSH配置或网络连接';
+                } else if (error.message) {
+                    errorMessage = '刷新失败: ' + error.message;
+                }
+                
+                // 标记刷新失败
+                refreshManager.finishRefresh(serverId, false, errorMessage);
+                alert(errorMessage);
+            }).finally(() => {
+                // 清理刷新状态视觉效果
+                refreshManager.clearRefreshingState(serverId);
+                
+                // 恢复按钮状态
+                element.innerHTML = originalText;
+                element.disabled = false;
+            });
+        }
+        
+        function deleteServer(element) {
+            const serverId = element.getAttribute('data-id');
+            
+            if (confirm('确定要删除这个服务器吗？此操作不可撤销。')) {
+                fetch('/admin/servers/' + serverId + '/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [getCSRFHeaderName()]: getCSRFToken()
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        alert('服务器删除成功');
+                        loadContent('servers'); // 重新加载服务器内容
+                    } else {
+                        alert('删除失败，请稍后重试');
+                    }
+                }).catch(error => {
+                    console.error('删除服务器失败:', error);
+                    alert('删除失败，请稍后重试');
+                });
+            }
+        }
+        
+        function editServer(element) {
+            const serverId = element.getAttribute('data-id');
+            // 使用抽屉组件
+            if (typeof drawerManager !== 'undefined' && drawerManager) {
+                drawerManager.openServerDrawer(serverId);
+            } else {
+                // 后备方案：跳转到服务器详情页面
+                window.location.href = '/admin/servers/' + serverId;
+            }
+        }
+        
+        function openTerminal(element) {
+            const serverId = element.getAttribute('data-id');
+            window.open('/terminal/connect/' + serverId, '_blank');
+        }
+        
+        function viewLogs(element) {
+            const serverId = element.getAttribute('data-id');
+            alert(`查看服务器 ${serverId} 日志功能开发中...`);
+        }
+        
+        function refreshAllData() {
+            const currentPage = document.querySelector('.nav-link.active')?.getAttribute('data-page') || 'dashboard';
+            loadContent(currentPage);
+        }
+        
+        // ===================
+        // 用户管理相关函数
+        // ===================
+        
+        function editUser(userId) {
+            // 使用抽屉组件
+            if (typeof drawerManager !== 'undefined' && drawerManager) {
+                drawerManager.openUserDrawer(userId);
+            } else {
+                // 后备方案：跳转到原页面
+                window.location.href = '/admin/users/' + userId + '/edit';
+            }
+        }
+        
+        function resetPassword(userId) {
+            if (confirm('确定要重置该用户的密码吗？')) {
+                fetch('/admin/users/' + userId + '/reset-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [getCSRFHeaderName()]: getCSRFToken()
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        alert('密码重置成功，新密码已发送到用户邮箱');
+                        loadContent('users');
+                    } else {
+                        alert('密码重置失败，请重试');
+                    }
+                }).catch(error => {
+                    console.error('重置密码失败:', error);
+                    alert('密码重置失败，请检查网络连接');
+                });
+            }
+        }
+        
+        function deleteUser(userId, username) {
+            if (confirm(`确定要删除用户 "${username}" 吗？此操作不可撤销！`)) {
+                fetch('/admin/users/' + userId, {
+                    method: 'DELETE',
+                    headers: {
+                        [getCSRFHeaderName()]: getCSRFToken()
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        alert('用户删除成功');
+                        loadContent('users');
+                    } else {
+                        alert('用户删除失败，请重试');
+                    }
+                }).catch(error => {
+                    console.error('删除用户失败:', error);
+                    alert('用户删除失败，请检查网络连接');
+                });
+            }
+        }
+        
+        function addUser() {
+            // 使用抽屉组件
+            if (typeof drawerManager !== 'undefined' && drawerManager) {
+                drawerManager.openUserDrawer();
+            } else {
+                // 后备方案：使用简单的提示
+                alert('添加用户功能需要抽屉组件支持，请联系管理员');
+            }
+        }
+        
+        function exportUsers() {
+            window.location.href = '/admin/users/export';
+        }
+        
+        // ===================
+        // 应用管理相关函数
+        // ===================
+        
+        function startApplication(appId) {
+            if (confirm('确定要启动这个应用吗？')) {
+                fetch('/apps/' + appId + '/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [getCSRFHeaderName()]: getCSRFToken()
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        alert('应用启动成功');
+                        loadContent('applications');
+                    } else {
+                        alert('应用启动失败，请重试');
+                    }
+                }).catch(error => {
+                    console.error('启动应用失败:', error);
+                    alert('应用启动失败，请检查网络连接');
+                });
+            }
+        }
+        
+        function stopApplication(appId) {
+            if (confirm('确定要停止这个应用吗？')) {
+                fetch('/apps/' + appId + '/stop', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [getCSRFHeaderName()]: getCSRFToken()
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        alert('应用停止成功');
+                        loadContent('applications');
+                    } else {
+                        alert('应用停止失败，请重试');
+                    }
+                }).catch(error => {
+                    console.error('停止应用失败:', error);
+                    alert('应用停止失败，请检查网络连接');
+                });
+            }
+        }
+        
+        function restartApplication(appId) {
+            if (confirm('确定要重启这个应用吗？')) {
+                fetch('/apps/' + appId + '/restart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [getCSRFHeaderName()]: getCSRFToken()
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        alert('应用重启成功');
+                        loadContent('applications');
+                    } else {
+                        alert('应用重启失败，请重试');
+                    }
+                }).catch(error => {
+                    console.error('重启应用失败:', error);
+                    alert('应用重启失败，请检查网络连接');
+                });
+            }
+        }
+        
+        function deleteApplication(appId) {
+            if (confirm('确定要删除这个应用吗？此操作不可撤销！')) {
+                fetch('/apps/' + appId + '/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [getCSRFHeaderName()]: getCSRFToken()
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        alert('应用删除成功');
+                        loadContent('applications');
+                    } else {
+                        alert('应用删除失败，请重试');
+                    }
+                }).catch(error => {
+                    console.error('删除应用失败:', error);
+                    alert('应用删除失败，请检查网络连接');
+                });
+            }
+        }
+        
+        function viewApplicationLogs(appId) {
+            window.open('/apps/' + appId + '/logs', '_blank');
+        }
+        
+        function viewApplicationDetails(appId) {
+            window.location.href = '/apps/' + appId;
+        }
+        
+        // 下拉菜单切换函数
+        function toggleDropdown(button) {
+            const dropdown = button.parentNode;
+            const menu = dropdown.querySelector('.dropdown-menu');
+            
+            // 关闭其他所有下拉菜单
+            document.querySelectorAll('.dropdown-menu.show').forEach(otherMenu => {
+                if (otherMenu !== menu) {
+                    otherMenu.classList.remove('show');
+                }
+            });
+            
+            // 切换当前下拉菜单
+            menu.classList.toggle('show');
+        }
+        
+        // 添加服务器函数
+        function addServer() {
+            // 使用抽屉组件
+            if (typeof drawerManager !== 'undefined' && drawerManager) {
+                drawerManager.openServerDrawer();
+            } else {
+                // 后备方案：使用简单的提示
+                alert('添加服务器功能需要抽屉组件支持，请联系管理员');
+            }
+        }
+        
+        // 统一事件委托处理器 (在内容加载完成后绑定)
+        function bindContentEvents() {
+            // 移除之前的事件监听器（避免重复绑定）
+            document.removeEventListener('click', handleContentEvents);
+            // 添加新的事件监听器
+            document.addEventListener('click', handleContentEvents);
+        }
+        
+        // 为了兼容性，保留旧函数名
+        function bindServerEvents() {
+            bindContentEvents();
+        }
+        
+        function handleContentEvents(event) {
+            // 处理下拉菜单关闭
+            if (!event.target.closest('.server-actions-dropdown')) {
+                document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+            
+            const target = event.target.closest('button');
+            if (!target) return;
+            
+            // 刷新服务器按钮
+            if (target.classList.contains('btn-refresh-server')) {
+                event.preventDefault();
+                refreshServer(target);
+                return;
+            }
+            
+            // 删除服务器按钮
+            if (target.classList.contains('btn-delete-server')) {
+                event.preventDefault();
+                deleteServer(target);
+                return;
+            }
+            
+            // 编辑服务器按钮
+            if (target.classList.contains('btn-edit-server')) {
+                event.preventDefault();
+                editServer(target);
+                return;
+            }
+            
+            // 查看服务器详情按钮
+            if (target.classList.contains('btn-view-server')) {
+                event.preventDefault();
+                viewServer(target);
+                return;
+            }
+            
+            // 打开终端按钮
+            if (target.classList.contains('btn-open-terminal')) {
+                event.preventDefault();
+                openTerminal(target);
+                return;
+            }
+            
+            // ===== 用户管理相关按钮事件 =====
+            
+            // 编辑用户按钮
+            if (target.classList.contains('edit-user-btn')) {
+                event.preventDefault();
+                const userId = target.getAttribute('data-user-id');
+                editUser(userId);
+                return;
+            }
+            
+            // 重置密码按钮
+            if (target.classList.contains('reset-password-btn')) {
+                event.preventDefault();
+                const userId = target.getAttribute('data-user-id');
+                resetPassword(userId);
+                return;
+            }
+            
+            // 删除用户按钮
+            if (target.classList.contains('delete-user-btn')) {
+                event.preventDefault();
+                const userId = target.getAttribute('data-user-id');
+                const username = target.getAttribute('data-username');
+                deleteUser(userId, username);
+                return;
+            }
+            
+            // ===== 应用管理相关按钮事件 =====
+            
+            // 启动应用按钮
+            if (target.classList.contains('btn-start-app') || target.classList.contains('start-app-btn')) {
+                event.preventDefault();
+                const appId = target.getAttribute('data-app-id') || target.getAttribute('data-id');
+                startApplication(appId);
+                return;
+            }
+            
+            // 停止应用按钮
+            if (target.classList.contains('btn-stop-app') || target.classList.contains('stop-app-btn')) {
+                event.preventDefault();
+                const appId = target.getAttribute('data-app-id') || target.getAttribute('data-id');
+                stopApplication(appId);
+                return;
+            }
+            
+            // 重启应用按钮
+            if (target.classList.contains('btn-restart-app') || target.classList.contains('restart-app-btn')) {
+                event.preventDefault();
+                const appId = target.getAttribute('data-app-id') || target.getAttribute('data-id');
+                restartApplication(appId);
+                return;
+            }
+            
+            // 删除应用按钮
+            if (target.classList.contains('btn-delete-app') || target.classList.contains('delete-app-btn')) {
+                event.preventDefault();
+                const appId = target.getAttribute('data-app-id') || target.getAttribute('data-id');
+                deleteApplication(appId);
+                return;
+            }
+            
+            // 查看应用日志按钮
+            if (target.classList.contains('btn-app-logs') || target.classList.contains('app-logs-btn')) {
+                event.preventDefault();
+                const appId = target.getAttribute('data-app-id') || target.getAttribute('data-id');
+                viewApplicationLogs(appId);
+                return;
+            }
+            
+            // 查看应用详情按钮
+            if (target.classList.contains('btn-app-details') || target.classList.contains('app-details-btn')) {
+                event.preventDefault();
+                const appId = target.getAttribute('data-app-id') || target.getAttribute('data-id');
+                viewApplicationDetails(appId);
+                return;
+            }
+        }
+        
         // 错误处理
         window.addEventListener('error', function(e) {
             console.error('页面错误:', e.error);
         });
 
+        // 全局变量用于状态管理
+        let serverStatusManager = null;
+        
+        // 备用的服务器状态标签加载函数
+        async function loadServerStatusTagsFallback(serverId) {
+            try {
+                const response = await fetch(`/admin/api/servers/${serverId}/status-tags`);
+                const data = await response.json();
+                
+                if (data.status === 'success' && data.tags) {
+                    const statusContainer = document.querySelector(`[data-server-id="${serverId}"] .server-status-tags-row`);
+                    if (statusContainer) {
+                        displayServerStatusTags(statusContainer, data.tags);
+                    }
+                }
+            } catch (error) {
+                console.error(`加载服务器 ${serverId} 状态标签失败:`, error);
+                const statusContainer = document.querySelector(`[data-server-id="${serverId}"] .server-status-tags-row`);
+                if (statusContainer) {
+                    statusContainer.innerHTML = '<div class="status-tags-empty">加载失败</div>';
+                }
+            }
+        }
+
+        // 检查服务器名称长度并添加滚动效果
+        function initServerNameScrolling() {
+            const serverNames = document.querySelectorAll('.server-name');
+            serverNames.forEach(nameElement => {
+                const textContent = nameElement.textContent || nameElement.innerText;
+                // 检查文本长度是否超过12个字符
+                if (textContent.length > 12) {
+                    nameElement.classList.add('long-text');
+                }
+            });
+        }
+
         // 全局样式类
         window.addEventListener('load', function() {
             document.body.classList.add('layout-loaded');
+            
+            // 初始化服务器状态标签管理器
+            if (typeof ServerStatusManager !== 'undefined') {
+                serverStatusManager = new ServerStatusManager();
+                console.log('服务器状态标签管理器已初始化');
+            } else {
+                console.warn('ServerStatusManager类未找到，状态标签功能不可用');
+            }
         });
     </script>
 </body>

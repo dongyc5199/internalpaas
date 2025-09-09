@@ -61,32 +61,49 @@ public class ServerService {
     @Autowired
     private com.cmict.internalpaas.repository.UserRepository userRepository;
     
+    @Autowired
+    private PasswordEncryptionService passwordEncryptionService;
+    
     public List<Server> getAllServers() {
-        return serverRepository.findAll();
+        List<Server> servers = serverRepository.findAll();
+        ensurePasswordEncryptionService(servers);
+        return servers;
     }
     
     public List<Server> getActiveServers() {
-        return serverRepository.findByActiveTrueOrderByName();
+        List<Server> servers = serverRepository.findByActiveTrueOrderByName();
+        ensurePasswordEncryptionService(servers);
+        return servers;
     }
     
     public List<Server> findAllActive() {
-        return serverRepository.findByActiveTrueOrderByName();
+        List<Server> servers = serverRepository.findByActiveTrueOrderByName();
+        ensurePasswordEncryptionService(servers);
+        return servers;
     }
     
     public List<Server> findAll() {
-        return serverRepository.findAll();
+        List<Server> servers = serverRepository.findAll();
+        ensurePasswordEncryptionService(servers);
+        return servers;
     }
     
     public Optional<Server> getServerById(Long id) {
-        return serverRepository.findById(id);
+        Optional<Server> serverOpt = serverRepository.findById(id);
+        serverOpt.ifPresent(this::ensurePasswordEncryptionService);
+        return serverOpt;
     }
     
     public Optional<Server> findById(Long id) {
-        return serverRepository.findById(id);
+        Optional<Server> serverOpt = serverRepository.findById(id);
+        serverOpt.ifPresent(this::ensurePasswordEncryptionService);
+        return serverOpt;
     }
 
     public List<Server> findByConnectionStatusIn(List<Server.ConnectionStatus> connectionStatuses) {
-        return serverRepository.findByConnectionStatusIn(connectionStatuses);
+        List<Server> servers = serverRepository.findByConnectionStatusIn(connectionStatuses);
+        ensurePasswordEncryptionService(servers);
+        return servers;
     }
     
     /**
@@ -146,6 +163,9 @@ public class ServerService {
         if (server.getMonitorIntervalSeconds() == null) {
             server.setMonitorIntervalSeconds(60);
         }
+        
+        // 确保设置密码加密服务
+        server.setPasswordEncryptionService(passwordEncryptionService);
         
         // 验证必填字段完整性
         validateServerBeforeSave(server);
@@ -338,6 +358,10 @@ public class ServerService {
         Server server = serverRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Server not found"));
         
+        // 确保设置密码加密服务
+        server.setPasswordEncryptionService(passwordEncryptionService);
+        serverDetails.setPasswordEncryptionService(passwordEncryptionService);
+        
         server.setName(serverDetails.getName());
         server.setHostname(serverDetails.getHostname());
         server.setPort(serverDetails.getPort());
@@ -348,9 +372,28 @@ public class ServerService {
         // 更新SSH相关字段
         server.setSshPort(serverDetails.getSshPort());
         server.setSshUsername(serverDetails.getSshUsername());
-        server.setSshPassword(serverDetails.getSshPassword());
+        
+        // 处理密码更新 - 只有在提供了新密码时才更新
+        if (serverDetails.getSshPasswordEncrypted() != null && !serverDetails.getSshPasswordEncrypted().isEmpty()) {
+            // 如果传入的是明文密码，自动加密
+            if (!passwordEncryptionService.isPasswordEncrypted(serverDetails.getSshPasswordEncrypted())) {
+                server.setSshPassword(serverDetails.getSshPasswordEncrypted()); // 会自动加密
+                logger.info("更新服务器 {} 的SSH密码（已加密）", server.getName());
+            } else {
+                server.setSshPasswordEncrypted(serverDetails.getSshPasswordEncrypted()); // 直接设置已加密的密码
+            }
+        }
+        
         server.setSshKeyPath(serverDetails.getSshKeyPath());
-        server.setSshKeyPassphrase(serverDetails.getSshKeyPassphrase());
+        
+        // 处理密钥密码更新
+        if (serverDetails.getSshKeyPassphraseEncrypted() != null && !serverDetails.getSshKeyPassphraseEncrypted().isEmpty()) {
+            if (!passwordEncryptionService.isPasswordEncrypted(serverDetails.getSshKeyPassphraseEncrypted())) {
+                server.setSshKeyPassphrase(serverDetails.getSshKeyPassphraseEncrypted()); // 会自动加密
+            } else {
+                server.setSshKeyPassphraseEncrypted(serverDetails.getSshKeyPassphraseEncrypted()); // 直接设置已加密的密码
+            }
+        }
         
         // 更新监控相关字段
         if (serverDetails.getAutoMonitorEnabled() != null) {
@@ -510,6 +553,36 @@ public class ServerService {
         if (server.getDescription() != null && server.getDescription().length() > 500) {
             server.setDescription(server.getDescription().substring(0, 500));
         }
+    }
+    
+    /**
+     * 确保服务器实体具有密码加密服务
+     */
+    private void ensurePasswordEncryptionService(Server server) {
+        if (server != null) {
+            server.setPasswordEncryptionService(passwordEncryptionService);
+        }
+    }
+    
+    /**
+     * 为服务器列表设置密码加密服务
+     */
+    private void ensurePasswordEncryptionService(List<Server> servers) {
+        if (servers != null) {
+            servers.forEach(server -> server.setPasswordEncryptionService(passwordEncryptionService));
+        }
+    }
+    
+    /**
+     * 验证服务器密码设置状态
+     */
+    public boolean validateServerPasswordSetup(Long serverId) {
+        Optional<Server> serverOpt = getServerById(serverId);
+        if (serverOpt.isPresent()) {
+            Server server = serverOpt.get();
+            return sshConnectionService.validateServerPassword(server);
+        }
+        return false;
     }
     
     @PreDestroy

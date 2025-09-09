@@ -4,6 +4,7 @@ import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.UserActivity;
 import com.cmict.internalpaas.service.RemoteCommandService.CommandResult;
 import com.jcraft.jsch.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import lombok.Data;
 
@@ -23,6 +24,9 @@ import java.util.concurrent.TimeUnit;
 public class SshConnectionService {
 
     private static final Logger logger = LoggerFactory.getLogger(SshConnectionService.class);
+
+    @Autowired
+    private PasswordEncryptionService passwordEncryptionService;
 
     private static final int CONNECTION_TIMEOUT = 15000; // 15秒连接超时 (从8秒增加)
     private static final int CHECK_TIMEOUT = 20000; // 20秒检测超时 (从10秒增加)
@@ -92,8 +96,9 @@ public class SshConnectionService {
             session.setTimeout(CONNECTION_TIMEOUT);
 
             // 设置认证方式 - 仅使用密码认证
-            if (server.getSshPassword() != null && !server.getSshPassword().isEmpty()) {
-                session.setPassword(server.getSshPassword());
+            String decryptedPassword = getDecryptedPassword(server);
+            if (decryptedPassword != null && !decryptedPassword.isEmpty()) {
+                session.setPassword(decryptedPassword);
                 logger.debug("使用密码认证: 用户名={}, 主机={}, 端口={}",
                         session.getUserName(), server.getHostname(), server.getSshPort());
             } else {
@@ -595,13 +600,60 @@ public class SshConnectionService {
         session.setTimeout(CONNECTION_TIMEOUT);
 
         // 仅支持密码认证
-        if (server.getSshPassword() != null && !server.getSshPassword().isEmpty()) {
-            session.setPassword(server.getSshPassword());
+        String decryptedPassword = getDecryptedPassword(server);
+        if (decryptedPassword != null && !decryptedPassword.isEmpty()) {
+            session.setPassword(decryptedPassword);
         } else {
             throw new JSchException("未提供密码，无法进行SSH认证");
         }
 
         return session;
+    }
+
+    /**
+     * 安全获取解密后的SSH密码
+     */
+    private String getDecryptedPassword(Server server) {
+        try {
+            // 设置密码加密服务到Server实体中
+            server.setPasswordEncryptionService(passwordEncryptionService);
+            
+            // 获取解密后的密码
+            String password = server.getSshPassword();
+            
+            // 如果获取到的仍然是加密密码，尝试直接解密
+            if (password != null && passwordEncryptionService.isPasswordEncrypted(password)) {
+                password = passwordEncryptionService.decryptPassword(password);
+            }
+            
+            return password;
+            
+        } catch (Exception e) {
+            logger.error("SSH密码解密失败: {} - {}", server.getHostname(), e.getMessage());
+            
+            // 如果解密失败，可能是旧的明文密码，尝试直接使用
+            String encryptedPassword = server.getSshPasswordEncrypted();
+            if (encryptedPassword != null && !passwordEncryptionService.isPasswordEncrypted(encryptedPassword)) {
+                logger.warn("检测到明文密码，建议升级加密存储: {}", server.getHostname());
+                return encryptedPassword;
+            }
+            
+            logger.error("无法获取有效的SSH密码: {}", server.getHostname());
+            return null;
+        }
+    }
+
+    /**
+     * 验证服务器密码设置
+     */
+    public boolean validateServerPassword(Server server) {
+        try {
+            String password = getDecryptedPassword(server);
+            return password != null && !password.isEmpty();
+        } catch (Exception e) {
+            logger.error("验证服务器密码失败: {} - {}", server.getHostname(), e.getMessage());
+            return false;
+        }
     }
 
     /**

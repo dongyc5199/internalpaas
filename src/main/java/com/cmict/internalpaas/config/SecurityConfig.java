@@ -25,6 +25,7 @@ public class SecurityConfig {
                 .antMatchers("/css/**", "/js/**", "/register", "/debug/**", "/h2-console/**", "/ws/**", "/test/**").permitAll() // 允许访问静态资源、注册页面、H2控制台、WebSocket端点和测试页面
                 .antMatchers("/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN") // 管理员和超级管理员才能访问管理页面
                 .antMatchers("/developer/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN") // 开发者、管理员和超级管理员都能访问研发工作台
+                .antMatchers("/terminal/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN") // 所有认证用户都能访问SSH终端
                 .anyRequest().authenticated() // 其他所有请求都需要认证
             )
             .formLogin(form -> form
@@ -41,7 +42,8 @@ public class SecurityConfig {
                 .ignoringAntMatchers("/h2-console/**", "/ws/**", "/test/**", 
                     "/monitoring/server/*/refresh", "/monitoring/trigger-health-check",
                     "/monitoring/history/api/**", "/monitoring/thresholds/api/**",
-                    "/api/server-user-groups/**", "/api/permission-test/**") // 禁用H2控制台、WebSocket、测试接口和监控接口的CSRF保护
+                    "/api/server-user-groups/**", "/api/permission-test/**",
+                    "/terminal/api/**") // 禁用H2控制台、WebSocket、测试接口、监控接口和终端API的CSRF保护
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // 使用Cookie存储CSRF token
             )
             .headers(headers -> headers

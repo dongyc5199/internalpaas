@@ -107,7 +107,8 @@ class ServerStatusManager {
      * 渲染服务器状态标签
      */
     renderServerStatusTags(serverId, tags) {
-        const serverCard = document.querySelector(`.modern-server-card[data-server-id="${serverId}"]`);
+        const serverCard = document.querySelector(`[data-server-id="${serverId}"]`) || 
+                          document.querySelector(`[data-id="${serverId}"]`);
         if (!serverCard) {
             console.warn(`未找到服务器 ${serverId} 的卡片`);
             return;
@@ -295,7 +296,8 @@ class ServerStatusManager {
      * 渲染错误状态
      */
     renderErrorState(serverId) {
-        const serverCard = document.querySelector(`.modern-server-card[data-server-id="${serverId}"]`);
+        const serverCard = document.querySelector(`[data-server-id="${serverId}"]`) || 
+                          document.querySelector(`[data-id="${serverId}"]`);
         if (!serverCard) return;
         
         // 首先查找HTML模板中已存在的状态标签行

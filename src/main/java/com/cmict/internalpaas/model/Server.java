@@ -1,5 +1,10 @@
 package com.cmict.internalpaas.model;
 
+import com.cmict.internalpaas.service.PasswordEncryptionService;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
+
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -37,14 +42,16 @@ public class Server {
     @Column
     private String sshUsername;
     
-    @Column
-    private String sshPassword;
+    @Column(name = "ssh_password")
+    @JsonIgnore  // 防止密码在JSON序列化时暴露
+    private String sshPasswordEncrypted;
     
     @Column
     private String sshKeyPath;
     
-    @Column
-    private String sshKeyPassphrase;
+    @Column(name = "ssh_key_passphrase")
+    @JsonIgnore  // 防止密钥密码在JSON序列化时暴露
+    private String sshKeyPassphraseEncrypted;
     
     // 连接状态缓存
     @Column
@@ -184,14 +191,104 @@ public class Server {
     public String getSshUsername() { return sshUsername; }
     public void setSshUsername(String sshUsername) { this.sshUsername = sshUsername; }
     
-    public String getSshPassword() { return sshPassword; }
-    public void setSshPassword(String sshPassword) { this.sshPassword = sshPassword; }
+    /**
+     * 获取SSH加密密码（内部使用，已加密）
+     */
+    public String getSshPasswordEncrypted() { 
+        return sshPasswordEncrypted; 
+    }
+    
+    /**
+     * 设置SSH加密密码（内部使用，已加密）
+     */
+    public void setSshPasswordEncrypted(String sshPasswordEncrypted) { 
+        this.sshPasswordEncrypted = sshPasswordEncrypted; 
+    }
+    
+    /**
+     * 获取SSH明文密码（业务逻辑使用）
+     * 注意：此方法需要依赖注入PasswordEncryptionService
+     */
+    @Transient
+    private PasswordEncryptionService passwordEncryptionService;
+    
+    public String getSshPassword() {
+        if (passwordEncryptionService == null) {
+            // 如果服务未注入，返回加密密码（向后兼容）
+            return sshPasswordEncrypted;
+        }
+        
+        try {
+            return passwordEncryptionService.decryptPassword(sshPasswordEncrypted);
+        } catch (Exception e) {
+            throw new RuntimeException("SSH密码解密失败", e);
+        }
+    }
+    
+    /**
+     * 设置SSH明文密码（业务逻辑使用）
+     */
+    public void setSshPassword(String plainPassword) {
+        if (passwordEncryptionService == null) {
+            // 如果服务未注入，直接存储（向后兼容）
+            this.sshPasswordEncrypted = plainPassword;
+            return;
+        }
+        
+        try {
+            this.sshPasswordEncrypted = passwordEncryptionService.encryptPassword(plainPassword);
+        } catch (Exception e) {
+            throw new RuntimeException("SSH密码加密失败", e);
+        }
+    }
     
     public String getSshKeyPath() { return sshKeyPath; }
     public void setSshKeyPath(String sshKeyPath) { this.sshKeyPath = sshKeyPath; }
     
-    public String getSshKeyPassphrase() { return sshKeyPassphrase; }
-    public void setSshKeyPassphrase(String sshKeyPassphrase) { this.sshKeyPassphrase = sshKeyPassphrase; }
+    /**
+     * 获取SSH密钥加密密码（内部使用，已加密）
+     */
+    public String getSshKeyPassphraseEncrypted() { 
+        return sshKeyPassphraseEncrypted; 
+    }
+    
+    /**
+     * 设置SSH密钥加密密码（内部使用，已加密）
+     */
+    public void setSshKeyPassphraseEncrypted(String sshKeyPassphraseEncrypted) { 
+        this.sshKeyPassphraseEncrypted = sshKeyPassphraseEncrypted; 
+    }
+    
+    /**
+     * 获取SSH密钥明文密码（业务逻辑使用）
+     */
+    public String getSshKeyPassphrase() {
+        if (passwordEncryptionService == null) {
+            return sshKeyPassphraseEncrypted;
+        }
+        
+        try {
+            return passwordEncryptionService.decryptPassword(sshKeyPassphraseEncrypted);
+        } catch (Exception e) {
+            throw new RuntimeException("SSH密钥密码解密失败", e);
+        }
+    }
+    
+    /**
+     * 设置SSH密钥明文密码（业务逻辑使用）
+     */
+    public void setSshKeyPassphrase(String plainPassphrase) {
+        if (passwordEncryptionService == null) {
+            this.sshKeyPassphraseEncrypted = plainPassphrase;
+            return;
+        }
+        
+        try {
+            this.sshKeyPassphraseEncrypted = passwordEncryptionService.encryptPassword(plainPassphrase);
+        } catch (Exception e) {
+            throw new RuntimeException("SSH密钥密码加密失败", e);
+        }
+    }
     
     public ConnectionStatus getConnectionStatus() { return connectionStatus; }
     public void setConnectionStatus(ConnectionStatus connectionStatus) { this.connectionStatus = connectionStatus; }
@@ -228,4 +325,34 @@ public class Server {
     
     public Long getDefaultUserGroupId() { return defaultUserGroupId; }
     public void setDefaultUserGroupId(Long defaultUserGroupId) { this.defaultUserGroupId = defaultUserGroupId; }
+    
+    /**
+     * 设置密码加密服务（用于依赖注入）
+     * 此方法应在Service层中调用，确保密码加密解密功能正常工作
+     */
+    public void setPasswordEncryptionService(PasswordEncryptionService passwordEncryptionService) {
+        this.passwordEncryptionService = passwordEncryptionService;
+    }
+    
+    /**
+     * 检查密码是否已加密
+     */
+    public boolean isPasswordEncrypted() {
+        return passwordEncryptionService != null && 
+               passwordEncryptionService.isPasswordEncrypted(sshPasswordEncrypted);
+    }
+    
+    /**
+     * 获取用于JSON序列化的脱敏密码信息
+     */
+    public String getPasswordMasked() {
+        return (sshPasswordEncrypted != null && !sshPasswordEncrypted.isEmpty()) ? "***已设置***" : null;
+    }
+    
+    /**
+     * 获取用于JSON序列化的脱敏密钥密码信息
+     */
+    public String getKeyPassphraseMasked() {
+        return (sshKeyPassphraseEncrypted != null && !sshKeyPassphraseEncrypted.isEmpty()) ? "***已设置***" : null;
+    }
 }

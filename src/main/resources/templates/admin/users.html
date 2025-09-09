@@ -818,101 +818,13 @@
             return csrfHeaderMeta ? csrfHeaderMeta.getAttribute('content') : 'X-CSRF-TOKEN';
         }
         
-        // 用户管理相关功能
-        function refreshAllData() {
-            location.reload();
-        }
-        
-        
-        function editUser(userId) {
-            // 使用抽屉组件
-            if (typeof drawerManager !== 'undefined' && drawerManager) {
-                drawerManager.openUserDrawer(userId);
-            } else {
-                // 后备方案：跳转到原页面
-                window.location.href = `/admin/users/${userId}/edit`;
-            }
-        }
-        
-        function resetPassword(userId) {
-            if (confirm('确定要重置该用户的密码吗？')) {
-                const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
-                const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
-                
-                fetch(`/admin/users/${userId}/reset-password`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        [csrfHeader]: csrfToken
-                    }
-                }).then(response => {
-                    if (response.ok) {
-                        alert('密码重置成功，新密码已发送到用户邮箱');
-                        location.reload();
-                    } else {
-                        alert('密码重置失败，请重试');
-                    }
-                }).catch(error => {
-                    console.error('重置密码失败:', error);
-                    alert('密码重置失败，请检查网络连接');
-                });
-            }
-        }
-        
-        function deleteUser(userId, username) {
-            if (confirm(`确定要删除用户 "${username}" 吗？此操作不可撤销！`)) {
-                const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
-                const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
-                
-                fetch(`/admin/users/${userId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        [csrfHeader]: csrfToken
-                    }
-                }).then(response => {
-                    if (response.ok) {
-                        alert('用户删除成功');
-                        location.reload();
-                    } else {
-                        alert('用户删除失败，请重试');
-                    }
-                }).catch(error => {
-                    console.error('删除用户失败:', error);
-                    alert('用户删除失败，请检查网络连接');
-                });
-            }
-        }
-        
-        // 添加事件监听器
+        // 页面片段加载完成后的初始化 (用于SPA动态加载)
         document.addEventListener('DOMContentLoaded', function() {
-            // 编辑用户按钮
-            document.querySelectorAll('.edit-user-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const userId = this.getAttribute('data-user-id');
-                    editUser(userId);
-                });
-            });
-            
-            // 重置密码按钮
-            document.querySelectorAll('.reset-password-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const userId = this.getAttribute('data-user-id');
-                    resetPassword(userId);
-                });
-            });
-            
-            // 删除用户按钮
-            document.querySelectorAll('.delete-user-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const userId = this.getAttribute('data-user-id');
-                    const username = this.getAttribute('data-username');
-                    deleteUser(userId, username);
-                });
-            });
+            // 如果在SPA环境中，延迟执行初始化
+            setTimeout(() => {
+                // 任何用户管理特定的初始化逻辑可以在这里添加
+                console.log('用户管理内容已加载');
+            }, 100);
         });
-        
-        function exportUsers() {
-            window.location.href = '/admin/users/export';
-        }
     </script>
 </div>

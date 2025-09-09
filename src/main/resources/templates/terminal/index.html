@@ -131,15 +131,20 @@
                     </button>
                 </div>
             </div>
-                    <h2><i class="fas fa-terminal"></i> SSH终端连接</h2>
-                    <div>
-                        <a href="/terminal/manager" class="btn btn-primary">
-                            <i class="fas fa-window-restore"></i> 多标签页终端
-                        </a>
+            
+            <!-- Terminal Options -->
+            <div class="content-section">
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2><i class="fas fa-terminal"></i> SSH终端连接</h2>
+                        <div>
+                            <a href="/terminal/manager" class="btn btn-primary">
+                                <i class="fas fa-window-restore"></i> 多标签页终端
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
         <!-- 错误消息 -->
         <div th:if="${error}" class="alert alert-danger" role="alert">

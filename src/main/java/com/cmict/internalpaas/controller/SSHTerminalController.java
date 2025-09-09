@@ -61,7 +61,7 @@ public class SSHTerminalController {
     }
     
     /**
-     * 连接到指定服务器的终端页面
+     * 连接到指定服务器的终端页面 - 重定向到终端管理器
      */
     @GetMapping("/connect/{serverId}")
     public String connectToServer(@PathVariable Long serverId, Model model) {
@@ -69,8 +69,8 @@ public class SSHTerminalController {
             Server server = serverService.findById(serverId)
                 .orElseThrow(() -> new RuntimeException("服务器不存在"));
             
-            model.addAttribute("server", server);
-            return "terminal/connect";
+            // 重定向到终端管理器并传递服务器ID参数
+            return "redirect:/terminal/manager?serverId=" + serverId;
         } catch (Exception e) {
             model.addAttribute("error", "连接服务器失败: " + e.getMessage());
             return "terminal/index";
