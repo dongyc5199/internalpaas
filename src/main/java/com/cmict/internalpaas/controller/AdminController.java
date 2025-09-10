@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -1160,8 +1159,7 @@ public class AdminController {
                     
                     // 创建用户服务器账户并分配到默认用户组
                     try {
-                        com.cmict.internalpaas.model.UserServerAccount account = 
-                            userServerAccountService.createUserAccount(user, server, defaultGroup.get());
+                        userServerAccountService.createUserAccount(user, server, defaultGroup.get());
                         logger.info("成功为用户 {} 在服务器 {} 上创建账户并加入用户组 {}", 
                             user.getUsername(), server.getName(), defaultGroup.get().getGroupName());
                     } catch (Exception e) {
@@ -1189,8 +1187,7 @@ public class AdminController {
                         if (newDefaultGroup.isPresent()) {
                             // 创建用户服务器账户并分配到新创建的默认用户组
                             try {
-                                com.cmict.internalpaas.model.UserServerAccount account = 
-                                    userServerAccountService.createUserAccount(user, server, newDefaultGroup.get());
+                                userServerAccountService.createUserAccount(user, server, newDefaultGroup.get());
                                 logger.info("成功为用户 {} 在服务器 {} 上创建账户并加入新的默认用户组 {}", 
                                     user.getUsername(), server.getName(), newDefaultGroup.get().getGroupName());
                             } catch (Exception createAccountException) {
