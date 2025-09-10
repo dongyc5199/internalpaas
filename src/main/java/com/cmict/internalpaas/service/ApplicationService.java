@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -21,6 +23,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Service
+@Transactional(readOnly = true)
 public class ApplicationService {
 
     private static final Logger logger = LoggerFactory.getLogger(ApplicationService.class);
@@ -35,6 +38,7 @@ public class ApplicationService {
     /**
      * 上传JAR文件
      */
+    @Transactional
     public Application uploadApplication(User user, MultipartFile file, String appName) throws IOException {
         // 获取或创建用户工作目录
         String workDir = getOrCreateUserWorkDirectory(user);
@@ -95,6 +99,7 @@ public class ApplicationService {
     /**
      * 保存应用配置
      */
+    @Transactional
     public Application saveApplication(Application app) {
         return applicationRepository.save(app);
     }
@@ -102,6 +107,7 @@ public class ApplicationService {
     /**
      * 启动应用
      */
+    @Transactional
     public Application startApplication(Long appId) throws IOException {
         Application app = applicationRepository.findById(appId)
             .orElseThrow(() -> new RuntimeException("Application not found"));
@@ -150,6 +156,7 @@ public class ApplicationService {
     /**
      * 停止应用
      */
+    @Transactional
     public Application stopApplication(Long appId) {
         Application app = applicationRepository.findById(appId)
             .orElseThrow(() -> new RuntimeException("Application not found"));
@@ -177,6 +184,7 @@ public class ApplicationService {
      * 重启应用
      * 原子性操作：先停止应用，然后重新启动
      */
+    @Transactional(propagation = Propagation.REQUIRED)
     public Application restartApplication(Long appId) throws IOException {
         Application app = applicationRepository.findById(appId)
             .orElseThrow(() -> new RuntimeException("Application not found"));
@@ -460,6 +468,7 @@ public class ApplicationService {
     /**
      * 删除应用
      */
+    @Transactional(propagation = Propagation.REQUIRED)
     public void deleteApplication(Long appId) throws IOException {
         Application app = applicationRepository.findById(appId)
             .orElseThrow(() -> new RuntimeException("Application not found"));

@@ -616,7 +616,7 @@ public class SshConnectionService {
             server.setPasswordEncryptionService(passwordEncryptionService);
             
             // 获取解密后的密码
-            String password = server.getSshPassword();
+            String password = server.getSshPasswordSafely();
             
             // 如果获取到的仍然是加密密码，尝试直接解密
             if (password != null && passwordEncryptionService.isPasswordEncrypted(password)) {

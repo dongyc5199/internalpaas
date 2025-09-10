@@ -110,14 +110,42 @@ public class SecurityConfig {
                                       (contentType != null && contentType.contains("application/json")) ||
                                       request.getRequestURI().contains("/api/");
                 
+                // 检查是否是会话过期（存在session但已失效）
+                boolean isSessionExpired = false;
+                String sessionId = null;
+                
+                // 检查Cookie中的JSESSIONID
+                if (request.getCookies() != null) {
+                    for (javax.servlet.http.Cookie cookie : request.getCookies()) {
+                        if ("JSESSIONID".equals(cookie.getName())) {
+                            sessionId = cookie.getValue();
+                            break;
+                        }
+                    }
+                }
+                
+                // 如果有sessionId但session已失效，则认为是过期
+                if (sessionId != null) {
+                    javax.servlet.http.HttpSession session = request.getSession(false);
+                    isSessionExpired = (session == null || !sessionId.equals(session.getId()));
+                }
+                
                 if (isAjaxRequest) {
                     // AJAX请求返回401状态码和JSON响应
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType("application/json;charset=UTF-8");
-                    response.getWriter().write("{\"error\":\"session_expired\",\"message\":\"会话已过期，请重新登录\",\"redirect\":\"/login?expired\"}");
+                    if (isSessionExpired) {
+                        response.getWriter().write("{\"error\":\"session_expired\",\"message\":\"会话已过期，请重新登录\",\"redirect\":\"/login?expired\"}");
+                    } else {
+                        response.getWriter().write("{\"error\":\"authentication_required\",\"message\":\"需要登录\",\"redirect\":\"/login\"}");
+                    }
                 } else {
                     // 普通请求重定向到登录页面
-                    response.sendRedirect("/login?expired");
+                    if (isSessionExpired) {
+                        response.sendRedirect("/login?expired");
+                    } else {
+                        response.sendRedirect("/login");
+                    }
                 }
             }
         };

@@ -205,12 +205,17 @@ public class Server {
      * 注意：此方法需要依赖注入PasswordEncryptionService
      */
     @Transient
+    @JsonIgnore  // 防止JSON序列化时调用此字段
     private PasswordEncryptionService passwordEncryptionService;
     
+    @JsonIgnore  // 防止JSON序列化调用此方法
     public String getSshPassword() {
         if (passwordEncryptionService == null) {
-            // 如果服务未注入，返回加密密码（向后兼容）
-            return sshPasswordEncrypted;
+            throw new IllegalStateException("密码加密服务未初始化，请在Service层调用setPasswordEncryptionService()");
+        }
+        
+        if (sshPasswordEncrypted == null || sshPasswordEncrypted.isEmpty()) {
+            return null;
         }
         
         try {
@@ -257,9 +262,14 @@ public class Server {
     /**
      * 获取SSH密钥明文密码（业务逻辑使用）
      */
+    @JsonIgnore  // 防止JSON序列化调用此方法
     public String getSshKeyPassphrase() {
         if (passwordEncryptionService == null) {
-            return sshKeyPassphraseEncrypted;
+            throw new IllegalStateException("密码加密服务未初始化，请在Service层调用setPasswordEncryptionService()");
+        }
+        
+        if (sshKeyPassphraseEncrypted == null || sshKeyPassphraseEncrypted.isEmpty()) {
+            return null;
         }
         
         try {
@@ -335,6 +345,48 @@ public class Server {
     public boolean isPasswordEncrypted() {
         return passwordEncryptionService != null && 
                passwordEncryptionService.isPasswordEncrypted(sshPasswordEncrypted);
+    }
+    
+    /**
+     * 安全地获取SSH明文密码（仅供Service层使用）
+     * 返回可选值，避免抛出异常
+     */
+    @JsonIgnore
+    public String getSshPasswordSafely() {
+        if (passwordEncryptionService == null) {
+            return null; // 服务未初始化，返回null
+        }
+        
+        if (sshPasswordEncrypted == null || sshPasswordEncrypted.isEmpty()) {
+            return null;
+        }
+        
+        try {
+            return passwordEncryptionService.decryptPassword(sshPasswordEncrypted);
+        } catch (Exception e) {
+            // 日志记录错误但不抛出异常
+            return null;
+        }
+    }
+    
+    /**
+     * 安全地获取SSH密钥明文密码（仅供Service层使用）
+     */
+    @JsonIgnore
+    public String getSshKeyPassphraseSafely() {
+        if (passwordEncryptionService == null) {
+            return null;
+        }
+        
+        if (sshKeyPassphraseEncrypted == null || sshKeyPassphraseEncrypted.isEmpty()) {
+            return null;
+        }
+        
+        try {
+            return passwordEncryptionService.decryptPassword(sshKeyPassphraseEncrypted);
+        } catch (Exception e) {
+            return null;
+        }
     }
     
     /**

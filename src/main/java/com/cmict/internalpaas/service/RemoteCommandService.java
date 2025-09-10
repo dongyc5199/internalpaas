@@ -27,6 +27,9 @@ public class RemoteCommandService {
 
     @Autowired
     private CommandSecurityService commandSecurityService;
+    
+    @Autowired
+    private PasswordEncryptionService passwordEncryptionService;
 
     @Autowired
     private SecurityAuditService securityAuditService;
@@ -230,8 +233,10 @@ public class RemoteCommandService {
         session.setConfig(config);
         
         // 设置认证方式 - 仅支持密码认证
-        if (server.getSshPassword() != null && !server.getSshPassword().isEmpty()) {
-            session.setPassword(server.getSshPassword());
+        server.setPasswordEncryptionService(passwordEncryptionService);
+        String password = server.getSshPasswordSafely();
+        if (password != null && !password.isEmpty()) {
+            session.setPassword(password);
         } else {
             throw new JSchException("未提供密码，无法进行SSH认证");
         }

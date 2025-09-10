@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -109,6 +110,7 @@ public class ServerService {
     /**
      * 检查服务器连接并获取监控数据
      */
+    @Transactional
     public Server checkServerConnectionAndMetrics(Long id) {
         Server server = findById(id).orElseThrow(() -> new RuntimeException("Server not found"));
         
@@ -149,6 +151,7 @@ public class ServerService {
         }
     }
     
+    @Transactional
     public Server saveServer(Server server) {
         // 设置默认值
         if (server.getSshPort() == null) {
@@ -175,7 +178,7 @@ public class ServerService {
     /**
      * 保存服务器并自动检测连接
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRED)
     public Server saveServerWithAutoCheck(Server server) {
         Server savedServer = saveServer(server);
         
@@ -231,6 +234,7 @@ public class ServerService {
         return server.getConnectionStatus().name();
     }
     
+    @Transactional(propagation = Propagation.REQUIRED)
     public void deleteServer(Long id) {
         logger.info("开始删除服务器，ID: {}", id);
         
@@ -354,6 +358,7 @@ public class ServerService {
         }
     }
     
+    @Transactional
     public Server updateServer(Long id, Server serverDetails) {
         Server server = serverRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Server not found"));
@@ -426,6 +431,7 @@ public class ServerService {
     /**
      * 强制刷新服务器监控数据
      */
+    @Transactional
     public ServerMetrics refreshServerMetrics(Long id) {
         Server server = findById(id).orElseThrow(() -> new RuntimeException("Server not found"));
         
