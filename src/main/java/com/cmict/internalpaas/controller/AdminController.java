@@ -105,7 +105,7 @@ public class AdminController {
         model.addAttribute("hasHistoryFeature", true);
         model.addAttribute("hasThresholdFeature", true);
         
-        return "admin/servers";
+        return "admin/servers-page";
     }
 
 
@@ -1524,7 +1524,7 @@ public class AdminController {
         model.addAttribute("monitoringServers", activeCount); // 简化处理
         
         // 返回服务器管理内容片段
-        return "admin/servers :: servers-content";
+        return "fragments/servers-fragment :: servers-content";
     }
     
     /**

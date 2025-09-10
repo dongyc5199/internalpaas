@@ -199,7 +199,9 @@ src/main/java/com/cmict/internalpaas/
 │   ├── deployment-guide.md           # 部署指南
 │   ├── operations-manual.md          # 运维手册
 │   ├── performance-optimization.md   # 性能优化指南
-│   └── project-overview.md           # 项目概述
+│   ├── project-overview.md           # 项目概述
+│   ├── frontend-architecture.md     # 前端架构指南 (重要!)
+│   └── fragment-restructure-report.md # 片段重构报告
 ├── mvnw                              # Maven Wrapper (Unix)
 ├── mvnw.cmd                          # Maven Wrapper (Windows)
 ├── pom.xml                           # Maven项目配置
@@ -309,6 +311,25 @@ app.debug.port.range.end=5999
 - **授权**: 基于角色的访问控制
 - **CSRF**: 已启用CSRF保护
 - **密码加密**: 使用BCrypt加密
+
+## 🚨 重要: 前端架构说明
+
+### 架构模式
+本项目采用 **单页应用(SPA) + 动态内容片段** 架构:
+
+- **main-layout.html**: 主页面框架，包含所有JavaScript逻辑
+- **片段文件** (servers.html, users.html等): 仅包含HTML+CSS内容片段
+
+### 开发规则
+1. **JavaScript相关修改** → 只在 `main-layout.html` 中进行
+2. **HTML结构修改** → 在对应片段文件中进行
+3. **事件处理器** → 只在 `main-layout.html` 中定义
+
+### 常见错误
+❌ 在 `servers.html` 中修改JavaScript (无效)  
+✅ 在 `main-layout.html` 中修改JavaScript (有效)
+
+**详细说明请参考: [前端架构指南](./doc/frontend-architecture.md)**
 
 ## 开发指南
 
