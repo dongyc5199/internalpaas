@@ -77,27 +77,51 @@ public class ServerStatusAggregationDto {
                         Server.ConnectionStatus.CONNECTED : Server.ConnectionStatus.FAILED;
                     this.connectionStatusDisplay = tag.getDisplayText();
                     break;
-                    
+
                 case ACTIVE_USERS:
                     this.hasActiveUsers = tag.getStatus().name().equals("ACTIVE");
                     break;
-                    
+
                 case MONITORING:
                     this.isMonitoringActive = tag.getStatus().name().equals("ACTIVE");
                     break;
-                    
+
                 case MEMORY_USAGE:
                     this.hasMemoryAlert = tag.isAlert();
                     this.isCriticalMemoryAlert = tag.isCriticalAlert();
                     this.memoryStatus = tag.getDisplayText();
                     break;
-                    
+
                 case CPU_USAGE:
                     this.cpuStatus = tag.getDisplayText();
                     break;
-                    
+
                 case DISK_USAGE:
                     this.diskStatus = tag.getDisplayText();
+                    break;
+
+                case SYSTEM_LOAD:
+                    // No specific action required for SYSTEM_LOAD
+                    break;
+
+                case SECURITY:
+                    // No specific action required for SECURITY
+                    break;
+
+                case SYSTEM_RESOURCE:
+                    // No specific action required for SYSTEM_RESOURCE
+                    break;
+
+                case WORK_DIRECTORY:
+                    // No specific action required for WORK_DIRECTORY
+                    break;
+
+                case MAINTENANCE:
+                    // No specific action required for MAINTENANCE
+                    break;
+
+                case PERMISSION:
+                    // No specific action required for PERMISSION
                     break;
             }
         }

@@ -14,10 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -37,9 +33,6 @@ public class ApplicationConfigService {
     private static final Pattern JVM_HEAP_PATTERN = Pattern.compile("^-X(m[sx])\\d+[kmgKMG]?$");
     private static final Pattern JVM_GC_PATTERN = Pattern.compile("^-XX:[+\\-]?\\w+.*$");
     private static final Pattern SYSTEM_PROPERTY_PATTERN = Pattern.compile("^-D[\\w\\.]+=[^\\s]*$");
-    
-    // Spring Boot property patterns
-    private static final Pattern SPRING_PROPERTY_PATTERN = Pattern.compile("^[\\w\\.\\-_]+=[^\\s]*$");
     
     // Port validation range
     private static final int MIN_PORT = 1024;

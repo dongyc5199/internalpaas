@@ -96,8 +96,6 @@ public class RemoteCommandService {
             
             validationPassed = true;
             
-            // 2. 转义命令
-            String originalCommand = command;
             String safeCommand = commandSecurityService.escapeCommand(command);
             if (!safeCommand.equals(command)) {
                 logger.info("命令已转义: 原始={}, 转义后={}", command, safeCommand);

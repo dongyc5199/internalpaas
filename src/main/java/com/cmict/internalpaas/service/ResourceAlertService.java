@@ -9,7 +9,6 @@ import com.cmict.internalpaas.model.ServerStatusTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -32,9 +31,6 @@ public class ResourceAlertService {
     
     // 告警抑制时间（分钟），避免频繁告警
     private static final int ALERT_SUPPRESS_MINUTES = 5;
-    
-    @Autowired
-    private ApplicationEventPublisher eventPublisher;
     
     @Autowired
     private SimpMessagingTemplate messagingTemplate;

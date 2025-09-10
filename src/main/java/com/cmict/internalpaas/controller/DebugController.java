@@ -6,7 +6,6 @@ import com.cmict.internalpaas.service.MonitoringHistoryService;
 import com.cmict.internalpaas.service.UserService;
 import com.cmict.internalpaas.service.ServerService;
 import com.cmict.internalpaas.service.ServerUserGroupService;
-import com.cmict.internalpaas.dto.UserProfileDto;
 import com.cmict.internalpaas.dto.UserPreferencesDto;
 import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.User;

@@ -2,13 +2,8 @@ package com.cmict.internalpaas.model;
 
 import com.cmict.internalpaas.service.PasswordEncryptionService;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Configurable;
-
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Table(name = "servers")

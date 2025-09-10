@@ -567,7 +567,6 @@ public class UserGroupSyncDebugController {
      * 测试会话类
      */
     private static class TestSession {
-        private final String sessionId;
         private final String testType;
         private final String serverName;
         private final String groupName;
@@ -576,7 +575,6 @@ public class UserGroupSyncDebugController {
         private final List<Map<String, Object>> results = new ArrayList<>();
         
         public TestSession(String sessionId, String testType, String serverName, String groupName) {
-            this.sessionId = sessionId;
             this.testType = testType;
             this.serverName = serverName;
             this.groupName = groupName;
@@ -592,8 +590,6 @@ public class UserGroupSyncDebugController {
             results.add(result);
         }
         
-        // Getters
-        public String getSessionId() { return sessionId; }
         public String getTestType() { return testType; }
         public String getServerName() { return serverName; }
         public String getGroupName() { return groupName; }

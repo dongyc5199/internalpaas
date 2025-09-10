@@ -5,7 +5,6 @@ import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.model.UserActivity;
 import com.cmict.internalpaas.repository.ServerMetricsRepository;
 import com.cmict.internalpaas.repository.UserActivityRepository;
-import com.jcraft.jsch.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +12,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -27,8 +24,6 @@ import java.util.concurrent.TimeUnit;
 public class MonitoringService {
     
     private static final Logger logger = LoggerFactory.getLogger(MonitoringService.class);
-    private static final int COMMAND_TIMEOUT = 45000; // 45秒命令超时（从30秒增加）
-    private static final int SSH_CONNECT_TIMEOUT = 15000; // 15秒SSH连接超时（从8秒增加）
     private static final int METRICS_COLLECTION_TIMEOUT = 90000; // 90秒指标收集总超时（从45秒增加）
     
     // 专用线程池，用于指标收集的异步任务

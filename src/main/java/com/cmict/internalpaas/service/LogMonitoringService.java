@@ -13,12 +13,10 @@ import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.*;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 /**
  * 日志监控服务

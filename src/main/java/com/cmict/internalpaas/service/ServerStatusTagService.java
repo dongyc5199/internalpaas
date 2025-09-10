@@ -4,7 +4,6 @@ import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerStatusTag;
 import com.cmict.internalpaas.model.ServerStatusTag.TagType;
 import com.cmict.internalpaas.model.ServerStatusTag.TagStatus;
-import com.cmict.internalpaas.model.UserActivity;
 import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.repository.ServerStatusTagRepository;
 import org.slf4j.Logger;
@@ -236,8 +235,7 @@ public class ServerStatusTagService {
     public ServerStatusTag checkActiveUsersStatus(Long serverId) {
         try {
             int activeUserCount = userActivityService.getActiveUserCount(serverId);
-            int activeSessionCount = userActivityService.getActiveSessionCount(serverId);
-            
+ 
             // 只在没有活跃用户时显示异常标签，有活跃用户时不显示任何标签
             if (activeUserCount == 0) {
                 return createOrUpdateTag(serverId, TagType.ACTIVE_USERS, TagStatus.INACTIVE,

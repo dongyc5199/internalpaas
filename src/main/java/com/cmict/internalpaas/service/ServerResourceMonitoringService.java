@@ -1,6 +1,5 @@
 package com.cmict.internalpaas.service;
 
-import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.model.ServerResourceThreshold;
 import com.cmict.internalpaas.model.ServerResourceThreshold.ResourceType;
@@ -12,7 +11,6 @@ import com.cmict.internalpaas.repository.ServerResourceThresholdRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @Transactional
@@ -37,12 +34,6 @@ public class ServerResourceMonitoringService {
     @Autowired
     private ServerStatusTagService tagService;
     
-    @Autowired
-    private ServerService serverService;
-    
-    @Autowired
-    private ApplicationEventPublisher eventPublisher;
-
     /**
      * 检查服务器资源状态并生成相应的状态标签
      */

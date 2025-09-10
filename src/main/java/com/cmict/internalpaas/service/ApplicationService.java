@@ -181,9 +181,6 @@ public class ApplicationService {
         Application app = applicationRepository.findById(appId)
             .orElseThrow(() -> new RuntimeException("Application not found"));
         
-        // 记录原始状态
-        String originalStatus = app.getStatus();
-        
         try {
             // 如果应用正在运行，先停止它
             if ("RUNNING".equals(app.getStatus())) {

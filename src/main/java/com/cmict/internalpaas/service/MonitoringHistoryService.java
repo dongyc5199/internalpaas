@@ -1,6 +1,5 @@
 package com.cmict.internalpaas.service;
 
-import com.cmict.internalpaas.dto.AggregatedServerMetrics;
 import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.repository.ServerMetricsRepository;

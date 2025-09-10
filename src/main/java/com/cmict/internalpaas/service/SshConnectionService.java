@@ -2,7 +2,6 @@ package com.cmict.internalpaas.service;
 
 import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.UserActivity;
-import com.cmict.internalpaas.service.RemoteCommandService.CommandResult;
 import com.jcraft.jsch.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -12,10 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;

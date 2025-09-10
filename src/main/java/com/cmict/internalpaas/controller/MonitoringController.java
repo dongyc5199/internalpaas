@@ -3,7 +3,6 @@ package com.cmict.internalpaas.controller;
 import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.model.UserActivity;
-import com.cmict.internalpaas.service.MonitoringService;
 import com.cmict.internalpaas.service.MonitoringSchedulerService;
 import com.cmict.internalpaas.service.ServerService;
 import com.cmict.internalpaas.service.UserActivityService;
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,9 +20,6 @@ import java.util.Map;
 @RequestMapping("/monitoring")
 public class MonitoringController {
 
-    @Autowired
-    private MonitoringService monitoringService;
-    
     @Autowired
     private ServerService serverService;
     

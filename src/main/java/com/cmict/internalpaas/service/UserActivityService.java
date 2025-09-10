@@ -1,7 +1,6 @@
 package com.cmict.internalpaas.service;
 
 import com.cmict.internalpaas.model.UserActivity;
-import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.SSHSession;
 import com.cmict.internalpaas.repository.UserActivityRepository;
 import com.cmict.internalpaas.repository.SSHSessionRepository;

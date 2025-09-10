@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.spec.IvParameterSpec;
@@ -22,11 +21,8 @@ public class PasswordEncryptionService {
 
     private static final Logger logger = LoggerFactory.getLogger(PasswordEncryptionService.class);
 
-    // 加密算法配置
-    private static final String ALGORITHM = "AES";
     private static final String TRANSFORMATION = "AES/CBC/PKCS5Padding";
     private static final String KEY_ALGORITHM = "AES";
-    private static final int KEY_LENGTH = 256;
     private static final int IV_LENGTH = 16;
 
     // 密钥分隔符

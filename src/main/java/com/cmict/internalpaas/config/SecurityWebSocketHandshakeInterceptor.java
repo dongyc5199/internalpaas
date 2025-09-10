@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
+import org.springframework.lang.Nullable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -96,7 +97,7 @@ public class SecurityWebSocketHandshakeInterceptor implements HandshakeIntercept
     
     @Override
     public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
-                             WebSocketHandler wsHandler, Exception exception) {
+                             WebSocketHandler wsHandler,@Nullable Exception exception) {
         if (exception != null) {
             logger.error("WebSocket握手完成时发生异常", exception);
         } else {

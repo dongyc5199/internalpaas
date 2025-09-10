@@ -7,8 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.HashMap;
@@ -194,13 +192,6 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理AJAX请求的异常响应
-     */
-    private ResponseEntity<Map<String, Object>> handleAjaxException(Exception ex, HttpStatus status) {
-        return handleAjaxException(ex, status, ex.getMessage());
-    }
-
-    /**
      * 处理AJAX请求的异常响应（自定义消息）
      */
     private ResponseEntity<Map<String, Object>> handleAjaxException(Exception ex, HttpStatus status, String userMessage) {
@@ -228,11 +219,4 @@ public class GlobalExceptionHandler {
         return modelAndView;
     }
 
-    /**
-     * 处理带有RedirectAttributes的页面异常
-     */
-    private String handlePageExceptionWithRedirect(String redirectUrl, String message, RedirectAttributes redirectAttributes) {
-        redirectAttributes.addFlashAttribute("error", message);
-        return "redirect:" + redirectUrl;
-    }
 }

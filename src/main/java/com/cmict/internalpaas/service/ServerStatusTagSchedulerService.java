@@ -395,9 +395,6 @@ public class ServerStatusTagSchedulerService {
         }
 
         public Long getServerId() { return serverId; }
-        public String getServerName() { return serverName; }
         public boolean isSuccess() { return success; }
-        public long getDuration() { return duration; }
-        public String getErrorMessage() { return errorMessage; }
     }
 }
