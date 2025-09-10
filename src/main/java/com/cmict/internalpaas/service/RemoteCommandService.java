@@ -1,9 +1,13 @@
 package com.cmict.internalpaas.service;
 
 import com.cmict.internalpaas.model.Server;
+import com.cmict.internalpaas.model.User;
+import com.cmict.internalpaas.service.CommandSecurityService.CommandValidationResult;
+import com.cmict.internalpaas.service.CommandSecurityService.CommandSecurityException;
 import com.jcraft.jsch.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -21,6 +25,12 @@ public class RemoteCommandService {
     private static final int CONNECTION_TIMEOUT = 10000; // 10秒连接超时
     private static final int COMMAND_TIMEOUT = 30000; // 30秒命令执行超时
 
+    @Autowired
+    private CommandSecurityService commandSecurityService;
+
+    @Autowired
+    private SecurityAuditService securityAuditService;
+
     /**
      * 执行远程命令
      * @param server 目标服务器
@@ -28,7 +38,18 @@ public class RemoteCommandService {
      * @return 命令执行结果
      */
     public CommandResult executeCommand(Server server, String command) {
-        return executeCommand(server, command, COMMAND_TIMEOUT);
+        return executeCommand(server, command, null, COMMAND_TIMEOUT);
+    }
+
+    /**
+     * 执行远程命令（带用户安全验证）
+     * @param server 目标服务器
+     * @param command 要执行的命令
+     * @param user 执行用户
+     * @return 命令执行结果
+     */
+    public CommandResult executeCommand(Server server, String command, User user) {
+        return executeCommand(server, command, user, COMMAND_TIMEOUT);
     }
 
     /**
@@ -39,9 +60,80 @@ public class RemoteCommandService {
      * @return 命令执行结果
      */
     public CommandResult executeCommand(Server server, String command, long timeoutMillis) {
-        logger.info("准备执行远程命令: {}@{} -> {}", 
-                   server.getSshUsername(), server.getHostname(), command);
-        
+        return executeCommand(server, command, null, timeoutMillis);
+    }
+
+    /**
+     * 执行远程命令（完整版本，带安全验证）
+     * @param server 目标服务器
+     * @param command 要执行的命令
+     * @param user 执行用户（可为null，表示系统内部调用）
+     * @param timeoutMillis 超时时间（毫秒）
+     * @return 命令执行结果
+     */
+    public CommandResult executeCommand(Server server, String command, User user, long timeoutMillis) {
+        long startTime = System.currentTimeMillis();
+        boolean validationPassed = false;
+        CommandResult result = null;
+
+        logger.info("准备执行远程命令: {}@{} -> {} (用户: {})", 
+                   server.getSshUsername(), server.getHostname(), command, 
+                   user != null ? user.getUsername() : "system");
+
+        try {
+            // 1. 安全验证
+            CommandValidationResult validationResult = commandSecurityService.validateCommand(command, user);
+            if (!validationResult.isValid()) {
+                logger.warn("命令安全验证失败: {} - {}", command, validationResult.getMessage());
+                
+                // 记录安全违规
+                securityAuditService.logSecurityViolation(user, server, command, 
+                    "VALIDATION_FAILED", validationResult.getMessage());
+                
+                result = CommandResult.error("命令安全验证失败: " + validationResult.getMessage());
+                return result;
+            }
+            
+            validationPassed = true;
+            
+            // 2. 转义命令
+            String originalCommand = command;
+            String safeCommand = commandSecurityService.escapeCommand(command);
+            if (!safeCommand.equals(command)) {
+                logger.info("命令已转义: 原始={}, 转义后={}", command, safeCommand);
+                command = safeCommand;
+            }
+
+            // 3. 执行命令
+            result = performCommandExecution(server, command, timeoutMillis);
+            
+            return result;
+            
+        } catch (CommandSecurityException e) {
+            logger.error("命令安全检查异常: {}", e.getMessage());
+            
+            // 记录安全异常
+            securityAuditService.logSecurityViolation(user, server, command, 
+                "SECURITY_EXCEPTION", e.getMessage());
+            
+            result = CommandResult.error("命令安全检查失败: " + e.getMessage());
+            return result;
+            
+        } finally {
+            // 记录审计日志
+            long executionTime = System.currentTimeMillis() - startTime;
+            String resultSummary = result != null ? 
+                (result.isSuccess() ? "SUCCESS" : "FAILED") : "UNKNOWN";
+            
+            securityAuditService.logCommandExecution(user, server, command, 
+                resultSummary, validationPassed, executionTime);
+        }
+    }
+
+    /**
+     * 实际执行命令的核心方法
+     */
+    private CommandResult performCommandExecution(Server server, String command, long timeoutMillis) {
         JSch jsch = new JSch();
         Session session = null;
         ChannelExec channel = null;
@@ -109,6 +201,17 @@ public class RemoteCommandService {
      */
     public CompletableFuture<CommandResult> executeCommandAsync(Server server, String command) {
         return CompletableFuture.supplyAsync(() -> executeCommand(server, command));
+    }
+
+    /**
+     * 异步执行远程命令（带用户验证）
+     * @param server 目标服务器
+     * @param command 要执行的命令
+     * @param user 执行用户
+     * @return CompletableFuture包装的命令结果
+     */
+    public CompletableFuture<CommandResult> executeCommandAsync(Server server, String command, User user) {
+        return CompletableFuture.supplyAsync(() -> executeCommand(server, command, user));
     }
 
     /**

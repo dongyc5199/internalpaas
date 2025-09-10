@@ -220,6 +220,12 @@
     color: #16a34a;
 }
 
+.warning-message {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 1px solid #fbbf24;
+    color: #d97706;
+}
+
 .alert-icon {
     font-size: 1.5rem;
     flex-shrink: 0;

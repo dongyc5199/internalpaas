@@ -13,6 +13,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.springframework.security.core.AuthenticationException;
+import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
@@ -53,6 +59,10 @@ public class SecurityConfig {
                 .maximumSessions(10) // 允许每个用户最多10个并发会话
                 .sessionRegistry(sessionRegistry()) // 设置会话注册表
                 .maxSessionsPreventsLogin(false) // 允许新登录挑出旧会话
+                .expiredUrl("/login?expired") // 会话过期时重定向到登录页面
+            )
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint(ajaxAwareAuthenticationEntryPoint()) // 设置自定义认证入口点
             )
             .userDetailsService(userDetailsService); // 设置UserDetailsService
 
@@ -78,5 +88,38 @@ public class SecurityConfig {
     @Bean
     public HttpSessionEventPublisher httpSessionEventPublisher() {
         return new HttpSessionEventPublisher();
+    }
+    
+    /**
+     * 自定义认证入口点，用于处理AJAX请求的会话超时
+     */
+    @Bean
+    public AuthenticationEntryPoint ajaxAwareAuthenticationEntryPoint() {
+        return new AuthenticationEntryPoint() {
+            @Override
+            public void commence(HttpServletRequest request, HttpServletResponse response,
+                    AuthenticationException authException) throws IOException, ServletException {
+                
+                // 检查是否是AJAX请求
+                String requestedWith = request.getHeader("X-Requested-With");
+                String accept = request.getHeader("Accept");
+                String contentType = request.getHeader("Content-Type");
+                
+                boolean isAjaxRequest = "XMLHttpRequest".equals(requestedWith) ||
+                                      (accept != null && accept.contains("application/json")) ||
+                                      (contentType != null && contentType.contains("application/json")) ||
+                                      request.getRequestURI().contains("/api/");
+                
+                if (isAjaxRequest) {
+                    // AJAX请求返回401状态码和JSON响应
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write("{\"error\":\"session_expired\",\"message\":\"会话已过期，请重新登录\",\"redirect\":\"/login?expired\"}");
+                } else {
+                    // 普通请求重定向到登录页面
+                    response.sendRedirect("/login?expired");
+                }
+            }
+        };
     }
 }

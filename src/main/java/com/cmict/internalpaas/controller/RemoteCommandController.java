@@ -1,11 +1,15 @@
 package com.cmict.internalpaas.controller;
 
 import com.cmict.internalpaas.model.Server;
+import com.cmict.internalpaas.model.User;
 import com.cmict.internalpaas.service.RemoteCommandService;
 import com.cmict.internalpaas.service.RemoteCommandService.CommandResult;
 import com.cmict.internalpaas.service.ServerService;
+import com.cmict.internalpaas.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -24,6 +28,9 @@ public class RemoteCommandController {
     @Autowired
     private ServerService serverService;
 
+    @Autowired
+    private UserService userService;
+
     /**
      * 在指定服务器上执行命令
      */
@@ -33,10 +40,14 @@ public class RemoteCommandController {
             @RequestBody CommandRequest request) {
         
         try {
+            // 获取当前用户
+            User currentUser = getCurrentUser();
+            
             Server server = serverService.getServerById(serverId)
                     .orElseThrow(() -> new RuntimeException("服务器不存在"));
             
-            CommandResult result = remoteCommandService.executeCommand(server, request.getCommand());
+            // 使用带安全验证的命令执行
+            CommandResult result = remoteCommandService.executeCommand(server, request.getCommand(), currentUser);
             
             CommandResponse response = new CommandResponse(
                     result.isSuccess(),
@@ -68,7 +79,8 @@ public class RemoteCommandController {
                 Server server = serverService.getServerById(serverId)
                         .orElseThrow(() -> new RuntimeException("服务器不存在"));
                 
-                CommandResult result = remoteCommandService.executeCommand(server, request.getCommand());
+                User currentUser = getCurrentUser();
+                CommandResult result = remoteCommandService.executeCommand(server, request.getCommand(), currentUser);
                 
                 results.put(server.getName(), new CommandResponse(
                         result.isSuccess(),
@@ -164,6 +176,22 @@ public class RemoteCommandController {
         commands.put("查看时间", "date");
         
         return ResponseEntity.ok(commands);
+    }
+
+    /**
+     * 获取当前登录用户
+     */
+    private User getCurrentUser() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                String username = authentication.getName();
+                return userService.findByUsername(username).orElse(null);
+            }
+        } catch (Exception e) {
+            // 记录错误但不中断流程
+        }
+        return null; // 系统内部调用时可能没有用户上下文
     }
 
     // 请求和响应类

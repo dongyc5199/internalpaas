@@ -47,6 +47,15 @@
                 </div>
             </div>
             
+            <!-- 会话过期信息显示 -->
+            <div th:if="${param.expired}" class="alert-message warning-message">
+                <div class="alert-icon">⏰</div>
+                <div class="alert-content">
+                    <strong>会话已过期</strong>
+                    <p>长时间未操作，请重新登录</p>
+                </div>
+            </div>
+            
             <form class="login-form" th:action="@{/login}" method="post">
                 <div class="form-group">
                     <label for="username">

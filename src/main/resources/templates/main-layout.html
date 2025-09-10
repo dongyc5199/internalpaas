@@ -95,20 +95,27 @@
             --heading-color-secondary: #374151;
         }
 
+        html {
+            overflow: hidden;
+            height: 100vh;
+        }
+
         body {
             font-family: var(--font-family);
             background-color: var(--background-color);
             color: var(--text-color);
             margin: 0;
             padding: 0;
-            overflow-x: hidden;
+            overflow: hidden;
+            height: 100vh;
         }
 
         /* 主容器布局 */
         .main-container {
             display: flex;
-            min-height: 100vh;
+            height: 100vh;
             position: relative;
+            overflow: hidden;
         }
 
         /* 顶部导航栏 - 固定位置，避免闪烁 */
@@ -149,15 +156,16 @@
             flex: 1;
             margin-left: 260px;
             margin-top: 60px;
-            min-height: calc(100vh - 60px);
+            height: calc(100vh - 60px);
             background-color: var(--background-color);
             position: relative;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         /* 内容加载区域 */
         .content-wrapper {
             padding: 2rem;
-            min-height: calc(100vh - 120px);
         }
 
         /* 导航品牌 */
@@ -271,12 +279,16 @@
             margin: 0 0.5rem;
             transition: all var(--transition-fast);
             cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
         }
 
         .nav-link:hover {
             background-color: var(--background-hover);
             color: var(--text-color);
             text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
         }
 
         .nav-link.active,
@@ -284,6 +296,7 @@
             background-color: var(--primary-light);
             color: var(--primary-color);
             font-weight: 600;
+            font-size: 0.95rem;
         }
 
         .nav-icon {
@@ -784,9 +797,6 @@
                     </div>
                     
                     <!-- 这里将加载工作台的具体内容 -->
-                    <div class="loading-placeholder">
-                        <p>正在加载工作台内容...</p>
-                    </div>
                 </div>
             </div>
         </main>
@@ -797,8 +807,9 @@
 
     <!-- 主要的JavaScript逻辑 -->
     <script>
+        console.log('Script started loading...');
         // 全局变量
-        let currentPage = 'dashboard';
+        let currentPage = '';
         let isLoading = false;
         
         // CSRF Token Helper Functions
@@ -812,10 +823,39 @@
             return csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
         }
 
+        // 全局AJAX错误处理器，用于处理会话超时
+        function handleAjaxError(response) {
+            if (response.status === 401) {
+                // 检查是否是JSON响应
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json().then(errorData => {
+                        if (errorData.error === 'session_expired') {
+                            window.location.href = errorData.redirect || '/login?expired';
+                            return Promise.reject(new Error('Session expired'));
+                        }
+                        return Promise.reject(new Error('Unauthorized'));
+                    });
+                } else {
+                    // 非JSON响应，可能是登录页面HTML
+                    window.location.href = '/login?expired';
+                    return Promise.reject(new Error('Session expired'));
+                }
+            }
+            return response;
+        }
+
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', function() {
-            // 加载默认页面内容
-            loadContent('dashboard', false);
+            console.log('DOMContentLoaded event fired');
+            try {
+                // 加载默认页面内容（第一次不显示加载动画）
+                console.log('About to call loadContent with dashboard');
+                loadContent('dashboard', false, false);
+                console.log('loadContent call completed');
+            } catch (error) {
+                console.error('Error calling loadContent:', error);
+            }
             
             // 初始化移动端菜单
             initMobileMenu();
@@ -832,11 +872,17 @@
         });
 
         // 核心内容加载函数
-        async function loadContent(page, addToHistory = true) {
-            if (isLoading || page === currentPage) return;
+        async function loadContent(page, addToHistory = true, showLoadingSpinner = true) {
+            console.log('loadContent called with:', {page, addToHistory, showLoadingSpinner});
+            if (isLoading || page === currentPage) {
+                console.log('loadContent early return:', {isLoading, currentPage});
+                return;
+            }
             
             isLoading = true;
-            showLoading();
+            if (showLoadingSpinner) {
+                showLoading();
+            }
             
             try {
                 // 更新菜单激活状态
@@ -844,9 +890,12 @@
                 
                 // 根据页面类型决定加载方式
                 let content;
+                console.log('Loading page:', page);
                 switch (page) {
                     case 'dashboard':
+                        console.log('Loading dashboard content...');
                         content = await loadDashboardContent();
+                        console.log('Dashboard content loaded, length:', content ? content.length : 'undefined');
                         break;
                     case 'servers':
                         content = await loadServersContent();
@@ -898,6 +947,7 @@
                 }
                 
                 // 更新内容
+                console.log('Updating content, length:', content ? content.length : 'undefined');
                 updateContent(content);
                 
                 // 更新浏览器历史
@@ -909,9 +959,23 @@
                 
             } catch (error) {
                 console.error('加载内容失败:', error);
+                
+                // 检查是否是会话过期错误
+                if (error.message && error.message.includes('401') && error.sessionExpired) {
+                    // 会话过期，重定向到登录页面
+                    window.location.href = '/login?expired';
+                    return;
+                } else if (error.message && error.message.includes('401')) {
+                    // 可能是会话过期，检查响应内容
+                    window.location.href = '/login?expired';
+                    return;
+                }
+                
                 updateContent(`<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> 加载失败: ${error.message}</div>`);
             } finally {
-                hideLoading();
+                if (showLoadingSpinner) {
+                    hideLoading();
+                }
                 isLoading = false;
             }
         }
@@ -930,7 +994,13 @@
 
         // 更新内容
         function updateContent(content) {
+            console.log('updateContent called with content length:', content ? content.length : 'undefined');
             const wrapper = document.getElementById('contentWrapper');
+            if (!wrapper) {
+                console.error('contentWrapper element not found!');
+                return;
+            }
+            console.log('Setting innerHTML...');
             wrapper.innerHTML = content;
             wrapper.classList.add('content-fade-in');
             
@@ -1223,7 +1293,24 @@
             });
             
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+                if (response.status === 401) {
+                    // 会话过期，尝试解析JSON响应
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.error === 'session_expired') {
+                            // 直接跳转到登录页面
+                            window.location.href = errorData.redirect || '/login?expired';
+                            return '';
+                        }
+                    } catch (e) {
+                        // JSON解析失败，直接跳转
+                        window.location.href = '/login?expired';
+                        return '';
+                    }
+                }
+                const error = new Error(`HTTP ${response.status}`);
+                error.sessionExpired = response.status === 401;
+                throw error;
             }
             
             return await response.text();
@@ -1240,7 +1327,24 @@
             });
             
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+                if (response.status === 401) {
+                    // 会话过期，尝试解析JSON响应
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.error === 'session_expired') {
+                            // 直接跳转到登录页面
+                            window.location.href = errorData.redirect || '/login?expired';
+                            return '';
+                        }
+                    } catch (e) {
+                        // JSON解析失败，直接跳转
+                        window.location.href = '/login?expired';
+                        return '';
+                    }
+                }
+                const error = new Error(`HTTP ${response.status}`);
+                error.sessionExpired = response.status === 401;
+                throw error;
             }
             
             return await response.text();
@@ -1257,7 +1361,24 @@
             });
             
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+                if (response.status === 401) {
+                    // 会话过期，尝试解析JSON响应
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.error === 'session_expired') {
+                            // 直接跳转到登录页面
+                            window.location.href = errorData.redirect || '/login?expired';
+                            return '';
+                        }
+                    } catch (e) {
+                        // JSON解析失败，直接跳转
+                        window.location.href = '/login?expired';
+                        return '';
+                    }
+                }
+                const error = new Error(`HTTP ${response.status}`);
+                error.sessionExpired = response.status === 401;
+                throw error;
             }
             
             return await response.text();
@@ -1274,7 +1395,24 @@
             });
             
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+                if (response.status === 401) {
+                    // 会话过期，尝试解析JSON响应
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.error === 'session_expired') {
+                            // 直接跳转到登录页面
+                            window.location.href = errorData.redirect || '/login?expired';
+                            return '';
+                        }
+                    } catch (e) {
+                        // JSON解析失败，直接跳转
+                        window.location.href = '/login?expired';
+                        return '';
+                    }
+                }
+                const error = new Error(`HTTP ${response.status}`);
+                error.sessionExpired = response.status === 401;
+                throw error;
             }
             
             return await response.text();
