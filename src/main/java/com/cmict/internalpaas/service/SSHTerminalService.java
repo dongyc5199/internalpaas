@@ -14,6 +14,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.io.*;
+import java.net.InetSocketAddress;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -488,7 +489,11 @@ public class SSHTerminalService {
      */
     private String getClientIP(WebSocketSession webSocketSession) {
         try {
-            return webSocketSession.getRemoteAddress().getAddress().getHostAddress();
+            InetSocketAddress remoteAddress = webSocketSession.getRemoteAddress();
+            if (remoteAddress == null) {
+                return "unknown";      
+            }
+            return remoteAddress.getAddress().getHostAddress();
         } catch (Exception e) {
             return "unknown";
         }
