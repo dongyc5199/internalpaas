@@ -174,6 +174,14 @@ public class CommandSecurityService {
             return command;
         }
 
+        // 获取命令的第一个单词（命令名）
+        String[] parts = command.trim().split("\\s+", 2);
+        String commandName = parts[0];
+        
+        // 对于文件操作命令，不转义引号，因为引号是路径参数的一部分
+        Set<String> fileOperationCommands = Set.of("test", "ls", "cat", "mkdir", "rmdir", "rm", "cp", "mv", "find", "grep", "chmod", "chown", "stat", "du", "df");
+        boolean isFileOperation = fileOperationCommands.contains(commandName);
+
         // 移除危险字符
         String escaped = command
             .replaceAll("[;&|`$()]", "")           // 移除命令连接符
@@ -183,8 +191,10 @@ public class CommandSecurityService {
             .replaceAll("%[0-9a-fA-F]+", "")       // 移除URL编码
             .replaceAll("\\\\[0-7]+", "");         // 移除八进制编码
 
-        // 转义单引号和双引号
-        escaped = escaped.replace("'", "\\'").replace("\"", "\\\"");
+        // 对于非文件操作命令才转义引号
+        if (!isFileOperation) {
+            escaped = escaped.replace("'", "\\'").replace("\"", "\\\"");
+        }
 
         if (!escaped.equals(command)) {
             logger.warn("命令已被转义: 原始={}, 转义后={}", command, escaped);
