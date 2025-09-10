@@ -97,8 +97,8 @@ public class DashboardService {
         
         User user = userOptional.get();
         
-        // 应用统计数据
-        List<Application> applications = applicationRepository.findByUser(user);
+        // 应用统计数据 - 使用优化查询避免N+1问题
+        List<Application> applications = applicationRepository.findByUserWithUserOrderByCreatedAtDesc(user);
         long totalApplications = applications.size();
         long runningApplications = applications.stream()
             .filter(app -> "RUNNING".equals(app.getStatus())).count();

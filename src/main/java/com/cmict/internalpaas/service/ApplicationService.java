@@ -439,9 +439,18 @@ public class ApplicationService {
     
     /**
      * 获取用户的所有应用
+     * 使用优化查询避免N+1问题
      */
     public List<Application> getUserApplications(User user) {
-        return applicationRepository.findByUserOrderByCreatedAtDesc(user);
+        return applicationRepository.findByUserWithUserOrderByCreatedAtDesc(user);
+    }
+    
+    /**
+     * 获取用户的所有应用（包含配置信息）
+     * 适用于需要显示配置详情的页面
+     */
+    public List<Application> getUserApplicationsWithConfigs(User user) {
+        return applicationRepository.findByUserWithConfigsOrderByCreatedAtDesc(user);
     }
     
     /**

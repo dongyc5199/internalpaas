@@ -9,7 +9,10 @@ import com.cmict.internalpaas.service.ServerUserGroupService;
 import com.cmict.internalpaas.dto.UserProfileDto;
 import com.cmict.internalpaas.dto.UserPreferencesDto;
 import com.cmict.internalpaas.model.Server;
+import com.cmict.internalpaas.model.User;
+import com.cmict.internalpaas.test.N1QueryOptimizationTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,6 +44,9 @@ public class DebugController {
     
     @Autowired
     private ServerUserGroupService userGroupService;
+    
+    @Autowired
+    private N1QueryOptimizationTest n1QueryOptimizationTest;
 
     @GetMapping("/debug/check-root")
     public String checkRootUser() {
@@ -237,6 +243,30 @@ public class DebugController {
             return result.toString();
         } catch (Exception e) {
             return "检查用户组状态失败: " + e.getMessage() + "\n" + Arrays.toString(e.getStackTrace());
+        }
+    }
+    
+    /**
+     * N+1查询优化测试端点
+     */
+    @GetMapping("/debug/test-n1-query-optimization")
+    public String testN1QueryOptimization(Authentication authentication) {
+        try {
+            if (authentication == null || authentication.getName() == null) {
+                return "需要登录才能执行测试";
+            }
+            
+            User user = userService.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("用户未找到"));
+            
+            String result = n1QueryOptimizationTest.performQuickTest(user);
+            
+            return "=== N+1查询优化测试结果 ===\n\n" + result + 
+                   "\n\n提示: 查看应用日志可以看到SQL查询详情";
+                   
+        } catch (Exception e) {
+            return "N+1查询测试失败: " + e.getMessage() + 
+                   "\n\n错误堆栈:\n" + Arrays.toString(e.getStackTrace());
         }
     }
 }

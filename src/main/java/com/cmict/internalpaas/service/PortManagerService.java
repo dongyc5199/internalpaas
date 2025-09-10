@@ -129,7 +129,7 @@ public class PortManagerService {
     private Set<Integer> getUsedPorts(User user, boolean isDebug) {
         Set<Integer> usedPorts = new HashSet<>();
         
-        applicationRepository.findByUser(user).forEach(app -> {
+        applicationRepository.findByUserWithUserOrderByCreatedAtDesc(user).forEach(app -> {
             if (isDebug && app.getDebugPort() != null) {
                 usedPorts.add(app.getDebugPort());
             } else if (!isDebug && app.getPort() != null) {
