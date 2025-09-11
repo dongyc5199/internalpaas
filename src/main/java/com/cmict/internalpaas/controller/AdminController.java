@@ -1613,6 +1613,47 @@ public class AdminController {
     }
 
     /**
+     * 重新生成服务器工作目录 API
+     */
+    @PostMapping("/servers/{id}/initialize-working-directory")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> initializeServerWorkingDirectory(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Server server = serverService.findById(id)
+                .orElseThrow(() -> new RuntimeException("服务器未找到"));
+            
+            logger.info("开始为服务器 {} 重新生成工作目录", server.getName());
+            
+            // 调用现有的工作目录创建功能
+            Map<String, Object> directoryResult = ensureBaseWorkDirectory(server);
+            boolean success = (Boolean) directoryResult.get("success");
+            boolean created = (Boolean) directoryResult.get("created");
+            String message = (String) directoryResult.get("message");
+            
+            if (success) {
+                response.put("status", "success");
+                response.put("workingDirectory", server.getBaseWorkDirectory());
+                response.put("created", created);
+                response.put("message", message);
+                logger.info("服务器 {} 工作目录初始化成功: {}", server.getName(), message);
+            } else {
+                response.put("status", "error");
+                response.put("message", message);
+                logger.error("服务器 {} 工作目录初始化失败: {}", server.getName(), message);
+            }
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("重新生成服务器工作目录时发生错误: {}", e.getMessage(), e);
+            response.put("status", "error");
+            response.put("message", "操作失败: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    /**
      * 转换标签为前端所需的Map格式
      */
     private Map<String, Object> convertTagToMap(ServerStatusTag tag) {
