@@ -64,7 +64,7 @@ class DrawerManager {
                 </button>
             </div>
             <div class="drawer-content">
-                <form class="drawer-form" id="serverDrawerForm">
+                <form class="drawer-form" id="serverDrawerForm" action="javascript:void(0)" method="post" onsubmit="event.preventDefault(); console.log('🚫 表单默认提交被阻止'); return false;">
                     <input type="hidden" name="_csrf" value="">
                     <input type="hidden" name="id" value="">
                     
@@ -296,7 +296,7 @@ class DrawerManager {
                     <span>✕</span>
                     取消
                 </button>
-                <button type="button" class="drawer-btn drawer-btn-primary" onclick="drawerManager.submitServerForm()" id="serverSubmitBtn">
+                <button type="button" class="drawer-btn drawer-btn-primary" onclick="console.log('🖱️ 保存按钮被点击'); drawerManager.submitServerForm()" id="serverSubmitBtn">
                     <span>💾</span>
                     <span class="submit-text">保存服务器</span>
                 </button>
@@ -758,10 +758,38 @@ class DrawerManager {
             }
         });
 
-        // 延迟绑定用户表单事件（等DOM创建完成）
+        // 延迟绑定表单事件（等DOM创建完成）
         setTimeout(() => {
             this.bindUserFormEvents();
+            this.bindServerFormEvents();
         }, 100);
+    }
+
+    // 绑定服务器表单事件
+    bindServerFormEvents() {
+        console.log('🔗 绑定服务器表单事件');
+        const form = document.getElementById('serverDrawerForm');
+        if (form) {
+            // 阻止表单默认提交
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                console.log('🚫 服务器表单提交被阻止 (addEventListener)');
+                return false;
+            });
+            
+            // 阻止回车键提交表单
+            form.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    console.log('🚫 回车键表单提交被阻止');
+                    return false;
+                }
+            });
+            
+            console.log('✅ 服务器表单事件绑定完成');
+        } else {
+            console.error('❌ 未找到服务器表单');
+        }
     }
     
     // 根据屏幕大小调整抽屉布局
@@ -915,6 +943,7 @@ class DrawerManager {
 
     // 打开服务器抽屉
     openServerDrawer(serverId = null) {
+        console.log('📂 openServerDrawer 被调用', {serverId});
         this.currentDrawer = this.serverDrawer;
         
         // 更新标题
@@ -950,8 +979,9 @@ class DrawerManager {
         // 显示抽屉
         this.showDrawer(this.serverDrawer);
         
-        // 聚焦第一个输入框
+        // 绑定表单事件（确保在抽屉显示后绑定）
         setTimeout(() => {
+            this.bindServerFormEvents();
             const firstInput = this.serverDrawer.querySelector('.form-control');
             if (firstInput) firstInput.focus();
         }, 300);
@@ -1207,6 +1237,7 @@ class DrawerManager {
 
     // 提交服务器表单
     async submitServerForm() {
+        console.log('🔄 submitServerForm called - 异步优化版本 2025-09-10 20:10', {timestamp: new Date().toISOString()});
         if (this.isSubmitting) return;
 
         const form = this.serverDrawer.querySelector('#serverDrawerForm');
@@ -1276,14 +1307,24 @@ class DrawerManager {
             // 重置未保存标志
             this.hasUnsavedChanges = false;
             
-            // 延迟关闭抽屉并刷新页面
+            // 立即回显服务器卡片，不等待状态检测
+            console.log('🎯 立即回显服务器卡片 - 异步优化', {result, isEdit});
+            if (result.server) {
+                this.updateServerCardDisplay(result.server, isEdit);
+            } else {
+                console.warn('⚠️ 响应中未找到服务器数据:', result);
+            }
+            
+            // 延迟关闭抽屉，保持在当前页面
             setTimeout(() => {
                 this.closeDrawer();
-                // 刷新服务器列表
+                // 刷新服务器列表而不跳转页面
                 if (typeof refreshServerList === 'function') {
                     refreshServerList();
-                } else {
-                    window.location.reload();
+                } else if (window.location.pathname.includes('/admin/servers') || 
+                           window.location.search.includes('page=servers')) {
+                    // 如果在服务器页面，只刷新服务器内容，不刷新整个页面
+                    this.refreshCurrentPageContent();
                 }
             }, 1500);
 
@@ -2933,6 +2974,185 @@ class DrawerManager {
                     this.loadServerStatus(serverId);
                 }, 300);
             }
+        }
+    }
+
+    // 立即更新服务器卡片显示
+    updateServerCardDisplay(serverData, isEdit) {
+        try {
+            if (isEdit) {
+                // 编辑模式：更新现有服务器卡片
+                this.updateExistingServerCard(serverData);
+            } else {
+                // 新建模式：添加新的服务器卡片
+                this.addNewServerCard(serverData);
+            }
+        } catch (error) {
+            console.error('更新服务器卡片显示失败:', error);
+        }
+    }
+
+    // 更新现有服务器卡片
+    updateExistingServerCard(serverData) {
+        const serverId = serverData.id;
+        const serverCard = document.querySelector(`.server-card[data-id="${serverId}"]`);
+        
+        if (serverCard) {
+            // 更新服务器名称
+            const serverName = serverCard.querySelector('.server-name');
+            if (serverName && serverData.name) {
+                serverName.textContent = serverData.name;
+            }
+            
+            // 更新主机名
+            const hostnameMeta = serverCard.querySelector('.meta-item:has(.fa-globe)');
+            if (hostnameMeta && serverData.hostname) {
+                hostnameMeta.lastChild.textContent = serverData.hostname;
+            }
+            
+            // 更新SSH端口
+            const portMeta = serverCard.querySelector('.meta-item:has(.fa-plug)');
+            if (portMeta && serverData.sshPort) {
+                portMeta.lastChild.textContent = `SSH:${serverData.sshPort}`;
+            }
+            
+            // 添加更新标识
+            serverCard.classList.add('card-updated');
+            setTimeout(() => {
+                serverCard.classList.remove('card-updated');
+            }, 3000);
+        }
+    }
+
+    // 添加新的服务器卡片
+    addNewServerCard(serverData) {
+        const serverGrid = document.querySelector('.servers-grid');
+        if (!serverGrid) return;
+        
+        // 创建新的服务器卡片HTML
+        const newCardHtml = this.createServerCardHtml(serverData);
+        
+        // 将新卡片添加到网格的开头
+        serverGrid.insertAdjacentHTML('afterbegin', newCardHtml);
+        
+        // 为新卡片添加动画效果
+        const newCard = serverGrid.querySelector('.server-card[data-id="' + serverData.id + '"]');
+        if (newCard) {
+            newCard.classList.add('card-new');
+            setTimeout(() => {
+                newCard.classList.remove('card-new');
+            }, 3000);
+        }
+    }
+
+    // 创建服务器卡片HTML模板
+    createServerCardHtml(serverData) {
+        return `
+            <div class="server-card card-new" data-id="${serverData.id}">
+                <div class="server-card-header">
+                    <div class="server-name-container">
+                        <i class="role-icon fas fa-server" style="color: #6366f1;"></i>
+                        <span class="server-name">${serverData.name || '未命名服务器'}</span>
+                    </div>
+                    <div class="server-status-badge status-offline">
+                        <i class="fas fa-circle"></i>
+                        检查中
+                    </div>
+                </div>
+                
+                <div class="server-card-body">
+                    <div class="server-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-globe"></i>
+                            ${serverData.hostname || '未设置'}
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-plug"></i>
+                            SSH:${serverData.sshPort || 22}
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-folder"></i>
+                            ${serverData.baseWorkDirectory || '未设置'}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="server-status-tags-row">
+                    <div class="status-tags-loading">
+                        <i class="fas fa-sync fa-spin"></i>
+                        正在检查服务器状态...
+                    </div>
+                </div>
+                
+                <div class="server-quick-actions">
+                    <button class="quick-action-btn primary btn-open-terminal" data-id="${serverData.id}" title="打开SSH终端">
+                        <i class="fas fa-terminal"></i>
+                    </button>
+                    <button class="quick-action-btn secondary btn-view-server" data-id="${serverData.id}" title="查看详情">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="quick-action-btn info btn-view-logs" data-id="${serverData.id}" title="查看日志">
+                        <i class="fas fa-file-text"></i>
+                    </button>
+                    
+                    <div class="server-actions-dropdown">
+                        <button class="dropdown-toggle" onclick="toggleServerActions(${serverData.id})">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                        <div class="dropdown-menu" id="serverActions${serverData.id}">
+                            <button class="dropdown-item btn-refresh-server" data-id="${serverData.id}">
+                                <i class="fas fa-sync"></i>
+                                刷新状态
+                            </button>
+                            <button class="dropdown-item btn-edit-server" data-id="${serverData.id}">
+                                <i class="fas fa-edit"></i>
+                                编辑
+                            </button>
+                            <div class="dropdown-divider"></div>
+                            <button class="dropdown-item danger btn-delete-server" data-id="${serverData.id}">
+                                <i class="fas fa-trash"></i>
+                                删除
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // 刷新当前页面内容（不跳转）
+    refreshCurrentPageContent() {
+        try {
+            // 检查是否在服务器管理页面
+            if (window.location.search.includes('page=servers') || 
+                window.location.pathname.includes('/admin/servers')) {
+                
+                // 调用loadContent函数重新加载服务器内容
+                if (typeof loadContent === 'function') {
+                    loadContent('servers');
+                } else {
+                    // 后备方案：使用fetch刷新服务器内容
+                    this.refreshServersContentViaFetch();
+                }
+            }
+        } catch (error) {
+            console.error('刷新页面内容失败:', error);
+        }
+    }
+
+    // 通过fetch API刷新服务器内容
+    async refreshServersContentViaFetch() {
+        try {
+            const response = await fetch('/admin/api/servers-content');
+            if (response.ok) {
+                const html = await response.text();
+                const contentArea = document.querySelector('.content-area');
+                if (contentArea) {
+                    contentArea.innerHTML = html;
+                }
+            }
+        } catch (error) {
+            console.error('通过fetch刷新服务器内容失败:', error);
         }
     }
 }

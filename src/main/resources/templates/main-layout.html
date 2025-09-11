@@ -860,6 +860,15 @@
             // 初始化移动端菜单
             initMobileMenu();
             
+            // 初始化抽屉管理器
+            console.log('🚀 main-layout.html 加载 - 版本: 2025-09-10 21:12 (异步优化版)');
+            try {
+                window.drawerManager = new DrawerManager();
+                console.log('✅ DrawerManager 初始化成功 - 版本: 2025-09-10 21:12');
+            } catch (error) {
+                console.error('❌ DrawerManager 初始化失败:', error);
+            }
+            
             // 监听浏览器后退/前进按钮
             window.addEventListener('popstate', function(e) {
                 if (e.state && e.state.page) {
@@ -1971,12 +1980,31 @@
         
         // 添加服务器函数
         function addServer() {
+            console.log('🎯 addServer 函数被调用');
             // 使用抽屉组件
             if (typeof drawerManager !== 'undefined' && drawerManager) {
+                console.log('📂 打开服务器抽屉');
                 drawerManager.openServerDrawer();
             } else {
+                console.error('❌ drawerManager 未定义或为空:', typeof drawerManager);
                 // 后备方案：使用简单的提示
                 alert('添加服务器功能需要抽屉组件支持，请联系管理员');
+            }
+        }
+
+        // 编辑服务器函数
+        function editServer(element) {
+            console.log('✏️ editServer 函数被调用');
+            const serverId = element.getAttribute('data-id');
+            console.log('📝 编辑服务器 ID:', serverId);
+            // 使用抽屉组件
+            if (typeof drawerManager !== 'undefined' && drawerManager) {
+                console.log('📂 打开服务器编辑抽屉');
+                drawerManager.openServerDrawer(serverId);
+            } else {
+                console.error('❌ drawerManager 未定义或为空:', typeof drawerManager);
+                // 后备方案：使用简单的提示
+                alert('编辑服务器功能需要抽屉组件支持，请联系管理员');
             }
         }
         
