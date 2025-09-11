@@ -31,5 +31,8 @@
 16. [服务器状态标签设计](./server-status-tags-design.md) - 服务器状态标签功能设计
 17. [用户服务器账户同步](./user-server-account-sync.md) - 用户与服务器账户同步机制
 
+### 故障排查文档
+18. [SPA架构JavaScript事件失效问题](./troubleshooting/spa-javascript-events-not-working.md) - ⚠️ **重要排查指南**: SPA动态片段中JavaScript事件不工作的完整解决方案
+
 ---
-*最后更新: 2025-09-10*
+*最后更新: 2025-09-11*
