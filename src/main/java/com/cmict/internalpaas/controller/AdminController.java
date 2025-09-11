@@ -131,8 +131,31 @@ public class AdminController {
         try {
             // 保存服务器，不进行自动检测
             Server savedServer = serverService.saveServer(server);
+            
+            // 异步刷新服务器状态和监控数据（提交到后台任务队列）
+            CompletableFuture.runAsync(() -> {
+                try {
+                    logger.info("开始为新创建的服务器 {} 执行异步状态刷新", savedServer.getName());
+                    Server refreshedServer = serverService.checkServerConnectionAndMetrics(savedServer.getId());
+                    logger.info("新服务器 {} 异步状态刷新完成，连接状态: {}", 
+                        refreshedServer.getName(), refreshedServer.getConnectionStatus());
+                    
+                    // 通知前端更新服务器状态
+                    webSocketController.broadcast("/topic/server-status", Map.of(
+                        "type", "SERVER_CREATED_STATUS_UPDATED",
+                        "serverId", savedServer.getId(),
+                        "serverName", savedServer.getName(),
+                        "connectionStatus", refreshedServer.getConnectionStatus().name(),
+                        "timestamp", System.currentTimeMillis()
+                    ));
+                    
+                } catch (Exception e) {
+                    logger.error("新服务器 {} 异步状态刷新失败: {}", savedServer.getName(), e.getMessage(), e);
+                }
+            });
+            
             redirectAttributes.addFlashAttribute("successMessage", 
-                String.format("服务器 '%s' 已保存", savedServer.getName()));
+                String.format("服务器 '%s' 已保存，状态检查正在后台进行", savedServer.getName()));
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "保存失败: " + e.getMessage());
         }
@@ -222,17 +245,27 @@ public class AdminController {
                 // 不中断服务器创建流程，只记录错误
             }
             
-            // 自动刷新服务器状态和监控数据
-            try {
-                logger.info("开始为新创建的服务器 {} 执行状态刷新", savedServer.getName());
-                Server refreshedServer = serverService.checkServerConnectionAndMetrics(savedServer.getId());
-                logger.info("新服务器 {} 状态刷新完成，连接状态: {}", 
-                    refreshedServer.getName(), refreshedServer.getConnectionStatus());
-                savedServer = refreshedServer; // 更新服务器对象以获取最新状态
-            } catch (Exception e) {
-                logger.error("新服务器 {} 状态刷新失败: {}", savedServer.getName(), e.getMessage(), e);
-                // 不中断服务器创建流程，只记录错误
-            }
+            // 异步刷新服务器状态和监控数据（提交到后台任务队列）
+            CompletableFuture.runAsync(() -> {
+                try {
+                    logger.info("开始为新创建的服务器 {} 执行异步状态刷新", savedServer.getName());
+                    Server refreshedServer = serverService.checkServerConnectionAndMetrics(savedServer.getId());
+                    logger.info("新服务器 {} 异步状态刷新完成，连接状态: {}", 
+                        refreshedServer.getName(), refreshedServer.getConnectionStatus());
+                    
+                    // 通知前端更新服务器状态
+                    webSocketController.broadcast("/topic/server-status", Map.of(
+                        "type", "SERVER_CREATED_STATUS_UPDATED",
+                        "serverId", savedServer.getId(),
+                        "serverName", savedServer.getName(),
+                        "connectionStatus", refreshedServer.getConnectionStatus().name(),
+                        "timestamp", System.currentTimeMillis()
+                    ));
+                    
+                } catch (Exception e) {
+                    logger.error("新服务器 {} 异步状态刷新失败: {}", savedServer.getName(), e.getMessage(), e);
+                }
+            });
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
@@ -288,17 +321,36 @@ public class AdminController {
     }
 
     @PostMapping("/servers/{id}/update")
-    public String updateServer(@PathVariable Long id, @ModelAttribute Server server) {
-        Server updatedServer = serverService.updateServer(id, server);
-        
-        // 自动刷新服务器状态和监控数据
+    public String updateServer(@PathVariable Long id, @ModelAttribute Server server, RedirectAttributes redirectAttributes) {
         try {
-            logger.info("开始为更新后的服务器 {} 执行状态刷新", updatedServer.getName());
-            serverService.checkServerConnectionAndMetrics(updatedServer.getId());
-            logger.info("更新后服务器 {} 状态刷新完成", updatedServer.getName());
+            Server updatedServer = serverService.updateServer(id, server);
+            
+            // 异步刷新服务器状态和监控数据（提交到后台任务队列）
+            CompletableFuture.runAsync(() -> {
+                try {
+                    logger.info("开始为更新后的服务器 {} 执行异步状态刷新", updatedServer.getName());
+                    Server refreshedServer = serverService.checkServerConnectionAndMetrics(updatedServer.getId());
+                    logger.info("更新后服务器 {} 异步状态刷新完成，连接状态: {}", 
+                        refreshedServer.getName(), refreshedServer.getConnectionStatus());
+                    
+                    // 通知前端更新服务器状态
+                    webSocketController.broadcast("/topic/server-status", Map.of(
+                        "type", "SERVER_UPDATED_STATUS_UPDATED",
+                        "serverId", updatedServer.getId(),
+                        "serverName", updatedServer.getName(),
+                        "connectionStatus", refreshedServer.getConnectionStatus().name(),
+                        "timestamp", System.currentTimeMillis()
+                    ));
+                    
+                } catch (Exception e) {
+                    logger.error("更新后服务器 {} 异步状态刷新失败: {}", updatedServer.getName(), e.getMessage(), e);
+                }
+            });
+            
+            redirectAttributes.addFlashAttribute("successMessage", 
+                String.format("服务器 '%s' 更新成功，状态检查正在后台进行", updatedServer.getName()));
         } catch (Exception e) {
-            logger.error("更新后服务器 {} 状态刷新失败: {}", updatedServer.getName(), e.getMessage(), e);
-            // 不中断服务器更新流程，只记录错误
+            redirectAttributes.addFlashAttribute("errorMessage", "更新失败: " + e.getMessage());
         }
         
         return "redirect:/admin/servers";
@@ -317,17 +369,27 @@ public class AdminController {
             Map<String, Object> directoryResult = ensureBaseWorkDirectory(updatedServer);
             boolean directoryCreated = (Boolean) directoryResult.get("created");
             
-            // 自动刷新服务器状态和监控数据
-            try {
-                logger.info("开始为更新后的服务器 {} 执行状态刷新", updatedServer.getName());
-                Server refreshedServer = serverService.checkServerConnectionAndMetrics(updatedServer.getId());
-                logger.info("更新后服务器 {} 状态刷新完成，连接状态: {}", 
-                    refreshedServer.getName(), refreshedServer.getConnectionStatus());
-                updatedServer = refreshedServer; // 更新服务器对象以获取最新状态
-            } catch (Exception e) {
-                logger.error("更新后服务器 {} 状态刷新失败: {}", updatedServer.getName(), e.getMessage(), e);
-                // 不中断服务器更新流程，只记录错误
-            }
+            // 异步刷新服务器状态和监控数据（提交到后台任务队列）
+            CompletableFuture.runAsync(() -> {
+                try {
+                    logger.info("开始为更新后的服务器 {} 执行异步状态刷新", updatedServer.getName());
+                    Server refreshedServer = serverService.checkServerConnectionAndMetrics(updatedServer.getId());
+                    logger.info("更新后服务器 {} 异步状态刷新完成，连接状态: {}", 
+                        refreshedServer.getName(), refreshedServer.getConnectionStatus());
+                    
+                    // 通知前端更新服务器状态
+                    webSocketController.broadcast("/topic/server-status", Map.of(
+                        "type", "SERVER_UPDATED_STATUS_UPDATED",
+                        "serverId", updatedServer.getId(),
+                        "serverName", updatedServer.getName(),
+                        "connectionStatus", refreshedServer.getConnectionStatus().name(),
+                        "timestamp", System.currentTimeMillis()
+                    ));
+                    
+                } catch (Exception e) {
+                    logger.error("更新后服务器 {} 异步状态刷新失败: {}", updatedServer.getName(), e.getMessage(), e);
+                }
+            });
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
