@@ -358,6 +358,9 @@ class ServerStatusManager {
             const socket = new SockJS('/ws');
             this.websocket = Stomp.over(socket);
             
+            // 关闭STOMP调试信息
+            this.websocket.debug = null;
+            
             this.websocket.connect({}, (frame) => {
                 this.retryCount = 0;
                 
