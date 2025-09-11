@@ -22,7 +22,6 @@ class UXEnhancement {
         this.createConfirmDialog();
         this.enhanceExistingElements();
         this.setupGlobalErrorHandling();
-        console.log('UX Enhancement initialized');
     }
 
     /**

@@ -145,13 +145,11 @@ function formatUptime(seconds) {
 // 模拟数据更新功能
 function updateDashboardData() {
     // 这里可以添加通过AJAX获取实时数据的逻辑
-    console.log('Updating dashboard data...');
 }
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
     // 可以在这里添加初始化代码
-    console.log('Dashboard initialized');
     
     // 模拟定期更新数据
     setInterval(updateDashboardData, 30000); // 每30秒更新一次

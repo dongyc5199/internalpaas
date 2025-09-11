@@ -28,7 +28,6 @@ Chart.defaults.backgroundColor = 'rgba(0,0,0,0.1)';
  * 初始化监控历史系统
  */
 function initializeMonitoringHistory() {
-    console.log('初始化监控历史系统...');
     
     // 初始化时间选择器
     initializeDateTimePickers();
@@ -42,7 +41,6 @@ function initializeMonitoringHistory() {
     // 加载默认数据（最近24小时）
     loadDefaultData();
     
-    console.log('监控历史系统初始化完成');
 }
 
 /**
@@ -1339,5 +1337,4 @@ function updateRealtimeChart(chartData) {
 // 更新图表图例
 function updateChartLegend(chart, canvasId) {
     // 这里可以添加自定义图例更新逻辑
-    console.log('图表缩放/平移事件:', canvasId);
 }

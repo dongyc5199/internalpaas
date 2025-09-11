@@ -807,7 +807,6 @@
 
     <!-- 主要的JavaScript逻辑 -->
     <script>
-        console.log('Script started loading...');
         // 全局变量
         let currentPage = '';
         let isLoading = false;
@@ -847,12 +846,9 @@
 
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOMContentLoaded event fired');
             try {
                 // 加载默认页面内容（第一次不显示加载动画）
-                console.log('About to call loadContent with dashboard');
                 loadContent('dashboard', false, false);
-                console.log('loadContent call completed');
             } catch (error) {
                 console.error('Error calling loadContent:', error);
             }
@@ -861,10 +857,8 @@
             initMobileMenu();
             
             // 初始化抽屉管理器
-            console.log('🚀 main-layout.html 加载 - 版本: 2025-09-10 21:12 (异步优化版)');
             try {
                 window.drawerManager = new DrawerManager();
-                console.log('✅ DrawerManager 初始化成功 - 版本: 2025-09-10 21:12');
             } catch (error) {
                 console.error('❌ DrawerManager 初始化失败:', error);
             }
@@ -882,9 +876,7 @@
 
         // 核心内容加载函数
         async function loadContent(page, addToHistory = true, showLoadingSpinner = true) {
-            console.log('loadContent called with:', {page, addToHistory, showLoadingSpinner});
             if (isLoading || page === currentPage) {
-                console.log('loadContent early return:', {isLoading, currentPage});
                 return;
             }
             
@@ -899,12 +891,9 @@
                 
                 // 根据页面类型决定加载方式
                 let content;
-                console.log('Loading page:', page);
                 switch (page) {
                     case 'dashboard':
-                        console.log('Loading dashboard content...');
                         content = await loadDashboardContent();
-                        console.log('Dashboard content loaded, length:', content ? content.length : 'undefined');
                         break;
                     case 'servers':
                         content = await loadServersContent();
@@ -956,7 +945,6 @@
                 }
                 
                 // 更新内容
-                console.log('Updating content, length:', content ? content.length : 'undefined');
                 updateContent(content);
                 
                 // 更新浏览器历史
@@ -1003,13 +991,11 @@
 
         // 更新内容
         function updateContent(content) {
-            console.log('updateContent called with content length:', content ? content.length : 'undefined');
             const wrapper = document.getElementById('contentWrapper');
             if (!wrapper) {
                 console.error('contentWrapper element not found!');
                 return;
             }
-            console.log('Setting innerHTML...');
             wrapper.innerHTML = content;
             wrapper.classList.add('content-fade-in');
             
@@ -1208,13 +1194,6 @@
                 const iconClass = getTagIcon(tag);
                 
                 // 调试日志
-                console.log('标签调试信息:', {
-                    displayText: tag.displayText,
-                    status: tag.status,
-                    colorScheme: tag.colorScheme,
-                    tagType: tag.tagType,
-                    computedClass: tagClass
-                });
                 
                 return `<span class="status-tag ${tagClass}" title="${tag.details || tag.displayText}" data-debug-class="${tagClass}">
                     <i class="${iconClass}"></i>
@@ -1228,12 +1207,6 @@
             setTimeout(() => {
                 const appliedTags = container.querySelectorAll('.status-tag');
                 appliedTags.forEach((tagElement, index) => {
-                    console.log(`标签 ${index + 1} DOM检查:`, {
-                        text: tagElement.textContent.trim(),
-                        className: tagElement.className,
-                        debugClass: tagElement.getAttribute('data-debug-class'),
-                        computedBg: window.getComputedStyle(tagElement).backgroundColor
-                    });
                 });
             }, 100);
         }
@@ -1980,10 +1953,8 @@
         
         // 添加服务器函数
         function addServer() {
-            console.log('🎯 addServer 函数被调用');
             // 使用抽屉组件
             if (typeof drawerManager !== 'undefined' && drawerManager) {
-                console.log('📂 打开服务器抽屉');
                 drawerManager.openServerDrawer();
             } else {
                 console.error('❌ drawerManager 未定义或为空:', typeof drawerManager);
@@ -1994,12 +1965,9 @@
 
         // 编辑服务器函数
         function editServer(element) {
-            console.log('✏️ editServer 函数被调用');
             const serverId = element.getAttribute('data-id');
-            console.log('📝 编辑服务器 ID:', serverId);
             // 使用抽屉组件
             if (typeof drawerManager !== 'undefined' && drawerManager) {
-                console.log('📂 打开服务器编辑抽屉');
                 drawerManager.openServerDrawer(serverId);
             } else {
                 console.error('❌ drawerManager 未定义或为空:', typeof drawerManager);
@@ -2177,7 +2145,6 @@
         // 检查服务器名称长度并添加滚动效果
         function initServerNameScrolling() {
             const serverNames = document.querySelectorAll('.server-name');
-            console.log('开始检查服务器名称滚动状态，找到', serverNames.length, '个服务器名称');
             
             serverNames.forEach((nameElement, index) => {
                 // 首先移除所有可能存在的long-text类
@@ -2188,18 +2155,14 @@
                 const originalLength = textContent.length;
                 textContent = textContent.replace(/\s+/g, ' ').trim(); // 将所有连续空白字符替换为单个空格
                 
-                console.log(`服务器${index + 1}: "${textContent}" (原始长度: ${originalLength}, 清理后长度: ${textContent.length})`);
                 
                 // 检查文本长度是否超过13个字符（在15ch容器中考虑图标占用空间）
                 if (textContent.length > 13) {
-                    console.log('✓ 启动滚动动画:', textContent);
                     nameElement.classList.add('long-text');
                 } else {
-                    console.log('✗ 不启动滚动动画:', textContent);
                 }
             });
             
-            console.log('服务器名称滚动状态检查完成');
         }
 
         // 全局样式类
@@ -2209,7 +2172,6 @@
             // 初始化服务器状态标签管理器
             if (typeof ServerStatusManager !== 'undefined') {
                 serverStatusManager = new ServerStatusManager();
-                console.log('服务器状态标签管理器已初始化');
             } else {
                 console.warn('ServerStatusManager类未找到，状态标签功能不可用');
             }

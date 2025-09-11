@@ -37,7 +37,6 @@ class ServerStatusManager {
                     this.renderServerStatusTags(serverId, serverStatus.tags || []);
                 });
                 
-                console.log(`已加载 ${Object.keys(data.servers).length} 个服务器的状态标签`);
             }
             
         } catch (error) {
@@ -360,7 +359,6 @@ class ServerStatusManager {
             this.websocket = Stomp.over(socket);
             
             this.websocket.connect({}, (frame) => {
-                console.log('WebSocket已连接:', frame);
                 this.retryCount = 0;
                 
                 // 订阅服务器状态更新
@@ -417,7 +415,6 @@ class ServerStatusManager {
         if (this.retryCount < this.maxRetries) {
             this.retryCount++;
             setTimeout(() => {
-                console.log(`尝试重连WebSocket (${this.retryCount}/${this.maxRetries})`);
                 this.initWebSocket();
             }, 5000 * this.retryCount);
         }

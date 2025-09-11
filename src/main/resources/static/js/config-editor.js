@@ -528,7 +528,6 @@ class ConfigurationEditor {
 
     displayValidationErrors(errors) {
         errors.forEach(error => {
-            console.log('Validation error:', error);
         });
         
         // Display errors in a modal or alert

@@ -42,7 +42,6 @@ class ApplicationDetailManager {
         this.startRealTimeUpdates();
         this.loadInitialData();
         
-        console.log('Application Detail Manager initialized for app:', this.appConfig.name);
     }
     
     /**
@@ -421,7 +420,6 @@ class ApplicationDetailManager {
      */
     changeTimeRange(range) {
         // 这里可以实现不同时间范围的数据加载逻辑
-        console.log('Time range changed to:', range);
         
         // 清空当前数据
         this.metricsHistory = {
@@ -472,7 +470,6 @@ class ApplicationDetailManager {
             this.logWebSocket = new WebSocket(wsUrl);
             
             this.logWebSocket.onopen = () => {
-                console.log('Log WebSocket connected');
                 this.showConnectionStatus(true);
             };
             
@@ -481,7 +478,6 @@ class ApplicationDetailManager {
             };
             
             this.logWebSocket.onclose = () => {
-                console.log('Log WebSocket disconnected');
                 this.showConnectionStatus(false);
                 
                 // 尝试重连
@@ -848,7 +844,6 @@ class ApplicationDetailManager {
             this.metricsChart.destroy();
         }
         
-        console.log('Application Detail Manager cleaned up');
     }
 }
 

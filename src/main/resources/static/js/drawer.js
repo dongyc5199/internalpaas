@@ -767,13 +767,11 @@ class DrawerManager {
 
     // 绑定服务器表单事件
     bindServerFormEvents() {
-        console.log('🔗 绑定服务器表单事件');
         const form = document.getElementById('serverDrawerForm');
         if (form) {
             // 阻止表单默认提交
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
-                console.log('🚫 服务器表单提交被阻止 (addEventListener)');
                 return false;
             });
             
@@ -781,12 +779,10 @@ class DrawerManager {
             form.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
                     e.preventDefault();
-                    console.log('🚫 回车键表单提交被阻止');
                     return false;
                 }
             });
             
-            console.log('✅ 服务器表单事件绑定完成');
         } else {
             console.error('❌ 未找到服务器表单');
         }
@@ -943,7 +939,6 @@ class DrawerManager {
 
     // 打开服务器抽屉
     openServerDrawer(serverId = null) {
-        console.log('📂 openServerDrawer 被调用', {serverId});
         this.currentDrawer = this.serverDrawer;
         
         // 更新标题
@@ -1237,7 +1232,6 @@ class DrawerManager {
 
     // 提交服务器表单
     async submitServerForm() {
-        console.log('🔄 submitServerForm called - 异步优化版本 2025-09-10 20:10', {timestamp: new Date().toISOString()});
         if (this.isSubmitting) return;
 
         const form = this.serverDrawer.querySelector('#serverDrawerForm');
@@ -1294,7 +1288,6 @@ class DrawerManager {
                 if (dirInfo.created) {
                     successMessage += ' 🗂️ 已创建基础工作目录';
                 } else if (dirInfo.success && dirInfo.message) {
-                    console.log('基础工作目录状态:', dirInfo.message);
                 }
             }
             
@@ -1308,7 +1301,6 @@ class DrawerManager {
             this.hasUnsavedChanges = false;
             
             // 立即回显服务器卡片，不等待状态检测
-            console.log('🎯 立即回显服务器卡片 - 异步优化', {result, isEdit});
             if (result.server) {
                 this.updateServerCardDisplay(result.server, isEdit);
             } else {
@@ -1632,13 +1624,11 @@ class DrawerManager {
         try {
             this.showLoading(true);
             
-            console.log('加载用户数据，userId:', userId); // 添加调试日志
             const response = await fetch(`/admin/users/${userId}/data`); // 正确的路径，包含/admin前缀
             
             if (!response.ok) {
                 // 获取详细的错误信息
                 const errorBody = await response.json().catch(() => ({error: '未知错误'}));
-                console.log('API错误响应:', response.status, errorBody);
                 throw new Error(`获取用户数据失败: ${errorBody.error || '未知错误'}`);
             }
             
@@ -1786,9 +1776,7 @@ class DrawerManager {
 
     // 提交用户表单
     async submitUserForm() {
-        console.log('submitUserForm called'); // 调试日志
         if (this.isSubmitting) {
-            console.log('Already submitting, returning'); // 调试日志
             return;
         }
 
@@ -1842,9 +1830,6 @@ class DrawerManager {
             };
             
             // 调试日志
-            console.log('发送的用户数据:', userData);
-            console.log('选中的角色:', roles);
-            console.log('选中的服务器ID:', serverIds);
             
             
             const url = userId ? `/admin/api/users/${userId}/update` : '/admin/api/users';
@@ -2717,7 +2702,6 @@ class DrawerManager {
     // 刷新服务器状态
     async refreshServersStatus() {
         if (this.isRefreshingServers) {
-            console.log('服务器状态刷新中，跳过重复请求');
             return;
         }
         
@@ -2765,7 +2749,6 @@ class DrawerManager {
                     
                     if (refreshResponse.ok) {
                         const result = await refreshResponse.json();
-                        console.log(`服务器 ${server.name} 状态刷新成功:`, result.connectionStatus);
                         return { serverId: server.id, success: true, status: result.connectionStatus };
                     } else {
                         console.warn(`服务器 ${server.name} 状态刷新失败`);
@@ -2782,7 +2765,6 @@ class DrawerManager {
             // 重新加载服务器列表以显示最新状态
             await this.loadAvailableServers();
             
-            console.log('所有服务器状态刷新完成');
             
         } catch (error) {
             console.error('刷新服务器状态时出错:', error);
@@ -3195,21 +3177,14 @@ if (document.readyState === 'loading') {
 
 // 调试函数
 function debugDrawer() {
-    console.log('drawerManager状态:', drawerManager);
-    console.log('document.body存在:', !!document.body);
-    console.log('尝试初始化drawerManager...');
     const manager = initDrawerManager();
-    console.log('初始化结果:', manager);
     return manager;
 }
 
 // 全局函数供HTML调用
 function addServer() {
-    console.log('addServer被调用');
     const manager = drawerManager || initDrawerManager();
-    console.log('获取到的manager:', manager);
     if (manager) {
-        console.log('尝试打开服务器抽屉');
         manager.openServerDrawer();
     } else {
         console.error('DrawerManager初始化失败');
@@ -3231,11 +3206,8 @@ function editServer(element) {
 }
 
 function addUser() {
-    console.log('addUser被调用');
     const manager = drawerManager || initDrawerManager();
-    console.log('获取到的manager:', manager);
     if (manager) {
-        console.log('尝试打开用户抽屉');
         manager.openUserDrawer();
     } else {
         console.error('DrawerManager初始化失败');
