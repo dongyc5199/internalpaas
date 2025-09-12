@@ -25,6 +25,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByDefaultServerId(@Param("serverId") Long serverId);
     
     /**
+     * 查找有权限访问指定服务器的所有用户
+     */
+    @Query("SELECT u FROM User u JOIN u.availableServers s WHERE s.id = :serverId")
+    List<User> findByAvailableServersContaining(@Param("serverId") Long serverId);
+    
+    /**
      * 从用户可用服务器列表中移除指定服务器
      */
     @Query(value = "DELETE FROM user_servers WHERE server_id = :serverId", nativeQuery = true)

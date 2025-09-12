@@ -1018,13 +1018,9 @@
                                 <i class="fas fa-terminal"></i>
                                 <span>终端</span>
                             </button>
-                            <button class="quick-action-btn secondary btn-view-server" th:data-id="${server.id}" title="查看详情">
+                            <button class="quick-action-btn secondary btn-view-server" th:data-id="${server.id}" th:data-server-name="${server.name}" title="查看详情">
                                 <i class="fas fa-eye"></i>
                                 <span>详情</span>
-                            </button>
-                            <button class="quick-action-btn info btn-view-logs" th:data-id="${server.id}" title="查看日志">
-                                <i class="fas fa-file-alt"></i>
-                                <span>日志</span>
                             </button>
                         </div>
                     </div>
@@ -1403,11 +1399,6 @@
             window.open(`/terminal/connect/${serverId}`, '_blank');
         }
         
-        function viewLogs(element) {
-            const serverId = element.getAttribute('data-id');
-            // 可以打开日志查看页面或者显示日志模态框
-            alert(`查看服务器 ${serverId} 日志功能开发中...`);
-        }
         
         // addServer() 函数已移至 main-layout.html
         

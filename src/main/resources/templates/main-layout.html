@@ -52,6 +52,7 @@
     <link rel="stylesheet" href="/css/dashboard-theme.css">
     <link rel="stylesheet" href="/css/drawer.css">
     <link rel="stylesheet" href="/css/server-status-tags.css">
+    <link rel="stylesheet" href="/css/server-detail-modal.css">
     <style>
         :root {
             --primary-color: #6366f1;
@@ -1043,13 +1044,52 @@
             return response;
         }
 
+        // 根据当前URL获取页面名称
+        function getCurrentPageFromUrl() {
+            const hash = window.location.hash.substring(1); // 移除 # 号
+            const pathname = window.location.pathname;
+            
+            // 检查hash是否存在且有效
+            if (hash) {
+                const validPages = ['dashboard', 'servers', 'users', 'applications', 'monitoring', 'terminal'];
+                if (validPages.includes(hash)) {
+                    console.log('从hash获取页面:', hash);
+                    return hash;
+                }
+            }
+            
+            // 根据pathname推断页面
+            if (pathname.includes('/admin/workspace') || pathname === '/admin/workspace') {
+                return 'dashboard';
+            } else if (pathname.includes('/admin/servers')) {
+                return 'servers';
+            } else if (pathname.includes('/admin/users')) {
+                return 'users';
+            } else if (pathname.includes('/apps')) {
+                return 'applications';
+            } else if (pathname.includes('/monitoring')) {
+                return 'monitoring';
+            } else if (pathname.includes('/terminal')) {
+                return 'terminal';
+            }
+            
+            // 默认返回dashboard
+            return 'dashboard';
+        }
+
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', function() {
             try {
-                // 加载默认页面内容（第一次不显示加载动画）
-                loadContent('dashboard', false, false);
+                // 获取当前页面并加载对应内容
+                const currentPageName = getCurrentPageFromUrl();
+                console.log('页面初始化，当前页面:', currentPageName);
+                
+                // 加载当前页面内容（第一次不显示加载动画）
+                loadContent(currentPageName, false, false);
             } catch (error) {
                 console.error('Error calling loadContent:', error);
+                // 如果出错，回退到默认页面
+                loadContent('dashboard', false, false);
             }
             
             // 初始化移动端菜单
@@ -1069,8 +1109,9 @@
                 }
             });
             
-            // 设置初始状态
-            history.replaceState({ page: 'dashboard' }, '', '#dashboard');
+            // 设置初始状态为当前页面
+            const currentPageName = getCurrentPageFromUrl();
+            history.replaceState({ page: currentPageName }, '', `#${currentPageName}`);
         });
 
         // 核心内容加载函数
@@ -1291,7 +1332,10 @@
         
         function viewServer(element) {
             const serverId = element.getAttribute('data-id');
-            window.location.href = '/admin/servers/' + serverId;
+            const serverName = element.getAttribute('data-server-name') || '未知服务器';
+            
+            // 调用新的系统风格服务器详情模态框
+            showSystemServerDetailModal(serverId, serverName);
         }
         
         function viewLogs(element) {
@@ -3666,5 +3710,377 @@
             50% { opacity: 0.5; }
         }
     </style>
+
+    <script>
+        // 新的系统风格服务器详情模态框函数
+        function showSystemServerDetailModal(serverId, serverName) {
+            console.log('显示系统风格服务器详情模态框:', { serverId, serverName });
+            
+            const modal = document.getElementById('systemServerDetailModal');
+            if (!modal) {
+                console.error('找不到模态框元素');
+                return;
+            }
+            
+            // 更新模态框标题
+            const titleElement = document.getElementById('systemModalServerName');
+            if (titleElement) {
+                titleElement.textContent = (serverName || 'Server-' + serverId) + ' 详情';
+            }
+            
+            // 显示模态框
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            
+            // 加载服务器数据
+            loadSystemServerData(serverId);
+        }
+
+        function hideSystemServerDetailModal() {
+            const modal = document.getElementById('systemServerDetailModal');
+            if (modal) {
+                modal.classList.remove('show');
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        function loadSystemServerData(serverId) {
+            console.log('加载服务器数据:', serverId);
+            
+            // 显示加载状态
+            document.getElementById('systemHostname').textContent = '加载中...';
+            document.getElementById('systemIpAddress').textContent = '加载中...';
+            document.getElementById('systemUptime').textContent = '加载中...';
+            document.getElementById('systemOperatingSystem').textContent = '加载中...';
+            document.getElementById('systemWorkDirectory').textContent = '加载中...';
+            document.getElementById('systemConnectionStatus').textContent = '检查中...';
+            
+            // 调用真实API获取服务器详情
+            fetch(`/admin/api/servers/${serverId}/details`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('服务器详情API响应:', data);
+                
+                if (data.success) {
+                    // 更新服务器基本信息
+                    const basicInfo = data.basicInfo;
+                    document.getElementById('systemHostname').textContent = basicInfo.hostname || '未知';
+                    document.getElementById('systemIpAddress').textContent = basicInfo.ipAddress || '未知';
+                    document.getElementById('systemUptime').textContent = basicInfo.uptime || '未知';
+                    document.getElementById('systemOperatingSystem').textContent = basicInfo.operatingSystem || 'Linux';
+                    document.getElementById('systemWorkDirectory').textContent = basicInfo.workDirectory || '/opt/apps';
+                    
+                    // 更新连接状态
+                    const statusText = basicInfo.connectionStatus === 'CONNECTED' ? '在线' : 
+                                      basicInfo.connectionStatus === 'MONITORING' ? '监控中' : '离线';
+                    document.getElementById('systemConnectionStatus').textContent = `${statusText} ${basicInfo.lastCheck}`;
+                    
+                    // 加载应用列表和操作日志
+                    loadSystemApplications(data.applications);
+                    loadSystemOperationLogs(data.operationLogs);
+                } else {
+                    // 处理错误情况
+                    console.error('获取服务器详情失败:', data.error);
+                    document.getElementById('systemHostname').textContent = '获取失败';
+                    document.getElementById('systemIpAddress').textContent = data.error || '未知错误';
+                    document.getElementById('systemUptime').textContent = '';
+                    document.getElementById('systemOperatingSystem').textContent = '';
+                    document.getElementById('systemWorkDirectory').textContent = '';
+                    document.getElementById('systemConnectionStatus').textContent = '无法连接';
+                    
+                    // 显示错误的应用和日志
+                    loadSystemApplications([]);
+                    loadSystemOperationLogs([]);
+                }
+            })
+            .catch(error => {
+                console.error('服务器详情API调用失败:', error);
+                document.getElementById('systemHostname').textContent = '网络错误';
+                document.getElementById('systemIpAddress').textContent = '请检查网络连接';
+                document.getElementById('systemUptime').textContent = '';
+                document.getElementById('systemOperatingSystem').textContent = '';
+                document.getElementById('systemWorkDirectory').textContent = '';
+                document.getElementById('systemConnectionStatus').textContent = '连接失败';
+                
+                // 显示空的应用和日志
+                loadSystemApplications([]);
+                loadSystemOperationLogs([]);
+            });
+        }
+
+        function loadSystemApplications(applications) {
+            const container = document.getElementById('systemApplicationsList');
+            
+            if (!applications || applications.length === 0) {
+                container.innerHTML = `
+                    <div class="system-app-card system-fade-in" style="text-align: center; padding: 40px;">
+                        <div style="font-size: 1.2rem; color: #6b7280; margin-bottom: 10px;">📱</div>
+                        <div style="color: #6b7280;">暂无应用部署</div>
+                        <div style="font-size: 0.875rem; color: #9ca3af; margin-top: 5px;">
+                            该服务器上暂时没有部署的应用
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            applications.forEach(app => {
+                // 处理应用状态
+                const status = app.status ? app.status.toLowerCase() : 'unknown';
+                const statusClass = status === 'running' ? 'running' : 
+                                   status === 'stopped' ? 'stopped' : 
+                                   status === 'error' ? 'stopped' : 'starting';
+                const statusText = status === 'running' ? '运行中' :
+                                  status === 'stopped' ? '已停止' :
+                                  status === 'error' ? '错误' : '未知';
+                
+                // 构建应用卡片
+                html += `
+                    <div class="system-app-card ${statusClass} system-fade-in">
+                        <div class="system-app-header">
+                            <h3 class="system-app-name">${app.name || '未知应用'}</h3>
+                            <span class="system-app-status ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="system-app-metrics">
+                            ${app.owner ? `<div class="system-app-metric">所有者: ${app.owner}</div>` : ''}
+                            ${app.port ? `<div class="system-app-metric">端口: ${app.port}</div>` : ''}
+                            ${app.debugPort ? `<div class="system-app-metric">调试: ${app.debugPort}</div>` : ''}
+                            ${app.uptime && app.uptime !== '未运行' ? `<div class="system-app-metric">运行: ${app.uptime}</div>` : ''}
+                            ${app.jarFileName ? `<div class="system-app-metric">文件: ${app.jarFileName}</div>` : ''}
+                            ${app.processId ? `<div class="system-app-metric">PID: ${app.processId}</div>` : ''}
+                            ${app.error ? `<div class="system-app-metric" style="color: #dc3545;">错误: ${app.error}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // 计算统计信息
+            const runningCount = applications.filter(a => a.status && a.status.toLowerCase() === 'running').length;
+            const stoppedCount = applications.filter(a => a.status && a.status.toLowerCase() === 'stopped').length;
+            const errorCount = applications.filter(a => a.status && a.status.toLowerCase() === 'error').length;
+            
+            html += `
+                <div class="system-app-summary">
+                    💻 总计: ${applications.length}个应用 • 
+                    ${runningCount > 0 ? `${runningCount}个运行中` : ''} 
+                    ${runningCount > 0 && (stoppedCount > 0 || errorCount > 0) ? ' • ' : ''}
+                    ${stoppedCount > 0 ? `${stoppedCount}个已停止` : ''} 
+                    ${stoppedCount > 0 && errorCount > 0 ? ' • ' : ''}
+                    ${errorCount > 0 ? `${errorCount}个错误` : ''}
+                    ${runningCount === 0 && stoppedCount === 0 && errorCount === 0 ? '0个运行中' : ''}
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        function loadSystemOperationLogs(serverId) {
+            const container = document.getElementById('systemOperationLogs');
+            
+            // 模拟操作日志数据
+            const logs = [
+                {
+                    time: '14:32:15',
+                    user: '张三',
+                    ip: '192.168.1.50',
+                    action: '🚀 部署 UserService v2.1.0',
+                    details: [
+                        { label: '执行命令', value: 'docker deploy userservice:v2.1.0' },
+                        { label: '构建时间', value: '2分35秒' },
+                        { label: '部署状态', value: '成功', status: 'success' },
+                        { label: '影响服务', value: '用户认证模块' },
+                        { label: '版本特性', value: '新增双因子认证' }
+                    ]
+                },
+                {
+                    time: '14:15:42',
+                    user: '系统自动',
+                    ip: '',
+                    action: '🔄 API Gateway 重启',
+                    details: [
+                        { label: '触发原因', value: '配置文件变更' },
+                        { label: '重启耗时', value: '30秒' },
+                        { label: '健康检查', value: '通过', status: 'success' },
+                        { label: '内存释放', value: '45MB' },
+                        { label: '服务恢复', value: '正常运行', status: 'success' }
+                    ]
+                },
+                {
+                    time: '13:45:18',
+                    user: '李四',
+                    ip: '192.168.1.88',
+                    action: '⚙️ 负载均衡配置更新',
+                    details: [
+                        { label: '修改文件', value: 'nginx.conf' },
+                        { label: '权重调整', value: 'server1: 3→5' },
+                        { label: '测试结果', value: '连通性正常', status: 'success' },
+                        { label: '性能提升', value: '响应时间-15%' },
+                        { label: '配置验证', value: '语法检查通过', status: 'success' }
+                    ]
+                }
+            ];
+            
+            let html = '';
+            logs.forEach((log, index) => {
+                html += `
+                    <div class="system-log-card system-fade-in" style="animation-delay: ${index * 0.1}s">
+                        <div class="system-log-header">
+                            <div class="system-log-time">${log.time}</div>
+                            <div class="system-log-user">
+                                <i class="fas fa-${log.user === '系统自动' ? 'cog' : 'user'}"></i>
+                                ${log.user}${log.ip ? ' @' + log.ip : ''}
+                            </div>
+                        </div>
+                        <div class="system-log-content">
+                            <h3 class="system-log-action">${log.action}</h3>
+                            <div class="system-log-details">
+                                ${log.details.map(detail => `
+                                    <div class="system-detail-row">
+                                        <span class="system-detail-label">${detail.label}:</span>
+                                        <span class="system-detail-value ${detail.status ? 'system-status-' + detail.status : ''}">
+                                            ${detail.status === 'success' ? '<i class="fas fa-check-circle"></i>' : ''}
+                                            ${detail.value}
+                                        </span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                <button class="system-load-more" onclick="loadMoreSystemLogs()">
+                    <i class="fas fa-plus-circle"></i>
+                    加载更多操作记录 (还有23条)
+                </button>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        function loadMoreSystemLogs() {
+            const button = event.target.closest('.system-load-more');
+            const originalHTML = button.innerHTML;
+            
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>加载中...';
+            
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+                // 这里可以添加更多日志
+                console.log('加载更多日志记录');
+            }, 1500);
+        }
+
+        // 更新现有的showServerLogsModal函数以使用新的模态框
+        const originalShowServerLogsModal = window.showServerLogsModal;
+        window.showServerLogsModal = function(serverId, serverName) {
+            // 使用新的系统风格模态框
+            showSystemServerDetailModal(serverId, serverName);
+        };
+
+        // 关闭模态框的事件处理
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('systemServerDetailModal');
+            if (modal && event.target === modal) {
+                hideSystemServerDetailModal();
+            }
+        });
+
+        // ESC键关闭模态框
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                hideSystemServerDetailModal();
+            }
+        });
+    </script>
+
+    <!-- System Style Server Detail Modal -->
+    <div id="systemServerDetailModal" class="system-modal-overlay">
+        <div class="system-modal">
+            <!-- System Style Header -->
+            <div class="system-header">
+                <h1 class="system-title">
+                    <i class="fas fa-server"></i>
+                    <span id="systemModalServerName">服务器详情</span>
+                </h1>
+                <button class="system-close-btn" onclick="hideSystemServerDetailModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- System Style Info Bar -->
+            <div class="system-info-bar">
+                <div class="system-info-item">
+                    <i class="fas fa-desktop system-info-icon"></i>
+                    <span id="systemHostname">-</span>
+                </div>
+                <div class="system-info-item">
+                    <i class="fas fa-map-marker-alt system-info-icon"></i>
+                    <span id="systemIpAddress">-</span>
+                </div>
+                <div class="system-info-item">
+                    <i class="fas fa-clock system-info-icon"></i>
+                    <span id="systemUptime">-</span>
+                </div>
+                <div class="system-info-item">
+                    <i class="fas fa-hdd system-info-icon"></i>
+                    <span id="systemOperatingSystem">-</span>
+                </div>
+                <div class="system-info-item">
+                    <i class="fas fa-folder system-info-icon"></i>
+                    <span id="systemWorkDirectory">-</span>
+                </div>
+                <div class="system-info-item">
+                    <i class="fas fa-wifi system-info-icon"></i>
+                    <div class="system-status-online">
+                        <div class="system-status-dot"></div>
+                        <span id="systemConnectionStatus">检查中...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Grid -->
+            <div class="system-content">
+                <!-- Applications Panel -->
+                <div class="system-app-panel">
+                    <h2 class="system-panel-title">
+                        <i class="fas fa-cube"></i>
+                        应用运行状态
+                    </h2>
+                    <div id="systemApplicationsList">
+                        <!-- 应用列表将通过JavaScript动态加载 -->
+                        <div style="text-align: center; padding: 40px; color: var(--color-text-secondary);">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                            <div>正在加载应用信息...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Logs Panel -->
+                <div class="system-logs-panel">
+                    <h2 class="system-panel-title">
+                        <i class="fas fa-file-alt"></i>
+                        用户操作详情
+                    </h2>
+                    <div id="systemOperationLogs">
+                        <!-- 日志列表将通过JavaScript动态加载 -->
+                        <div style="text-align: center; padding: 40px; color: var(--color-text-secondary);">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                            <div>正在加载操作日志...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

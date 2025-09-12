@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -249,6 +250,122 @@ public class UserActivityService {
             logger.info("清理了{}天前的用户活动记录", daysToKeep);
         } catch (Exception e) {
             logger.error("清理历史活动记录失败", e);
+        }
+    }
+    
+    /**
+     * 根据ID获取用户活动详情
+     */
+    public UserActivity getUserActivityById(Long id) {
+        return userActivityRepository.findByIdWithDetails(id);
+    }
+    
+    /**
+     * 复杂条件查询用户活动
+     */
+    public org.springframework.data.domain.Page<UserActivity> searchUserActivities(
+            Long serverId, String username, String sessionId, 
+            UserActivity.ActivityType activityType, Boolean isActive, String remoteIp,
+            LocalDateTime startTime, LocalDateTime endTime, String terminalType, 
+            String keyword, org.springframework.data.domain.Pageable pageable) {
+        
+        return userActivityRepository.findByComplexConditions(
+            serverId, username, sessionId, activityType, isActive, remoteIp,
+            startTime, endTime, terminalType, keyword, pageable);
+    }
+    
+    /**
+     * 获取全局统计信息
+     */
+    public Map<String, Object> getGlobalStatistics(LocalDateTime startTime, LocalDateTime endTime) {
+        Map<String, Object> stats = new HashMap<>();
+        
+        // 总活动数
+        stats.put("totalActivities", userActivityRepository.countAllActivities());
+        
+        // 时间范围内的活动数
+        if (startTime != null && endTime != null) {
+            stats.put("rangeActivities", userActivityRepository.countByCreatedAtBetween(startTime, endTime));
+        }
+        
+        // 全局活跃用户数
+        stats.put("totalActiveUsers", userActivityRepository.countAllActiveUsers());
+        
+        // 服务器活动分布
+        if (startTime != null && endTime != null) {
+            List<Object[]> serverStats = userActivityRepository.countActivitiesByServer(startTime, endTime);
+            Map<Long, Long> serverActivityMap = serverStats.stream()
+                .collect(Collectors.toMap(
+                    result -> (Long) result[0],
+                    result -> (Long) result[1]
+                ));
+            stats.put("serverActivityDistribution", serverActivityMap);
+        }
+        
+        // 时间分布统计
+        if (startTime != null && endTime != null) {
+            List<Object[]> hourStats = userActivityRepository.countActivitiesByHour(startTime, endTime);
+            Map<Integer, Long> hourActivityMap = hourStats.stream()
+                .collect(Collectors.toMap(
+                    result -> (Integer) result[0],
+                    result -> (Long) result[1]
+                ));
+            stats.put("hourlyActivityDistribution", hourActivityMap);
+        }
+        
+        return stats;
+    }
+    
+    /**
+     * 获取用户操作风险评估
+     */
+    public Map<String, Object> getUserRiskAssessment(String username) {
+        Map<String, Object> assessment = new HashMap<>();
+        
+        List<UserActivity> userHistory = getUserHistory(username);
+        
+        // 计算风险分数
+        int riskScore = 0;
+        int dangerousOperations = 0;
+        
+        for (UserActivity activity : userHistory) {
+            if (activity.getActivityType() == UserActivity.ActivityType.COMMAND_EXECUTE) {
+                riskScore += 2;
+                if (activity.getActivityDetails() != null) {
+                    String details = activity.getActivityDetails().toLowerCase();
+                    if (details.contains("rm") || details.contains("delete") || 
+                        details.contains("drop") || details.contains("truncate")) {
+                        riskScore += 10;
+                        dangerousOperations++;
+                    }
+                }
+            } else if (activity.getActivityType() == UserActivity.ActivityType.FILE_EDIT ||
+                      activity.getActivityType() == UserActivity.ActivityType.PROCESS_START ||
+                      activity.getActivityType() == UserActivity.ActivityType.PROCESS_STOP) {
+                riskScore += 1;
+            }
+        }
+        
+        assessment.put("username", username);
+        assessment.put("riskScore", riskScore);
+        assessment.put("dangerousOperations", dangerousOperations);
+        assessment.put("totalOperations", userHistory.size());
+        assessment.put("riskLevel", getRiskLevel(riskScore));
+        
+        // 最近活动时间
+        LocalDateTime lastActivity = userActivityRepository.findLastActivityByUsername(username);
+        assessment.put("lastActivity", lastActivity);
+        
+        return assessment;
+    }
+    
+    private String getRiskLevel(int riskScore) {
+        if (riskScore >= 50) {
+            return "高";
+        } else if (riskScore >= 20) {
+            return "中";
+        } else {
+            return "低";
         }
     }
 }

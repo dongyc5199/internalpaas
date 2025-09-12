@@ -4,11 +4,13 @@ import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.model.ServerStatusTag;
 import com.cmict.internalpaas.model.User;
+import com.cmict.internalpaas.model.UserActivity;
 import com.cmict.internalpaas.service.MonitoringSchedulerService;
 import com.cmict.internalpaas.service.RemoteCommandService;
 import com.cmict.internalpaas.service.ServerService;
 import com.cmict.internalpaas.service.ServerStatusTagService;
 import com.cmict.internalpaas.service.SshConnectionService;
+import com.cmict.internalpaas.service.UserActivityService;
 import com.cmict.internalpaas.service.UserServerCredentialService;
 import com.cmict.internalpaas.service.UserService;
 import com.cmict.internalpaas.repository.UserRepository;
@@ -67,6 +69,12 @@ public class AdminController {
     
     @Autowired
     private ServerStatusTagService statusTagService;
+    
+    @Autowired
+    private com.cmict.internalpaas.service.ApplicationService applicationService;
+    
+    @Autowired
+    private com.cmict.internalpaas.service.UserActivityService userActivityService;
     
     
     @Autowired
@@ -469,6 +477,291 @@ public class AdminController {
             error.put("serverId", String.valueOf(id));
             return ResponseEntity.internalServerError().body(error);
         }
+    }
+    
+    /**
+     * 获取服务器详情数据 - 用于新的系统风格模态框
+     * GET /admin/api/servers/{id}/details
+     */
+    @GetMapping("/api/servers/{id}/details")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getServerDetails(@PathVariable Long id) {
+        logger.info("获取服务器详情数据: serverId={}", id);
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // 检查服务器是否存在
+            Optional<Server> serverOpt = serverService.getServerById(id);
+            if (!serverOpt.isPresent()) {
+                response.put("success", false);
+                response.put("error", "服务器不存在");
+                return ResponseEntity.status(404).body(response);
+            }
+            
+            Server server = serverOpt.get();
+            
+            // 1. 基本信息
+            Map<String, Object> basicInfo = buildBasicServerInfo(server);
+            
+            // 2. 应用列表 - 获取在该服务器上有权限的用户的应用
+            List<Map<String, Object>> applications = getServerApplications(id);
+            
+            // 3. 操作日志 - 获取该服务器的用户活动记录
+            List<Map<String, Object>> operationLogs = getServerOperationLogs(id);
+            
+            // 构建响应
+            response.put("success", true);
+            response.put("serverId", id);
+            response.put("basicInfo", basicInfo);
+            response.put("applications", applications);
+            response.put("operationLogs", operationLogs);
+            response.put("retrieveTime", System.currentTimeMillis());
+            
+            logger.info("成功获取服务器 {} 的详情数据: 应用数={}, 日志数={}", id, applications.size(), operationLogs.size());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("获取服务器详情失败: serverId={}", id, e);
+            response.put("success", false);
+            response.put("error", "获取服务器详情失败: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+    
+    /**
+     * 构建服务器基本信息
+     */
+    private Map<String, Object> buildBasicServerInfo(Server server) {
+        Map<String, Object> basicInfo = new HashMap<>();
+        basicInfo.put("id", server.getId());
+        basicInfo.put("name", server.getName());
+        basicInfo.put("hostname", server.getHostname());
+        basicInfo.put("ipAddress", server.getHostname() + ":" + server.getPort());
+        basicInfo.put("sshPort", server.getSshPort() != null ? server.getSshPort() : server.getPort());
+        basicInfo.put("operatingSystem", server.getDescription() != null ? server.getDescription() : "Linux");
+        basicInfo.put("workDirectory", server.getBaseWorkDirectory());
+        
+        // 连接状态
+        String status = "UNKNOWN";
+        if (server.getConnectionStatus() != null) {
+            status = server.getConnectionStatus().name();
+        }
+        basicInfo.put("connectionStatus", status);
+        
+        // 获取系统监控信息
+        try {
+            // 这里可以调用监控服务获取实时数据
+            // 暂时使用简单的状态信息
+            basicInfo.put("uptime", "运行中");
+            basicInfo.put("lastCheck", "刚刚检查");
+        } catch (Exception e) {
+            logger.warn("获取服务器 {} 监控信息失败: {}", server.getId(), e.getMessage());
+            basicInfo.put("uptime", "未知");
+            basicInfo.put("lastCheck", "检查失败");
+        }
+        
+        return basicInfo;
+    }
+    
+    /**
+     * 获取服务器上的应用列表
+     */
+    private List<Map<String, Object>> getServerApplications(Long serverId) {
+        List<Map<String, Object>> applications = new ArrayList<>();
+        
+        try {
+            // 获取有权限访问该服务器的所有用户
+            List<User> serverUsers = userService.findUsersByServerId(serverId);
+            
+            // 获取这些用户的应用
+            for (User user : serverUsers) {
+                List<com.cmict.internalpaas.model.Application> userApps = applicationService.getUserApplications(user);
+                
+                for (com.cmict.internalpaas.model.Application app : userApps) {
+                    Map<String, Object> appInfo = new HashMap<>();
+                    appInfo.put("id", app.getId());
+                    appInfo.put("name", app.getName());
+                    appInfo.put("owner", user.getUsername());
+                    appInfo.put("status", app.getStatus().toLowerCase());
+                    appInfo.put("port", app.getPort());
+                    appInfo.put("debugPort", app.getDebugPort());
+                    appInfo.put("jarFileName", app.getJarFileName());
+                    appInfo.put("processId", app.getProcessId());
+                    appInfo.put("lastStartedAt", app.getLastStartedAt());
+                    appInfo.put("createdAt", app.getCreatedAt());
+                    
+                    // 计算运行时间
+                    if ("running".equals(app.getStatus().toLowerCase()) && app.getLastStartedAt() != null) {
+                        java.time.Duration duration = java.time.Duration.between(app.getLastStartedAt(), java.time.LocalDateTime.now());
+                        appInfo.put("uptime", formatDuration(duration));
+                    } else {
+                        appInfo.put("uptime", "未运行");
+                    }
+                    
+                    applications.add(appInfo);
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.error("获取服务器 {} 应用列表失败: {}", serverId, e.getMessage(), e);
+            // 添加一个错误指示应用
+            Map<String, Object> errorApp = new HashMap<>();
+            errorApp.put("name", "获取应用列表失败");
+            errorApp.put("status", "error");
+            errorApp.put("error", e.getMessage());
+            applications.add(errorApp);
+        }
+        
+        return applications;
+    }
+    
+    /**
+     * 获取服务器操作日志
+     */
+    private List<Map<String, Object>> getServerOperationLogs(Long serverId) {
+        List<Map<String, Object>> operationLogs = new ArrayList<>();
+        
+        try {
+            // 获取最近的用户活动记录
+            List<com.cmict.internalpaas.model.UserActivity> activities = userActivityService.getRecentActivities(serverId);
+            
+            for (com.cmict.internalpaas.model.UserActivity activity : activities) {
+                Map<String, Object> logEntry = new HashMap<>();
+                
+                // 格式化时间
+                if (activity.getLoginTime() != null) {
+                    logEntry.put("time", activity.getLoginTime().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")));
+                } else {
+                    logEntry.put("time", "未知时间");
+                }
+                
+                logEntry.put("user", activity.getUsername() != null ? activity.getUsername() : "未知用户");
+                logEntry.put("ip", activity.getRemoteIp() != null ? activity.getRemoteIp() : "");
+                
+                // 根据活动类型生成操作描述
+                String action = generateActionDescription(activity);
+                logEntry.put("action", action);
+                
+                // 构建详细信息
+                List<Map<String, Object>> details = buildActivityDetails(activity);
+                logEntry.put("details", details);
+                
+                operationLogs.add(logEntry);
+            }
+            
+            // 如果没有活动记录，显示提示信息
+            if (operationLogs.isEmpty()) {
+                Map<String, Object> noDataLog = new HashMap<>();
+                noDataLog.put("time", "");
+                noDataLog.put("user", "系统");
+                noDataLog.put("ip", "");
+                noDataLog.put("action", "📝 暂无操作记录");
+                noDataLog.put("details", List.of(
+                    Map.of("label", "状态", "value", "暂无用户活动记录"),
+                    Map.of("label", "说明", "value", "用户首次操作后会显示记录")
+                ));
+                operationLogs.add(noDataLog);
+            }
+            
+        } catch (Exception e) {
+            logger.error("获取服务器 {} 操作日志失败: {}", serverId, e.getMessage(), e);
+            // 添加错误日志
+            Map<String, Object> errorLog = new HashMap<>();
+            errorLog.put("time", "");
+            errorLog.put("user", "系统");
+            errorLog.put("ip", "");
+            errorLog.put("action", "❌ 获取操作日志失败");
+            errorLog.put("details", List.of(
+                Map.of("label", "错误信息", "value", e.getMessage()),
+                Map.of("label", "建议", "value", "请联系管理员检查日志服务")
+            ));
+            operationLogs.add(errorLog);
+        }
+        
+        return operationLogs;
+    }
+    
+    /**
+     * 格式化持续时间
+     */
+    private String formatDuration(java.time.Duration duration) {
+        long days = duration.toDays();
+        long hours = duration.toHours() % 24;
+        long minutes = duration.toMinutes() % 60;
+        
+        if (days > 0) {
+            return String.format("%d天%d小时", days, hours);
+        } else if (hours > 0) {
+            return String.format("%d小时%d分钟", hours, minutes);
+        } else {
+            return String.format("%d分钟", minutes);
+        }
+    }
+    
+    /**
+     * 生成活动描述
+     */
+    private String generateActionDescription(com.cmict.internalpaas.model.UserActivity activity) {
+        if (activity.getActivityType() != null) {
+            switch (activity.getActivityType()) {
+                case LOGIN:
+                    return "🔐 用户登录";
+                case LOGOUT:
+                    return "🔓 用户登出";
+                case COMMAND_EXECUTE:
+                    return "⚡ 执行命令";
+                case FILE_TRANSFER:
+                    return "📁 文件传输";
+                case FILE_EDIT:
+                    return "✏️ 文件编辑";
+                case PROCESS_START:
+                    return "▶️ 进程启动";
+                case PROCESS_STOP:
+                    return "⏹️ 进程停止";
+                case DIRECTORY_CHANGE:
+                    return "📂 目录切换";
+                case SYSTEM_INFO:
+                    return "ℹ️ 系统信息";
+                default:
+                    return "📋 用户活动";
+            }
+        } else {
+            return "📋 用户活动";
+        }
+    }
+    
+    /**
+     * 构建活动详细信息
+     */
+    private List<Map<String, Object>> buildActivityDetails(com.cmict.internalpaas.model.UserActivity activity) {
+        List<Map<String, Object>> details = new ArrayList<>();
+        
+        if (activity.getSessionId() != null) {
+            details.add(Map.of("label", "会话ID", "value", activity.getSessionId()));
+        }
+        
+        if (activity.getActivityDetails() != null && activity.getActivityType() == UserActivity.ActivityType.COMMAND_EXECUTE) {
+            details.add(Map.of("label", "执行命令", "value", activity.getActivityDetails()));
+        }
+        
+        if (activity.getRemoteIp() != null) {
+            details.add(Map.of("label", "远程IP", "value", activity.getRemoteIp()));
+        }
+        
+        if (activity.getLoginTime() != null && activity.getLogoutTime() != null) {
+            java.time.Duration sessionDuration = java.time.Duration.between(activity.getLoginTime(), activity.getLogoutTime());
+            details.add(Map.of("label", "会话时长", "value", formatDuration(sessionDuration)));
+        }
+        
+        // 添加状态信息
+        if (activity.getLogoutTime() == null && activity.getLoginTime() != null) {
+            details.add(Map.of("label", "状态", "value", "进行中", "status", "success"));
+        } else {
+            details.add(Map.of("label", "状态", "value", "已完成"));
+        }
+        
+        return details;
     }
     
     /**

@@ -102,4 +102,68 @@ public interface UserActivityRepository extends JpaRepository<UserActivity, Long
      * 删除指定用户的所有活动记录
      */
     void deleteByUsername(String username);
+    
+    /**
+     * 根据ID获取用户活动详情
+     */
+    @Query("SELECT ua FROM UserActivity ua WHERE ua.id = :id")
+    UserActivity findByIdWithDetails(@Param("id") Long id);
+    
+    /**
+     * 复杂条件查询用户活动
+     */
+    @Query("SELECT ua FROM UserActivity ua WHERE " +
+           "(:serverId IS NULL OR ua.serverId = :serverId) AND " +
+           "(:username IS NULL OR ua.username LIKE %:username%) AND " +
+           "(:sessionId IS NULL OR ua.sessionId = :sessionId) AND " +
+           "(:activityType IS NULL OR ua.activityType = :activityType) AND " +
+           "(:isActive IS NULL OR ua.isActive = :isActive) AND " +
+           "(:remoteIp IS NULL OR ua.remoteIp = :remoteIp) AND " +
+           "(:startTime IS NULL OR ua.createdAt >= :startTime) AND " +
+           "(:endTime IS NULL OR ua.createdAt <= :endTime) AND " +
+           "(:terminalType IS NULL OR ua.terminalType = :terminalType) AND " +
+           "(:keyword IS NULL OR ua.activityDetails LIKE %:keyword%)")
+    org.springframework.data.domain.Page<UserActivity> findByComplexConditions(
+            @Param("serverId") Long serverId,
+            @Param("username") String username,
+            @Param("sessionId") String sessionId,
+            @Param("activityType") UserActivity.ActivityType activityType,
+            @Param("isActive") Boolean isActive,
+            @Param("remoteIp") String remoteIp,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime,
+            @Param("terminalType") String terminalType,
+            @Param("keyword") String keyword,
+            org.springframework.data.domain.Pageable pageable);
+    
+    /**
+     * 统计总的活动数量
+     */
+    @Query("SELECT COUNT(ua) FROM UserActivity ua")
+    long countAllActivities();
+    
+    /**
+     * 统计所有服务器的活跃用户数
+     */
+    @Query("SELECT COUNT(DISTINCT ua.username) FROM UserActivity ua WHERE ua.isActive = true")
+    long countAllActiveUsers();
+    
+    /**
+     * 获取用户活动的服务器分布统计
+     */
+    @Query("SELECT ua.serverId, COUNT(ua) FROM UserActivity ua " +
+           "WHERE ua.createdAt BETWEEN :startTime AND :endTime " +
+           "GROUP BY ua.serverId")
+    List<Object[]> countActivitiesByServer(@Param("startTime") LocalDateTime startTime,
+                                          @Param("endTime") LocalDateTime endTime);
+    
+    /**
+     * 获取用户活动的时间分布统计（按小时）
+     */
+    @Query("SELECT HOUR(ua.createdAt), COUNT(ua) FROM UserActivity ua " +
+           "WHERE ua.createdAt BETWEEN :startTime AND :endTime " +
+           "GROUP BY HOUR(ua.createdAt) " +
+           "ORDER BY HOUR(ua.createdAt)")
+    List<Object[]> countActivitiesByHour(@Param("startTime") LocalDateTime startTime,
+                                        @Param("endTime") LocalDateTime endTime);
 }

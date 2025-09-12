@@ -39,6 +39,13 @@ public interface UserService extends UserDetailsService {
      * @return 用户列表
      */
     List<User> findAllUsers();
+    
+    /**
+     * 查找有权限访问指定服务器的所有用户
+     * @param serverId 服务器ID
+     * @return 用户列表
+     */
+    List<User> findUsersByServerId(Long serverId);
 
     /**
      * 切换用户的管理员角色
