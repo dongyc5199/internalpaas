@@ -3783,7 +3783,7 @@
                     
                     // 加载应用列表和操作日志
                     loadSystemApplications(data.applications);
-                    loadSystemOperationLogs(data.operationLogs);
+                    loadSystemOperationLogs(serverId);
                 } else {
                     // 处理错误情况
                     console.error('获取服务器详情失败:', data.error);
@@ -3796,7 +3796,7 @@
                     
                     // 显示错误的应用和日志
                     loadSystemApplications([]);
-                    loadSystemOperationLogs([]);
+                    loadSystemOperationLogs(null);
                 }
             })
             .catch(error => {
@@ -3810,7 +3810,7 @@
                 
                 // 显示空的应用和日志
                 loadSystemApplications([]);
-                loadSystemOperationLogs([]);
+                loadSystemOperationLogs(null);
             });
         }
 
@@ -3884,86 +3884,227 @@
         function loadSystemOperationLogs(serverId) {
             const container = document.getElementById('systemOperationLogs');
             
-            // 模拟操作日志数据
-            const logs = [
-                {
-                    time: '14:32:15',
-                    user: '张三',
-                    ip: '192.168.1.50',
-                    action: '🚀 部署 UserService v2.1.0',
-                    details: [
-                        { label: '执行命令', value: 'docker deploy userservice:v2.1.0' },
-                        { label: '构建时间', value: '2分35秒' },
-                        { label: '部署状态', value: '成功', status: 'success' },
-                        { label: '影响服务', value: '用户认证模块' },
-                        { label: '版本特性', value: '新增双因子认证' }
-                    ]
+            // 显示加载状态
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--color-text-secondary);">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                    <div>正在加载用户操作详情...</div>
+                </div>
+            `;
+            
+            // 如果没有serverId,显示空状态
+            if (!serverId) {
+                console.log('loadSystemOperationLogs called with empty serverId, showing empty state');
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--color-text-secondary);">
+                        <i class="fas fa-user-slash" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                        <div>暂无用户操作记录</div>
+                        <div style="font-size: 0.875rem; color: #9ca3af; margin-top: 5px;">
+                            该服务器上暂时没有用户操作记录
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            console.log('调用用户操作详情API，serverId:', serverId);
+            
+            // 构建查询参数
+            const queryDto = {
+                serverId: parseInt(serverId),
+                page: 0,
+                size: 10,
+                sortBy: 'lastActivity',
+                sortDirection: 'DESC'
+            };
+            
+            // 调用实际的用户操作详情API
+            fetch('/user-operations/api/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
-                {
-                    time: '14:15:42',
-                    user: '系统自动',
-                    ip: '',
-                    action: '🔄 API Gateway 重启',
-                    details: [
-                        { label: '触发原因', value: '配置文件变更' },
-                        { label: '重启耗时', value: '30秒' },
-                        { label: '健康检查', value: '通过', status: 'success' },
-                        { label: '内存释放', value: '45MB' },
-                        { label: '服务恢复', value: '正常运行', status: 'success' }
-                    ]
-                },
-                {
-                    time: '13:45:18',
-                    user: '李四',
-                    ip: '192.168.1.88',
-                    action: '⚙️ 负载均衡配置更新',
-                    details: [
-                        { label: '修改文件', value: 'nginx.conf' },
-                        { label: '权重调整', value: 'server1: 3→5' },
-                        { label: '测试结果', value: '连通性正常', status: 'success' },
-                        { label: '性能提升', value: '响应时间-15%' },
-                        { label: '配置验证', value: '语法检查通过', status: 'success' }
-                    ]
+                body: JSON.stringify(queryDto)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('用户操作详情API响应:', data);
+                
+                if (data.content && Array.isArray(data.content)) {
+                    renderUserOperations(data.content, data.totalElements);
+                } else if (data.error) {
+                    console.error('获取用户操作详情失败:', data.error);
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: var(--color-danger);">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                            <div>加载用户操作详情失败</div>
+                            <div style="font-size: 0.875rem; margin-top: 5px;">${data.error}</div>
+                        </div>
+                    `;
+                } else {
+                    // 空数据
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: var(--color-text-secondary);">
+                            <i class="fas fa-user-slash" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                            <div>暂无用户操作记录</div>
+                            <div style="font-size: 0.875rem; color: #9ca3af; margin-top: 5px;">
+                                该服务器上暂时没有用户操作记录
+                            </div>
+                        </div>
+                    `;
                 }
-            ];
+            })
+            .catch(error => {
+                console.error('用户操作详情API调用失败:', error);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--color-danger);">
+                        <i class="fas fa-network-wired" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                        <div>网络连接失败</div>
+                        <div style="font-size: 0.875rem; margin-top: 5px;">请检查网络连接后重试</div>
+                    </div>
+                `;
+            });
+        }
+        
+        function renderUserOperations(operations, totalElements) {
+            const container = document.getElementById('systemOperationLogs');
+            
+            if (!operations || operations.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--color-text-secondary);">
+                        <i class="fas fa-user-slash" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                        <div>暂无用户操作记录</div>
+                        <div style="font-size: 0.875rem; color: #9ca3af; margin-top: 5px;">
+                            该服务器上暂时没有用户操作记录
+                        </div>
+                    </div>
+                `;
+                return;
+            }
             
             let html = '';
-            logs.forEach((log, index) => {
+            operations.forEach((operation, index) => {
+                const formatTime = operation.lastActivity ? 
+                    new Date(operation.lastActivity).toLocaleTimeString('zh-CN', { 
+                        hour12: false,
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    }) : '未知时间';
+                
+                const activityIcon = getActivityIcon(operation.activityType);
+                const riskColor = getRiskColor(operation.riskLevel);
+                
                 html += `
                     <div class="system-log-card system-fade-in" style="animation-delay: ${index * 0.1}s">
                         <div class="system-log-header">
-                            <div class="system-log-time">${log.time}</div>
+                            <div class="system-log-time">${formatTime}</div>
                             <div class="system-log-user">
-                                <i class="fas fa-${log.user === '系统自动' ? 'cog' : 'user'}"></i>
-                                ${log.user}${log.ip ? ' @' + log.ip : ''}
+                                <i class="fas fa-user"></i>
+                                ${operation.username || '未知用户'}${operation.remoteIp ? ' @' + operation.remoteIp : ''}
                             </div>
                         </div>
                         <div class="system-log-content">
-                            <h3 class="system-log-action">${log.action}</h3>
+                            <h3 class="system-log-action">
+                                ${activityIcon} ${operation.operationSummary || operation.activityTypeDescription || '未知操作'}
+                            </h3>
                             <div class="system-log-details">
-                                ${log.details.map(detail => `
+                                ${operation.activityDetails ? `
                                     <div class="system-detail-row">
-                                        <span class="system-detail-label">${detail.label}:</span>
-                                        <span class="system-detail-value ${detail.status ? 'system-status-' + detail.status : ''}">
-                                            ${detail.status === 'success' ? '<i class="fas fa-check-circle"></i>' : ''}
-                                            ${detail.value}
+                                        <span class="system-detail-label">操作详情:</span>
+                                        <span class="system-detail-value">${operation.activityDetails}</span>
+                                    </div>
+                                ` : ''}
+                                ${operation.sessionId ? `
+                                    <div class="system-detail-row">
+                                        <span class="system-detail-label">会话ID:</span>
+                                        <span class="system-detail-value">${operation.sessionId}</span>
+                                    </div>
+                                ` : ''}
+                                ${operation.commandCount && operation.commandCount > 0 ? `
+                                    <div class="system-detail-row">
+                                        <span class="system-detail-label">命令数量:</span>
+                                        <span class="system-detail-value">${operation.commandCount}个</span>
+                                    </div>
+                                ` : ''}
+                                ${operation.sessionDuration ? `
+                                    <div class="system-detail-row">
+                                        <span class="system-detail-label">会话时长:</span>
+                                        <span class="system-detail-value">${operation.sessionDuration}分钟</span>
+                                    </div>
+                                ` : ''}
+                                ${operation.riskLevel ? `
+                                    <div class="system-detail-row">
+                                        <span class="system-detail-label">风险等级:</span>
+                                        <span class="system-detail-value" style="color: ${riskColor}">
+                                            <i class="fas fa-shield-alt"></i>
+                                            ${operation.riskLevel}
                                         </span>
                                     </div>
-                                `).join('')}
+                                ` : ''}
+                                ${operation.isActive !== null ? `
+                                    <div class="system-detail-row">
+                                        <span class="system-detail-label">会话状态:</span>
+                                        <span class="system-detail-value system-status-${operation.isActive ? 'success' : 'error'}">
+                                            ${operation.isActive ? '<i class="fas fa-check-circle"></i>活跃' : '<i class="fas fa-times-circle"></i>已结束'}
+                                        </span>
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
                     </div>
                 `;
             });
             
-            html += `
-                <button class="system-load-more" onclick="loadMoreSystemLogs()">
-                    <i class="fas fa-plus-circle"></i>
-                    加载更多操作记录 (还有23条)
-                </button>
-            `;
+            // 如果有更多记录，显示加载更多按钮
+            const remainingCount = totalElements - operations.length;
+            if (remainingCount > 0) {
+                html += `
+                    <button class="system-load-more" onclick="loadMoreUserOperations(${operations[0].serverId})">
+                        <i class="fas fa-plus-circle"></i>
+                        加载更多操作记录 (还有${remainingCount}条)
+                    </button>
+                `;
+            }
             
             container.innerHTML = html;
+        }
+        
+        function getActivityIcon(activityType) {
+            const iconMap = {
+                'SSH_LOGIN': '🔐',
+                'SSH_LOGOUT': '🚪',
+                'COMMAND_EXECUTE': '💻',
+                'FILE_EDIT': '📝',
+                'PROCESS_START': '▶️',
+                'PROCESS_STOP': '⏹️',
+                'SYSTEM_INFO': '📊',
+                'APPLICATION_DEPLOY': '🚀'
+            };
+            return iconMap[activityType] || '⚙️';
+        }
+        
+        function getRiskColor(riskLevel) {
+            const colorMap = {
+                '低': '#10b981',  // green
+                '中': '#f59e0b',  // amber
+                '高': '#ef4444'   // red
+            };
+            return colorMap[riskLevel] || '#6b7280'; // default gray
+        }
+        
+        function loadMoreUserOperations(serverId) {
+            const button = event.target.closest('.system-load-more');
+            const originalHTML = button.innerHTML;
+            
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>加载中...';
+            
+            // TODO: 实现分页加载更多用户操作记录
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+                console.log('加载更多用户操作记录:', serverId);
+            }, 1500);
         }
 
         function loadMoreSystemLogs() {
