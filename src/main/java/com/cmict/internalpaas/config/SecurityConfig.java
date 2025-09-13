@@ -49,7 +49,7 @@ public class SecurityConfig {
                     "/monitoring/server/*/refresh", "/monitoring/trigger-health-check",
                     "/monitoring/history/api/**", "/monitoring/thresholds/api/**",
                     "/api/server-user-groups/**", "/api/permission-test/**",
-                    "/terminal/api/**") // 禁用H2控制台、WebSocket、测试接口、监控接口和终端API的CSRF保护
+                    "/terminal/api/**", "/user-operations/api/**") // 禁用H2控制台、WebSocket、测试接口、监控接口、用户操作接口和终端API的CSRF保护
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // 使用Cookie存储CSRF token
             )
             .headers(headers -> headers
