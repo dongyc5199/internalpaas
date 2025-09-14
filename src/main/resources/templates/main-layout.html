@@ -53,6 +53,14 @@
     <link rel="stylesheet" href="/css/drawer.css">
     <link rel="stylesheet" href="/css/server-status-tags.css">
     <link rel="stylesheet" href="/css/server-detail-modal.css">
+    <!-- 现代化开发者工作台样式 -->
+    <link rel="stylesheet" href="/css/modern-developer-dashboard.css">
+    <link rel="stylesheet" href="/css/modern-dashboard-stats.css">
+    <link rel="stylesheet" href="/css/modern-app-cards.css">
+    <link rel="stylesheet" href="/css/modern-upload-modal.css">
+    <link rel="stylesheet" href="/css/batch-operations.css">
+    <!-- 现代化管理员页面样式 -->
+    <link rel="stylesheet" href="/css/modern-admin-pages.css">
     <style>
         :root {
             --primary-color: #6366f1;
@@ -2634,6 +2642,42 @@
         
         function viewApplicationDetails(appId) {
             window.location.href = '/apps/' + appId;
+        }
+        
+        // 现代化应用管理页面的额外函数
+        function refreshApps() {
+            loadContent('applications');
+        }
+        
+        function uploadApp() {
+            // 使用抽屉组件或模态框上传应用
+            alert('上传应用功能开发中...');
+        }
+        
+        function filterApplications(filter) {
+            // 根据状态过滤应用
+            const appCards = document.querySelectorAll('.modern-app-card');
+            appCards.forEach(card => {
+                const statusClass = card.classList.contains('running') ? 'running' :
+                                   card.classList.contains('stopped') ? 'stopped' :
+                                   card.classList.contains('starting') ? 'starting' : 'all';
+                                   
+                if (filter === 'all' || filter === statusClass) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // 更新统计卡片的激活状态
+            document.querySelectorAll('.modern-stats-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            
+            const targetCard = document.querySelector(`.modern-stats-card.${filter}`);
+            if (targetCard) {
+                targetCard.classList.add('active');
+            }
         }
         
         // 下拉菜单切换函数

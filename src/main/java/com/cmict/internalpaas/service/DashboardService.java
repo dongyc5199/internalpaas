@@ -116,6 +116,47 @@ public class DashboardService {
         dto.setCpuUsage(32.5);
         dto.setMemoryUsage(45.8);
         
+        // 生成最近调试记录（模拟数据）
+        java.util.List<DeveloperDashboardDto.DebugRecord> records = new java.util.ArrayList<>();
+        
+        // 基于实际应用数据生成一些活动记录
+        if (!applications.isEmpty()) {
+            Application app = applications.get(0);
+            DeveloperDashboardDto.DebugRecord record1 = new DeveloperDashboardDto.DebugRecord();
+            record1.setApplicationName(app.getName());
+            record1.setAction("应用启动");
+            record1.setStatus("成功");
+            record1.setTimestamp("5分钟前");
+            records.add(record1);
+            
+            if (applications.size() > 1) {
+                Application app2 = applications.get(1);
+                DeveloperDashboardDto.DebugRecord record2 = new DeveloperDashboardDto.DebugRecord();
+                record2.setApplicationName(app2.getName());
+                record2.setAction("调试会话");
+                record2.setStatus("开始");
+                record2.setTimestamp("25分钟前");
+                records.add(record2);
+            }
+        }
+        
+        // 添加一些通用活动记录
+        DeveloperDashboardDto.DebugRecord record3 = new DeveloperDashboardDto.DebugRecord();
+        record3.setApplicationName("test-app-2.0.jar");
+        record3.setAction("历史记录查看");
+        record3.setStatus("查看");
+        record3.setTimestamp("2小时前");
+        records.add(record3);
+        
+        DeveloperDashboardDto.DebugRecord record4 = new DeveloperDashboardDto.DebugRecord();
+        record4.setApplicationName("broken-app-1.0.jar");
+        record4.setAction("应用启动");
+        record4.setStatus("失败");
+        record4.setTimestamp("1天前");
+        records.add(record4);
+        
+        dto.setRecentDebugRecords(records);
+        
         return dto;
     }
 }

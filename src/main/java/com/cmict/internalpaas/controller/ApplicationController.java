@@ -528,7 +528,7 @@ public class ApplicationController {
     }
     
     /**
-     * AJAX API: 获取应用管理内容片段
+     * AJAX API: 获取应用管理内容片段 - 现代化版本
      */
     @GetMapping("/api/content")
     @ResponseBody
@@ -543,20 +543,17 @@ public class ApplicationController {
                 
             List<Application> applications = applicationService.getUserApplications(user);
             
-            StringBuilder content = new StringBuilder();
-            content.append("<div class=\"content-header\">\n");
-            content.append("    <div class=\"d-flex justify-content-between align-items-center mb-4\">\n");
-            content.append("        <h2><i class=\"fas fa-rocket\"></i> 应用管理控制面板</h2>\n");
-            content.append("        <div>\n");
-            content.append("            <button class=\"btn btn-outline-primary\" onclick=\"refreshApps()\">\n");
-            content.append("                <i class=\"fas fa-sync-alt\"></i> 刷新数据\n");
-            content.append("            </button>\n");
-            content.append("            <button class=\"btn btn-outline-success\" onclick=\"checkHealth()\">\n");
-            content.append("                <i class=\"fas fa-heartbeat\"></i> 健康检查\n");
-            content.append("            </button>\n");
-            content.append("        </div>\n");
-            content.append("    </div>\n");
-            content.append("</div>\n\n");
+            StringBuilder htmlBuilder = new StringBuilder();
+            
+            // 页面标题
+            htmlBuilder.append("<div class=\"content-header\">");
+            htmlBuilder.append("<div class=\"page-title-group\">");
+            htmlBuilder.append("<h1 class=\"page-title\">应用管理控制面板</h1>");
+            htmlBuilder.append("</div></div>");
+            
+            // 现代化统计面板
+            htmlBuilder.append("<section class=\"modern-stats-container\">");
+            htmlBuilder.append("<div class=\"stats-grid\">");
             
             // 应用状态统计
             long runningCount = applications.stream().filter(app -> "RUNNING".equals(app.getStatus())).count();
@@ -564,139 +561,188 @@ public class ApplicationController {
             long startingCount = applications.stream().filter(app -> "STARTING".equals(app.getStatus())).count();
             long totalCount = applications.size();
             
-            content.append("<div class=\"row mb-4\">\n");
-            content.append("    <div class=\"col-md-3 col-sm-6 mb-3\">\n");
-            content.append("        <div class=\"card metric-card bg-success text-white\">\n");
-            content.append("            <div class=\"card-body\">\n");
-            content.append("                <div class=\"d-flex justify-content-between\">\n");
-            content.append("                    <div>\n");
-            content.append("                        <h4>").append(runningCount).append("</h4>\n");
-            content.append("                        <p>运行中</p>\n");
-            content.append("                    </div>\n");
-            content.append("                    <i class=\"fas fa-check-circle fa-2x align-self-center\"></i>\n");
-            content.append("                </div>\n");
-            content.append("            </div>\n");
-            content.append("        </div>\n");
-            content.append("    </div>\n");
-            content.append("    <div class=\"col-md-3 col-sm-6 mb-3\">\n");
-            content.append("        <div class=\"card metric-card bg-danger text-white\">\n");
-            content.append("            <div class=\"card-body\">\n");
-            content.append("                <div class=\"d-flex justify-content-between\">\n");
-            content.append("                    <div>\n");
-            content.append("                        <h4>").append(stoppedCount).append("</h4>\n");
-            content.append("                        <p>已停止</p>\n");
-            content.append("                    </div>\n");
-            content.append("                    <i class=\"fas fa-times-circle fa-2x align-self-center\"></i>\n");
-            content.append("                </div>\n");
-            content.append("            </div>\n");
-            content.append("        </div>\n");
-            content.append("    </div>\n");
-            content.append("    <div class=\"col-md-3 col-sm-6 mb-3\">\n");
-            content.append("        <div class=\"card metric-card bg-primary text-white\">\n");
-            content.append("            <div class=\"card-body\">\n");
-            content.append("                <div class=\"d-flex justify-content-between\">\n");
-            content.append("                    <div>\n");
-            content.append("                        <h4>").append(startingCount).append("</h4>\n");
-            content.append("                        <p>启动中</p>\n");
-            content.append("                    </div>\n");
-            content.append("                    <i class=\"fas fa-spinner fa-2x align-self-center\"></i>\n");
-            content.append("                </div>\n");
-            content.append("            </div>\n");
-            content.append("        </div>\n");
-            content.append("    </div>\n");
-            content.append("    <div class=\"col-md-3 col-sm-6 mb-3\">\n");
-            content.append("        <div class=\"card metric-card bg-secondary text-white\">\n");
-            content.append("            <div class=\"card-body\">\n");
-            content.append("                <div class=\"d-flex justify-content-between\">\n");
-            content.append("                    <div>\n");
-            content.append("                        <h4>").append(totalCount).append("</h4>\n");
-            content.append("                        <p>总应用数</p>\n");
-            content.append("                    </div>\n");
-            content.append("                    <i class=\"fas fa-rocket fa-2x align-self-center\"></i>\n");
-            content.append("                </div>\n");
-            content.append("            </div>\n");
-            content.append("        </div>\n");
-            content.append("    </div>\n");
-            content.append("</div>\n\n");
+            // 运行中应用卡片
+            htmlBuilder.append("<div class=\"modern-stats-card running\" onclick=\"filterApplications('running')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">运行中</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(runningCount).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">个</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-up\">↗</span>应用正常运行</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-check-circle icon-pulse\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
             
-            // 应用列表
-            content.append("<div class=\"row\">\n");
-            content.append("    <div class=\"col-12\">\n");
-            content.append("        <div class=\"card\">\n");
-            content.append("            <div class=\"card-header d-flex justify-content-between align-items-center\">\n");
-            content.append("                <h5 class=\"mb-0\"><i class=\"fas fa-list\"></i> 应用状态</h5>\n");
-            content.append("                <button class=\"btn btn-primary btn-sm\" onclick=\"uploadApp()\">\n");
-            content.append("                    <i class=\"fas fa-plus\"></i> 上传新应用\n");
-            content.append("                </button>\n");
-            content.append("            </div>\n");
-            content.append("            <div class=\"card-body\">\n");
+            // 已停止应用卡片  
+            htmlBuilder.append("<div class=\"modern-stats-card stopped\" onclick=\"filterApplications('stopped')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">已停止</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(stoppedCount).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">个</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>待启动</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-times-circle\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            // 启动中应用卡片
+            htmlBuilder.append("<div class=\"modern-stats-card starting\" onclick=\"filterApplications('starting')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">启动中</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(startingCount).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">个</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-up\">↗</span>正在启动</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-spinner icon-spin\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            // 总应用数卡片
+            htmlBuilder.append("<div class=\"modern-stats-card total\" onclick=\"filterApplications('all')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">总应用数</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(totalCount).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">个</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>应用概览</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-rocket\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</section>");
+            
+            // 应用卡片网格
+            htmlBuilder.append("<section class=\"modern-apps-section\">");
+            htmlBuilder.append("<div class=\"section-header\">");
+            htmlBuilder.append("<h2 class=\"section-title\">我的应用</h2>");
+            htmlBuilder.append("<div class=\"section-actions\">");
+            htmlBuilder.append("<button class=\"action-btn secondary\" onclick=\"refreshApps()\">");
+            htmlBuilder.append("<i class=\"fas fa-sync-alt\"></i>");
+            htmlBuilder.append("<span>刷新数据</span>");
+            htmlBuilder.append("</button>");
+            htmlBuilder.append("<button class=\"action-btn primary\" onclick=\"uploadApp()\">");
+            htmlBuilder.append("<i class=\"fas fa-plus\"></i>");
+            htmlBuilder.append("<span>上传新应用</span>");
+            htmlBuilder.append("</button>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
             
             if (applications.isEmpty()) {
-                content.append("                <div class=\"row\">\n");
-                content.append("                    <div class=\"col-12 text-center py-4\">\n");
-                content.append("                        <i class=\"fas fa-rocket fa-3x text-muted mb-3\"></i>\n");
-                content.append("                        <p class=\"text-muted\">还没有应用，上传您的第一个应用开始使用管理功能</p>\n");
-                content.append("                        <button class=\"btn btn-primary\" onclick=\"uploadApp()\">\n");
-                content.append("                            <i class=\"fas fa-plus\"></i> 上传应用\n");
-                content.append("                        </button>\n");
-                content.append("                    </div>\n");
-                content.append("                </div>\n");
+                // 空状态
+                htmlBuilder.append("<div class=\"empty-state\">");
+                htmlBuilder.append("<div class=\"empty-icon\">");
+                htmlBuilder.append("<i class=\"fas fa-rocket\"></i>");
+                htmlBuilder.append("</div>");
+                htmlBuilder.append("<h3 class=\"empty-title\">还没有应用</h3>");
+                htmlBuilder.append("<p class=\"empty-description\">上传您的第一个JAR应用开始使用管理功能</p>");
+                htmlBuilder.append("<div class=\"empty-actions\">");
+                htmlBuilder.append("<button class=\"modern-action-btn primary\" onclick=\"uploadApp()\">");
+                htmlBuilder.append("<i class=\"fas fa-plus\"></i>");
+                htmlBuilder.append("<span>上传应用</span>");
+                htmlBuilder.append("</button>");
+                htmlBuilder.append("</div>");
+                htmlBuilder.append("</div>");
             } else {
-                content.append("                <div class=\"row\">\n");
+                // 应用卡片网格
+                htmlBuilder.append("<div class=\"modern-apps-grid\">");
                 for (Application app : applications) {
-                    String statusClass = getStatusClass(app.getStatus());
+                    String statusClass = getModernStatusClass(app.getStatus());
                     String statusText = getStatusText(app.getStatus());
-                    String badgeClass = getBadgeClass(app.getStatus());
+                    String statusIcon = getStatusIcon(app.getStatus());
                     
-                    content.append("                    <div class=\"col-lg-6 col-xl-4 mb-3\">\n");
-                    content.append("                        <div class=\"card app-card ").append(statusClass).append("\">\n");
-                    content.append("                            <div class=\"card-body\">\n");
-                    content.append("                                <div class=\"d-flex justify-content-between align-items-start mb-2\">\n");
-                    content.append("                                    <h6 class=\"card-title mb-0\">").append(escapeHtml(app.getName())).append("</h6>\n");
-                    content.append("                                    <span class=\"badge ").append(badgeClass).append("\">").append(statusText).append("</span>\n");
-                    content.append("                                </div>\n");
-                    content.append("                                <p class=\"card-text small text-muted mb-2\">\n");
-                    content.append("                                    <i class=\"fas fa-plug\"></i> 端口: <span>").append(app.getPort() != null ? app.getPort() : "N/A").append("</span>\n");
-                    content.append("                                </p>\n");
+                    htmlBuilder.append("<div class=\"modern-app-card ").append(statusClass).append("\">");
+                    
+                    // 卡片头部
+                    htmlBuilder.append("<div class=\"app-header\">");
+                    htmlBuilder.append("<div class=\"app-info\">");
+                    htmlBuilder.append("<div class=\"app-name\">").append(escapeHtml(app.getName())).append("</div>");
+                    htmlBuilder.append("<div class=\"app-meta\">");
+                    htmlBuilder.append("<span class=\"app-id\">ID: ").append(app.getId()).append("</span>");
                     if (app.getLastStartedAt() != null) {
-                        content.append("                                <p class=\"card-text small text-muted mb-3\">\n");
-                        content.append("                                    <i class=\"fas fa-clock\"></i> 最后启动: <span>").append(app.getLastStartedAt().toString()).append("</span>\n");
-                        content.append("                                </p>\n");
+                        htmlBuilder.append("<span class=\"app-time\">").append(formatRelativeTime(app.getLastStartedAt())).append("</span>");
                     }
-                    content.append("                                <div class=\"mt-3\">\n");
-                    content.append("                                    <button class=\"btn btn-sm btn-outline-primary\" onclick=\"viewDetails('").append(app.getId()).append("')\">\n");
-                    content.append("                                        <i class=\"fas fa-info-circle\"></i> 详细信息\n");
-                    content.append("                                    </button>\n");
-                    content.append("                                    <button class=\"btn btn-sm btn-outline-secondary\" onclick=\"editConfig('").append(app.getId()).append("')\">\n");
-                    content.append("                                        <i class=\"fas fa-cogs\"></i> 配置\n");
-                    content.append("                                    </button>\n");
-                    content.append("                                    <button class=\"btn btn-sm btn-outline-success\" onclick=\"refreshApp('").append(app.getId()).append("')\">\n");
-                    content.append("                                        <i class=\"fas fa-sync-alt\"></i> 刷新\n");
-                    content.append("                                    </button>\n");
-                    content.append("                                </div>\n");
-                    content.append("                            </div>\n");
-                    content.append("                        </div>\n");
-                    content.append("                    </div>\n");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("<div class=\"status-indicator ").append(statusClass).append("\">");
+                    htmlBuilder.append("<i class=\"").append(statusIcon).append("\"></i>");
+                    htmlBuilder.append("<span>").append(statusText).append("</span>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    
+                    // 应用指标
+                    htmlBuilder.append("<div class=\"app-metrics\">");
+                    htmlBuilder.append("<div class=\"metrics-grid\">");
+                    htmlBuilder.append("<div class=\"metric-item\">");
+                    htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-plug\"></i></div>");
+                    htmlBuilder.append("<div class=\"metric-info\">");
+                    htmlBuilder.append("<div class=\"metric-label\">端口</div>");
+                    htmlBuilder.append("<div class=\"metric-value\">").append(app.getPort() != null ? app.getPort() : "N/A").append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    if (app.getDebugPort() != null) {
+                        htmlBuilder.append("<div class=\"metric-item\">");
+                        htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-bug\"></i></div>");
+                        htmlBuilder.append("<div class=\"metric-info\">");
+                        htmlBuilder.append("<div class=\"metric-label\">调试</div>");
+                        htmlBuilder.append("<div class=\"metric-value\">").append(app.getDebugPort()).append("</div>");
+                        htmlBuilder.append("</div>");
+                        htmlBuilder.append("</div>");
+                    }
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    
+                    // 操作按钮
+                    htmlBuilder.append("<div class=\"app-actions\">");
+                    if ("RUNNING".equals(app.getStatus())) {
+                        htmlBuilder.append("<button class=\"app-action-btn secondary\" onclick=\"stopApplication('").append(app.getId()).append("')\">");
+                        htmlBuilder.append("<i class=\"fas fa-stop\"></i>");
+                        htmlBuilder.append("<span>停止</span>");
+                        htmlBuilder.append("</button>");
+                        htmlBuilder.append("<button class=\"app-action-btn primary\" onclick=\"restartApplication('").append(app.getId()).append("')\">");
+                        htmlBuilder.append("<i class=\"fas fa-redo\"></i>");
+                        htmlBuilder.append("<span>重启</span>");
+                        htmlBuilder.append("</button>");
+                    } else {
+                        htmlBuilder.append("<button class=\"app-action-btn success\" onclick=\"startApplication('").append(app.getId()).append("')\">");
+                        htmlBuilder.append("<i class=\"fas fa-play\"></i>");
+                        htmlBuilder.append("<span>启动</span>");
+                        htmlBuilder.append("</button>");
+                    }
+                    htmlBuilder.append("<button class=\"app-action-btn secondary\" onclick=\"viewApplicationDetails('").append(app.getId()).append("')\">");
+                    htmlBuilder.append("<i class=\"fas fa-info-circle\"></i>");
+                    htmlBuilder.append("<span>详情</span>");
+                    htmlBuilder.append("</button>");
+                    htmlBuilder.append("</div>");
+                    
+                    htmlBuilder.append("</div>");
                 }
-                content.append("                </div>\n");
+                htmlBuilder.append("</div>");
             }
             
-            content.append("            </div>\n");
-            content.append("        </div>\n");
-            content.append("    </div>\n");
-            content.append("</div>\n\n");
+            htmlBuilder.append("</section>");
             
-            // 添加必要的JavaScript函数
-            content.append("<script>\n");
-            content.append("function refreshApps() { loadContent('applications'); }\n");
-            content.append("function checkHealth() { console.log('执行健康检查...'); }\n");
-            content.append("function uploadApp() { alert('上传功能开发中...'); }\n");
-            content.append("function viewDetails(appId) { alert('查看详情: ' + appId); }\n");
-            content.append("function editConfig(appId) { alert('编辑配置: ' + appId); }\n");
-            content.append("function refreshApp(appId) { alert('刷新应用: ' + appId); }\n");
-            content.append("</script>\n");
-            
-            return ResponseEntity.ok(content.toString());
+            return ResponseEntity.ok(htmlBuilder.toString());
             
         } catch (Exception e) {
             String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载应用内容失败: " + e.getMessage() + "</div>";
@@ -704,8 +750,8 @@ public class ApplicationController {
         }
     }
     
-    // 辅助方法
-    private String getStatusClass(String status) {
+    // 辅助方法 - 现代化版本
+    private String getModernStatusClass(String status) {
         switch (status != null ? status.toUpperCase() : "UNKNOWN") {
             case "RUNNING": return "running";
             case "STOPPED": return "stopped";
@@ -721,6 +767,37 @@ public class ApplicationController {
             case "STARTING": return "启动中";
             default: return "未知";
         }
+    }
+    
+    private String getStatusIcon(String status) {
+        switch (status != null ? status.toUpperCase() : "UNKNOWN") {
+            case "RUNNING": return "fas fa-check-circle";
+            case "STOPPED": return "fas fa-times-circle";
+            case "STARTING": return "fas fa-spinner fa-spin";
+            default: return "fas fa-question-circle";
+        }
+    }
+    
+    private String formatRelativeTime(java.time.LocalDateTime dateTime) {
+        if (dateTime == null) return "";
+        
+        java.time.Duration duration = java.time.Duration.between(dateTime, java.time.LocalDateTime.now());
+        long minutes = duration.toMinutes();
+        long hours = duration.toHours();
+        long days = duration.toDays();
+        
+        if (minutes < 60) {
+            return minutes + "分钟前";
+        } else if (hours < 24) {
+            return hours + "小时前";
+        } else {
+            return days + "天前";
+        }
+    }
+    
+    // 保留原有方法以兼容其他地方的调用
+    private String getStatusClass(String status) {
+        return getModernStatusClass(status);
     }
     
     private String getBadgeClass(String status) {
@@ -739,5 +816,148 @@ public class ApplicationController {
                    .replace(">", "&gt;")
                    .replace("\"", "&quot;")
                    .replace("'", "&#x27;");
+    }
+    
+    // ===============================
+    // 批量操作API
+    // ===============================
+    
+    /**
+     * 批量启动应用
+     */
+    @PostMapping("/batch/start")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> batchStart(
+            @RequestBody Map<String, Object> request, 
+            Authentication authentication) {
+        
+        if (authentication == null) {
+            return ResponseEntity.status(401).body(createErrorResponse("用户未登录"));
+        }
+        
+        try {
+            User user = userService.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            @SuppressWarnings("unchecked")
+            List<Long> applicationIds = (List<Long>) request.get("applicationIds");
+            
+            if (applicationIds == null || applicationIds.isEmpty()) {
+                return ResponseEntity.badRequest().body(createErrorResponse("应用ID列表不能为空"));
+            }
+            
+            Map<String, Object> result = applicationService.batchStart(applicationIds, user);
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(createErrorResponse("批量启动失败: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 批量停止应用
+     */
+    @PostMapping("/batch/stop")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> batchStop(
+            @RequestBody Map<String, Object> request, 
+            Authentication authentication) {
+        
+        if (authentication == null) {
+            return ResponseEntity.status(401).body(createErrorResponse("用户未登录"));
+        }
+        
+        try {
+            User user = userService.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            @SuppressWarnings("unchecked")
+            List<Long> applicationIds = (List<Long>) request.get("applicationIds");
+            
+            if (applicationIds == null || applicationIds.isEmpty()) {
+                return ResponseEntity.badRequest().body(createErrorResponse("应用ID列表不能为空"));
+            }
+            
+            Map<String, Object> result = applicationService.batchStop(applicationIds, user);
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(createErrorResponse("批量停止失败: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 批量重启应用
+     */
+    @PostMapping("/batch/restart")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> batchRestart(
+            @RequestBody Map<String, Object> request, 
+            Authentication authentication) {
+        
+        if (authentication == null) {
+            return ResponseEntity.status(401).body(createErrorResponse("用户未登录"));
+        }
+        
+        try {
+            User user = userService.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            @SuppressWarnings("unchecked")
+            List<Long> applicationIds = (List<Long>) request.get("applicationIds");
+            
+            if (applicationIds == null || applicationIds.isEmpty()) {
+                return ResponseEntity.badRequest().body(createErrorResponse("应用ID列表不能为空"));
+            }
+            
+            Map<String, Object> result = applicationService.batchRestart(applicationIds, user);
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(createErrorResponse("批量重启失败: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 批量删除应用
+     */
+    @PostMapping("/batch/delete")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> batchDelete(
+            @RequestBody Map<String, Object> request, 
+            Authentication authentication) {
+        
+        if (authentication == null) {
+            return ResponseEntity.status(401).body(createErrorResponse("用户未登录"));
+        }
+        
+        try {
+            User user = userService.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            @SuppressWarnings("unchecked")
+            List<Long> applicationIds = (List<Long>) request.get("applicationIds");
+            
+            if (applicationIds == null || applicationIds.isEmpty()) {
+                return ResponseEntity.badRequest().body(createErrorResponse("应用ID列表不能为空"));
+            }
+            
+            Map<String, Object> result = applicationService.batchDelete(applicationIds, user);
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(createErrorResponse("批量删除失败: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 创建错误响应
+     */
+    private Map<String, Object> createErrorResponse(String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("message", message);
+        response.put("timestamp", LocalDateTime.now().toString());
+        return response;
     }
 }
