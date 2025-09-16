@@ -156,9 +156,109 @@
             left: 0;
             bottom: 0;
             overflow-y: auto;
+            overflow-x: hidden;
             z-index: 1000;
             box-shadow: var(--sidebar-shadow);
+            transition: width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
         }
+
+        /* 侧边栏收起状态 */
+        .sidebar.collapsed {
+            width: 60px !important;
+        }
+
+        /* 收起状态下隐藏文字，但保持图标显示 */
+        .sidebar.collapsed .nav-text {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+
+        /* 确保收起状态下图标始终可见 */
+        .sidebar.collapsed .nav-icon {
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: inline-block !important;
+            margin-right: 0 !important;
+            width: auto !important;
+            height: auto !important;
+            min-width: 20px !important;
+            min-height: 20px !important;
+        }
+        
+        /* 强制显示Font Awesome图标 */
+        .sidebar.collapsed .nav-icon i {
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: inline-block !important;
+            font-size: 1.2rem !important;
+            color: #333333 !important;
+            font-family: "Font Awesome 6 Free" !important;
+            font-weight: 900 !important;
+            font-style: normal !important;
+            width: auto !important;
+            height: auto !important;
+        }
+        
+        
+        /* 收起状态下图标容器样式 */
+        .sidebar.collapsed .nav-icon {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 36px !important;
+            height: 36px !important;
+            margin: 0 auto !important;
+            background: #f8f9fa !important;
+            border: 1px solid #dee2e6 !important;
+            border-radius: 8px !important;
+        }
+        
+        /* 收起状态下Font Awesome图标样式 */
+        .sidebar.collapsed .nav-icon i {
+            display: inline-block !important;
+            font-family: "Font Awesome 6 Free" !important;
+            font-weight: 900 !important;
+            font-style: normal !important;
+            font-size: 1.2rem !important;
+            color: #495057 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            line-height: 1 !important;
+        }
+        
+        /* 强制显示特定图标 */
+        .sidebar.collapsed .nav-icon i.fa-tachometer-alt::before,
+        .sidebar.collapsed .nav-icon i.fa-server::before,
+        .sidebar.collapsed .nav-icon i.fa-users::before,
+        .sidebar.collapsed .nav-icon i.fa-rocket::before,
+        .sidebar.collapsed .nav-icon i.fa-chart-line::before,
+        .sidebar.collapsed .nav-icon i.fa-terminal::before {
+            font-family: "Font Awesome 6 Free" !important;
+            font-weight: 900 !important;
+            display: inline-block !important;
+        }
+
+        /* 正常状态下显示所有内容 */
+        .sidebar .nav-text,
+        .sidebar .nav-icon {
+            opacity: 1 !important;
+            visibility: visible !important;
+            transition: opacity 0.3s ease 0.1s, visibility 0.3s ease 0.1s;
+        }
+
+        /* 收起状态下的导航链接 */
+        .sidebar.collapsed .nav-link {
+            justify-content: center !important;
+            padding: 0.75rem 0.5rem !important; /* 收起状态下减少水平padding给图标留空间 */
+            margin: 0.25rem !important;
+            display: flex !important;
+            align-items: center !important;
+            text-align: center !important;
+            min-height: 48px !important; /* 确保最小高度一致 */
+            box-sizing: border-box !important;
+        }
+
 
         /* 右侧内容区域 */
         .content-area {
@@ -170,11 +270,53 @@
             position: relative;
             overflow-y: auto;
             overflow-x: hidden;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        /* 侧边栏收起时内容区域调整 */
+        .sidebar-collapsed .content-area,
+        body.sidebar-collapsed .content-area,
+        body.sidebar-collapsed main.content-area,
+        .sidebar.collapsed ~ main.content-area {
+            margin-left: 60px !important;
         }
 
         /* 内容加载区域 */
         .content-wrapper {
             padding: 2rem;
+        }
+
+        /* 侧边栏收起展开按钮 */
+        .sidebar-toggle {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: var(--primary-color) !important;
+            border: 2px solid var(--primary-color) !important;
+            color: white !important;
+            cursor: pointer;
+            border-radius: var(--border-radius-md);
+            margin-right: 1rem;
+            transition: all 0.2s ease;
+            z-index: 1002 !important;
+            position: relative !important;
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--background-hover);
+            color: var(--primary-color);
+        }
+
+        .sidebar-toggle i {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        /* 侧边栏收起时按钮图标旋转 */
+        .sidebar-collapsed .sidebar-toggle i {
+            transform: rotate(180deg);
         }
 
         /* 导航品牌 */
@@ -290,6 +432,78 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 0.95rem;
+            white-space: nowrap;
+            min-height: 48px; /* 设置最小高度确保一致性 */
+            box-sizing: border-box;
+        }
+
+        /* 收起状态下的导航链接 */
+        .sidebar.collapsed .nav-link {
+            justify-content: center;
+            padding: 0.75rem 0;
+            margin: 0 0.25rem;
+        }
+
+
+        /* 收起状态下的工具提示 */
+        .sidebar.collapsed .nav-link {
+            position: relative;
+        }
+
+        .sidebar.collapsed .nav-link::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 70px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--text-color);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--border-radius-md);
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1100;
+            pointer-events: none;
+        }
+
+        .sidebar.collapsed .nav-link:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .sidebar.collapsed .nav-link::before {
+            content: '';
+            position: absolute;
+            left: 64px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border: 6px solid transparent;
+            border-right-color: var(--text-color);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1100;
+        }
+
+        .sidebar.collapsed .nav-link:hover::before {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* 暗色主题下的工具提示样式 */
+        .dark-theme .sidebar.collapsed .nav-link::after {
+            background: #374151;
+            color: #e5e7eb;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .dark-theme .sidebar.collapsed .nav-link::before {
+            border-right-color: #374151;
         }
 
         .nav-link:hover {
@@ -313,6 +527,23 @@
             width: 20px;
             text-align: center;
             font-size: 1rem;
+            display: inline-block !important;
+            color: inherit !important;
+        }
+        
+        /* 收起状态下图标样式增强 */
+        .sidebar.collapsed .nav-icon {
+            width: auto !important;
+            margin-right: 0 !important;
+            text-align: center !important;
+            font-size: 1.2rem !important;
+        }
+        
+        /* 确保Font Awesome图标正确显示 */
+        .nav-icon i {
+            display: inline-block !important;
+            width: auto !important;
+            color: inherit !important;
         }
 
         /* 加载动画 */
@@ -574,18 +805,45 @@
 
         /* 响应式设计 */
         @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
+            /* 移动端隐藏侧边栏收起展开按钮 */
+            .sidebar-toggle {
+                display: none !important;
             }
             
+            /* 移动端侧边栏初始隐藏 */
+            .sidebar {
+                transform: translateX(-100%);
+                width: 100% !important;
+            }
+            
+            /* 移动端侧边栏打开时显示 */
             .sidebar.mobile-open {
                 transform: translateX(0);
             }
             
+            /* 移动端内容区域始终全宽 */
             .content-area {
-                margin-left: 0;
+                margin-left: 0 !important;
             }
+        }
+        
+        /* 确保桌面端正常显示 */
+        @media (min-width: 769px) {
+            .sidebar-toggle {
+                display: flex !important;
+            }
+            
+            /* 桌面端侧边栏正常显示 */
+            .sidebar {
+                transform: translateX(0) !important;
+                width: 260px !important;
+            }
+            
+            /* 桌面端内容区域正常缩进 */
+            .content-area {
+                margin-left: 260px !important;
+            }
+        }
             
             .mobile-overlay {
                 display: none;
@@ -914,6 +1172,11 @@
 <body class="dashboard-body admin-theme theme-body">
     <!-- 顶部导航栏 -->
     <nav class="top-nav">
+        <!-- 侧边栏收起展开按钮 -->
+        <button type="button" class="sidebar-toggle" title="收起/展开侧边栏" aria-label="收起/展开侧边栏">
+            <i class="fas fa-bars"></i>
+        </button>
+        
         <div class="nav-brand">
             <div class="brand-icon"><i class="fas fa-rocket"></i></div>
             <span class="brand-text">Dev Debug Platform</span>
@@ -947,41 +1210,41 @@
         <aside class="sidebar">
             <nav>
                 <div class="nav-item active">
-                    <a href="javascript:void(0)" class="nav-link" data-page="dashboard" onclick="loadContent('dashboard')">
+                    <a href="javascript:void(0)" class="nav-link" data-page="dashboard" data-tooltip="工作台概览" onclick="loadContent('dashboard')">
                         <span class="nav-icon"><i class="fas fa-tachometer-alt"></i></span>
-                        <span>工作台概览</span>
+                        <span class="nav-text">工作台概览</span>
                     </a>
                 </div>
                 <!-- 管理员功能 -->
                 <div class="nav-item" th:if="${isAdmin}">
-                    <a href="javascript:void(0)" class="nav-link" data-page="servers" onclick="loadContent('servers')">
+                    <a href="javascript:void(0)" class="nav-link" data-page="servers" data-tooltip="服务器管理" onclick="loadContent('servers')">
                         <span class="nav-icon"><i class="fas fa-server"></i></span>
-                        <span>服务器管理</span>
+                        <span class="nav-text">服务器管理</span>
                     </a>
                 </div>
                 <div class="nav-item" th:if="${isAdmin}">
-                    <a href="javascript:void(0)" class="nav-link" data-page="users" onclick="loadContent('users')">
+                    <a href="javascript:void(0)" class="nav-link" data-page="users" data-tooltip="用户管理" onclick="loadContent('users')">
                         <span class="nav-icon"><i class="fas fa-users"></i></span>
-                        <span>用户管理</span>
+                        <span class="nav-text">用户管理</span>
                     </a>
                 </div>
                 <!-- 开发者功能 - 只有非管理员用户显示 -->
                 <div class="nav-item" th:if="${!isAdmin}">
-                    <a href="javascript:void(0)" class="nav-link" data-page="applications" onclick="loadContent('applications')">
+                    <a href="javascript:void(0)" class="nav-link" data-page="applications" data-tooltip="应用管理" onclick="loadContent('applications')">
                         <span class="nav-icon"><i class="fas fa-rocket"></i></span>
-                        <span>应用管理</span>
+                        <span class="nav-text">应用管理</span>
                     </a>
                 </div>
                 <div class="nav-item" th:if="${!isAdmin}">
-                    <a href="javascript:void(0)" class="nav-link" data-page="monitoring" onclick="loadContent('monitoring')">
+                    <a href="javascript:void(0)" class="nav-link" data-page="monitoring" data-tooltip="系统监控" onclick="loadContent('monitoring')">
                         <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
-                        <span>系统监控</span>
+                        <span class="nav-text">系统监控</span>
                     </a>
                 </div>
                 <div class="nav-item" th:if="${!isAdmin}">
-                    <a href="javascript:void(0)" class="nav-link" data-page="terminal" onclick="loadContent('terminal')">
+                    <a href="javascript:void(0)" class="nav-link" data-page="terminal" data-tooltip="终端管理" onclick="loadContent('terminal')">
                         <span class="nav-icon"><i class="fas fa-terminal"></i></span>
-                        <span>终端管理</span>
+                        <span class="nav-text">终端管理</span>
                     </a>
                 </div>
             </nav>
@@ -1102,6 +1365,36 @@
             
             // 初始化移动端菜单
             initMobileMenu();
+            
+            // 初始化侧边栏收起展开功能
+            initSidebarToggle();
+            
+            // 全局测试函数
+            window.testToggle = function() {
+                console.log('测试函数被调用');
+                toggleSidebar();
+            };
+            
+            
+            // 绑定侧边栏切换事件
+            const toggleButton = document.querySelector('.sidebar-toggle');
+            if (toggleButton) {
+                console.log('找到侧边栏切换按钮，绑定事件');
+                
+                // 清除所有可能的重复事件处理器
+                const newButton = toggleButton.cloneNode(true);
+                toggleButton.parentNode.replaceChild(newButton, toggleButton);
+                
+                // 绑定单一的事件处理器
+                newButton.addEventListener('click', function(e) {
+                    console.log('侧边栏切换按钮被点击');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleSidebar();
+                });
+            } else {
+                console.error('未找到侧边栏切换按钮');
+            }
             
             // 初始化抽屉管理器
             try {
@@ -2208,6 +2501,95 @@
             
             sidebar.classList.remove('mobile-open');
             overlay.classList.remove('active');
+        }
+
+        // =====================
+        // 侧边栏收起展开功能
+        // =====================
+
+        function initSidebarToggle() {
+            // 检查是否为移动端，如果是则不初始化桌面端收起功能
+            const mediaQuery = window.matchMedia('(max-width: 768px)');
+            if (mediaQuery.matches) {
+                return;
+            }
+
+            // 从localStorage读取用户偏好
+            const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+            if (isCollapsed) {
+                toggleSidebar(false);
+            }
+
+            // 监听屏幕尺寸变化
+            mediaQuery.addEventListener('change', function(e) {
+                if (e.matches) {
+                    // 切换到移动端时，重置侧边栏状态
+                    document.body.classList.remove('sidebar-collapsed');
+                    document.querySelector('.sidebar').classList.remove('collapsed');
+                }
+            });
+        }
+
+        function toggleSidebar(saveState = true) {
+            console.log('toggleSidebar 函数被调用');
+            console.log('当前屏幕宽度:', window.innerWidth);
+            console.log('媒体查询结果:', window.matchMedia('(max-width: 768px)').matches);
+            
+            // 检查是否为移动端
+            if (window.matchMedia('(max-width: 768px)').matches) {
+                console.log('检测到移动端，退出函数');
+                return;
+            }
+
+            const sidebar = document.querySelector('.sidebar');
+            const body = document.body;
+            
+            if (!sidebar) {
+                console.error('找不到侧边栏元素');
+                return;
+            }
+            
+            console.log('切换侧边栏状态');
+            console.log('侧边栏元素:', sidebar);
+            console.log('Body元素:', body);
+            
+            // 切换收起状态
+            sidebar.classList.toggle('collapsed');
+            body.classList.toggle('sidebar-collapsed');
+            
+            console.log('侧边栏', sidebar.classList.contains('collapsed') ? '已收起' : '已展开');
+            
+            // 更新图标显示状态
+            const navIcons = document.querySelectorAll('.nav-icon');
+            navIcons.forEach((icon, index) => {
+                
+                // 确保Font Awesome图标在收起状态下正确显示
+                const fontAwesomeIcon = icon.querySelector('i');
+                if (fontAwesomeIcon) {
+                    console.log(`图标 ${index + 1} 类名:`, fontAwesomeIcon.className);
+                    console.log(`图标 ${index + 1} 计算样式:`, {
+                        fontFamily: window.getComputedStyle(fontAwesomeIcon).fontFamily,
+                        fontSize: window.getComputedStyle(fontAwesomeIcon).fontSize,
+                        color: window.getComputedStyle(fontAwesomeIcon).color,
+                        display: window.getComputedStyle(fontAwesomeIcon).display
+                    });
+                }
+            });
+            
+            // 强制更新内容区域样式
+            const contentArea = document.querySelector('.content-area');
+            if (contentArea) {
+                const isCollapsed = sidebar.classList.contains('collapsed');
+                contentArea.style.marginLeft = isCollapsed ? '60px' : '260px';
+                console.log('内容区域margin-left已设置为:', contentArea.style.marginLeft);
+            }
+            
+            // 保存用户偏好到localStorage
+            if (saveState) {
+                const isCollapsed = sidebar.classList.contains('collapsed');
+                localStorage.setItem('sidebar-collapsed', isCollapsed.toString());
+                console.log('状态已保存到localStorage:', isCollapsed);
+            }
         }
 
         // ===================
