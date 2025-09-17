@@ -403,37 +403,9 @@ body.sidebar-collapsed .content-area {
     margin-left: 60px !important;
 }
 
-/* 侧边栏收起展开按钮 */
+/* 侧边栏收起展开按钮 - 已废弃，使用modern-sidebar.css中的箭头按钮 */
 .sidebar-toggle {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: var(--primary-color) !important;
-    border: 2px solid var(--primary-color) !important;
-    color: white !important;
-    cursor: pointer;
-    border-radius: var(--border-radius-md);
-    margin-right: 1rem;
-    transition: all 0.2s ease;
-    z-index: 1002 !important;
-    position: relative !important;
-}
-
-.sidebar-toggle:hover {
-    background: var(--background-hover);
-    color: var(--primary-color);
-}
-
-.sidebar-toggle i {
-    font-size: 1.2rem;
-    transition: transform 0.3s ease;
-}
-
-/* 侧边栏收起时按钮图标旋转 */
-.sidebar-collapsed .sidebar-toggle i {
-    transform: rotate(180deg);
+    display: none !important; /* 隐藏旧的侧边栏切换按钮 */
 }
 
 /* 自定义滚动条 */
@@ -1669,16 +1641,9 @@ body.sidebar-collapsed .content-area {
         flex-direction: column;
     }
     
-    /* 移动端隐藏侧边栏收起展开按钮 */
+    /* 移动端隐藏旧的侧边栏收起展开按钮 */
     .sidebar-toggle {
-        display: none !important;
-    }
-    
-    /* 确保移动端才隐藏 */
-    @media (min-width: 769px) {
-        .sidebar-toggle {
-            display: flex !important;
-        }
+        display: none !important; /* 始终隐藏旧的侧边栏切换按钮 */
     }
     
     .sidebar {

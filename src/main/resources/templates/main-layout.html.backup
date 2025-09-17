@@ -62,8 +62,6 @@
     <!-- 现代化管理员页面样式 -->
     <link rel="stylesheet" href="/css/modern-admin-pages.css">
     <link rel="stylesheet" href="/css/modern-sidebar.css">
-    <!-- 现代化导航栏样式 -->
-    <link rel="stylesheet" href="/css/modern-navigation.css">
     <style>
         :root {
             --primary-color: #6366f1;
@@ -1164,104 +1162,6 @@
                 flex-direction: column;
             }
         }
-        
-        /* ===========================================
-           🔧 现代导航栏集成兼容性样式
-           =========================================== */
-        
-        /* 确保主内容区域正确适配现代导航栏 */
-        .modern-content-area {
-            margin-left: var(--nav-width-expanded, 280px);
-            margin-top: var(--nav-height, 64px);
-            transition: margin-left var(--nav-transition-normal, 0.35s) var(--nav-ease, cubic-bezier(0.4, 0.0, 0.2, 1));
-            min-height: calc(100vh - var(--nav-height, 64px));
-            background: var(--background-color, #f9fafb);
-        }
-        
-        /* 侧边栏收起时的主内容区域适配 */
-        .modern-sidebar.collapsed ~ .modern-content-area,
-        .sidebar-collapsed .modern-content-area {
-            margin-left: var(--nav-width-collapsed, 80px);
-        }
-        
-        /* 移动端适配 */
-        @media (max-width: 768px) {
-            .modern-content-area {
-                margin-left: 0;
-                margin-top: var(--nav-height, 64px);
-            }
-        }
-        
-        /* 隐藏原有的顶部导航栏和侧边栏样式 */
-        .top-nav {
-            display: none !important;
-        }
-        
-        .sidebar:not(.modern-sidebar) {
-            display: none !important;
-        }
-        
-        /* 确保现代导航栏的用户菜单功能 */
-        .nav-user-menu {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            min-width: 200px;
-            background: var(--nav-background);
-            border: 1px solid var(--nav-border);
-            border-radius: 8px;
-            box-shadow: var(--nav-shadow-medium);
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.2s ease;
-            z-index: 1100;
-        }
-        
-        .nav-user-menu.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-        
-        .nav-user-menu-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            color: var(--nav-text);
-            text-decoration: none;
-            transition: all 0.2s ease;
-            border: none;
-            background: none;
-            width: 100%;
-            text-align: left;
-            font-size: 14px;
-        }
-        
-        .nav-user-menu-item:hover {
-            background: var(--nav-surface-hover);
-            color: var(--nav-primary);
-        }
-        
-        .nav-user-menu-divider {
-            height: 1px;
-            background: var(--nav-border);
-            margin: 8px 0;
-        }
-        
-        .nav-logout-form {
-            margin: 0;
-        }
-        
-        .logout-item {
-            color: #ef4444 !important;
-        }
-        
-        .logout-item:hover {
-            background: rgba(239, 68, 68, 0.1) !important;
-            color: #dc2626 !important;
-        }
     </style>
     <script src="/js/theme.js"></script>
     <script src="/js/drawer.js"></script>
@@ -1271,241 +1171,98 @@
     <script src="/js/server-status-tags.js"></script>
 </head>
 <body class="dashboard-body admin-theme theme-body">
-    <!-- 🎯 现代化顶部导航栏 -->
-    <nav class="modern-top-nav">
-        <div class="nav-container">
-            <!-- 左侧区域 -->
-            <div class="nav-brand-section">
-                <!-- 🔄 侧边栏切换按钮 -->
-                <button class="modern-sidebar-toggle" 
-                        id="sidebarToggle" 
-                        type="button"
-                        aria-label="切换导航菜单"
-                        aria-expanded="true"
-                        title="Ctrl+B">
-                    <div class="hamburger-icon">
-                        <span class="hamburger-line"></span>
-                        <span class="hamburger-line"></span>
-                        <span class="hamburger-line"></span>
-                    </div>
-                </button>
-                
-                <!-- 🏷️ 品牌信息 -->
-                <a href="#" class="nav-brand-info" aria-label="回到首页">
-                    <div class="brand-logo">
-                        <i class="fas fa-code"></i>
-                    </div>
-                    <div class="brand-content">
-                        <div class="brand-text">Dev Debug Platform</div>
-                        <div class="brand-subtitle">开发调试平台</div>
-                    </div>
-                </a>
-            </div>
-            
-            <!-- 右侧操作区域 -->
-            <div class="nav-actions">
-                <!-- 🔔 通知按钮 -->
-                <button class="nav-action-btn notification-btn" 
-                        type="button"
-                        aria-label="查看通知"
-                        title="通知">
-                    <i class="fas fa-bell"></i>
-                    <span class="nav-badge">3</span>
-                </button>
-                
-                <!-- 🎨 主题切换按钮 -->
-                <button class="nav-action-btn theme-toggle-btn" 
-                        type="button"
-                        onclick="toggleTheme()"
-                        aria-label="切换主题"
-                        title="切换主题 (Ctrl+Shift+T)">
-                    <i class="theme-icon fas fa-moon"></i>
-                </button>
-                
-                <!-- 🔍 搜索按钮 -->
-                <button class="nav-action-btn search-btn" 
-                        type="button"
-                        aria-label="搜索"
-                        title="搜索 (Ctrl+K)">
-                    <i class="fas fa-search"></i>
-                </button>
-                
-                <!-- 👤 用户菜单 -->
-                <div class="nav-user-dropdown">
-                    <button class="nav-user-profile" 
-                            type="button" 
-                            onclick="toggleUserMenu()"
-                            aria-label="用户菜单">
-                        <div class="nav-user-avatar">
-                            <span th:text="${#strings.substring(username, 0, 1)}">A</span>
-                        </div>
-                        <div class="nav-user-info">
-                            <div class="nav-user-name" th:text="${username}">Admin</div>
-                            <div class="nav-user-role" th:text="${isAdmin ? '管理员' : '开发者'}">管理员</div>
-                        </div>
-                        <i class="fas fa-chevron-down dropdown-arrow"></i>
-                    </button>
-                    
-                    <!-- 用户下拉菜单 -->
-                    <div class="nav-user-menu" id="userDropdownMenu">
-                        <a href="/profile" class="nav-user-menu-item">
-                            <i class="fas fa-user"></i>
-                            <span>个人档案</span>
-                        </a>
-                        <a href="/settings" class="nav-user-menu-item">
-                            <i class="fas fa-cog"></i>
-                            <span>设置</span>
-                        </a>
-                        <div class="nav-user-menu-divider"></div>
-                        <form th:action="@{/logout}" method="post" class="nav-logout-form">
-                            <button type="submit" class="nav-user-menu-item logout-item">
-                                <i class="fas fa-sign-out-alt"></i>
-                                <span>安全退出</span>
-                            </button>
-                        </form>
-                    </div>
+    <!-- 顶部导航栏 -->
+    <nav class="top-nav">
+        <!-- 品牌区域移到左侧 -->
+        <div class="nav-brand">
+            <div class="brand-icon"><i class="fas fa-rocket"></i></div>
+            <span class="brand-text">Dev Debug Platform</span>
+        </div>
+        <div class="nav-menu">
+            <a href="/profile" class="user-profile" title="查看个人档案">
+                <div class="user-avatar">
+                    <span th:text="${#strings.substring(username, 0, 1)}">A</span>
                 </div>
+                <div class="user-info">
+                    <span class="greeting">欢迎回来</span>
+                    <span class="username" th:text="${username}">管理员</span>
+                </div>
+            </a>
+            <div class="nav-actions">
+                <div class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+                    <span class="theme-icon"><i class="fas fa-moon"></i></span>
+                </div>
+                <form th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="logout-btn" title="安全退出">
+                        <span class="logout-icon"><i class="fas fa-sign-out-alt"></i></span>
+                    </button>
+                </form>
             </div>
         </div>
     </nav>
 
     <!-- 主要容器 -->
     <div class="main-container">
-        <!-- 🧭 现代化侧边栏 -->
-        <aside class="modern-sidebar" id="modernSidebar">
-            <div class="sidebar-content">
-                <!-- 导航菜单区域 -->
-                <div class="nav-menu-section">
-                    
-                    <!-- 🏠 主要功能组 -->
-                    <div class="nav-group">
-                        <div class="nav-group-title">主要功能</div>
-                        
-                        <!-- 工作台 -->
-                        <div class="modern-nav-item">
-                            <a href="javascript:void(0)" class="modern-nav-link active" data-nav-id="dashboard" data-page="dashboard">
-                                <div class="modern-nav-icon">
-                                    <i class="fas fa-tachometer-alt"></i>
-                                </div>
-                                <span class="modern-nav-text">工作台</span>
-                                <div class="nav-tooltip">工作台</div>
-                            </a>
-                        </div>
-                        
-                        <!-- 管理员功能 -->
-                        <div class="modern-nav-item" th:if="${isAdmin}">
-                            <a href="javascript:void(0)" class="modern-nav-link" data-nav-id="servers" data-page="servers">
-                                <div class="modern-nav-icon">
-                                    <i class="fas fa-server"></i>
-                                </div>
-                                <span class="modern-nav-text">服务器管理</span>
-                                <div class="nav-tooltip">服务器管理</div>
-                            </a>
-                        </div>
-                        
-                        <div class="modern-nav-item" th:if="${isAdmin}">
-                            <a href="javascript:void(0)" class="modern-nav-link" data-nav-id="users" data-page="users">
-                                <div class="modern-nav-icon">
-                                    <i class="fas fa-users"></i>
-                                </div>
-                                <span class="modern-nav-text">用户管理</span>
-                                <div class="nav-tooltip">用户管理</div>
-                            </a>
-                        </div>
-                        
-                        <!-- 开发者功能 - 只有非管理员用户显示 -->
-                        <div class="modern-nav-item" th:if="${!isAdmin}">
-                            <a href="javascript:void(0)" class="modern-nav-link" data-nav-id="applications" data-page="applications">
-                                <div class="modern-nav-icon">
-                                    <i class="fas fa-rocket"></i>
-                                </div>
-                                <span class="modern-nav-text">应用管理</span>
-                                <div class="nav-tooltip">应用管理</div>
-                            </a>
-                        </div>
-                        
-                        <!-- 监控中心 -->
-                        <div class="modern-nav-item" th:if="${!isAdmin}">
-                            <a href="javascript:void(0)" class="modern-nav-link" data-nav-id="monitoring" data-page="monitoring">
-                                <div class="modern-nav-icon">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
-                                <span class="modern-nav-text">监控中心</span>
-                                <div class="nav-tooltip">监控中心</div>
-                            </a>
-                        </div>
-                        
-                        <!-- SSH终端 -->
-                        <div class="modern-nav-item" th:if="${!isAdmin}">
-                            <a href="javascript:void(0)" class="modern-nav-link" data-nav-id="terminal" data-page="terminal">
-                                <div class="modern-nav-icon">
-                                    <i class="fas fa-terminal"></i>
-                                </div>
-                                <span class="modern-nav-text">SSH终端</span>
-                                <div class="nav-tooltip">SSH终端</div>
-                            </a>
-                        </div>
+        <!-- 侧边栏导航 - 添加modern-sidebar类以支持玻璃拟态效果 -->
+        <aside class="sidebar modern-sidebar">
+            <!-- 侧边栏头部 - 包含品牌和收起按钮 -->
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
+                    <div class="sidebar-brand-icon">
+                        <i class="fas fa-rocket"></i>
                     </div>
-                    
-                    <!-- 🔧 高级功能组 (管理员专用) -->
-                    <div class="nav-group" th:if="${isAdmin}">
-                        <div class="nav-group-title">高级功能</div>
-                        
-                        <!-- 系统监控 -->
-                        <div class="modern-nav-item">
-                            <a href="javascript:void(0)" class="modern-nav-link" data-nav-id="monitoring" data-page="monitoring">
-                                <div class="modern-nav-icon">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
-                                <span class="modern-nav-text">系统监控</span>
-                                <div class="nav-tooltip">系统监控</div>
-                            </a>
-                        </div>
-                        
-                        <!-- SSH终端 -->
-                        <div class="modern-nav-item">
-                            <a href="javascript:void(0)" class="modern-nav-link" data-nav-id="terminal" data-page="terminal">
-                                <div class="modern-nav-icon">
-                                    <i class="fas fa-terminal"></i>
-                                </div>
-                                <span class="modern-nav-text">SSH终端</span>
-                                <div class="nav-tooltip">SSH终端</div>
-                            </a>
-                        </div>
-                        
-                        <!-- 系统设置 -->
-                        <div class="modern-nav-item">
-                            <a href="javascript:void(0)" class="modern-nav-link" data-nav-id="settings" data-page="settings">
-                                <div class="modern-nav-icon">
-                                    <i class="fas fa-cogs"></i>
-                                </div>
-                                <span class="modern-nav-text">系统设置</span>
-                                <div class="nav-tooltip">系统设置</div>
-                            </a>
-                        </div>
-                    </div>
+                    <span class="sidebar-brand-text">Dev Debug Platform</span>
                 </div>
-                
-                <!-- 用户信息区域 -->
-                <div class="nav-user-section">
-                    <div class="nav-user-profile">
-                        <div class="nav-user-avatar">
-                            <span th:text="${#strings.substring(username, 0, 1)}">A</span>
-                        </div>
-                        <div class="nav-user-info">
-                            <div class="nav-user-name" th:text="${username}">Admin</div>
-                            <div class="nav-user-role" th:text="${isAdmin ? '管理员' : '开发者'}">管理员</div>
-                        </div>
-                    </div>
-                </div>
+                <button type="button" class="sidebar-collapse" title="收起/展开侧边栏" aria-label="收起/展开侧边栏">
+                    <i class="fas fa-chevron-left collapse-icon"></i>
+                </button>
             </div>
+            
+            <!-- 导航菜单 -->
+            <nav class="sidebar-nav">
+                <div class="nav-item">
+                    <a href="javascript:void(0)" class="nav-link active" data-page="dashboard" data-tooltip="工作台概览" onclick="loadContent('dashboard')">
+                        <span class="nav-icon"><i class="fas fa-tachometer-alt"></i></span>
+                        <span class="nav-text">工作台概览</span>
+                    </a>
+                </div>
+                <!-- 管理员功能 -->
+                <div class="nav-item" th:if="${isAdmin}">
+                    <a href="javascript:void(0)" class="nav-link" data-page="servers" data-tooltip="服务器管理" onclick="loadContent('servers')">
+                        <span class="nav-icon"><i class="fas fa-server"></i></span>
+                        <span class="nav-text">服务器管理</span>
+                    </a>
+                </div>
+                <div class="nav-item" th:if="${isAdmin}">
+                    <a href="javascript:void(0)" class="nav-link" data-page="users" data-tooltip="用户管理" onclick="loadContent('users')">
+                        <span class="nav-icon"><i class="fas fa-users"></i></span>
+                        <span class="nav-text">用户管理</span>
+                    </a>
+                </div>
+                <!-- 开发者功能 - 只有非管理员用户显示 -->
+                <div class="nav-item" th:if="${!isAdmin}">
+                    <a href="javascript:void(0)" class="nav-link" data-page="applications" data-tooltip="应用管理" onclick="loadContent('applications')">
+                        <span class="nav-icon"><i class="fas fa-rocket"></i></span>
+                        <span class="nav-text">应用管理</span>
+                    </a>
+                </div>
+                <div class="nav-item" th:if="${!isAdmin}">
+                    <a href="javascript:void(0)" class="nav-link" data-page="monitoring" data-tooltip="系统监控" onclick="loadContent('monitoring')">
+                        <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
+                        <span class="nav-text">系统监控</span>
+                    </a>
+                </div>
+                <div class="nav-item" th:if="${!isAdmin}">
+                    <a href="javascript:void(0)" class="nav-link" data-page="terminal" data-tooltip="终端管理" onclick="loadContent('terminal')">
+                        <span class="nav-icon"><i class="fas fa-terminal"></i></span>
+                        <span class="nav-text">终端管理</span>
+                    </a>
+                </div>
+            </nav>
         </aside>
-        
-        <!-- 📱 移动端遮罩层 -->
-        <div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
 
-        <!-- 🎯 现代化内容区域 -->
-        <main class="modern-content-area" id="modernContentArea">
+        <!-- 右侧内容区域 -->
+        <main class="content-area">
             <!-- 加载动画 -->
             <div class="loading-spinner" id="loadingSpinner">
                 <div class="spinner"></div>
@@ -1819,27 +1576,17 @@
             });
         }
 
-        // 更新菜单激活状态 - 兼容现代导航栏
+        // 更新菜单激活状态
         function updateActiveMenu(page) {
-            // 移除所有激活状态 - 兼容新旧导航栏
-            document.querySelectorAll('.nav-item, .modern-nav-link').forEach(item => {
+            // 移除所有激活状态
+            document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
             });
             
             // 设置当前页面为激活状态
             const currentItem = document.querySelector(`[data-page="${page}"]`);
             if (currentItem) {
-                // 新的现代导航栏结构
-                if (currentItem.classList.contains('modern-nav-link')) {
-                    currentItem.classList.add('active');
-                } 
-                // 旧的导航栏结构（向后兼容）
-                else {
-                    const navItem = currentItem.closest('.nav-item');
-                    if (navItem) {
-                        navItem.classList.add('active');
-                    }
-                }
+                currentItem.closest('.nav-item').classList.add('active');
             }
         }
         
@@ -3111,10 +2858,7 @@
         }
         
         function refreshAllData() {
-            // 兼容新旧导航栏结构
-            const modernNavLink = document.querySelector('.modern-nav-link.active');
-            const oldNavLink = document.querySelector('.nav-link.active');
-            const currentPage = (modernNavLink || oldNavLink)?.getAttribute('data-page') || 'dashboard';
+            const currentPage = document.querySelector('.nav-link.active')?.getAttribute('data-page') || 'dashboard';
             loadContent(currentPage);
         }
         
@@ -4911,147 +4655,6 @@
             </div>
         </div>
     </div>
-
-    <!-- 现代化导航JavaScript控制器 -->
-    <script src="/js/modern-navigation.js"></script>
-    
-    <!-- 现代导航栏集成脚本 -->
-    <script>
-        // 现代导航栏集成初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 现代导航栏集成初始化开始...');
-            
-            // 用户菜单切换功能
-            window.toggleUserMenu = function() {
-                const userMenu = document.getElementById('userDropdownMenu');
-                if (userMenu) {
-                    userMenu.classList.toggle('show');
-                }
-            };
-            
-            // 点击外部关闭用户菜单
-            document.addEventListener('click', function(e) {
-                const userMenu = document.getElementById('userDropdownMenu');
-                const userProfile = document.querySelector('.nav-user-profile');
-                
-                if (userMenu && userProfile && !userProfile.contains(e.target)) {
-                    userMenu.classList.remove('show');
-                }
-            });
-            
-            // 搜索按钮功能（演示）
-            const searchBtn = document.querySelector('.search-btn');
-            if (searchBtn) {
-                searchBtn.addEventListener('click', function() {
-                    console.log('🔍 搜索功能触发');
-                    // TODO: 实现搜索功能
-                    alert('搜索功能即将推出！');
-                });
-            }
-            
-            // 通知按钮功能（演示）
-            const notificationBtn = document.querySelector('.notification-btn');
-            if (notificationBtn) {
-                notificationBtn.addEventListener('click', function() {
-                    console.log('🔔 通知功能触发');
-                    // TODO: 实现通知功能
-                    alert('通知中心即将推出！');
-                });
-            }
-            
-            // 导航链接点击处理 - 集成现有的loadContent功能
-            const modernNavLinks = document.querySelectorAll('.modern-nav-link');
-            modernNavLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    // 移除所有活跃状态
-                    modernNavLinks.forEach(l => l.classList.remove('active'));
-                    // 添加当前活跃状态
-                    this.classList.add('active');
-                    
-                    // 获取页面ID并调用现有的loadContent函数
-                    const pageId = this.getAttribute('data-page');
-                    if (pageId && typeof loadContent === 'function') {
-                        console.log('📄 切换到页面:', pageId);
-                        loadContent(pageId);
-                    }
-                    
-                    // 在移动端自动关闭侧边栏
-                    if (window.innerWidth <= 768 && window.modernNavController) {
-                        setTimeout(() => {
-                            window.modernNavController.closeMobileSidebar();
-                        }, 300);
-                    }
-                });
-            });
-            
-            // 键盘快捷键支持
-            document.addEventListener('keydown', function(e) {
-                // Ctrl+B 切换侧边栏
-                if (e.ctrlKey && e.key === 'b') {
-                    e.preventDefault();
-                    if (window.modernNavController) {
-                        window.modernNavController.toggle();
-                    }
-                }
-                
-                // Ctrl+Shift+T 切换主题（如果存在toggleTheme函数）
-                if (e.ctrlKey && e.shiftKey && e.key === 'T') {
-                    e.preventDefault();
-                    if (typeof toggleTheme === 'function') {
-                        toggleTheme();
-                    }
-                }
-                
-                // Ctrl+K 触发搜索
-                if (e.ctrlKey && e.key === 'k') {
-                    e.preventDefault();
-                    const searchBtn = document.querySelector('.search-btn');
-                    if (searchBtn) {
-                        searchBtn.click();
-                    }
-                }
-            });
-            
-            // 监听现代导航事件
-            document.addEventListener('modernNav:sidebarToggle', function(e) {
-                console.log('📱 侧边栏切换:', e.detail.collapsed ? '收起' : '展开');
-            });
-            
-            document.addEventListener('modernNav:themeChanged', function(e) {
-                console.log('🎨 主题切换:', e.detail.theme);
-            });
-            
-            // 确保主题图标正确显示
-            function updateThemeIcon() {
-                const themeIcon = document.querySelector('.theme-icon');
-                if (themeIcon) {
-                    const isDark = document.documentElement.classList.contains('theme-dark');
-                    themeIcon.className = isDark ? 'theme-icon fas fa-sun' : 'theme-icon fas fa-moon';
-                }
-            }
-            
-            // 初始化主题图标
-            updateThemeIcon();
-            
-            // 监听主题变化
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                        updateThemeIcon();
-                    }
-                });
-            });
-            
-            observer.observe(document.documentElement, {
-                attributes: true,
-                attributeFilter: ['class']
-            });
-            
-            console.log('✅ 现代导航栏集成初始化完成');
-        });
-    </script>
 
 </body>
 </html>

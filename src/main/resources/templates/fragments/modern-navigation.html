@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<!--
+===============================================
+🎯 MODERN NAVIGATION TEMPLATE
+===============================================
+现代化导航栏HTML模板 - Dev Debug Platform
+特性: 响应式设计、主题切换、流畅动画、无障碍支持
+更新: 2025-09-16
+===============================================
+-->
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/extras/springsecurity">
+
+<!-- 🎯 现代化顶部导航栏 -->
+<nav th:fragment="modern-top-nav" class="modern-top-nav">
+    <div class="nav-container">
+        <!-- 左侧区域 -->
+        <div class="nav-brand-section">
+            <!-- 🔄 侧边栏切换按钮 -->
+            <button class="modern-sidebar-toggle" 
+                    id="sidebarToggle" 
+                    type="button"
+                    aria-label="切换导航菜单"
+                    aria-expanded="true"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="bottom" 
+                    title="Ctrl+B">
+                <div class="hamburger-icon">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </div>
+            </button>
+            
+            <!-- 🏷️ 品牌信息 -->
+            <a href="/" class="nav-brand-info" aria-label="回到首页">
+                <div class="brand-logo">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="brand-content">
+                    <div class="brand-text">Dev Debug Platform</div>
+                    <div class="brand-subtitle">开发调试平台</div>
+                </div>
+            </a>
+        </div>
+        
+        <!-- 右侧操作区域 -->
+        <div class="nav-actions">
+            <!-- 🔔 通知按钮 -->
+            <button class="nav-action-btn notification-btn" 
+                    type="button"
+                    aria-label="查看通知"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="bottom" 
+                    title="通知">
+                <i class="fas fa-bell"></i>
+                <span class="nav-badge" th:if="${unreadNotifications > 0}" th:text="${unreadNotifications}">3</span>
+            </button>
+            
+            <!-- 🎨 主题切换按钮 -->
+            <button class="nav-action-btn theme-toggle-btn" 
+                    type="button"
+                    aria-label="切换主题"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="bottom" 
+                    title="切换主题 (Ctrl+Shift+T)">
+                <i class="theme-icon fas fa-moon"></i>
+            </button>
+            
+            <!-- 🔍 搜索按钮 -->
+            <button class="nav-action-btn search-btn" 
+                    type="button"
+                    aria-label="搜索"
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="bottom" 
+                    title="搜索 (Ctrl+K)">
+                <i class="fas fa-search"></i>
+            </button>
+            
+            <!-- 👤 用户菜单 -->
+            <div class="nav-user-dropdown dropdown">
+                <button class="nav-user-profile dropdown-toggle" 
+                        type="button" 
+                        id="userDropdown" 
+                        data-bs-toggle="dropdown" 
+                        aria-expanded="false"
+                        aria-label="用户菜单">
+                    <div class="nav-user-avatar" th:if="${#authentication.name}">
+                        <span th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</span>
+                    </div>
+                    <div class="nav-user-info">
+                        <div class="nav-user-name" 
+                             th:text="${#authentication.name ?: 'Guest'}"
+                             sec:authentication="name">用户名</div>
+                        <div class="nav-user-role" 
+                             th:text="${userRole ?: 'Developer'}"
+                             sec:authorize="hasRole('ADMIN')">管理员</div>
+                        <div class="nav-user-role" 
+                             th:text="'开发者'"
+                             sec:authorize="hasRole('DEVELOPER')">开发者</div>
+                    </div>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </button>
+                
+                <!-- 用户下拉菜单 -->
+                <ul class="dropdown-menu dropdown-menu-end user-dropdown-menu" 
+                    aria-labelledby="userDropdown">
+                    <li>
+                        <a class="dropdown-item" href="/profile">
+                            <i class="fas fa-user"></i>
+                            <span>个人资料</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="/settings">
+                            <i class="fas fa-cog"></i>
+                            <span>账户设置</span>
+                        </a>
+                    </li>
+                    <li sec:authorize="hasRole('ADMIN')">
+                        <a class="dropdown-item" href="/admin">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>管理面板</span>
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="/help">
+                            <i class="fas fa-question-circle"></i>
+                            <span>帮助中心</span>
+                        </a>
+                    </li>
+                    <li>
+                        <form th:action="@{/logout}" method="post" class="d-inline">
+                            <button type="submit" class="dropdown-item text-danger">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>退出登录</span>
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- 🧭 现代化侧边栏 -->
+<aside th:fragment="modern-sidebar" class="modern-sidebar" id="modernSidebar">
+    <div class="sidebar-content">
+        <!-- 导航菜单区域 -->
+        <div class="nav-menu-section">
+            
+            <!-- 🏠 主要功能组 -->
+            <div class="nav-group">
+                <div class="nav-group-title">主要功能</div>
+                
+                <!-- 工作台 -->
+                <div class="modern-nav-item">
+                    <a href="/" 
+                       class="modern-nav-link" 
+                       data-nav-id="dashboard"
+                       th:classappend="${currentPage == 'dashboard'} ? 'active' : ''">
+                        <div class="modern-nav-icon">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </div>
+                        <span class="modern-nav-text">工作台</span>
+                        <div class="nav-tooltip">工作台</div>
+                    </a>
+                </div>
+                
+                <!-- 应用管理 -->
+                <div class="modern-nav-item">
+                    <a href="/apps" 
+                       class="modern-nav-link" 
+                       data-nav-id="applications"
+                       th:classappend="${currentPage == 'applications'} ? 'active' : ''">
+                        <div class="modern-nav-icon">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        <span class="modern-nav-text">应用管理</span>
+                        <div class="nav-tooltip">应用管理</div>
+                        <span class="nav-badge" th:if="${runningApps > 0}" th:text="${runningApps}">2</span>
+                    </a>
+                </div>
+                
+                <!-- SSH终端 -->
+                <div class="modern-nav-item">
+                    <a href="/terminal" 
+                       class="modern-nav-link" 
+                       data-nav-id="terminal"
+                       th:classappend="${currentPage == 'terminal'} ? 'active' : ''">
+                        <div class="modern-nav-icon">
+                            <i class="fas fa-terminal"></i>
+                        </div>
+                        <span class="modern-nav-text">SSH终端</span>
+                        <div class="nav-tooltip">SSH终端</div>
+                    </a>
+                </div>
+                
+                <!-- 监控中心 -->
+                <div class="modern-nav-item">
+                    <a href="/monitoring" 
+                       class="modern-nav-link" 
+                       data-nav-id="monitoring"
+                       th:classappend="${currentPage == 'monitoring'} ? 'active' : ''">
+                        <div class="modern-nav-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <span class="modern-nav-text">监控中心</span>
+                        <div class="nav-tooltip">监控中心</div>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 🔧 管理功能组 (仅管理员可见) -->
+            <div class="nav-group" sec:authorize="hasRole('ADMIN')">
+                <div class="nav-group-title">管理功能</div>
+                
+                <!-- 服务器管理 -->
+                <div class="modern-nav-item">
+                    <a href="/admin/servers" 
+                       class="modern-nav-link" 
+                       data-nav-id="servers"
+                       th:classappend="${currentPage == 'servers'} ? 'active' : ''">
+                        <div class="modern-nav-icon">
+                            <i class="fas fa-server"></i>
+                        </div>
+                        <span class="modern-nav-text">服务器管理</span>
+                        <div class="nav-tooltip">服务器管理</div>
+                        <span class="nav-badge" th:if="${offlineServers > 0}" th:text="${offlineServers}" 
+                              style="background: var(--danger-color);">1</span>
+                    </a>
+                </div>
+                
+                <!-- 用户管理 -->
+                <div class="modern-nav-item">
+                    <a href="/admin/users" 
+                       class="modern-nav-link" 
+                       data-nav-id="users"
+                       th:classappend="${currentPage == 'users'} ? 'active' : ''">
+                        <div class="modern-nav-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <span class="modern-nav-text">用户管理</span>
+                        <div class="nav-tooltip">用户管理</div>
+                    </a>
+                </div>
+                
+                <!-- 系统设置 -->
+                <div class="modern-nav-item">
+                    <a href="/admin/settings" 
+                       class="modern-nav-link" 
+                       data-nav-id="settings"
+                       th:classappend="${currentPage == 'settings'} ? 'active' : ''">
+                        <div class="modern-nav-icon">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <span class="modern-nav-text">系统设置</span>
+                        <div class="nav-tooltip">系统设置</div>
+                    </a>
+                </div>
+                
+                <!-- 日志审计 -->
+                <div class="modern-nav-item">
+                    <a href="/admin/audit" 
+                       class="modern-nav-link" 
+                       data-nav-id="audit"
+                       th:classappend="${currentPage == 'audit'} ? 'active' : ''">
+                        <div class="modern-nav-icon">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                        <span class="modern-nav-text">日志审计</span>
+                        <div class="nav-tooltip">日志审计</div>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 📊 数据分析组 -->
+            <div class="nav-group">
+                <div class="nav-group-title">数据分析</div>
+                
+                <!-- 性能报告 -->
+                <div class="modern-nav-item">
+                    <a href="/reports/performance" 
+                       class="modern-nav-link" 
+                       data-nav-id="performance"
+                       th:classappend="${currentPage == 'performance'} ? 'active' : ''">
+                        <div class="modern-nav-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <span class="modern-nav-text">性能报告</span>
+                        <div class="nav-tooltip">性能报告</div>
+                    </a>
+                </div>
+                
+                <!-- 使用统计 -->
+                <div class="modern-nav-item">
+                    <a href="/reports/usage" 
+                       class="modern-nav-link" 
+                       data-nav-id="usage"
+                       th:classappend="${currentPage == 'usage'} ? 'active' : ''">
+                        <div class="modern-nav-icon">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <span class="modern-nav-text">使用统计</span>
+                        <div class="nav-tooltip">使用统计</div>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 🛠️ 工具组 -->
+            <div class="nav-group">
+                <div class="nav-group-title">工具</div>
+                
+                <!-- 文件管理 -->
+                <div class="modern-nav-item">
+                    <a href="/tools/files" 
+                       class="modern-nav-link" 
+                       data-nav-id="files"
+                       th:classappend="${currentPage == 'files'} ? 'active' : ''">
+                        <div class="modern-nav-icon">
+                            <i class="fas fa-folder-open"></i>
+                        </div>
+                        <span class="modern-nav-text">文件管理</span>
+                        <div class="nav-tooltip">文件管理</div>
+                    </a>
+                </div>
+                
+                <!-- 数据备份 -->
+                <div class="modern-nav-item">
+                    <a href="/tools/backup" 
+                       class="modern-nav-link" 
+                       data-nav-id="backup"
+                       th:classappend="${currentPage == 'backup'} ? 'active' : ''">
+                        <div class="modern-nav-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <span class="modern-nav-text">数据备份</span>
+                        <div class="nav-tooltip">数据备份</div>
+                    </a>
+                </div>
+                
+                <!-- API文档 -->
+                <div class="modern-nav-item">
+                    <a href="/api-docs" 
+                       class="modern-nav-link" 
+                       data-nav-id="api-docs"
+                       target="_blank">
+                        <div class="modern-nav-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <span class="modern-nav-text">API文档</span>
+                        <div class="nav-tooltip">API文档</div>
+                        <i class="fas fa-external-link-alt external-icon"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 用户信息区域 -->
+        <div class="nav-user-section">
+            <div class="nav-user-profile">
+                <div class="nav-user-avatar" th:if="${#authentication.name}">
+                    <span th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</span>
+                </div>
+                <div class="nav-user-info">
+                    <div class="nav-user-name" 
+                         th:text="${#authentication.name ?: 'Guest'}"
+                         sec:authentication="name">用户名</div>
+                    <div class="nav-user-role" 
+                         th:text="${userRole ?: '开发者'}">开发者</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<!-- 📱 移动端遮罩层 -->
+<div th:fragment="mobile-overlay" class="mobile-nav-overlay" id="mobileNavOverlay"></div>
+
+<!-- 🎯 现代化内容区域包装器 -->
+<main th:fragment="modern-content-area" class="modern-content-area" id="modernContentArea">
+    <div class="content-wrapper" th:insert="${contentTemplate}">
+        <!-- 动态内容将在这里加载 -->
+    </div>
+</main>
+
+<!-- 🎨 样式增强 -->
+<style th:fragment="modern-nav-styles">
+/* 用户下拉菜单增强 */
+.user-dropdown-menu {
+    margin-top: 8px !important;
+    border-radius: 12px !important;
+    box-shadow: var(--nav-shadow-medium) !important;
+    border: 1px solid var(--nav-border) !important;
+    background: var(--nav-background) !important;
+    backdrop-filter: blur(12px) !important;
+    min-width: 220px !important;
+}
+
+.user-dropdown-menu .dropdown-item {
+    padding: 12px 20px !important;
+    border-radius: 8px !important;
+    margin: 4px 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    color: var(--nav-text) !important;
+    transition: all 0.2s ease !important;
+}
+
+.user-dropdown-menu .dropdown-item:hover {
+    background: var(--nav-surface-hover) !important;
+    color: var(--nav-primary) !important;
+    transform: translateY(-1px) !important;
+}
+
+.user-dropdown-menu .dropdown-item i {
+    width: 16px !important;
+    text-align: center !important;
+    flex-shrink: 0 !important;
+}
+
+.user-dropdown-menu .dropdown-divider {
+    margin: 8px 0 !important;
+    border-top: 1px solid var(--nav-border) !important;
+}
+
+/* 通知徽章样式 */
+.nav-badge {
+    position: absolute !important;
+    top: -2px !important;
+    right: -2px !important;
+    background: var(--nav-primary) !important;
+    color: white !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    padding: 2px 6px !important;
+    border-radius: 10px !important;
+    min-width: 16px !important;
+    height: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 2px solid var(--nav-background) !important;
+    z-index: 1 !important;
+}
+
+/* 外部链接图标 */
+.external-icon {
+    position: absolute !important;
+    top: 8px !important;
+    right: 20px !important;
+    font-size: 11px !important;
+    opacity: 0.6 !important;
+    transition: all 0.2s ease !important;
+}
+
+.modern-nav-link:hover .external-icon {
+    opacity: 1 !important;
+    transform: translateY(-1px) !important;
+}
+
+/* 下拉箭头动画 */
+.dropdown-arrow {
+    transition: transform 0.2s ease !important;
+    font-size: 12px !important;
+    opacity: 0.7 !important;
+}
+
+.dropdown-toggle[aria-expanded="true"] .dropdown-arrow {
+    transform: rotate(180deg) !important;
+}
+
+/* 活跃导航项增强 */
+.modern-nav-link.active {
+    background: var(--nav-primary-light) !important;
+    color: var(--nav-primary) !important;
+    box-shadow: inset 4px 0 0 var(--nav-primary) !important;
+}
+
+.modern-nav-link.active .modern-nav-icon {
+    color: var(--nav-primary) !important;
+    transform: scale(1.1) !important;
+}
+
+/* 品牌内容布局 */
+.brand-content {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+}
+
+/* 加载状态 */
+.nav-loading .modern-nav-icon i {
+    animation: spin 1s linear infinite !important;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* 通知闪烁效果 */
+.notification-btn.has-notification .nav-badge {
+    animation: pulse 2s ease-in-out infinite !important;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+</style>
+
+<!-- 🔧 JavaScript集成脚本 -->
+<script th:fragment="modern-nav-integration">
+// 现代导航与现有平台集成
+document.addEventListener('DOMContentLoaded', function() {
+    // 集成现有的内容加载系统
+    if (typeof loadContent === 'function') {
+        // 监听现代导航点击事件
+        document.addEventListener('modernNav:navigationItemClick', function(e) {
+            const { element, itemId } = e.detail;
+            const href = element.getAttribute('href');
+            
+            // 如果是内部链接，使用现有的内容加载系统
+            if (href && href.startsWith('/') && !href.includes('#') && !element.hasAttribute('target')) {
+                e.preventDefault();
+                
+                // 提取页面标识
+                const pageId = itemId || href.split('/').pop() || 'dashboard';
+                
+                // 使用现有的loadContent函数
+                if (typeof loadContent === 'function') {
+                    loadContent(pageId);
+                }
+            }
+        });
+    }
+    
+    // 同步当前页面状态
+    if (typeof currentPage !== 'undefined' && window.modernNavController) {
+        // 根据当前页面设置活跃导航项
+        const activeLink = document.querySelector(`.modern-nav-link[data-nav-id="${currentPage}"]`);
+        if (activeLink) {
+            // 移除其他活跃状态
+            document.querySelectorAll('.modern-nav-link.active').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // 添加活跃状态
+            activeLink.classList.add('active');
+        }
+    }
+    
+    // 键盘快捷键集成
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + K 打开搜索
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            const searchBtn = document.querySelector('.search-btn');
+            if (searchBtn) {
+                searchBtn.click();
+                // 这里可以集成搜索功能
+                console.log('🔍 搜索功能待实现');
+            }
+        }
+    });
+    
+    // 集成Bootstrap Tooltip（如果存在）
+    if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl, {
+                delay: { show: 500, hide: 100 }
+            });
+        });
+    }
+    
+    console.log('✅ 现代导航集成完成');
+});
+</script>
+
+</html>

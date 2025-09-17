@@ -145,7 +145,7 @@ body.modern-dashboard-body {
     background-clip: text;
 }
 
-/* 📲 侧边栏切换按钮 */
+/* 📲 侧边栏切换按钮 - 移动端显示 */
 .sidebar-toggle {
     display: none;
     background: none;
@@ -558,7 +558,7 @@ body.modern-dashboard-body {
     }
     
     .sidebar-toggle {
-        display: block;
+        display: block; /* 移动端显示侧边栏切换按钮 */
     }
     
     .header-search {
