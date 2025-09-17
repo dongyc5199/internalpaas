@@ -585,8 +585,6 @@
             }
 
             createTerminalPane(terminalId, serverId, serverName) {
-                console.log('Creating terminal pane:', terminalId);
-
                 const contentContainer = document.getElementById('terminalContent');
                 if (!contentContainer) {
                     console.error('Terminal content container not found');
@@ -607,7 +605,6 @@
         background: #1e1e1e;
     `;
                 contentContainer.appendChild(pane);
-                console.log('Pane created and appended');
                 // 确保Terminal类存在
                 if (typeof Terminal === 'undefined') {
                     console.error('Terminal class not found! Check xterm.js loading');
@@ -631,7 +628,6 @@
                     rightClickSelectsWord: true,
                     windowsMode: false
                 });
-                console.log('Terminal instance created:', terminal);
                 try {
                     // 挂载终端
                     terminal.open(pane);
@@ -648,10 +644,6 @@
 
                 // 关键：正确处理终端输入
                 terminal.onData((data) => {
-                    console.log('=== TERMINAL INPUT ===');
-                    console.log('Input data:', JSON.stringify(data));
-                    console.log('Char codes:', Array.from(data).map(c => c.charCodeAt(0)));
-
                     // 重要：移除本地回显，让服务器处理
                     // terminal.write(data); // 删除这行
 
@@ -661,15 +653,13 @@
                             type: 'input',
                             data: data
                         }));
-                        console.log('Sent to server');
+                    
                     } else {
                         // 只有在没有WebSocket连接时才本地回显
                         terminal.write(data);
-                        console.log('Local echo (no WebSocket)');
+                   
                     }
                 });
-
-                console.log('Input handler attached');
 
                 const terminalSession = {
                     terminal: terminal,

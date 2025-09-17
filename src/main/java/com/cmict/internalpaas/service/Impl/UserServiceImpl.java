@@ -122,6 +122,12 @@ public class UserServiceImpl implements UserService {
     public List<User> findAllUsers() {
         return userRepository.findAll();
     }
+    
+    @Override
+    public List<User> findUsersByServerId(Long serverId) {
+        logger.debug("查找有权限访问服务器 {} 的用户", serverId);
+        return userRepository.findByAvailableServersContaining(serverId);
+    }
 
     @Override
     public boolean existsByUsername(String username) {

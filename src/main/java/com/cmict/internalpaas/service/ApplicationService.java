@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -503,5 +504,187 @@ public class ApplicationService {
         Path logFile = logsDir.resolve(logFilename);
         
         return logFile.toString();
+    }
+    
+    // ===============================
+    // 批量操作方法
+    // ===============================
+    
+    /**
+     * 批量启动应用
+     */
+    @Transactional
+    public Map<String, Object> batchStart(List<Long> applicationIds, User user) {
+        Map<String, Object> result = new java.util.HashMap<>();
+        List<String> successApps = new ArrayList<>();
+        List<String> failedApps = new ArrayList<>();
+        
+        for (Long appId : applicationIds) {
+            try {
+                Optional<Application> appOpt = applicationRepository.findByIdAndUser(appId, user);
+                if (appOpt.isEmpty()) {
+                    failedApps.add("应用ID " + appId + ": 未找到或无权限");
+                    continue;
+                }
+                Application app = appOpt.get();
+                
+                if ("RUNNING".equals(app.getStatus())) {
+                    successApps.add(app.getName() + ": 已经在运行");
+                    continue;
+                }
+                
+                startApplication(appId);
+                successApps.add(app.getName() + ": 启动成功");
+                logger.info("批量启动应用成功: {} (ID: {})", app.getName(), appId);
+                
+            } catch (Exception e) {
+                failedApps.add("应用ID " + appId + ": " + e.getMessage());
+                logger.error("批量启动应用失败: ID={}, 错误={}", appId, e.getMessage());
+            }
+        }
+        
+        result.put("success", true);
+        result.put("total", applicationIds.size());
+        result.put("successCount", successApps.size());
+        result.put("failedCount", failedApps.size());
+        result.put("successApps", successApps);
+        result.put("failedApps", failedApps);
+        result.put("message", String.format("批量启动完成: 成功 %d 个，失败 %d 个", 
+                                           successApps.size(), failedApps.size()));
+        
+        return result;
+    }
+    
+    /**
+     * 批量停止应用
+     */
+    @Transactional
+    public Map<String, Object> batchStop(List<Long> applicationIds, User user) {
+        Map<String, Object> result = new java.util.HashMap<>();
+        List<String> successApps = new ArrayList<>();
+        List<String> failedApps = new ArrayList<>();
+        
+        for (Long appId : applicationIds) {
+            try {
+                Optional<Application> appOpt = applicationRepository.findByIdAndUser(appId, user);
+                if (appOpt.isEmpty()) {
+                    failedApps.add("应用ID " + appId + ": 未找到或无权限");
+                    continue;
+                }
+                Application app = appOpt.get();
+                
+                if ("STOPPED".equals(app.getStatus())) {
+                    successApps.add(app.getName() + ": 已经停止");
+                    continue;
+                }
+                
+                stopApplication(appId);
+                successApps.add(app.getName() + ": 停止成功");
+                logger.info("批量停止应用成功: {} (ID: {})", app.getName(), appId);
+                
+            } catch (Exception e) {
+                failedApps.add("应用ID " + appId + ": " + e.getMessage());
+                logger.error("批量停止应用失败: ID={}, 错误={}", appId, e.getMessage());
+            }
+        }
+        
+        result.put("success", true);
+        result.put("total", applicationIds.size());
+        result.put("successCount", successApps.size());
+        result.put("failedCount", failedApps.size());
+        result.put("successApps", successApps);
+        result.put("failedApps", failedApps);
+        result.put("message", String.format("批量停止完成: 成功 %d 个，失败 %d 个", 
+                                           successApps.size(), failedApps.size()));
+        
+        return result;
+    }
+    
+    /**
+     * 批量重启应用
+     */
+    @Transactional
+    public Map<String, Object> batchRestart(List<Long> applicationIds, User user) {
+        Map<String, Object> result = new java.util.HashMap<>();
+        List<String> successApps = new ArrayList<>();
+        List<String> failedApps = new ArrayList<>();
+        
+        for (Long appId : applicationIds) {
+            try {
+                Optional<Application> appOpt = applicationRepository.findByIdAndUser(appId, user);
+                if (appOpt.isEmpty()) {
+                    failedApps.add("应用ID " + appId + ": 未找到或无权限");
+                    continue;
+                }
+                Application app = appOpt.get();
+                
+                // 先停止，再启动
+                if ("RUNNING".equals(app.getStatus())) {
+                    stopApplication(appId);
+                    // 等待一下确保完全停止
+                    Thread.sleep(1000);
+                }
+                
+                startApplication(appId);
+                successApps.add(app.getName() + ": 重启成功");
+                logger.info("批量重启应用成功: {} (ID: {})", app.getName(), appId);
+                
+            } catch (Exception e) {
+                failedApps.add("应用ID " + appId + ": " + e.getMessage());
+                logger.error("批量重启应用失败: ID={}, 错误={}", appId, e.getMessage());
+            }
+        }
+        
+        result.put("success", true);
+        result.put("total", applicationIds.size());
+        result.put("successCount", successApps.size());
+        result.put("failedCount", failedApps.size());
+        result.put("successApps", successApps);
+        result.put("failedApps", failedApps);
+        result.put("message", String.format("批量重启完成: 成功 %d 个，失败 %d 个", 
+                                           successApps.size(), failedApps.size()));
+        
+        return result;
+    }
+    
+    /**
+     * 批量删除应用
+     */
+    @Transactional
+    public Map<String, Object> batchDelete(List<Long> applicationIds, User user) {
+        Map<String, Object> result = new java.util.HashMap<>();
+        List<String> successApps = new ArrayList<>();
+        List<String> failedApps = new ArrayList<>();
+        
+        for (Long appId : applicationIds) {
+            try {
+                Optional<Application> appOpt = applicationRepository.findByIdAndUser(appId, user);
+                if (appOpt.isEmpty()) {
+                    failedApps.add("应用ID " + appId + ": 未找到或无权限");
+                    continue;
+                }
+                Application app = appOpt.get();
+                
+                String appName = app.getName();
+                deleteApplication(appId);
+                successApps.add(appName + ": 删除成功");
+                logger.info("批量删除应用成功: {} (ID: {})", appName, appId);
+                
+            } catch (Exception e) {
+                failedApps.add("应用ID " + appId + ": " + e.getMessage());
+                logger.error("批量删除应用失败: ID={}, 错误={}", appId, e.getMessage());
+            }
+        }
+        
+        result.put("success", true);
+        result.put("total", applicationIds.size());
+        result.put("successCount", successApps.size());
+        result.put("failedCount", failedApps.size());
+        result.put("successApps", successApps);
+        result.put("failedApps", failedApps);
+        result.put("message", String.format("批量删除完成: 成功 %d 个，失败 %d 个", 
+                                           successApps.size(), failedApps.size()));
+        
+        return result;
     }
 }

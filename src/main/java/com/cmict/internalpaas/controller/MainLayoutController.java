@@ -120,145 +120,229 @@ public class MainLayoutController {
             htmlBuilder.append("  </div>");
             htmlBuilder.append("</div>");
             
-            // 现代化统计面板 - 完全复制admin-dashboard.html的结构
-            htmlBuilder.append("<section class=\"modern-stats-grid\">");
+            // 现代化统计面板 - 采用与开发者工作台一致的样式
+            htmlBuilder.append("<section class=\"modern-stats-container\">");
+            htmlBuilder.append("<div class=\"stats-grid\">");
             
             // 服务器统计卡片
-            htmlBuilder.append("  <div class=\"modern-stat-card servers\">");
-            htmlBuilder.append("    <div class=\"stat-header\">");
-            htmlBuilder.append("      <div class=\"stat-icon-wrapper servers\"><i class=\"fas fa-server\"></i></div>");
-            htmlBuilder.append("      <div class=\"stat-trend positive\">+</div>");
-            htmlBuilder.append("    </div>");
-            htmlBuilder.append("    <div class=\"stat-body\">");
-            htmlBuilder.append("      <div class=\"stat-number\">").append(adminData.getTotalServers()).append("</div>");
-            htmlBuilder.append("      <div class=\"stat-label\">服务器总数</div>");
-            htmlBuilder.append("      <div class=\"stat-sublabel\">活跃服务器: <span>").append(adminData.getActiveServers()).append("</span></div>");
-            htmlBuilder.append("    </div>");
-            htmlBuilder.append("  </div>");
+            htmlBuilder.append("<div class=\"modern-stats-card running\" onclick=\"loadContent('servers')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">服务器总数</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(adminData.getTotalServers()).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-up\">↗</span>活跃: ").append(adminData.getActiveServers()).append("台</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-server icon-pulse\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
             
             // 用户统计卡片  
-            htmlBuilder.append("  <div class=\"modern-stat-card users\">");
-            htmlBuilder.append("    <div class=\"stat-header\">");
-            htmlBuilder.append("      <div class=\"stat-icon-wrapper users\"><i class=\"fas fa-users\"></i></div>");
-            htmlBuilder.append("      <div class=\"stat-trend neutral\">~</div>");
-            htmlBuilder.append("    </div>");
-            htmlBuilder.append("    <div class=\"stat-body\">");
-            htmlBuilder.append("      <div class=\"stat-number\">").append(adminData.getTotalUsers()).append("</div>");
-            htmlBuilder.append("      <div class=\"stat-label\">用户总数</div>");
-            htmlBuilder.append("      <div class=\"stat-sublabel\">管理员: <span>").append(adminData.getAdminUsers()).append("</span> | 普通用户: <span>").append(adminData.getRegularUsers()).append("</span></div>");
-            htmlBuilder.append("    </div>");
-            htmlBuilder.append("  </div>");
+            htmlBuilder.append("<div class=\"modern-stats-card total\" onclick=\"loadContent('users')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">用户总数</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(adminData.getTotalUsers()).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">人</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>管理员: ").append(adminData.getAdminUsers()).append("人</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-users\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
             
-            // CPU使用率统计卡片
-            htmlBuilder.append("  <div class=\"modern-stat-card monitoring\">");
-            htmlBuilder.append("    <div class=\"stat-header\">");
-            htmlBuilder.append("      <div class=\"stat-icon-wrapper monitoring\"><i class=\"fas fa-microchip\"></i></div>");
-            htmlBuilder.append("      <div class=\"stat-trend neutral\">~</div>");
-            htmlBuilder.append("    </div>");
-            htmlBuilder.append("    <div class=\"stat-body\">");
-            htmlBuilder.append("      <div class=\"stat-number\">").append(String.format("%.1f", adminData.getCpuUsage())).append("%</div>");
-            htmlBuilder.append("      <div class=\"stat-label\">CPU使用率</div>");
-            htmlBuilder.append("      <div class=\"stat-sublabel\">内存: <span>").append(String.format("%.1f", adminData.getMemoryUsage())).append("%</span></div>");
-            htmlBuilder.append("    </div>");
-            htmlBuilder.append("  </div>");
+            // 系统资源统计卡片
+            htmlBuilder.append("<div class=\"modern-stats-card starting\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">CPU使用率</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(String.format("%.1f", adminData.getCpuUsage())).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">%</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>内存: ").append(String.format("%.1f", adminData.getMemoryUsage())).append("%</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-microchip icon-pulse\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
             
             // 系统活跃度统计卡片
-            htmlBuilder.append("  <div class=\"modern-stat-card activity\">");
-            htmlBuilder.append("    <div class=\"stat-header\">");
-            htmlBuilder.append("      <div class=\"stat-icon-wrapper activity\"><i class=\"fas fa-chart-line\"></i></div>");
-            htmlBuilder.append("      <div class=\"stat-trend positive\">↗</div>");
-            htmlBuilder.append("    </div>");
-            htmlBuilder.append("    <div class=\"stat-body\">");
-            htmlBuilder.append("      <div class=\"stat-number\">").append(adminData.getTotalUsers() > 0 ? adminData.getTotalUsers() : 0).append("</div>");
-            htmlBuilder.append("      <div class=\"stat-label\">系统活跃度</div>");
-            htmlBuilder.append("      <div class=\"stat-sublabel\">今日登录用户数</div>");
-            htmlBuilder.append("    </div>");
-            htmlBuilder.append("  </div>");
+            htmlBuilder.append("<div class=\"modern-stats-card stopped\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">系统活跃度</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(adminData.getTotalUsers() > 0 ? adminData.getTotalUsers() : 0).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">分</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-up\">↗</span>今日活跃用户</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-chart-line icon-bounce\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
             
+            htmlBuilder.append("</div>");
             htmlBuilder.append("</section>");
             
-            // 最近活动时间线 - 复制admin-dashboard.html结构
-            htmlBuilder.append("<section class=\"recent-activity\">");
-            htmlBuilder.append("  <h2>最近活动</h2>");
-            htmlBuilder.append("  <div class=\"activity-timeline\">");
+            // 现代化快捷操作区域
+            htmlBuilder.append("<section class=\"modern-apps-section\">");
+            htmlBuilder.append("<div class=\"section-header\">");
+            htmlBuilder.append("<h2 class=\"section-title\">管理功能</h2>");
+            htmlBuilder.append("<div class=\"section-actions\">");
+            htmlBuilder.append("<button class=\"action-btn secondary\" onclick=\"refreshAllData()\">");
+            htmlBuilder.append("<i class=\"fas fa-sync-alt\"></i>");
+            htmlBuilder.append("<span>刷新数据</span>");
+            htmlBuilder.append("</button>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
             
-            htmlBuilder.append("    <div class=\"activity-item\">");
-            htmlBuilder.append("      <div class=\"activity-icon\"><i class=\"fas fa-user\"></i></div>");
-            htmlBuilder.append("      <div class=\"activity-content\">");
-            htmlBuilder.append("        <h4>用户登录</h4>");
-            htmlBuilder.append("        <p>管理员 <strong>root</strong> 登录系统</p>");
-            htmlBuilder.append("        <span class=\"activity-time\">2分钟前</span>");
-            htmlBuilder.append("      </div>");
-            htmlBuilder.append("    </div>");
+            // 管理功能卡片网格
+            htmlBuilder.append("<div class=\"modern-apps-grid\">");
             
-            if (!servers.isEmpty()) {
-                Server firstServer = servers.get(0);
-                htmlBuilder.append("    <div class=\"activity-item\">");
-                htmlBuilder.append("      <div class=\"activity-icon\"><i class=\"fas fa-server\"></i></div>");
-                htmlBuilder.append("      <div class=\"activity-content\">");
-                htmlBuilder.append("        <h4>服务器状态变更</h4>");
-                htmlBuilder.append("        <p>服务器 <strong>").append(firstServer.getName()).append("</strong> 状态为").append(firstServer.getActive() ? "活跃" : "离线").append("</p>");
-                htmlBuilder.append("        <span class=\"activity-time\">15分钟前</span>");
-                htmlBuilder.append("      </div>");
-                htmlBuilder.append("    </div>");
-            } else {
-                htmlBuilder.append("    <div class=\"activity-item\">");
-                htmlBuilder.append("      <div class=\"activity-icon\"><i class=\"fas fa-server\"></i></div>");
-                htmlBuilder.append("      <div class=\"activity-content\">");
-                htmlBuilder.append("        <h4>系统监控</h4>");
-                htmlBuilder.append("        <p>系统监控服务正常运行</p>");
-                htmlBuilder.append("        <span class=\"activity-time\">15分钟前</span>");
-                htmlBuilder.append("      </div>");
-                htmlBuilder.append("    </div>");
-            }
+            // 服务器管理卡片
+            htmlBuilder.append("<div class=\"modern-app-card running\" onclick=\"loadContent('servers')\">");
+            htmlBuilder.append("<div class=\"app-header\">");
+            htmlBuilder.append("<div class=\"app-info\">");
+            htmlBuilder.append("<div class=\"app-name\">服务器管理</div>");
+            htmlBuilder.append("<div class=\"app-meta\">");
+            htmlBuilder.append("<span class=\"app-id\">管理和监控服务器</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"status-indicator running\">");
+            htmlBuilder.append("<i class=\"fas fa-server\"></i>");
+            htmlBuilder.append("<span>活跃</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"app-metrics\">");
+            htmlBuilder.append("<div class=\"metrics-grid\">");
+            htmlBuilder.append("<div class=\"metric-item\">");
+            htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-server\"></i></div>");
+            htmlBuilder.append("<div class=\"metric-info\">");
+            htmlBuilder.append("<div class=\"metric-label\">服务器</div>");
+            htmlBuilder.append("<div class=\"metric-value\">").append(adminData.getTotalServers()).append("台</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"metric-item\">");
+            htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-check-circle\"></i></div>");
+            htmlBuilder.append("<div class=\"metric-info\">");
+            htmlBuilder.append("<div class=\"metric-label\">在线</div>");
+            htmlBuilder.append("<div class=\"metric-value\">").append(adminData.getActiveServers()).append("台</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"app-actions\">");
+            htmlBuilder.append("<button class=\"app-action-btn primary\" onclick=\"loadContent('servers')\">");
+            htmlBuilder.append("<i class=\"fas fa-cog\"></i>");
+            htmlBuilder.append("<span>管理</span>");
+            htmlBuilder.append("</button>");
+            htmlBuilder.append("<button class=\"app-action-btn secondary\" onclick=\"addServer()\">");
+            htmlBuilder.append("<i class=\"fas fa-plus\"></i>");
+            htmlBuilder.append("<span>添加</span>");
+            htmlBuilder.append("</button>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
             
-            htmlBuilder.append("    <div class=\"activity-item\">");
-            htmlBuilder.append("      <div class=\"activity-icon\"><i class=\"fas fa-plus\"></i></div>");
-            htmlBuilder.append("      <div class=\"activity-content\">");
-            htmlBuilder.append("        <h4>系统状态</h4>");
-            htmlBuilder.append("        <p>系统监控正常，所有服务运行稳定</p>");
-            htmlBuilder.append("        <span class=\"activity-time\">1小时前</span>");
-            htmlBuilder.append("      </div>");
-            htmlBuilder.append("    </div>");
+            // 用户管理卡片
+            htmlBuilder.append("<div class=\"modern-app-card total\" onclick=\"loadContent('users')\">");
+            htmlBuilder.append("<div class=\"app-header\">");
+            htmlBuilder.append("<div class=\"app-info\">");
+            htmlBuilder.append("<div class=\"app-name\">用户管理</div>");
+            htmlBuilder.append("<div class=\"app-meta\">");
+            htmlBuilder.append("<span class=\"app-id\">用户权限管理</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"status-indicator total\">");
+            htmlBuilder.append("<i class=\"fas fa-users\"></i>");
+            htmlBuilder.append("<span>管理中</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"app-metrics\">");
+            htmlBuilder.append("<div class=\"metrics-grid\">");
+            htmlBuilder.append("<div class=\"metric-item\">");
+            htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-users\"></i></div>");
+            htmlBuilder.append("<div class=\"metric-info\">");
+            htmlBuilder.append("<div class=\"metric-label\">用户</div>");
+            htmlBuilder.append("<div class=\"metric-value\">").append(adminData.getTotalUsers()).append("人</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"metric-item\">");
+            htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-user-shield\"></i></div>");
+            htmlBuilder.append("<div class=\"metric-info\">");
+            htmlBuilder.append("<div class=\"metric-label\">管理员</div>");
+            htmlBuilder.append("<div class=\"metric-value\">").append(adminData.getAdminUsers()).append("人</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"app-actions\">");
+            htmlBuilder.append("<button class=\"app-action-btn primary\" onclick=\"loadContent('users')\">");
+            htmlBuilder.append("<i class=\"fas fa-cog\"></i>");
+            htmlBuilder.append("<span>管理</span>");
+            htmlBuilder.append("</button>");
+            htmlBuilder.append("<button class=\"app-action-btn secondary\" onclick=\"addUser()\">");
+            htmlBuilder.append("<i class=\"fas fa-user-plus\"></i>");
+            htmlBuilder.append("<span>添加</span>");
+            htmlBuilder.append("</button>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
             
-            htmlBuilder.append("  </div>");
-            htmlBuilder.append("</section>");
+            // 系统监控卡片
+            htmlBuilder.append("<div class=\"modern-app-card starting\">");
+            htmlBuilder.append("<div class=\"app-header\">");
+            htmlBuilder.append("<div class=\"app-info\">");
+            htmlBuilder.append("<div class=\"app-name\">系统监控</div>");
+            htmlBuilder.append("<div class=\"app-meta\">");
+            htmlBuilder.append("<span class=\"app-id\">实时系统状态</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"status-indicator starting\">");
+            htmlBuilder.append("<i class=\"fas fa-chart-line\"></i>");
+            htmlBuilder.append("<span>监控中</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"app-metrics\">");
+            htmlBuilder.append("<div class=\"metrics-grid\">");
+            htmlBuilder.append("<div class=\"metric-item\">");
+            htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-microchip\"></i></div>");
+            htmlBuilder.append("<div class=\"metric-info\">");
+            htmlBuilder.append("<div class=\"metric-label\">CPU</div>");
+            htmlBuilder.append("<div class=\"metric-value\">").append(String.format("%.1f", adminData.getCpuUsage())).append("%</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"metric-item\">");
+            htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-memory\"></i></div>");
+            htmlBuilder.append("<div class=\"metric-info\">");
+            htmlBuilder.append("<div class=\"metric-label\">内存</div>");
+            htmlBuilder.append("<div class=\"metric-value\">").append(String.format("%.1f", adminData.getMemoryUsage())).append("%</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"app-actions\">");
+            htmlBuilder.append("<button class=\"app-action-btn primary\" onclick=\"alert('监控功能开发中...')\">");
+            htmlBuilder.append("<i class=\"fas fa-chart-area\"></i>");
+            htmlBuilder.append("<span>详情</span>");
+            htmlBuilder.append("</button>");
+            htmlBuilder.append("<button class=\"app-action-btn secondary\" onclick=\"refreshAllData()\">");
+            htmlBuilder.append("<i class=\"fas fa-sync-alt\"></i>");
+            htmlBuilder.append("<span>刷新</span>");
+            htmlBuilder.append("</button>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
             
-            // 现代化快捷操作区 - 完全复制admin-dashboard.html结构
-            htmlBuilder.append("<section class=\"modern-actions-grid\">");
-            
-            htmlBuilder.append("  <a href=\"javascript:void(0)\" onclick=\"loadContent('servers')\" class=\"modern-action-card servers\">");
-            htmlBuilder.append("    <div class=\"action-card-content\">");
-            htmlBuilder.append("      <div class=\"action-icon-wrapper\"><i class=\"fas fa-server\"></i></div>");
-            htmlBuilder.append("      <h3 class=\"action-title\">服务器管理</h3>");
-            htmlBuilder.append("      <p class=\"action-description\">管理和监控所有服务器的状态</p>");
-            htmlBuilder.append("    </div>");
-            htmlBuilder.append("  </a>");
-            
-            htmlBuilder.append("  <a href=\"javascript:void(0)\" onclick=\"loadContent('users')\" class=\"modern-action-card users\">");
-            htmlBuilder.append("    <div class=\"action-card-content\">");
-            htmlBuilder.append("      <div class=\"action-icon-wrapper\"><i class=\"fas fa-users\"></i></div>");
-            htmlBuilder.append("      <h3 class=\"action-title\">用户管理</h3>");
-            htmlBuilder.append("      <p class=\"action-description\">管理用户账户和权限设置</p>");
-            htmlBuilder.append("    </div>");
-            htmlBuilder.append("  </a>");
-            
-            htmlBuilder.append("  <a href=\"/admin/servers/new\" class=\"modern-action-card servers\">");
-            htmlBuilder.append("    <div class=\"action-card-content\">");
-            htmlBuilder.append("      <div class=\"action-icon-wrapper\"><i class=\"fas fa-plus\"></i></div>");
-            htmlBuilder.append("      <h3 class=\"action-title\">添加服务器</h3>");
-            htmlBuilder.append("      <p class=\"action-description\">向系统添加新的服务器</p>");
-            htmlBuilder.append("    </div>");
-            htmlBuilder.append("  </a>");
-            
-            htmlBuilder.append("  <a href=\"/admin/users/new\" class=\"modern-action-card users\">");
-            htmlBuilder.append("    <div class=\"action-card-content\">");
-            htmlBuilder.append("      <div class=\"action-icon-wrapper\"><i class=\"fas fa-user-plus\"></i></div>");
-            htmlBuilder.append("      <h3 class=\"action-title\">创建用户</h3>");
-            htmlBuilder.append("      <p class=\"action-description\">添加新的用户账户</p>");
-            htmlBuilder.append("    </div>");
-            htmlBuilder.append("  </a>");
-            
+            htmlBuilder.append("</div>");
             htmlBuilder.append("</section>");
             
             return ResponseEntity.ok(htmlBuilder.toString());
@@ -287,33 +371,99 @@ public class MainLayoutController {
             htmlBuilder.append("<h1 class=\"page-title\">开发者工作台</h1>");
             htmlBuilder.append("</div></div>");
             
-            htmlBuilder.append("<div class=\"dashboard-stats\">");
-            htmlBuilder.append("<div class=\"stat-item\">");
-            htmlBuilder.append("<div class=\"stat-icon\"><i class=\"fas fa-rocket\"></i></div>");
-            htmlBuilder.append("<div class=\"stat-content\">");
-            htmlBuilder.append("<div class=\"stat-number\">").append(developerData.getTotalApplications()).append("</div>");
-            htmlBuilder.append("<div class=\"stat-label\">我的应用</div>");
-            htmlBuilder.append("</div></div>");
+            // 现代化统计面板
+            htmlBuilder.append("<section class=\"modern-stats-container\">");
+            htmlBuilder.append("<div class=\"stats-grid\">");
             
-            htmlBuilder.append("<div class=\"stat-item\">");
-            htmlBuilder.append("<div class=\"stat-icon\"><i class=\"fas fa-play\"></i></div>");
-            htmlBuilder.append("<div class=\"stat-content\">");
-            htmlBuilder.append("<div class=\"stat-number\">").append(developerData.getRunningApplications()).append("</div>");
-            htmlBuilder.append("<div class=\"stat-label\">运行中</div>");
-            htmlBuilder.append("</div></div>");
-            
-            htmlBuilder.append("<div class=\"stat-item\">");
-            htmlBuilder.append("<div class=\"stat-icon\"><i class=\"fas fa-bug\"></i></div>");
-            htmlBuilder.append("<div class=\"stat-content\">");
-            htmlBuilder.append("<div class=\"stat-number\">").append(developerData.getActiveDebugSessions()).append("</div>");
-            htmlBuilder.append("<div class=\"stat-label\">调试会话</div>");
-            htmlBuilder.append("</div></div>");
+            // 我的应用卡片
+            htmlBuilder.append("<div class=\"modern-stats-card total\" onclick=\"filterApplications('all')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">我的应用</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main count-up\">").append(developerData.getTotalApplications()).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">个</span>");
             htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend trend-up\">");
+            htmlBuilder.append("<i class=\"fas fa-chart-line trend-icon\"></i>");
+            htmlBuilder.append("<span>持续增长</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"fas fa-rocket stats-icon icon-bounce\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-tooltip\">点击查看所有应用概览</div>");
+            htmlBuilder.append("</div>");
+            
+            // 运行中应用卡片
+            htmlBuilder.append("<div class=\"modern-stats-card running\" onclick=\"filterApplications('running')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">运行中应用</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main count-up\">").append(developerData.getRunningApplications()).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">个</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend trend-up\">");
+            htmlBuilder.append("<i class=\"fas fa-arrow-up trend-icon\"></i>");
+            htmlBuilder.append("<span>活跃运行</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"fas fa-play-circle stats-icon icon-pulse\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-tooltip\">点击查看运行中的应用详情</div>");
+            htmlBuilder.append("</div>");
+            
+            // 调试会话卡片
+            htmlBuilder.append("<div class=\"modern-stats-card starting\" onclick=\"showDebugSessions()\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">调试会话</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main count-up\">").append(developerData.getActiveDebugSessions()).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">个</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend trend-up\">");
+            htmlBuilder.append("<i class=\"fas fa-arrow-up trend-icon\"></i>");
+            htmlBuilder.append("<span>启动进行中</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"fas fa-bug stats-icon icon-spin\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-tooltip\">点击管理调试会话</div>");
+            htmlBuilder.append("</div>");
+            
+            htmlBuilder.append("</div>"); // 关闭 stats-grid
+            htmlBuilder.append("</section>"); // 关闭 modern-stats-container
             
             return ResponseEntity.ok(htmlBuilder.toString());
             
         } catch (Exception e) {
             return ResponseEntity.status(500).body("<div class=\"alert alert-danger\">加载工作台内容失败: " + e.getMessage() + "</div>");
+        }
+    }
+    
+    
+    /**
+     * 开发者仪表板实时数据API
+     */
+    @GetMapping("/api/developer/dashboard/stats")
+    @ResponseBody
+    public ResponseEntity<DeveloperDashboardDto> getDeveloperDashboardStats(Authentication authentication) {
+        if (authentication == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        try {
+            DeveloperDashboardDto data = dashboardService.getDeveloperDashboardData(authentication.getName());
+            return ResponseEntity.ok(data);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
         }
     }
 }

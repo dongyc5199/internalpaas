@@ -18,6 +18,8 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     
     List<Application> findByUser(User user);
     
+    Optional<Application> findByIdAndUser(Long id, User user);
+    
     boolean existsByUserAndPort(User user, Integer port);
     
     boolean existsByUserAndDebugPort(User user, Integer debugPort);

@@ -99,6 +99,9 @@
             const socket = new SockJS('/ws');
             stompClient = Stomp.over(socket);
             
+            // 关闭STOMP调试信息
+            stompClient.debug = null;
+            
             stompClient.connect({}, function (frame) {
                 console.log('WebSocket已连接: ' + frame);
                 updateConnectionStatus(true);

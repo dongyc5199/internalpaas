@@ -4,11 +4,13 @@ import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.model.ServerStatusTag;
 import com.cmict.internalpaas.model.User;
+import com.cmict.internalpaas.model.UserActivity;
 import com.cmict.internalpaas.service.MonitoringSchedulerService;
 import com.cmict.internalpaas.service.RemoteCommandService;
 import com.cmict.internalpaas.service.ServerService;
 import com.cmict.internalpaas.service.ServerStatusTagService;
 import com.cmict.internalpaas.service.SshConnectionService;
+import com.cmict.internalpaas.service.UserActivityService;
 import com.cmict.internalpaas.service.UserServerCredentialService;
 import com.cmict.internalpaas.service.UserService;
 import com.cmict.internalpaas.repository.UserRepository;
@@ -67,6 +69,12 @@ public class AdminController {
     
     @Autowired
     private ServerStatusTagService statusTagService;
+    
+    @Autowired
+    private com.cmict.internalpaas.service.ApplicationService applicationService;
+    
+    @Autowired
+    private com.cmict.internalpaas.service.UserActivityService userActivityService;
     
     
     @Autowired
@@ -469,6 +477,291 @@ public class AdminController {
             error.put("serverId", String.valueOf(id));
             return ResponseEntity.internalServerError().body(error);
         }
+    }
+    
+    /**
+     * 获取服务器详情数据 - 用于新的系统风格模态框
+     * GET /admin/api/servers/{id}/details
+     */
+    @GetMapping("/api/servers/{id}/details")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getServerDetails(@PathVariable Long id) {
+        logger.info("获取服务器详情数据: serverId={}", id);
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // 检查服务器是否存在
+            Optional<Server> serverOpt = serverService.getServerById(id);
+            if (!serverOpt.isPresent()) {
+                response.put("success", false);
+                response.put("error", "服务器不存在");
+                return ResponseEntity.status(404).body(response);
+            }
+            
+            Server server = serverOpt.get();
+            
+            // 1. 基本信息
+            Map<String, Object> basicInfo = buildBasicServerInfo(server);
+            
+            // 2. 应用列表 - 获取在该服务器上有权限的用户的应用
+            List<Map<String, Object>> applications = getServerApplications(id);
+            
+            // 3. 操作日志 - 获取该服务器的用户活动记录
+            List<Map<String, Object>> operationLogs = getServerOperationLogs(id);
+            
+            // 构建响应
+            response.put("success", true);
+            response.put("serverId", id);
+            response.put("basicInfo", basicInfo);
+            response.put("applications", applications);
+            response.put("operationLogs", operationLogs);
+            response.put("retrieveTime", System.currentTimeMillis());
+            
+            logger.info("成功获取服务器 {} 的详情数据: 应用数={}, 日志数={}", id, applications.size(), operationLogs.size());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("获取服务器详情失败: serverId={}", id, e);
+            response.put("success", false);
+            response.put("error", "获取服务器详情失败: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+    
+    /**
+     * 构建服务器基本信息
+     */
+    private Map<String, Object> buildBasicServerInfo(Server server) {
+        Map<String, Object> basicInfo = new HashMap<>();
+        basicInfo.put("id", server.getId());
+        basicInfo.put("name", server.getName());
+        basicInfo.put("hostname", server.getHostname());
+        basicInfo.put("ipAddress", server.getHostname() + ":" + server.getPort());
+        basicInfo.put("sshPort", server.getSshPort() != null ? server.getSshPort() : server.getPort());
+        basicInfo.put("operatingSystem", server.getDescription() != null ? server.getDescription() : "Linux");
+        basicInfo.put("workDirectory", server.getBaseWorkDirectory());
+        
+        // 连接状态
+        String status = "UNKNOWN";
+        if (server.getConnectionStatus() != null) {
+            status = server.getConnectionStatus().name();
+        }
+        basicInfo.put("connectionStatus", status);
+        
+        // 获取系统监控信息
+        try {
+            // 这里可以调用监控服务获取实时数据
+            // 暂时使用简单的状态信息
+            basicInfo.put("uptime", "运行中");
+            basicInfo.put("lastCheck", "刚刚检查");
+        } catch (Exception e) {
+            logger.warn("获取服务器 {} 监控信息失败: {}", server.getId(), e.getMessage());
+            basicInfo.put("uptime", "未知");
+            basicInfo.put("lastCheck", "检查失败");
+        }
+        
+        return basicInfo;
+    }
+    
+    /**
+     * 获取服务器上的应用列表
+     */
+    private List<Map<String, Object>> getServerApplications(Long serverId) {
+        List<Map<String, Object>> applications = new ArrayList<>();
+        
+        try {
+            // 获取有权限访问该服务器的所有用户
+            List<User> serverUsers = userService.findUsersByServerId(serverId);
+            
+            // 获取这些用户的应用
+            for (User user : serverUsers) {
+                List<com.cmict.internalpaas.model.Application> userApps = applicationService.getUserApplications(user);
+                
+                for (com.cmict.internalpaas.model.Application app : userApps) {
+                    Map<String, Object> appInfo = new HashMap<>();
+                    appInfo.put("id", app.getId());
+                    appInfo.put("name", app.getName());
+                    appInfo.put("owner", user.getUsername());
+                    appInfo.put("status", app.getStatus().toLowerCase());
+                    appInfo.put("port", app.getPort());
+                    appInfo.put("debugPort", app.getDebugPort());
+                    appInfo.put("jarFileName", app.getJarFileName());
+                    appInfo.put("processId", app.getProcessId());
+                    appInfo.put("lastStartedAt", app.getLastStartedAt());
+                    appInfo.put("createdAt", app.getCreatedAt());
+                    
+                    // 计算运行时间
+                    if ("running".equals(app.getStatus().toLowerCase()) && app.getLastStartedAt() != null) {
+                        java.time.Duration duration = java.time.Duration.between(app.getLastStartedAt(), java.time.LocalDateTime.now());
+                        appInfo.put("uptime", formatDuration(duration));
+                    } else {
+                        appInfo.put("uptime", "未运行");
+                    }
+                    
+                    applications.add(appInfo);
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.error("获取服务器 {} 应用列表失败: {}", serverId, e.getMessage(), e);
+            // 添加一个错误指示应用
+            Map<String, Object> errorApp = new HashMap<>();
+            errorApp.put("name", "获取应用列表失败");
+            errorApp.put("status", "error");
+            errorApp.put("error", e.getMessage());
+            applications.add(errorApp);
+        }
+        
+        return applications;
+    }
+    
+    /**
+     * 获取服务器操作日志
+     */
+    private List<Map<String, Object>> getServerOperationLogs(Long serverId) {
+        List<Map<String, Object>> operationLogs = new ArrayList<>();
+        
+        try {
+            // 获取最近的用户活动记录
+            List<com.cmict.internalpaas.model.UserActivity> activities = userActivityService.getRecentActivities(serverId);
+            
+            for (com.cmict.internalpaas.model.UserActivity activity : activities) {
+                Map<String, Object> logEntry = new HashMap<>();
+                
+                // 格式化时间
+                if (activity.getLoginTime() != null) {
+                    logEntry.put("time", activity.getLoginTime().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")));
+                } else {
+                    logEntry.put("time", "未知时间");
+                }
+                
+                logEntry.put("user", activity.getUsername() != null ? activity.getUsername() : "未知用户");
+                logEntry.put("ip", activity.getRemoteIp() != null ? activity.getRemoteIp() : "");
+                
+                // 根据活动类型生成操作描述
+                String action = generateActionDescription(activity);
+                logEntry.put("action", action);
+                
+                // 构建详细信息
+                List<Map<String, Object>> details = buildActivityDetails(activity);
+                logEntry.put("details", details);
+                
+                operationLogs.add(logEntry);
+            }
+            
+            // 如果没有活动记录，显示提示信息
+            if (operationLogs.isEmpty()) {
+                Map<String, Object> noDataLog = new HashMap<>();
+                noDataLog.put("time", "");
+                noDataLog.put("user", "系统");
+                noDataLog.put("ip", "");
+                noDataLog.put("action", "📝 暂无操作记录");
+                noDataLog.put("details", List.of(
+                    Map.of("label", "状态", "value", "暂无用户活动记录"),
+                    Map.of("label", "说明", "value", "用户首次操作后会显示记录")
+                ));
+                operationLogs.add(noDataLog);
+            }
+            
+        } catch (Exception e) {
+            logger.error("获取服务器 {} 操作日志失败: {}", serverId, e.getMessage(), e);
+            // 添加错误日志
+            Map<String, Object> errorLog = new HashMap<>();
+            errorLog.put("time", "");
+            errorLog.put("user", "系统");
+            errorLog.put("ip", "");
+            errorLog.put("action", "❌ 获取操作日志失败");
+            errorLog.put("details", List.of(
+                Map.of("label", "错误信息", "value", e.getMessage()),
+                Map.of("label", "建议", "value", "请联系管理员检查日志服务")
+            ));
+            operationLogs.add(errorLog);
+        }
+        
+        return operationLogs;
+    }
+    
+    /**
+     * 格式化持续时间
+     */
+    private String formatDuration(java.time.Duration duration) {
+        long days = duration.toDays();
+        long hours = duration.toHours() % 24;
+        long minutes = duration.toMinutes() % 60;
+        
+        if (days > 0) {
+            return String.format("%d天%d小时", days, hours);
+        } else if (hours > 0) {
+            return String.format("%d小时%d分钟", hours, minutes);
+        } else {
+            return String.format("%d分钟", minutes);
+        }
+    }
+    
+    /**
+     * 生成活动描述
+     */
+    private String generateActionDescription(com.cmict.internalpaas.model.UserActivity activity) {
+        if (activity.getActivityType() != null) {
+            switch (activity.getActivityType()) {
+                case LOGIN:
+                    return "🔐 用户登录";
+                case LOGOUT:
+                    return "🔓 用户登出";
+                case COMMAND_EXECUTE:
+                    return "⚡ 执行命令";
+                case FILE_TRANSFER:
+                    return "📁 文件传输";
+                case FILE_EDIT:
+                    return "✏️ 文件编辑";
+                case PROCESS_START:
+                    return "▶️ 进程启动";
+                case PROCESS_STOP:
+                    return "⏹️ 进程停止";
+                case DIRECTORY_CHANGE:
+                    return "📂 目录切换";
+                case SYSTEM_INFO:
+                    return "ℹ️ 系统信息";
+                default:
+                    return "📋 用户活动";
+            }
+        } else {
+            return "📋 用户活动";
+        }
+    }
+    
+    /**
+     * 构建活动详细信息
+     */
+    private List<Map<String, Object>> buildActivityDetails(com.cmict.internalpaas.model.UserActivity activity) {
+        List<Map<String, Object>> details = new ArrayList<>();
+        
+        if (activity.getSessionId() != null) {
+            details.add(Map.of("label", "会话ID", "value", activity.getSessionId()));
+        }
+        
+        if (activity.getActivityDetails() != null && activity.getActivityType() == UserActivity.ActivityType.COMMAND_EXECUTE) {
+            details.add(Map.of("label", "执行命令", "value", activity.getActivityDetails()));
+        }
+        
+        if (activity.getRemoteIp() != null) {
+            details.add(Map.of("label", "远程IP", "value", activity.getRemoteIp()));
+        }
+        
+        if (activity.getLoginTime() != null && activity.getLogoutTime() != null) {
+            java.time.Duration sessionDuration = java.time.Duration.between(activity.getLoginTime(), activity.getLogoutTime());
+            details.add(Map.of("label", "会话时长", "value", formatDuration(sessionDuration)));
+        }
+        
+        // 添加状态信息
+        if (activity.getLogoutTime() == null && activity.getLoginTime() != null) {
+            details.add(Map.of("label", "状态", "value", "进行中", "status", "success"));
+        } else {
+            details.add(Map.of("label", "状态", "value", "已完成"));
+        }
+        
+        return details;
     }
     
     /**
@@ -1565,51 +1858,569 @@ public class AdminController {
     
 
     /**
-     * AJAX API: 获取服务器管理内容片段
+     * AJAX API: 获取服务器管理内容片段 - 现代化版本
      */
     @GetMapping("/api/servers-content")
-    public String getServersContent(Model model) {
-        List<Server> servers = serverService.getAllServers();
-        model.addAttribute("servers", servers);
+    @ResponseBody
+    public ResponseEntity<String> getServersContent() {
+        try {
+            List<Server> servers = serverService.getAllServers();
+            
+            StringBuilder htmlBuilder = new StringBuilder();
+            
+            // 页面标题
+            htmlBuilder.append("<div class=\"content-header\">");
+            htmlBuilder.append("<div class=\"page-title-group\">");
+            htmlBuilder.append("<h1 class=\"page-title\">服务器管理与监控</h1>");
+            htmlBuilder.append("</div></div>");
+            
+            // 统计服务器状态
+            long activeCount = servers.stream()
+                .filter(server -> server.getConnectionStatus() != null && 
+                        (server.getConnectionStatus() == Server.ConnectionStatus.CONNECTED || 
+                         server.getConnectionStatus() == Server.ConnectionStatus.MONITORING))
+                .count();
+            long inactiveCount = servers.size() - activeCount;
+            long totalCount = servers.size();
+            
+            // 现代化统计面板
+            htmlBuilder.append("<section class=\"modern-stats-container\">");
+            htmlBuilder.append("<div class=\"stats-grid\">");
+            
+            // 在线服务器卡片
+            htmlBuilder.append("<div class=\"modern-stats-card running\" onclick=\"filterServers('online')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">在线服务器</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(activeCount).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-up\">↗</span>连接正常</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-server icon-pulse\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            // 离线服务器卡片
+            htmlBuilder.append("<div class=\"modern-stats-card stopped\" onclick=\"filterServers('offline')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">离线服务器</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(inactiveCount).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-down\">↓</span>需要检查</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-exclamation-triangle\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            // 监控中服务器卡片
+            htmlBuilder.append("<div class=\"modern-stats-card starting\" onclick=\"filterServers('monitoring')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">监控中</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(activeCount).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>数据采集中</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-chart-line icon-bounce\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            // 总服务器数卡片
+            htmlBuilder.append("<div class=\"modern-stats-card total\" onclick=\"filterServers('all')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">服务器总数</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(totalCount).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>服务器概览</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-database\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</section>");
+            
+            // 服务器卡片网格
+            htmlBuilder.append("<section class=\"modern-apps-section\">");
+            htmlBuilder.append("<div class=\"section-header\">");
+            htmlBuilder.append("<h2 class=\"section-title\">服务器列表</h2>");
+            htmlBuilder.append("<div class=\"section-actions\">");
+            htmlBuilder.append("<button class=\"action-btn secondary\" onclick=\"refreshAllData()\">");
+            htmlBuilder.append("<i class=\"fas fa-sync-alt\"></i>");
+            htmlBuilder.append("<span>刷新数据</span>");
+            htmlBuilder.append("</button>");
+            htmlBuilder.append("<button class=\"action-btn primary\" onclick=\"addServer()\">");
+            htmlBuilder.append("<i class=\"fas fa-plus\"></i>");
+            htmlBuilder.append("<span>添加服务器</span>");
+            htmlBuilder.append("</button>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            if (servers.isEmpty()) {
+                // 空状态
+                htmlBuilder.append("<div class=\"empty-state\">");
+                htmlBuilder.append("<div class=\"empty-icon\">");
+                htmlBuilder.append("<i class=\"fas fa-server\"></i>");
+                htmlBuilder.append("</div>");
+                htmlBuilder.append("<h3 class=\"empty-title\">还没有服务器</h3>");
+                htmlBuilder.append("<p class=\"empty-description\">添加您的第一个服务器开始管理和监控基础设施</p>");
+                htmlBuilder.append("<div class=\"empty-actions\">");
+                htmlBuilder.append("<button class=\"modern-action-btn primary\" onclick=\"addServer()\">");
+                htmlBuilder.append("<i class=\"fas fa-plus\"></i>");
+                htmlBuilder.append("<span>添加服务器</span>");
+                htmlBuilder.append("</button>");
+                htmlBuilder.append("</div>");
+                htmlBuilder.append("</div>");
+            } else {
+                // 服务器卡片网格
+                htmlBuilder.append("<div class=\"modern-apps-grid\">");
+                for (Server server : servers) {
+                    String statusClass = getServerStatusClass(server);
+                    String statusText = getServerStatusText(server);
+                    String statusIcon = getServerStatusIcon(server);
+                    
+                    htmlBuilder.append("<div class=\"modern-app-card ").append(statusClass).append("\">");
+                    
+                    // 卡片头部
+                    htmlBuilder.append("<div class=\"app-header\">");
+                    htmlBuilder.append("<div class=\"app-info\">");
+                    htmlBuilder.append("<div class=\"app-name\">").append(escapeHtml(server.getName())).append("</div>");
+                    htmlBuilder.append("<div class=\"app-meta\">");
+                    htmlBuilder.append("<span class=\"app-id\">ID: ").append(server.getId()).append("</span>");
+                    if (server.getLastConnectionCheck() != null) {
+                        htmlBuilder.append("<span class=\"app-time\">").append(formatRelativeTime(server.getLastConnectionCheck())).append("</span>");
+                    }
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("<div class=\"status-indicator ").append(statusClass).append("\">");
+                    htmlBuilder.append("<i class=\"").append(statusIcon).append("\"></i>");
+                    htmlBuilder.append("<span>").append(statusText).append("</span>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    
+                    // 服务器指标
+                    htmlBuilder.append("<div class=\"app-metrics\">");
+                    htmlBuilder.append("<div class=\"metrics-grid\">");
+                    htmlBuilder.append("<div class=\"metric-item\">");
+                    htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-network-wired\"></i></div>");
+                    htmlBuilder.append("<div class=\"metric-info\">");
+                    htmlBuilder.append("<div class=\"metric-label\">主机</div>");
+                    htmlBuilder.append("<div class=\"metric-value\">").append(server.getHostname()).append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("<div class=\"metric-item\">");
+                    htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-plug\"></i></div>");
+                    htmlBuilder.append("<div class=\"metric-info\">");
+                    htmlBuilder.append("<div class=\"metric-label\">端口</div>");
+                    htmlBuilder.append("<div class=\"metric-value\">").append(server.getPort()).append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    
+                    // 操作按钮
+                    htmlBuilder.append("<div class=\"app-actions\">");
+                    htmlBuilder.append("<button class=\"app-action-btn primary\" onclick=\"editServer(this)\" data-id=\"").append(server.getId()).append("\">");
+                    htmlBuilder.append("<i class=\"fas fa-edit\"></i>");
+                    htmlBuilder.append("<span>编辑</span>");
+                    htmlBuilder.append("</button>");
+                    htmlBuilder.append("<button class=\"app-action-btn secondary\" onclick=\"refreshServer(this)\" data-id=\"").append(server.getId()).append("\">");
+                    htmlBuilder.append("<i class=\"fas fa-sync-alt\"></i>");
+                    htmlBuilder.append("<span>刷新</span>");
+                    htmlBuilder.append("</button>");
+                    htmlBuilder.append("</div>");
+                    
+                    htmlBuilder.append("</div>");
+                }
+                htmlBuilder.append("</div>");
+            }
+            
+            htmlBuilder.append("</section>");
+            
+            return ResponseEntity.ok(htmlBuilder.toString());
+            
+        } catch (Exception e) {
+            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载服务器内容失败: " + e.getMessage() + "</div>";
+            return ResponseEntity.status(500).body(errorContent);
+        }
+    }
+    
+    // 服务器状态辅助方法
+    private String getServerStatusClass(Server server) {
+        if (server.getConnectionStatus() == null) return "stopped";
         
-        // 统计活跃和非活跃服务器
-        long activeCount = servers.stream()
-            .filter(server -> server.getConnectionStatus() != null && 
-                    (server.getConnectionStatus() == Server.ConnectionStatus.CONNECTED || 
-                     server.getConnectionStatus() == Server.ConnectionStatus.MONITORING))
-            .count();
-        long inactiveCount = servers.size() - activeCount;
+        switch (server.getConnectionStatus()) {
+            case CONNECTED:
+            case MONITORING:
+                return "running";
+            case UNKNOWN:
+            case FAILED:
+            case TIMEOUT:
+            case AUTH_FAILED:
+            default:
+                return "stopped";
+        }
+    }
+    
+    private String getServerStatusText(Server server) {
+        if (server.getConnectionStatus() == null) return "未知";
         
-        model.addAttribute("totalServers", servers.size());
-        model.addAttribute("activeServers", activeCount);
-        model.addAttribute("inactiveServers", inactiveCount);
-        model.addAttribute("monitoringServers", activeCount); // 简化处理
+        switch (server.getConnectionStatus()) {
+            case CONNECTED:
+                return "已连接";
+            case MONITORING:
+                return "监控中";
+            case FAILED:
+                return "连接失败";
+            case TIMEOUT:
+                return "连接超时";
+            case AUTH_FAILED:
+                return "认证失败";
+            case UNKNOWN:
+            default:
+                return "未知";
+        }
+    }
+    
+    private String getServerStatusIcon(Server server) {
+        if (server.getConnectionStatus() == null) return "fas fa-question-circle";
         
-        // 返回服务器管理内容片段
-        return "fragments/servers-fragment :: servers-content";
+        switch (server.getConnectionStatus()) {
+            case CONNECTED:
+            case MONITORING:
+                return "fas fa-check-circle";
+            case FAILED:
+            case TIMEOUT:
+            case AUTH_FAILED:
+                return "fas fa-times-circle";
+            case UNKNOWN:
+            default:
+                return "fas fa-question-circle";
+        }
+    }
+    
+    private String formatRelativeTime(java.time.LocalDateTime dateTime) {
+        if (dateTime == null) return "";
+        
+        java.time.Duration duration = java.time.Duration.between(dateTime, java.time.LocalDateTime.now());
+        long minutes = duration.toMinutes();
+        long hours = duration.toHours();
+        long days = duration.toDays();
+        
+        if (minutes < 60) {
+            return minutes + "分钟前";
+        } else if (hours < 24) {
+            return hours + "小时前";
+        } else {
+            return days + "天前";
+        }
+    }
+    
+    private String escapeHtml(String text) {
+        if (text == null) return "";
+        return text.replace("&", "&amp;")
+                   .replace("<", "&lt;")
+                   .replace(">", "&gt;")
+                   .replace("\"", "&quot;")
+                   .replace("'", "&#x27;");
     }
     
     /**
-     * AJAX API: 获取用户管理内容片段
+     * AJAX API: 获取用户管理内容片段 - 现代化版本
      */
     @GetMapping("/api/users-content")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public String getUsersContent(Model model) {
-        List<User> users = userService.findAllUsers();
-        model.addAttribute("users", users);
-        
-        // 计算统计数据
-        long adminCount = users.stream().filter(u -> u.getRoles().contains(User.Role.ADMIN) || u.getRoles().contains(User.Role.SUPER_ADMIN)).count();
-        long developerCount = users.stream().filter(u -> u.getRoles().contains(User.Role.USER)).count();
-        long activeCount = users.size(); // 简化处理，所有用户都是活跃的
-        
-        model.addAttribute("totalUsers", users.size());
-        model.addAttribute("adminCount", adminCount);
-        model.addAttribute("developerCount", developerCount);
-        model.addAttribute("activeCount", activeCount);
-        
-        // 返回用户管理内容片段
-        return "admin/users :: users-content";
+    @ResponseBody
+    public ResponseEntity<String> getUsersContent() {
+        try {
+            List<User> users = userService.findAllUsers();
+            
+            StringBuilder htmlBuilder = new StringBuilder();
+            
+            // 页面标题
+            htmlBuilder.append("<div class=\"content-header\">");
+            htmlBuilder.append("<div class=\"page-title-group\">");
+            htmlBuilder.append("<h1 class=\"page-title\">用户管理与权限控制</h1>");
+            htmlBuilder.append("</div></div>");
+            
+            // 统计用户数据
+            long adminCount = users.stream()
+                .filter(u -> u.getRoles().contains(User.Role.ADMIN) || u.getRoles().contains(User.Role.SUPER_ADMIN))
+                .count();
+            long developerCount = users.stream()
+                .filter(u -> u.getRoles().contains(User.Role.USER))
+                .count();
+            long activeCount = users.size(); // 简化处理
+            long totalCount = users.size();
+            
+            // 现代化统计面板
+            htmlBuilder.append("<section class=\"modern-stats-container\">");
+            htmlBuilder.append("<div class=\"stats-grid\">");
+            
+            // 管理员用户卡片
+            htmlBuilder.append("<div class=\"modern-stats-card running\" onclick=\"filterUsers('admin')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">管理员</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(adminCount).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">人</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-up\">↗</span>高级权限</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-user-shield icon-pulse\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            // 开发者用户卡片
+            htmlBuilder.append("<div class=\"modern-stats-card starting\" onclick=\"filterUsers('developer')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">开发者</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(developerCount).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">人</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>普通权限</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-code icon-bounce\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            // 活跃用户卡片
+            htmlBuilder.append("<div class=\"modern-stats-card stopped\" onclick=\"filterUsers('active')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">活跃用户</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(activeCount).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">人</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-up\">↗</span>在线用户</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-users\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            // 用户总数卡片
+            htmlBuilder.append("<div class=\"modern-stats-card total\" onclick=\"filterUsers('all')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">用户总数</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(totalCount).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">人</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>用户概览</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-user-friends\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</section>");
+            
+            // 用户卡片网格
+            htmlBuilder.append("<section class=\"modern-apps-section\">");
+            htmlBuilder.append("<div class=\"section-header\">");
+            htmlBuilder.append("<h2 class=\"section-title\">用户列表</h2>");
+            htmlBuilder.append("<div class=\"section-actions\">");
+            htmlBuilder.append("<button class=\"action-btn secondary\" onclick=\"refreshAllData()\">");
+            htmlBuilder.append("<i class=\"fas fa-sync-alt\"></i>");
+            htmlBuilder.append("<span>刷新数据</span>");
+            htmlBuilder.append("</button>");
+            htmlBuilder.append("<button class=\"action-btn primary\" onclick=\"addUser()\">");
+            htmlBuilder.append("<i class=\"fas fa-user-plus\"></i>");
+            htmlBuilder.append("<span>添加用户</span>");
+            htmlBuilder.append("</button>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            if (users.isEmpty()) {
+                // 空状态
+                htmlBuilder.append("<div class=\"empty-state\">");
+                htmlBuilder.append("<div class=\"empty-icon\">");
+                htmlBuilder.append("<i class=\"fas fa-users\"></i>");
+                htmlBuilder.append("</div>");
+                htmlBuilder.append("<h3 class=\"empty-title\">还没有用户</h3>");
+                htmlBuilder.append("<p class=\"empty-description\">创建第一个用户账户开始使用系统</p>");
+                htmlBuilder.append("<div class=\"empty-actions\">");
+                htmlBuilder.append("<button class=\"modern-action-btn primary\" onclick=\"addUser()\">");
+                htmlBuilder.append("<i class=\"fas fa-user-plus\"></i>");
+                htmlBuilder.append("<span>添加用户</span>");
+                htmlBuilder.append("</button>");
+                htmlBuilder.append("</div>");
+                htmlBuilder.append("</div>");
+            } else {
+                // 用户卡片网格
+                htmlBuilder.append("<div class=\"modern-apps-grid\">");
+                for (User user : users) {
+                    String statusClass = getUserStatusClass(user);
+                    String roleText = getUserRoleText(user);
+                    String statusIcon = getUserStatusIcon(user);
+                    
+                    htmlBuilder.append("<div class=\"modern-app-card ").append(statusClass).append("\">");
+                    
+                    // 卡片头部
+                    htmlBuilder.append("<div class=\"app-header\">");
+                    htmlBuilder.append("<div class=\"app-info\">");
+                    htmlBuilder.append("<div class=\"app-name\">").append(escapeHtml(user.getUsername())).append("</div>");
+                    htmlBuilder.append("<div class=\"app-meta\">");
+                    htmlBuilder.append("<span class=\"app-id\">ID: ").append(user.getId()).append("</span>");
+                    if (user.getCreatedAt() != null) {
+                        htmlBuilder.append("<span class=\"app-time\">注册于 ").append(formatRelativeTime(user.getCreatedAt())).append("</span>");
+                    }
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("<div class=\"status-indicator ").append(statusClass).append("\">");
+                    htmlBuilder.append("<i class=\"").append(statusIcon).append("\"></i>");
+                    htmlBuilder.append("<span>").append(roleText).append("</span>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    
+                    // 用户信息指标
+                    htmlBuilder.append("<div class=\"app-metrics\">");
+                    htmlBuilder.append("<div class=\"metrics-grid\">");
+                    htmlBuilder.append("<div class=\"metric-item\">");
+                    htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-envelope\"></i></div>");
+                    htmlBuilder.append("<div class=\"metric-info\">");
+                    htmlBuilder.append("<div class=\"metric-label\">邮箱</div>");
+                    htmlBuilder.append("<div class=\"metric-value\">").append(escapeHtml(user.getEmail())).append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("<div class=\"metric-item\">");
+                    htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-user-tag\"></i></div>");
+                    htmlBuilder.append("<div class=\"metric-info\">");
+                    htmlBuilder.append("<div class=\"metric-label\">角色</div>");
+                    htmlBuilder.append("<div class=\"metric-value\">").append(roleText).append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    
+                    // 操作按钮
+                    htmlBuilder.append("<div class=\"app-actions\">");
+                    htmlBuilder.append("<button class=\"app-action-btn primary\" onclick=\"editUser('").append(user.getId()).append("')\">");
+                    htmlBuilder.append("<i class=\"fas fa-edit\"></i>");
+                    htmlBuilder.append("<span>编辑</span>");
+                    htmlBuilder.append("</button>");
+                    htmlBuilder.append("<button class=\"app-action-btn secondary\" onclick=\"resetPassword('").append(user.getId()).append("')\">");
+                    htmlBuilder.append("<i class=\"fas fa-key\"></i>");
+                    htmlBuilder.append("<span>重置</span>");
+                    htmlBuilder.append("</button>");
+                    htmlBuilder.append("</div>");
+                    
+                    htmlBuilder.append("</div>");
+                }
+                htmlBuilder.append("</div>");
+            }
+            
+            htmlBuilder.append("</section>");
+            
+            return ResponseEntity.ok(htmlBuilder.toString());
+            
+        } catch (Exception e) {
+            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载用户内容失败: " + e.getMessage() + "</div>";
+            return ResponseEntity.status(500).body(errorContent);
+        }
+    }
+    
+    // 用户状态辅助方法
+    private String getUserStatusClass(User user) {
+        if (user.getRoles().contains(User.Role.SUPER_ADMIN)) {
+            return "running";
+        } else if (user.getRoles().contains(User.Role.ADMIN)) {
+            return "starting";
+        } else {
+            return "total";
+        }
+    }
+    
+    private String getUserRoleText(User user) {
+        if (user.getRoles().contains(User.Role.SUPER_ADMIN)) {
+            return "超级管理员";
+        } else if (user.getRoles().contains(User.Role.ADMIN)) {
+            return "管理员";
+        } else {
+            return "开发者";
+        }
+    }
+    
+    private String getUserStatusIcon(User user) {
+        if (user.getRoles().contains(User.Role.SUPER_ADMIN)) {
+            return "fas fa-crown";
+        } else if (user.getRoles().contains(User.Role.ADMIN)) {
+            return "fas fa-user-shield";
+        } else {
+            return "fas fa-code";
+        }
+    }
+
+    /**
+     * 重新生成服务器工作目录 API
+     */
+    @PostMapping("/servers/{id}/initialize-working-directory")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> initializeServerWorkingDirectory(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Server server = serverService.findById(id)
+                .orElseThrow(() -> new RuntimeException("服务器未找到"));
+            
+            logger.info("开始为服务器 {} 重新生成工作目录", server.getName());
+            
+            // 调用现有的工作目录创建功能
+            Map<String, Object> directoryResult = ensureBaseWorkDirectory(server);
+            boolean success = (Boolean) directoryResult.get("success");
+            boolean created = (Boolean) directoryResult.get("created");
+            String message = (String) directoryResult.get("message");
+            
+            if (success) {
+                response.put("status", "success");
+                response.put("workingDirectory", server.getBaseWorkDirectory());
+                response.put("created", created);
+                response.put("message", message);
+                logger.info("服务器 {} 工作目录初始化成功: {}", server.getName(), message);
+            } else {
+                response.put("status", "error");
+                response.put("message", message);
+                logger.error("服务器 {} 工作目录初始化失败: {}", server.getName(), message);
+            }
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("重新生成服务器工作目录时发生错误: {}", e.getMessage(), e);
+            response.put("status", "error");
+            response.put("message", "操作失败: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
 
     /**

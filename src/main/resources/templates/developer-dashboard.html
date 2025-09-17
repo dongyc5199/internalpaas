@@ -18,193 +18,793 @@
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/common-dashboard.css">
     <link rel="stylesheet" href="/css/dashboard-theme.css">
+    <link rel="stylesheet" href="/css/modern-developer-dashboard.css">
+    <link rel="stylesheet" href="/css/modern-dashboard-stats.css">
     <script src="/js/theme.js"></script>
 </head>
-<body class="dashboard-body developer-theme theme-body">
-    <!-- 顶部导航栏 -->
-    <nav class="top-nav">
-        <div class="nav-brand">
-            <div class="brand-icon">🚀</div>
-            <span class="brand-text">Dev Debug Platform</span>
+<body class="modern-dashboard-body developer-theme theme-body">
+    <!-- 现代化头部导航 -->
+    <header class="modern-header">
+        <div class="header-brand">
+            <div class="brand-logo">
+                <div class="logo-icon">🚀</div>
+                <div class="brand-text">
+                    <span class="brand-name">Dev Debug Platform</span>
+                    <span class="brand-subtitle">开发者工作台</span>
+                </div>
+            </div>
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
-        <div class="nav-menu">
-            <a href="/profile" class="user-profile" title="查看个人档案">
-                <div class="user-avatar">
-                    <span th:text="${#strings.substring(username, 0, 1)}">D</span>
-                </div>
-                <div class="user-info">
-                    <span class="greeting">欢迎回来</span>
-                    <span class="username" th:text="${username}">开发者</span>
-                </div>
-            </a>
-            <div class="nav-actions">
-                <div class="theme-toggle" onclick="toggleTheme()" title="切换主题">
-                    <span class="theme-icon">🌙</span>
-                </div>
-                <form th:action="@{/logout}" method="post" style="display: inline;">
-                    <button type="submit" class="logout-btn" title="安全退出">
-                        <span class="logout-icon">🚪</span>
-                    </button>
-                </form>
+        
+        <div class="header-search">
+            <div class="search-container">
+                <input type="text" class="search-input" placeholder="搜索应用、日志、命令...">
+                <button class="search-btn">
+                    <span class="search-icon">🔍</span>
+                </button>
             </div>
         </div>
-    </nav>
+        
+        <div class="header-actions">
+            <button class="action-btn notification-btn" title="通知">
+                <span class="icon">🔔</span>
+                <span class="badge">3</span>
+            </button>
+            
+            <button class="action-btn theme-toggle-btn" onclick="toggleTheme()" title="切换主题">
+                <span class="theme-icon">🌙</span>
+            </button>
+            
+            <div class="user-menu">
+                <div class="user-trigger">
+                    <div class="user-avatar">
+                        <span th:text="${#strings.substring(username, 0, 1)}">D</span>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name" th:text="${username}">开发者</span>
+                        <span class="user-role">开发者</span>
+                    </div>
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+                <div class="user-dropdown">
+                    <a href="/profile" class="dropdown-item">
+                        <span class="item-icon">👤</span>
+                        <span>个人档案</span>
+                    </a>
+                    <a href="/apps" class="dropdown-item">
+                        <span class="item-icon">📱</span>
+                        <span>应用管理</span>
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <form th:action="@{/logout}" method="post" class="dropdown-form">
+                        <button type="submit" class="dropdown-item logout-item">
+                            <span class="item-icon">🚪</span>
+                            <span>安全退出</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </header>
 
-    <!-- 主要内容区域 -->
-    <div class="dashboard-container theme-container">
-        <!-- 侧边栏导航 -->
-        <aside class="sidebar">
+    <!-- 主要仪表板容器 -->
+    <div class="modern-dashboard-container">
+        <!-- 现代化侧边栏 -->
+        <aside class="modern-sidebar" id="modernSidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">
+                    <span class="title-icon">🎯</span>
+                    <span class="title-text">开发工作台</span>
+                </div>
+                <button class="sidebar-collapse" id="sidebarCollapse">
+                    <span class="collapse-icon">‹</span>
+                </button>
+            </div>
+            
             <nav class="sidebar-nav">
-                <ul>
-                    <li class="nav-item active">
-                        <a href="/developer/dashboard" class="nav-link">
-                            <span class="nav-icon">📊</span>
-                            <span class="nav-text">工作台概览</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/apps" class="nav-link">
-                            <span class="nav-icon">📱</span>
-                            <span class="nav-text">JAR管理</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/apps/history" class="nav-link">
-                            <span class="nav-icon">📜</span>
-                            <span class="nav-text">历史调试</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/apps/debug" class="nav-link">
-                            <span class="nav-icon">🔧</span>
-                            <span class="nav-text">调试区</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/monitoring/apps" class="nav-link">
-                            <span class="nav-icon">📈</span>
-                            <span class="nav-text">应用监控</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/apps/logs" class="nav-link">
-                            <span class="nav-icon">📝</span>
-                            <span class="nav-text">日志查看</span>
-                        </a>
-                    </li>
-                    <li class="nav-divider"></li>
-                    <li class="nav-item">
-                        <a href="/profile" class="nav-link">
-                            <span class="nav-icon">👤</span>
-                            <span class="nav-text">个人档案</span>
-                        </a>
-                    </li>
-                </ul>
+                <div class="nav-section">
+                    <div class="section-title">主要功能</div>
+                    <ul class="nav-list">
+                        <li class="nav-item active">
+                            <a href="/developer/dashboard" class="nav-link">
+                                <span class="nav-icon">📊</span>
+                                <span class="nav-text">工作台概览</span>
+                                <span class="nav-badge">Hot</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/apps" class="nav-link">
+                                <span class="nav-icon">📱</span>
+                                <span class="nav-text">JAR管理</span>
+                                <span class="nav-count" th:text="${developerData.totalApplications ?: 0}">0</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/apps/debug" class="nav-link">
+                                <span class="nav-icon">🔧</span>
+                                <span class="nav-text">调试区</span>
+                                <span class="nav-count" th:text="${developerData.activeDebugSessions ?: 0}">0</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/monitoring/apps" class="nav-link">
+                                <span class="nav-icon">📈</span>
+                                <span class="nav-text">应用监控</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="section-title">工具箱</div>
+                    <ul class="nav-list">
+                        <li class="nav-item">
+                            <a href="/apps/history" class="nav-link">
+                                <span class="nav-icon">📜</span>
+                                <span class="nav-text">历史调试</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/apps/logs" class="nav-link">
+                                <span class="nav-icon">📝</span>
+                                <span class="nav-text">日志查看</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/terminal" class="nav-link">
+                                <span class="nav-icon">💻</span>
+                                <span class="nav-text">远程终端</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="section-title">个人中心</div>
+                    <ul class="nav-list">
+                        <li class="nav-item">
+                            <a href="/profile" class="nav-link">
+                                <span class="nav-icon">👤</span>
+                                <span class="nav-text">个人档案</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </nav>
+            
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="status-dot online"></span>
+                    <span class="status-text">在线</span>
+                </div>
+                <div class="quick-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">运行应用</span>
+                        <span class="stat-value" th:text="${developerData.runningApplications ?: 0}">0</span>
+                    </div>
+                </div>
+            </div>
         </aside>
 
-        <!-- 主内容区 -->
-        <main class="main-content">
-            <div class="dashboard-header">
-                <h1>研发工作台</h1>
-                <p>专注于应用开发、调试和监控</p>
+        <!-- 现代化主内容区 -->
+        <main class="modern-main-content">
+            <div class="content-header">
+                <div class="header-title">
+                    <h1 class="page-title">研发工作台</h1>
+                    <p class="page-subtitle">专注于应用开发、调试和监控的统一工作平台</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-primary" onclick="window.location.href='/apps/upload'">
+                        <span class="btn-icon">📤</span>
+                        <span>上传应用</span>
+                    </button>
+                    <button class="btn-secondary" onclick="refreshDashboard()">
+                        <span class="btn-icon">🔄</span>
+                        <span>刷新</span>
+                    </button>
+                </div>
             </div>
 
-            <!-- 状态面板 -->
-            <section class="dashboard-stats">
-                <div class="stat-card">
-                    <div class="stat-icon icon-primary icon-primary-color">📱</div>
-                    <div class="stat-info">
-                        <h3>应用状态</h3>
-                        <p>运行中应用: <span th:text="${developerData.runningApplications}" class="text-success-text">0</span></p>
-                        <p>停止应用: <span th:text="${developerData.stoppedApplications}" class="text-secondary-text">0</span></p>
+            <!-- 现代化统计面板 -->
+            <section class="modern-stats-container">
+                <div class="stats-grid">
+                    <div class="modern-stats-card running" onclick="filterApplications('running')">
+                        <div class="stats-card-content">
+                            <div class="stats-info">
+                                <div class="stats-label">运行中应用</div>
+                                <div class="stats-value">
+                                    <span class="stats-value-main count-up" th:text="${developerData.runningApplications ?: 0}">0</span>
+                                    <span class="stats-value-unit">个</span>
+                                </div>
+                                <div class="stats-trend">
+                                    <span class="trend-icon trend-up">↗</span>
+                                    <span>今日新增 2</span>
+                                </div>
+                            </div>
+                            <div class="stats-icon-container">
+                                <div class="stats-icon icon-pulse">📱</div>
+                            </div>
+                        </div>
+                        <div class="stats-mini-chart">
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                        </div>
+                        <div class="stats-tooltip">点击查看运行中的应用</div>
                     </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon icon-success icon-success-color">🔧</div>
-                    <div class="stat-info">
-                        <h3>调试会话</h3>
-                        <p>当前会话: <span th:text="${developerData.activeDebugSessions}" class="text-primary-text">0</span></p>
-                        <p>历史记录: <span th:text="${developerData.totalDebugSessions}" class="text-primary-text">0</span></p>
+                    
+                    <div class="modern-stats-card stopped" onclick="filterApplications('stopped')">
+                        <div class="stats-card-content">
+                            <div class="stats-info">
+                                <div class="stats-label">停止应用</div>
+                                <div class="stats-value">
+                                    <span class="stats-value-main count-up" th:text="${developerData.stoppedApplications ?: 0}">0</span>
+                                    <span class="stats-value-unit">个</span>
+                                </div>
+                                <div class="stats-trend">
+                                    <span class="trend-icon trend-down">↘</span>
+                                    <span>相比昨日</span>
+                                </div>
+                            </div>
+                            <div class="stats-icon-container">
+                                <div class="stats-icon">⏸️</div>
+                            </div>
+                        </div>
+                        <div class="stats-mini-chart">
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                        </div>
+                        <div class="stats-tooltip">点击查看停止的应用</div>
                     </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon icon-warning icon-warning-color">⚡</div>
-                    <div class="stat-info">
-                        <h3>资源使用</h3>
-                        <p>CPU使用率: <span th:text="${#numbers.formatDecimal(developerData.cpuUsage, 1, 2)} + '%'" class="text-warning-text">0%</span></p>
-                        <p>内存使用率: <span th:text="${#numbers.formatDecimal(developerData.memoryUsage, 1, 2)} + '%'" class="text-warning-text">0%</span></p>
+                    
+                    <div class="modern-stats-card starting" onclick="showDebugSessions()">
+                        <div class="stats-card-content">
+                            <div class="stats-info">
+                                <div class="stats-label">调试会话</div>
+                                <div class="stats-value">
+                                    <span class="stats-value-main count-up" th:text="${developerData.activeDebugSessions ?: 0}">0</span>
+                                    <span class="stats-value-unit">个</span>
+                                </div>
+                                <div class="stats-trend">
+                                    <span class="trend-icon trend-stable">→</span>
+                                    <span>活跃会话</span>
+                                </div>
+                            </div>
+                            <div class="stats-icon-container">
+                                <div class="stats-icon icon-spin">🔧</div>
+                            </div>
+                        </div>
+                        <div class="stats-mini-chart">
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                        </div>
+                        <div class="stats-tooltip">点击管理调试会话</div>
+                    </div>
+                    
+                    <div class="modern-stats-card total" onclick="showResourceMonitor()">
+                        <div class="stats-card-content">
+                            <div class="stats-info">
+                                <div class="stats-label">系统状态</div>
+                                <div class="stats-value">
+                                    <span class="stats-value-main count-up" th:text="${#numbers.formatDecimal(developerData.cpuUsage ?: 0, 1, 1)}">0.0</span>
+                                    <span class="stats-value-unit">% CPU</span>
+                                </div>
+                                <div class="stats-trend">
+                                    <span class="trend-icon trend-up">↗</span>
+                                    <span th:text="'内存 ' + ${#numbers.formatDecimal(developerData.memoryUsage ?: 0, 1, 1)} + '%'">内存 0.0%</span>
+                                </div>
+                            </div>
+                            <div class="stats-icon-container">
+                                <div class="stats-icon icon-bounce">⚡</div>
+                            </div>
+                        </div>
+                        <div class="stats-mini-chart">
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                        </div>
+                        <div class="stats-tooltip">点击查看系统监控</div>
                     </div>
                 </div>
             </section>
 
-            <!-- 最近调试时间线 -->
-            <section class="recent-activity">
-                <h2>最近调试活动</h2>
-                <div class="activity-timeline">
-                    <div class="activity-item">
-                        <div class="activity-icon">📱</div>
-                        <div class="activity-content">
-                            <h4>应用启动</h4>
-                            <p>应用 <strong>myapp-1.0.jar</strong> 启动成功</p>
-                            <span class="activity-time">5分钟前</span>
+            <!-- 内容网格布局 -->
+            <div class="content-grid">
+                <!-- 最近活动时间线 -->
+                <section class="activity-section">
+                    <div class="section-header">
+                        <h2 class="section-title">最近活动</h2>
+                        <div class="section-actions">
+                            <button class="btn-text" onclick="refreshActivity()">刷新</button>
+                            <button class="btn-text" onclick="showAllActivity()">查看全部</button>
                         </div>
                     </div>
                     
-                    <div class="activity-item">
-                        <div class="activity-icon">🔧</div>
-                        <div class="activity-content">
-                            <h4>调试会话</h4>
-                            <p>开始调试会话 <strong>debug-session-001</strong></p>
-                            <span class="activity-time">25分钟前</span>
+                    <div class="modern-activity-timeline">
+                        <!-- 使用Thymeleaf循环渲染活动记录 -->
+                        <div th:each="record, iterStat : ${developerData.recentDebugRecords}" 
+                             th:class="'timeline-item ' + 
+                                      (${record.status} == '成功' ? 'success' : 
+                                       ${record.status} == '失败' ? 'error' : 
+                                       ${record.status} == '开始' ? 'info' : 
+                                       'warning')"
+                             th:data-time="${record.timestamp}">
+                            <div class="timeline-marker">
+                                <span class="marker-icon" 
+                                      th:text="${record.action} == '应用启动' ? '📱' : 
+                                               ${record.action} == '调试会话' ? '🔧' : 
+                                               ${record.action} == '历史记录查看' ? '📜' : 
+                                               '❌'">📱</span>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-header">
+                                    <h4 class="timeline-title" 
+                                        th:text="${record.action} + 
+                                                 (${record.status} == '成功' ? '成功' : 
+                                                  ${record.status} == '失败' ? '失败' : 
+                                                  ${record.status} == '开始' ? '开始' : '')">应用启动成功</h4>
+                                    <span class="timeline-time" th:text="${record.timestamp}">5分钟前</span>
+                                </div>
+                                <p class="timeline-description">
+                                    <span th:if="${record.action} == '应用启动' and ${record.status} == '成功'">
+                                        应用 <strong class="highlight" th:text="${record.applicationName}">myapp-1.0.jar</strong> 启动成功
+                                    </span>
+                                    <span th:if="${record.action} == '应用启动' and ${record.status} == '失败'">
+                                        应用 <strong class="highlight" th:text="${record.applicationName}">broken-app-1.0.jar</strong> 启动失败，可能是端口被占用
+                                    </span>
+                                    <span th:if="${record.action} == '调试会话'">
+                                        开始调试应用 <strong class="highlight" th:text="${record.applicationName}">debug-session-001</strong>
+                                    </span>
+                                    <span th:if="${record.action} == '历史记录查看'">
+                                        查看应用 <strong class="highlight" th:text="${record.applicationName}">test-app-2.0.jar</strong> 的历史调试记录
+                                    </span>
+                                </p>
+                                <div class="timeline-tags">
+                                    <span class="tag" 
+                                          th:classappend="${record.status} == '成功' ? 'success' : 
+                                                         ${record.status} == '失败' ? 'error' : 
+                                                         ${record.status} == '开始' ? 'info' : ''"
+                                          th:text="${record.status}">成功</span>
+                                    <span class="tag" 
+                                          th:text="${record.action} == '应用启动' ? '启动' : 
+                                                   ${record.action} == '调试会话' ? '调试' : 
+                                                   ${record.action} == '历史记录查看' ? '历史' : 
+                                                   '其他'">启动</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 如果没有活动记录，显示默认信息 -->
+                        <div th:if="${#lists.isEmpty(developerData.recentDebugRecords)}" class="timeline-item info">
+                            <div class="timeline-marker">
+                                <span class="marker-icon">ℹ️</span>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-header">
+                                    <h4 class="timeline-title">暂无活动记录</h4>
+                                    <span class="timeline-time">刚刚</span>
+                                </div>
+                                <p class="timeline-description">
+                                    开始使用开发者工作台，这里将显示您的应用操作历史
+                                </p>
+                                <div class="timeline-tags">
+                                    <span class="tag">系统</span>
+                                    <span class="tag">提示</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="activity-item">
-                        <div class="activity-icon">📜</div>
-                        <div class="activity-content">
-                            <h4>历史记录</h4>
-                            <p>查看应用 <strong>test-app-2.0.jar</strong> 的历史调试记录</p>
-                            <span class="activity-time">2小时前</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- 快捷操作区 -->
-            <section class="quick-actions">
-                <h2>快捷操作</h2>
-                <div class="action-grid">
-                    <a href="/apps/upload" class="action-card">
-                        <div class="action-icon">📤</div>
-                        <h3>上传JAR包</h3>
-                        <p>上传新的Java应用程序</p>
-                    </a>
+                <!-- 现代化快捷操作区 -->
+                <section class="quick-actions-section">
+                    <div class="section-header">
+                        <h2 class="section-title">快捷操作</h2>
+                        <div class="section-actions">
+                            <button class="btn-text" onclick="customizeQuickActions()">自定义</button>
+                        </div>
+                    </div>
                     
-                    <a href="/apps" class="action-card">
-                        <div class="action-icon">⚡</div>
-                        <h3>启动应用</h3>
-                        <p>启动已上传的应用程序</p>
-                    </a>
-                    
-                    <a href="/apps/debug" class="action-card">
-                        <div class="action-icon">🔧</div>
-                        <h3>开始调试</h3>
-                        <p>创建新的调试会话</p>
-                    </a>
-                    
-                    <a href="/apps/logs" class="action-card">
-                        <div class="action-icon">📝</div>
-                        <h3>查看日志</h3>
-                        <p>查看应用运行日志</p>
-                    </a>
-                </div>
-            </section>
+                    <div class="modern-quick-actions">
+                        <a href="/apps/upload" class="quick-action-card primary" data-action="upload">
+                            <div class="action-background"></div>
+                            <div class="action-content">
+                                <div class="action-icon-wrapper">
+                                    <span class="action-icon">📤</span>
+                                    <div class="icon-glow"></div>
+                                </div>
+                                <div class="action-info">
+                                    <h3 class="action-title">上传JAR包</h3>
+                                    <p class="action-description">上传新的Java应用程序</p>
+                                    <div class="action-shortcut">Ctrl + U</div>
+                                </div>
+                            </div>
+                            <div class="action-arrow">→</div>
+                        </a>
+                        
+                        <a href="/apps" class="quick-action-card success" data-action="manage">
+                            <div class="action-background"></div>
+                            <div class="action-content">
+                                <div class="action-icon-wrapper">
+                                    <span class="action-icon">⚡</span>
+                                    <div class="icon-glow"></div>
+                                </div>
+                                <div class="action-info">
+                                    <h3 class="action-title">管理应用</h3>
+                                    <p class="action-description">启动、停止、重启应用</p>
+                                    <div class="action-shortcut">Ctrl + M</div>
+                                </div>
+                            </div>
+                            <div class="action-arrow">→</div>
+                        </a>
+                        
+                        <a href="/apps/debug" class="quick-action-card info" data-action="debug">
+                            <div class="action-background"></div>
+                            <div class="action-content">
+                                <div class="action-icon-wrapper">
+                                    <span class="action-icon">🔧</span>
+                                    <div class="icon-glow"></div>
+                                </div>
+                                <div class="action-info">
+                                    <h3 class="action-title">开始调试</h3>
+                                    <p class="action-description">创建新的调试会话</p>
+                                    <div class="action-shortcut">Ctrl + D</div>
+                                </div>
+                            </div>
+                            <div class="action-arrow">→</div>
+                        </a>
+                        
+                        <a href="/apps/logs" class="quick-action-card warning" data-action="logs">
+                            <div class="action-background"></div>
+                            <div class="action-content">
+                                <div class="action-icon-wrapper">
+                                    <span class="action-icon">📝</span>
+                                    <div class="icon-glow"></div>
+                                </div>
+                                <div class="action-info">
+                                    <h3 class="action-title">查看日志</h3>
+                                    <p class="action-description">实时查看应用日志</p>
+                                    <div class="action-shortcut">Ctrl + L</div>
+                                </div>
+                            </div>
+                            <div class="action-arrow">→</div>
+                        </a>
+                    </div>
+                </section>
+            </div>
         </main>
     </div>
 
     <script src="/js/dashboard.js"></script>
+    
+    <!-- 现代化仪表板JavaScript -->
+    <script>
+        // 全局变量
+        let dashboardData = {
+            runningApps: [[${developerData.runningApplications ?: 0}]],
+            stoppedApps: [[${developerData.stoppedApplications ?: 0}]],
+            debugSessions: [[${developerData.activeDebugSessions ?: 0}]],
+            cpuUsage: [[${developerData.cpuUsage ?: 0}]],
+            memoryUsage: [[${developerData.memoryUsage ?: 0}]]
+        };
+
+        // 初始化现代化仪表板
+        document.addEventListener('DOMContentLoaded', function() {
+            initModernDashboard();
+        });
+
+        function initModernDashboard() {
+            // 初始化侧边栏
+            initSidebar();
+            
+            // 初始化用户下拉菜单
+            initUserMenu();
+            
+            // 初始化统计卡片动画
+            initStatsCards();
+            
+            // 初始化搜索功能
+            initSearch();
+            
+            // 初始化快捷键
+            initKeyboardShortcuts();
+            
+            // 启动数据刷新
+            startDataRefresh();
+        }
+
+        // 侧边栏功能
+        function initSidebar() {
+            const sidebar = document.getElementById('modernSidebar');
+            const collapseBtn = document.getElementById('sidebarCollapse');
+            const mobileToggle = document.getElementById('mobileMenuToggle');
+            
+            collapseBtn?.addEventListener('click', function() {
+                sidebar.classList.toggle('collapsed');
+                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+            });
+            
+            mobileToggle?.addEventListener('click', function() {
+                sidebar.classList.toggle('mobile-open');
+            });
+            
+            // 恢复侧边栏状态
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                sidebar.classList.add('collapsed');
+            }
+        }
+
+        // 用户菜单功能
+        function initUserMenu() {
+            const userTrigger = document.querySelector('.user-trigger');
+            const userDropdown = document.querySelector('.user-dropdown');
+            
+            userTrigger?.addEventListener('click', function(e) {
+                e.stopPropagation();
+                userDropdown.classList.toggle('show');
+            });
+            
+            document.addEventListener('click', function() {
+                userDropdown?.classList.remove('show');
+            });
+        }
+
+        // 统计卡片功能
+        function initStatsCards() {
+            const cards = document.querySelectorAll('.modern-stats-card');
+            
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.classList.add('stats-highlight');
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.classList.remove('stats-highlight');
+                });
+            });
+            
+            // 触发数值计数动画
+            setTimeout(() => {
+                animateCounters();
+            }, 500);
+        }
+
+        // 数值计数动画
+        function animateCounters() {
+            const counters = document.querySelectorAll('.count-up');
+            
+            counters.forEach(counter => {
+                const target = parseInt(counter.textContent) || 0;
+                const duration = 1000;
+                const step = target / (duration / 16);
+                let current = 0;
+                
+                counter.classList.add('animating');
+                
+                const timer = setInterval(() => {
+                    current += step;
+                    if (current >= target) {
+                        counter.textContent = target;
+                        counter.classList.remove('animating');
+                        clearInterval(timer);
+                    } else {
+                        counter.textContent = Math.floor(current);
+                    }
+                }, 16);
+            });
+        }
+
+        // 搜索功能
+        function initSearch() {
+            const searchInput = document.querySelector('.search-input');
+            const searchBtn = document.querySelector('.search-btn');
+            
+            searchInput?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch(this.value);
+                }
+            });
+            
+            searchBtn?.addEventListener('click', function() {
+                performSearch(searchInput.value);
+            });
+        }
+
+        function performSearch(query) {
+            if (!query.trim()) return;
+            
+            // 这里可以实现搜索逻辑
+            console.log('搜索:', query);
+            // 可以跳转到相应页面或显示搜索结果
+            window.location.href = `/apps?search=${encodeURIComponent(query)}`;
+        }
+
+        // 快捷键功能
+        function initKeyboardShortcuts() {
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey) {
+                    switch(e.key) {
+                        case 'u':
+                            e.preventDefault();
+                            window.location.href = '/apps/upload';
+                            break;
+                        case 'm':
+                            e.preventDefault();
+                            window.location.href = '/apps';
+                            break;
+                        case 'd':
+                            e.preventDefault();
+                            window.location.href = '/apps/debug';
+                            break;
+                        case 'l':
+                            e.preventDefault();
+                            window.location.href = '/apps/logs';
+                            break;
+                    }
+                }
+            });
+        }
+
+        // 统计卡片点击事件
+        function filterApplications(status) {
+            window.location.href = `/apps?filter=${status}`;
+        }
+
+        function showDebugSessions() {
+            window.location.href = '/apps/debug';
+        }
+
+        function showResourceMonitor() {
+            window.location.href = '/monitoring/apps';
+        }
+
+        // 仪表板刷新
+        function refreshDashboard() {
+            location.reload();
+        }
+
+        // 活动相关功能
+        function refreshActivity() {
+            // 这里可以通过AJAX刷新活动数据
+            console.log('刷新活动数据');
+        }
+
+        function showAllActivity() {
+            window.location.href = '/apps/history';
+        }
+
+        // 自定义快捷操作
+        function customizeQuickActions() {
+            alert('自定义功能开发中...');
+        }
+
+        // 数据自动刷新
+        function startDataRefresh() {
+            setInterval(async () => {
+                try {
+                    const response = await fetch('/api/developer/dashboard/stats');
+                    if (response.ok) {
+                        const data = await response.json();
+                        updateStats(data);
+                    } else {
+                        console.warn('数据刷新失败: HTTP', response.status);
+                    }
+                } catch (error) {
+                    console.error('数据刷新失败:', error);
+                }
+            }, 30000); // 30秒刷新一次
+        }
+
+        // 更新统计数据
+        function updateStats(data) {
+            // 更新运行中应用数据
+            const runningCard = document.querySelector('.modern-stats-card.running .stats-value-main');
+            if (runningCard && runningCard.textContent != data.runningApplications) {
+                animateNumberChange(runningCard, data.runningApplications);
+            }
+            
+            // 更新停止应用数据
+            const stoppedCard = document.querySelector('.modern-stats-card.stopped .stats-value-main');
+            if (stoppedCard && stoppedCard.textContent != data.stoppedApplications) {
+                animateNumberChange(stoppedCard, data.stoppedApplications);
+            }
+            
+            // 更新调试会话数据
+            const debugCard = document.querySelector('.modern-stats-card.starting .stats-value-main');
+            if (debugCard && debugCard.textContent != data.activeDebugSessions) {
+                animateNumberChange(debugCard, data.activeDebugSessions);
+            }
+            
+            // 更新CPU使用率数据
+            const cpuCard = document.querySelector('.modern-stats-card.total .stats-value-main');
+            if (cpuCard && cpuCard.textContent != data.cpuUsage.toFixed(1)) {
+                animateNumberChange(cpuCard, data.cpuUsage.toFixed(1));
+            }
+            
+            // 更新内存使用率显示
+            const memoryTrend = document.querySelector('.modern-stats-card.total .stats-trend span:last-child');
+            if (memoryTrend) {
+                memoryTrend.textContent = `内存 ${data.memoryUsage.toFixed(1)}%`;
+            }
+            
+            // 显示更新动画
+            const cards = document.querySelectorAll('.modern-stats-card');
+            cards.forEach(card => {
+                card.classList.add('stats-updated');
+                setTimeout(() => {
+                    card.classList.remove('stats-updated');
+                }, 800);
+            });
+        }
+        
+        // 数字变化动画
+        function animateNumberChange(element, newValue) {
+            const currentValue = parseFloat(element.textContent) || 0;
+            const targetValue = parseFloat(newValue) || 0;
+            const difference = targetValue - currentValue;
+            const duration = 1000;
+            const startTime = performance.now();
+            
+            element.classList.add('updating');
+            
+            function updateNumber(timestamp) {
+                const elapsed = timestamp - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // 使用缓动函数
+                const easedProgress = 1 - Math.pow(1 - progress, 3);
+                const currentNum = currentValue + (difference * easedProgress);
+                
+                if (Number.isInteger(targetValue)) {
+                    element.textContent = Math.round(currentNum);
+                } else {
+                    element.textContent = currentNum.toFixed(1);
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateNumber);
+                } else {
+                    element.textContent = targetValue;
+                    element.classList.remove('updating');
+                }
+            }
+            
+            requestAnimationFrame(updateNumber);
+        }
+    </script>
 </body>
 </html>

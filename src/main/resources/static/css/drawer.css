@@ -240,20 +240,26 @@
 .drawer-close {
     width: 32px;
     height: 32px;
-    border: none;
-    background: var(--background-hover, #f3f4f6);
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
     border-radius: 6px;
-    color: var(--text-color-secondary, #6b7280);
+    color: #374151;
     cursor: pointer;
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    font-size: 16px;
+    font-weight: bold;
+    z-index: 9999;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .drawer-close:hover {
-    background: var(--danger-light, #fee2e2);
-    color: var(--danger-color, #ef4444);
+    background: #fee2e2;
+    color: #ef4444;
+    border-color: #f87171;
 }
 
 /* 抽屉内容 */
@@ -1383,22 +1389,26 @@
 .drawer-close {
     width: 36px;
     height: 36px;
-    border: none;
-    background: var(--gray-100);
-    color: var(--gray-600);
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    color: #374151;
     border-radius: 8px;
     cursor: pointer;
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
     font-size: 18px;
     font-weight: bold;
     transition: all 0.2s ease;
+    z-index: 9999;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .drawer-close:hover {
-    background: var(--error-100);
-    color: var(--error-600);
+    background: #fee2e2;
+    color: #ef4444;
+    border-color: #f87171;
     transform: scale(1.05);
 }
 

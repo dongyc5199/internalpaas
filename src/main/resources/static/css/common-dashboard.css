@@ -165,13 +165,19 @@
     background-color: var(--sidebar-background);
     border-right: 1px solid var(--border-color);
     box-shadow: var(--sidebar-shadow);
-    transition: all var(--transition-normal);
+    transition: width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), all var(--transition-normal);
     overflow-y: auto;
+    overflow-x: hidden;
     position: fixed;
     top: 64px;
     left: 0;
     height: calc(100vh - 64px);
     z-index: 50;
+}
+
+/* 侧边栏收起状态 */
+.sidebar.collapsed {
+    width: 60px !important;
 }
 
 /* 自定义滚动条 */
@@ -223,6 +229,128 @@
     margin: 0 0.5rem;
     transition: all var(--transition-fast);
     position: relative;
+    white-space: nowrap;
+}
+
+/* 收起状态下的导航链接 */
+.sidebar.collapsed .nav-link {
+    justify-content: center;
+    padding: 0.75rem 0.5rem; /* 收起状态下减少水平padding给图标留空间 */
+    margin: 0 0.25rem;
+    min-height: 48px; /* 确保高度一致 */
+    box-sizing: border-box;
+}
+
+/* 收起状态下图标居中并强制显示 */
+.sidebar.collapsed .nav-icon {
+    margin-right: 0 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    background: #f8f9fa !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 8px !important;
+}
+
+/* 收起状态下Font Awesome图标强制显示 */
+.sidebar.collapsed .nav-icon i {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: inline-block !important;
+    color: #495057 !important;
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    font-size: 1.2rem !important;
+}
+
+/* 收起状态下隐藏文字 */
+.sidebar.collapsed .nav-text {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+/* 正常状态下显示文字 */
+.sidebar .nav-text {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition: opacity 0.3s ease 0.1s, visibility 0.3s ease 0.1s;
+}
+
+/* 确保图标始终可见 */
+.sidebar .nav-icon {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: inline-block !important;
+}
+
+/* 收起状态下的导航链接 */
+.sidebar.collapsed .nav-link {
+    justify-content: center !important;
+    padding: 0.75rem 0.5rem !important; /* 收起状态下减少水平padding给图标留空间 */
+    margin: 0 0.25rem !important;
+    min-height: 48px !important; /* 确保高度一致 */
+    box-sizing: border-box !important;
+}
+
+/* 收起状态下图标居中 */
+.sidebar.collapsed .nav-icon {
+    margin-right: 0 !important;
+}
+
+/* 收起状态下的工具提示 */
+.sidebar.collapsed .nav-link {
+    position: relative;
+}
+
+.sidebar.collapsed .nav-link::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 70px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--text-color);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--border-radius-md);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1100;
+    pointer-events: none;
+}
+
+.sidebar.collapsed .nav-link:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+.sidebar.collapsed .nav-link::before {
+    content: '';
+    position: absolute;
+    left: 64px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border: 6px solid transparent;
+    border-right-color: var(--text-color);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1100;
+}
+
+.sidebar.collapsed .nav-link:hover::before {
+    opacity: 1;
+    visibility: visible;
 }
 
 .nav-link:hover {
@@ -264,6 +392,20 @@
     background-color: var(--background-color);
     margin-left: 260px;
     min-height: calc(100vh - 64px);
+    transition: margin-left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* 侧边栏收起时主内容区域调整 */
+.sidebar-collapsed .main-content,
+body.sidebar-collapsed .main-content,
+.sidebar-collapsed .content-area,
+body.sidebar-collapsed .content-area {
+    margin-left: 60px !important;
+}
+
+/* 侧边栏收起展开按钮 - 已废弃，使用modern-sidebar.css中的箭头按钮 */
+.sidebar-toggle {
+    display: none !important; /* 隐藏旧的侧边栏切换按钮 */
 }
 
 /* 自定义滚动条 */
@@ -1499,9 +1641,14 @@
         flex-direction: column;
     }
     
+    /* 移动端隐藏旧的侧边栏收起展开按钮 */
+    .sidebar-toggle {
+        display: none !important; /* 始终隐藏旧的侧边栏切换按钮 */
+    }
+    
     .sidebar {
         position: relative;
-        width: 100%;
+        width: 100% !important; /* 移动端始终全宽 */
         height: auto;
         top: 0;
         left: 0;
@@ -1510,7 +1657,7 @@
     }
     
     .main-content {
-        margin-left: 0;
+        margin-left: 0 !important; /* 移动端内容始终全宽 */
         min-height: auto;
         padding: 1rem;
     }

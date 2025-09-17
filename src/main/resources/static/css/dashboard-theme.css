@@ -143,6 +143,17 @@
     border-color: #333333 !important;
 }
 
+/* 暗色主题下的侧边栏收起展开功能支持 */
+.theme-dark .sidebar.collapsed .nav-link::after {
+    background: #374151 !important;
+    color: #e5e7eb !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.theme-dark .sidebar.collapsed .nav-link::before {
+    border-right-color: #374151 !important;
+}
+
 /* 管理员工作台主题 */
 .admin-theme {
     --primary-color: #1976d2;
