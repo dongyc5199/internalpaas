@@ -1,25 +1,18 @@
-/**
- * ===========================================
- * ⚡ MODERN NAVIGATION CONTROLLER
- * ===========================================
- * 现代化导航栏JavaScript控制器
- * 
- * 功能特性:
- * 🔄 智能状态管理
- * 🎨 主题切换控制  
- * 📱 响应式行为
- * ⚡ 高性能动画
- * 💾 状态持久化
- * 🎯 事件处理
- * 
- * Dependencies: 无外部依赖
- * Browser Support: ES6+ (IE11+)
- * 
- * @author Dev Debug Platform Team
- * @version 2.0.0
- * @updated 2025-09-16
- * ===========================================
- */
+/*
+===============================================
+🎯 MODERN NAVIGATION CONTROLLER
+===============================================
+现代化导航栏JavaScript控制器 - Dev Debug Platform
+特性: 响应式设计、主题切换、流畅动画、无障碍支持
+版本: 1.0.0
+更新: 2025-09-17
+===============================================
+*/
+
+// 防止重复声明保护
+if (typeof window.ModernNavigationController !== 'undefined') {
+    console.warn('⚠️ ModernNavigationController已存在，跳过重复声明');
+} else {
 
 class ModernNavigationController {
     constructor(options = {}) {
@@ -506,6 +499,9 @@ class ModernNavigationController {
      * 🎯 处理导航项点击
      */
     handleNavItemClick(event, linkElement) {
+        // 阻止默认链接行为
+        event.preventDefault();
+
         // 移除所有活跃状态
         this.elements.navLinks?.forEach(link => {
             link.classList.remove('active');
@@ -613,9 +609,22 @@ class ModernNavigationController {
             this.elements.toggle.setAttribute('aria-expanded', !this.state.sidebarCollapsed);
         }
 
-        // 为侧边栏添加ARIA属性
+        // 为侧边栏添加ARIA属性和tabindex管理
         if (this.elements.sidebar) {
-            this.elements.sidebar.setAttribute('aria-hidden', this.state.sidebarCollapsed);
+            const isHidden = this.state.sidebarCollapsed;
+            this.elements.sidebar.setAttribute('aria-hidden', isHidden);
+
+            // 管理侧边栏内链接的可访问性
+            const sidebarLinks = this.elements.sidebar.querySelectorAll('a, button');
+            sidebarLinks.forEach(link => {
+                if (isHidden) {
+                    link.setAttribute('tabindex', '-1');
+                    link.setAttribute('aria-hidden', 'true');
+                } else {
+                    link.removeAttribute('tabindex');
+                    link.removeAttribute('aria-hidden');
+                }
+            });
         }
 
         // 更新ARIA状态
@@ -631,7 +640,20 @@ class ModernNavigationController {
         }
         
         if (this.elements.sidebar) {
-            this.elements.sidebar.setAttribute('aria-hidden', this.state.sidebarCollapsed);
+            const isHidden = this.state.sidebarCollapsed;
+            this.elements.sidebar.setAttribute('aria-hidden', isHidden);
+
+            // 管理侧边栏内链接的可访问性
+            const sidebarLinks = this.elements.sidebar.querySelectorAll('a, button');
+            sidebarLinks.forEach(link => {
+                if (isHidden) {
+                    link.setAttribute('tabindex', '-1');
+                    link.setAttribute('aria-hidden', 'true');
+                } else {
+                    link.removeAttribute('tabindex');
+                    link.removeAttribute('aria-hidden');
+                }
+            });
         }
     }
 
@@ -876,6 +898,11 @@ class ModernNavigationController {
     }
 }
 
+// 将类添加到window对象以便后续检查
+window.ModernNavigationController = ModernNavigationController;
+
+} // 结束重复声明保护
+
 // ===========================================
 // 🚀 自动初始化
 // ===========================================
@@ -905,6 +932,3 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = ModernNavigationController;
 }
 
-if (typeof window !== 'undefined') {
-    window.ModernNavigationController = ModernNavigationController;
-}

@@ -1,20 +1,13 @@
-/**
- * ===========================================
- * 🚀 MODERN NAVIGATION SYSTEM
- * ===========================================
- * 现代化导航栏组件 - Dev Debug Platform
- * 
- * 特性:
- * ✨ 流畅的展开/收起动画
- * 🎨 响应式主题支持 
- * 📱 移动端自适应
- * ⚡ 智能状态管理
- * 🎯 无障碍友好
- * 
- * 作者: Dev Debug Platform Team
- * 更新: 2025-09-16
- * ===========================================
- */
+/*
+===============================================
+🎯 MODERN NAVIGATION STYLES
+===============================================
+现代化导航栏样式 - Dev Debug Platform
+特性: 响应式设计、主题切换、流畅动画、无障碍支持
+版本: 1.0.0
+更新: 2025-09-17
+===============================================
+*/
 
 /* ===========================================
    🎨 CSS 变量定义 - 主题系统
@@ -990,4 +983,58 @@
 
 .theme-switching * {
     transition: none !important;
+}
+
+/* ===========================================
+   🔄 内容加载动画
+   =========================================== */
+
+.loading-spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.loading-spinner.active {
+    display: flex;
+}
+
+.loading-spinner .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--nav-border-light);
+    border-top: 3px solid var(--nav-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Spinner动画 */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* 内容区域加载状态 */
+.modern-content-area.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* 内容包装器加载状态 */
+.content-wrapper {
+    transition: opacity var(--nav-transition-normal) var(--nav-ease);
+}
+
+.content-wrapper.loading {
+    opacity: 0.3;
 }

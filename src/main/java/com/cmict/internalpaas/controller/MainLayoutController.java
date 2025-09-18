@@ -113,7 +113,7 @@ public class MainLayoutController {
             
             StringBuilder htmlBuilder = new StringBuilder();
             
-            // 构建完整的仪表板内容，完全参考admin-dashboard.html的结构和样式
+            // 构建完整的仪表板内容，采用现代化布局结构和样式
             htmlBuilder.append("<div class=\"content-header\">");
             htmlBuilder.append("  <div class=\"page-title-group\">");
             htmlBuilder.append("    <h1 class=\"page-title\">管理员工作台</h1>");
