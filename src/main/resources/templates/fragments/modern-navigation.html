@@ -1,15 +1,5 @@
 <!DOCTYPE html>
-<!--
-===============================================
-🎯 MODERN NAVIGATION TEMPLATE
-===============================================
-现代化导航栏HTML模板 - Dev Debug Platform
-特性: 响应式设计、主题切换、流畅动画、无障碍支持
-更新: 2025-09-16
-===============================================
--->
-<html xmlns:th="http://www.thymeleaf.org" 
-      xmlns:sec="http://www.thymeleaf.org/extras/springsecurity">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity">
 
 <!-- 🎯 现代化顶部导航栏 -->
 <nav th:fragment="modern-top-nav" class="modern-top-nav">
@@ -85,19 +75,13 @@
                         data-bs-toggle="dropdown" 
                         aria-expanded="false"
                         aria-label="用户菜单">
-                    <div class="nav-user-avatar" th:if="${#authentication.name}">
-                        <span th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</span>
+                    <div class="nav-user-avatar">
+                        <span th:text="${#strings.substring(username ?: 'A', 0, 1).toUpperCase()}">U</span>
                     </div>
                     <div class="nav-user-info">
-                        <div class="nav-user-name" 
-                             th:text="${#authentication.name ?: 'Guest'}"
-                             sec:authentication="name">用户名</div>
-                        <div class="nav-user-role" 
-                             th:text="${userRole ?: 'Developer'}"
-                             sec:authorize="hasRole('ADMIN')">管理员</div>
-                        <div class="nav-user-role" 
-                             th:text="'开发者'"
-                             sec:authorize="hasRole('DEVELOPER')">开发者</div>
+                        <div class="nav-user-name" th:text="${username ?: 'Guest'}">用户名</div>
+                        <div class="nav-user-role" sec:authorize="hasRole('ADMIN')">管理员</div>
+                        <div class="nav-user-role" sec:authorize="hasRole('DEVELOPER')">开发者</div>
                     </div>
                     <i class="fas fa-chevron-down dropdown-arrow"></i>
                 </button>
@@ -156,8 +140,8 @@
                 
                 <!-- 工作台 -->
                 <div class="modern-nav-item">
-                    <a href="/" 
-                       class="modern-nav-link" 
+                    <a href="#dashboard"
+                       class="modern-nav-link"
                        data-nav-id="dashboard"
                        th:classappend="${currentPage == 'dashboard'} ? 'active' : ''">
                         <div class="modern-nav-icon">
@@ -360,15 +344,13 @@
         <!-- 用户信息区域 -->
         <div class="nav-user-section">
             <div class="nav-user-profile">
-                <div class="nav-user-avatar" th:if="${#authentication.name}">
-                    <span th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">U</span>
+                <div class="nav-user-avatar">
+                    <span th:text="${#strings.substring(username ?: 'A', 0, 1).toUpperCase()}">U</span>
                 </div>
                 <div class="nav-user-info">
-                    <div class="nav-user-name" 
-                         th:text="${#authentication.name ?: 'Guest'}"
-                         sec:authentication="name">用户名</div>
-                    <div class="nav-user-role" 
-                         th:text="${userRole ?: '开发者'}">开发者</div>
+                    <div class="nav-user-name" th:text="${username ?: 'Guest'}">用户名</div>
+                    <div class="nav-user-role" sec:authorize="hasRole('ADMIN')">管理员</div>
+                    <div class="nav-user-role" sec:authorize="hasRole('DEVELOPER')">开发者</div>
                 </div>
             </div>
         </div>
@@ -380,8 +362,14 @@
 
 <!-- 🎯 现代化内容区域包装器 -->
 <main th:fragment="modern-content-area" class="modern-content-area" id="modernContentArea">
-    <div class="content-wrapper" th:insert="${contentTemplate}">
-        <!-- 动态内容将在这里加载 -->
+    <!-- 加载动画 -->
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- 内容容器 -->
+    <div class="content-wrapper" id="contentWrapper">
+        <!-- 内容将由JavaScript动态加载 -->
     </div>
 </main>
 
