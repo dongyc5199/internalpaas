@@ -1618,11 +1618,9 @@
             // 绑定侧边栏切换事件
             const toggleButton = document.querySelector('.sidebar-collapse');
             if (toggleButton) {
-                console.log('找到侧边栏切换按钮，绑定事件');
                 
                 // 绑定事件处理器
                 toggleButton.addEventListener('click', function(e) {
-                    console.log('侧边栏切换按钮被点击');
                     e.preventDefault();
                     e.stopPropagation();
                     toggleSidebar();
@@ -4904,7 +4902,7 @@
     <script>
         // 现代导航栏集成初始化
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 现代导航栏集成初始化开始...');
+            //console.log('🚀 现代导航栏集成初始化开始...');
             
             // 用户菜单切换功能
             window.toggleUserMenu = function() {

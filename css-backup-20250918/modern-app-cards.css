@@ -554,6 +554,17 @@
     font-size: 18px;
 }
 
+/* 当section-title包含图标时，隐藏默认的before图标 */
+.section-title:has(.section-icon)::before {
+    display: none;
+}
+
+.section-icon {
+    font-size: 18px !important;
+    margin-right: 8px !important;
+    color: var(--primary-color, #3b82f6) !important;
+}
+
 .section-actions {
     display: flex !important;
     gap: 12px !important;
@@ -628,4 +639,89 @@
     background: #2563eb !important;
     transform: translateY(-2px) !important;
     box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* ================================================================
+ * 📋 页面标题布局样式
+ * ================================================================ */
+
+/* 内容头部容器 */
+.content-header {
+    margin-bottom: 24px !important;
+    margin-top: 0 !important;
+    padding: 16px 0 16px 0 !important;
+    border-bottom: 1px solid var(--app-card-border, #e5e7eb) !important;
+    position: relative !important;
+    z-index: 2 !important;
+    background: var(--app-card-bg, #ffffff) !important;
+}
+
+/* 页面标题组 */
+.page-title-group {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 16px !important;
+}
+
+/* 页面标题样式 */
+.page-title {
+    font-size: 32px !important;
+    font-weight: 700 !important;
+    color: var(--text-primary, #111827) !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+    line-height: 1.2 !important;
+}
+
+/* 页面标题图标 */
+.page-title i {
+    font-size: 28px !important;
+    color: var(--primary-color, #3b82f6) !important;
+    background: linear-gradient(135deg, var(--primary-color, #3b82f6), #60a5fa) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
+/* 页面副标题 */
+.page-subtitle {
+    font-size: 16px !important;
+    color: var(--text-secondary, #6b7280) !important;
+    margin: 8px 0 0 0 !important;
+    line-height: 1.5 !important;
+}
+
+/* 页面操作按钮组 */
+.page-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .content-header {
+        margin-bottom: 16px !important;
+        padding: 12px 0 12px 0 !important;
+    }
+
+    .page-title {
+        font-size: 28px !important;
+        gap: 12px !important;
+    }
+
+    .page-title i {
+        font-size: 24px !important;
+    }
+
+    .page-title-group {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+    }
 }

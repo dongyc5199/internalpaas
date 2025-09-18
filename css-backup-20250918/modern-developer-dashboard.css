@@ -308,21 +308,8 @@ body.modern-dashboard-body {
     overflow: hidden;
 }
 
-/* 📑 侧边栏重设计 */
-.modern-sidebar {
-    width: var(--sidebar-width);
-    background: var(--bg-secondary);
-    border-right: 1px solid var(--border-color);
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    top: var(--header-height);
-    left: 0;
-    height: calc(100vh - var(--header-height));
-    z-index: var(--z-sidebar);
-    transition: transform 0.3s ease;
-}
+/* 📑 侧边栏重设计 - 已迁移到modern-navigation.css */
+/* .modern-sidebar样式定义已移至modern-navigation.css统一管理 */
 
 .sidebar-content {
     flex: 1;
@@ -549,13 +536,7 @@ body.modern-dashboard-body {
         padding: 24px;
     }
     
-    .modern-sidebar {
-        transform: translateX(-100%);
-    }
-    
-    .modern-sidebar.open {
-        transform: translateX(0);
-    }
+    /* .modern-sidebar 移动端样式已移至modern-navigation.css */
     
     .sidebar-toggle {
         display: block; /* 移动端显示侧边栏切换按钮 */
@@ -609,10 +590,7 @@ body.modern-dashboard-body {
         min-height: calc(100vh - 60px);
     }
     
-    .modern-sidebar {
-        top: 60px;
-        height: calc(100vh - 60px);
-    }
+    /* .modern-sidebar 小屏幕样式已移至modern-navigation.css */
     
     .page-title {
         font-size: 20px;

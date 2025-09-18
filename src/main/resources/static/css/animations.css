@@ -1,0 +1,718 @@
+/* ================================================================
+ * Dev Debug Platform - 动画与交互优化
+ * 版本: v1.0
+ * 提供流畅的动画效果和交互反馈
+ * ================================================================ */
+
+/* 🎭 全局动画变量 */
+:root {
+  /* 动画持续时间 */
+  --duration-instant: 0ms;
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --duration-slower: 750ms;
+
+  /* 缓动函数 */
+  --ease-linear: linear;
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-elastic: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* 弹簧动画 */
+  --spring-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --spring-medium: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --spring-bouncy: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+}
+
+/* 🚀 页面加载动画 */
+@keyframes pageLoad {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-container {
+  animation: pageLoad var(--duration-slow) var(--ease-out);
+}
+
+/* 🎯 导航动画 */
+.modern-top-nav {
+  animation: slideDown var(--duration-normal) var(--ease-out);
+}
+
+@keyframes slideDown {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 侧边栏展开/收起动画 */
+.modern-sidebar {
+  transition: all var(--duration-normal) var(--spring-soft);
+}
+
+.modern-sidebar.collapsed {
+  animation: sidebarCollapse var(--duration-normal) var(--spring-soft);
+}
+
+@keyframes sidebarCollapse {
+  0% {
+    width: var(--sidebar-width);
+  }
+  100% {
+    width: var(--sidebar-width-collapsed);
+  }
+}
+
+/* 导航链接悬停动画 */
+.nav-link {
+  position: relative;
+  transition: all var(--duration-fast) var(--ease-out);
+  overflow: hidden;
+}
+
+.nav-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--color-primary-ultra-light), transparent);
+  transition: left var(--duration-normal) var(--ease-out);
+}
+
+.nav-link:hover::before {
+  left: 100%;
+}
+
+.nav-link.active {
+  animation: navLinkActive var(--duration-normal) var(--spring-bouncy);
+}
+
+@keyframes navLinkActive {
+  0% {
+    transform: translateX(-5px);
+    background-color: transparent;
+  }
+  50% {
+    transform: translateX(2px);
+    background-color: var(--color-primary-ultra-light);
+  }
+  100% {
+    transform: translateX(0);
+    background-color: var(--color-primary-soft);
+  }
+}
+
+/* 🎴 统计卡片动画 */
+.modern-stats-card {
+  animation: cardEntrance var(--duration-slow) var(--spring-soft);
+  transition: all var(--duration-normal) var(--spring-soft);
+}
+
+.modern-stats-card:nth-child(1) { animation-delay: 0ms; }
+.modern-stats-card:nth-child(2) { animation-delay: 100ms; }
+.modern-stats-card:nth-child(3) { animation-delay: 200ms; }
+.modern-stats-card:nth-child(4) { animation-delay: 300ms; }
+
+@keyframes cardEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 卡片悬停动画 */
+.modern-stats-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: var(--shadow-xl);
+}
+
+.modern-stats-card:hover .stats-icon {
+  animation: iconPulse var(--duration-slower) var(--ease-in-out) infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* 数值更新动画 */
+.stats-value-main.updating {
+  animation: numberUpdate var(--duration-normal) var(--spring-bouncy);
+}
+
+@keyframes numberUpdate {
+  0% {
+    transform: scale(1);
+    color: var(--text-primary);
+  }
+  25% {
+    transform: scale(1.15);
+    color: var(--color-primary);
+  }
+  50% {
+    transform: scale(0.95);
+    color: var(--color-primary-dark);
+  }
+  100% {
+    transform: scale(1);
+    color: var(--text-primary);
+  }
+}
+
+/* 趋势指示器动画 */
+.trend-up {
+  animation: trendUp var(--duration-slow) var(--spring-bouncy);
+}
+
+.trend-down {
+  animation: trendDown var(--duration-slow) var(--spring-bouncy);
+}
+
+@keyframes trendUp {
+  0% {
+    transform: translateY(5px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes trendDown {
+  0% {
+    transform: translateY(-5px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 🎨 按钮动画 */
+.btn {
+  position: relative;
+  overflow: hidden;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width var(--duration-normal) var(--ease-out),
+              height var(--duration-normal) var(--ease-out);
+}
+
+.btn:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn:active {
+  transform: translateY(0);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+/* 按钮特殊效果 */
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* 🏃 快捷操作卡片动画 */
+.quick-action-card {
+  transition: all var(--duration-normal) var(--spring-soft);
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-action-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left var(--duration-slow) var(--ease-out);
+}
+
+.quick-action-card:hover::before {
+  left: 100%;
+}
+
+.quick-action-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-xl);
+}
+
+.quick-action-card:hover .action-icon {
+  animation: actionIconBounce var(--duration-normal) var(--spring-bouncy);
+}
+
+@keyframes actionIconBounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+/* 🎭 时间线动画 */
+.timeline-item {
+  animation: timelineSlide var(--duration-slow) var(--spring-soft);
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.timeline-item:nth-child(1) { animation-delay: 0ms; }
+.timeline-item:nth-child(2) { animation-delay: 150ms; }
+.timeline-item:nth-child(3) { animation-delay: 300ms; }
+.timeline-item:nth-child(4) { animation-delay: 450ms; }
+
+@keyframes timelineSlide {
+  0% {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.timeline-marker {
+  position: relative;
+  transition: all var(--duration-normal) var(--spring-soft);
+}
+
+.timeline-item:hover .timeline-marker {
+  transform: scale(1.1);
+}
+
+.timeline-marker::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: var(--color-primary-ultra-light);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: all var(--duration-normal) var(--ease-out);
+  z-index: -1;
+}
+
+.timeline-item:hover .timeline-marker::before {
+  width: 150%;
+  height: 150%;
+}
+
+/* 📈 迷你图表动画 */
+.mini-chart-bar {
+  animation: chartGrow var(--duration-slower) var(--spring-soft);
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.mini-chart-bar:nth-child(1) { animation-delay: 0ms; }
+.mini-chart-bar:nth-child(2) { animation-delay: 50ms; }
+.mini-chart-bar:nth-child(3) { animation-delay: 100ms; }
+.mini-chart-bar:nth-child(4) { animation-delay: 150ms; }
+.mini-chart-bar:nth-child(5) { animation-delay: 200ms; }
+.mini-chart-bar:nth-child(6) { animation-delay: 250ms; }
+.mini-chart-bar:nth-child(7) { animation-delay: 300ms; }
+.mini-chart-bar:nth-child(8) { animation-delay: 350ms; }
+
+@keyframes chartGrow {
+  0% {
+    height: 0;
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0.8;
+  }
+}
+
+.modern-stats-card:hover .mini-chart-bar {
+  animation: chartPulse var(--duration-slow) var(--ease-in-out) infinite;
+}
+
+@keyframes chartPulse {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.1);
+  }
+}
+
+/* 🔄 加载动画 */
+.loading-spinner {
+  animation: spin var(--duration-slower) linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 骨架屏动画 */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-tertiary) 50%, var(--bg-secondary) 75%);
+  background-size: 200% 100%;
+  animation: skeleton var(--duration-slower) ease-in-out infinite;
+}
+
+@keyframes skeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* 💫 特殊效果动画 */
+.sparkle {
+  position: relative;
+}
+
+.sparkle::before {
+  content: '✨';
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  font-size: 12px;
+  animation: sparkleFloat var(--duration-slower) ease-in-out infinite;
+}
+
+@keyframes sparkleFloat {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(-10px) rotate(180deg);
+    opacity: 1;
+  }
+}
+
+/* 🎊 成功动画 */
+.success-flash {
+  animation: successFlash var(--duration-normal) var(--ease-out);
+}
+
+@keyframes successFlash {
+  0% {
+    background-color: var(--bg-primary);
+    transform: scale(1);
+  }
+  50% {
+    background-color: var(--color-success-ultra-light);
+    transform: scale(1.02);
+  }
+  100% {
+    background-color: var(--bg-primary);
+    transform: scale(1);
+  }
+}
+
+/* ⚠️ 错误动画 */
+.error-shake {
+  animation: errorShake var(--duration-normal) var(--ease-out);
+}
+
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* 🌊 波纹效果 */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: rippleEffect var(--duration-slow) ease-out;
+}
+
+@keyframes rippleEffect {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 1;
+  }
+  100% {
+    width: 300px;
+    height: 300px;
+    opacity: 0;
+  }
+}
+
+/* 🎭 悬停效果增强 */
+.hover-lift {
+  transition: all var(--duration-normal) var(--spring-soft);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.hover-scale {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+.hover-glow {
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px var(--color-primary-medium);
+}
+
+/* 🎯 焦点动画 */
+.focus-ring {
+  position: relative;
+}
+
+.focus-ring:focus::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 2px solid var(--color-primary);
+  border-radius: inherit;
+  animation: focusRing var(--duration-normal) var(--ease-out);
+}
+
+@keyframes focusRing {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 🎨 数据更新动画 */
+.data-update {
+  animation: dataUpdate var(--duration-normal) var(--spring-bouncy);
+}
+
+@keyframes dataUpdate {
+  0% {
+    transform: scale(1);
+    background-color: var(--bg-primary);
+  }
+  25% {
+    transform: scale(1.03);
+    background-color: var(--color-primary-ultra-light);
+  }
+  50% {
+    transform: scale(0.98);
+    background-color: var(--color-primary-soft);
+  }
+  100% {
+    transform: scale(1);
+    background-color: var(--bg-primary);
+  }
+}
+
+/* 🎪 页面切换动画 */
+.page-transition-enter {
+  animation: pageEnter var(--duration-slow) var(--spring-soft);
+}
+
+.page-transition-exit {
+  animation: pageExit var(--duration-normal) var(--ease-in);
+}
+
+@keyframes pageEnter {
+  0% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pageExit {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+
+/* 🌙 主题切换动画 */
+.theme-transition {
+  transition: all var(--duration-slow) var(--ease-in-out);
+}
+
+/* 📱 移动端触摸反馈 */
+@media (hover: none) and (pointer: coarse) {
+  .modern-stats-card:active,
+  .quick-action-card:active,
+  .btn:active {
+    animation: touchFeedback var(--duration-fast) var(--ease-out);
+  }
+
+  @keyframes touchFeedback {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(0.95);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+}
+
+/* 🎭 减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .modern-stats-card:hover,
+  .quick-action-card:hover,
+  .btn:hover {
+    transform: none;
+  }
+}
+
+/* 🎊 特殊状态动画类 */
+.animate-bounce-in {
+  animation: bounceIn var(--duration-slow) var(--spring-bouncy);
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--duration-normal) var(--ease-out);
+}
+
+.animate-slide-up {
+  animation: slideUp var(--duration-normal) var(--spring-soft);
+}
+
+.animate-zoom-in {
+  animation: zoomIn var(--duration-normal) var(--spring-soft);
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes slideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes zoomIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

@@ -1,0 +1,678 @@
+/* ================================================================
+ * 🎯 现代导航栏组件 - Modern Navigation Component
+ * 版本: v4.0 - 简约现代设计版
+ * ================================================================ */
+
+/* 🏗️ 顶部导航栏 - Top Navigation Bar */
+.modern-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--nav-height);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing-6);
+  z-index: var(--z-navbar);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modern-nav.scrolled {
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 1px 20px rgba(0, 0, 0, 0.06);
+}
+
+/* 🎨 品牌区域 - Brand Section */
+.nav-brand-section {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.nav-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #64748b;
+  position: relative;
+}
+
+.nav-toggle:hover {
+  background: rgba(100, 116, 139, 0.1);
+  color: #334155;
+  transform: scale(1.02);
+}
+
+.nav-toggle:active {
+  transform: scale(0.98);
+}
+
+.nav-toggle i {
+  font-size: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-toggle.active i {
+  color: #3b82f6;
+  transform: rotate(90deg);
+}
+
+.brand-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.brand-icon:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 6px 25px rgba(59, 130, 246, 0.3);
+}
+
+.brand-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* 🎯 操作区域 - Actions Section */
+.nav-actions-section {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.nav-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #64748b;
+  position: relative;
+}
+
+.nav-action-btn:hover {
+  background: rgba(100, 116, 139, 0.1);
+  color: #334155;
+  transform: translateY(-1px);
+}
+
+.nav-action-btn:active {
+  transform: translateY(0);
+}
+
+.nav-action-btn.active {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.nav-action-btn i {
+  font-size: 18px;
+}
+
+/* 🔔 通知徽章 - Notification Badge */
+.nav-action-btn::after {
+  content: attr(data-count);
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  min-width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  transform: scale(0);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.nav-action-btn[data-count]:not([data-count=""]):not([data-count="0"])::after {
+  transform: scale(1);
+}
+
+/* 🌙 主题切换器 - Theme Switcher */
+.theme-switcher {
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-switcher .theme-icon {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] .theme-switcher .sun-icon {
+  opacity: 0;
+  transform: rotate(180deg) scale(0.5);
+}
+
+[data-theme="light"] .theme-switcher .moon-icon {
+  opacity: 0;
+  transform: rotate(-180deg) scale(0.5);
+}
+
+/* 👤 用户菜单 - User Menu */
+.user-menu {
+  position: relative;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
+}
+
+.user-avatar:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 6px 25px rgba(16, 185, 129, 0.3);
+}
+
+/* 🔽 下拉菜单 - Dropdown Menu */
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  min-width: 220px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px) scale(0.95);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-dropdown);
+  overflow: hidden;
+}
+
+.dropdown-menu.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: 14px 18px;
+  color: #475569;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dropdown-item:hover {
+  background: rgba(59, 130, 246, 0.05);
+  color: #3b82f6;
+}
+
+.dropdown-item i {
+  font-size: 16px;
+  width: 16px;
+  text-align: center;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.06);
+  margin: 8px 0;
+}
+
+/* ======================================================
+ * 🌊 侧边栏组件 - Sidebar Component
+ * ====================================================== */
+
+.modern-sidebar {
+  position: fixed;
+  top: var(--nav-height);
+  left: 0;
+  width: var(--sidebar-width-expanded);
+  height: calc(100vh - var(--nav-height));
+  background: white;
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  transform: translateX(0);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-sidebar);
+  overflow: hidden;
+}
+
+.modern-sidebar.collapsed {
+  width: var(--sidebar-width-collapsed);
+}
+
+.modern-sidebar.hidden {
+  transform: translateX(-100%);
+}
+
+/* 🧭 侧边栏导航 - Sidebar Navigation */
+.sidebar-nav {
+  padding: 24px 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+.nav-section {
+  margin-bottom: 32px;
+}
+
+.nav-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  padding: 0 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modern-sidebar.collapsed .nav-section-title {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  margin: 0 12px 4px;
+  color: #64748b;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.nav-item:hover {
+  background: rgba(100, 116, 139, 0.08);
+  color: #334155;
+  transform: translateX(2px);
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+  color: #3b82f6;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border-radius: 2px;
+}
+
+.nav-item-icon {
+  font-size: 18px;
+  width: 20px;
+  text-align: center;
+  margin-right: 14px;
+  flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-item:hover .nav-item-icon {
+  transform: scale(1.1);
+}
+
+.nav-item.active .nav-item-icon {
+  transform: scale(1.05);
+}
+
+.nav-item-text {
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex: 1;
+  opacity: 1;
+}
+
+.modern-sidebar.collapsed .nav-item-text {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+/* 🏷️ 状态徽章 - Status Badge */
+.nav-item-badge {
+  min-width: 22px;
+  height: 22px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+}
+
+.nav-item-badge.success {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.nav-item-badge.warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+}
+
+.nav-item-badge.info {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+.modern-sidebar.collapsed .nav-item-badge {
+  opacity: 0;
+  transform: scale(0.5) translateX(10px);
+}
+
+/* 📱 响应式设计 - Responsive Design */
+@media (max-width: 768px) {
+  .modern-nav {
+    height: var(--nav-height-mobile);
+    padding: 0 var(--spacing-4);
+  }
+
+  .brand-title {
+    display: none;
+  }
+
+  .nav-actions-section {
+    gap: var(--spacing-1);
+  }
+
+  .nav-action-btn,
+  .nav-toggle {
+    width: 40px;
+    height: 40px;
+  }
+
+  .brand-icon,
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .modern-sidebar {
+    top: var(--nav-height-mobile);
+    height: calc(100vh - var(--nav-height-mobile));
+    transform: translateX(-100%);
+  }
+
+  .modern-sidebar.show {
+    transform: translateX(0);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .modern-sidebar.collapsed {
+    width: var(--sidebar-width-expanded);
+    transform: translateX(-100%);
+  }
+
+  .modern-sidebar.collapsed.show {
+    transform: translateX(0);
+  }
+
+  .dropdown-menu {
+    right: -12px;
+    min-width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-nav {
+    padding: 0 var(--spacing-3);
+  }
+
+  .nav-toggle,
+  .nav-action-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .brand-icon,
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* 🌙 暗色主题 - Dark Theme */
+[data-theme="dark"] .modern-nav {
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom-color: rgba(148, 163, 184, 0.1);
+}
+
+[data-theme="dark"] .brand-title {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .nav-toggle,
+[data-theme="dark"] .nav-action-btn {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .nav-toggle:hover,
+[data-theme="dark"] .nav-action-btn:hover {
+  background: rgba(148, 163, 184, 0.1);
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .modern-sidebar {
+  background: #0f172a;
+  border-right-color: rgba(148, 163, 184, 0.1);
+}
+
+[data-theme="dark"] .nav-section-title {
+  color: #64748b;
+}
+
+[data-theme="dark"] .nav-item {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .nav-item:hover {
+  background: rgba(148, 163, 184, 0.1);
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .dropdown-menu {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .dropdown-item {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .dropdown-divider {
+  background: rgba(148, 163, 184, 0.1);
+}
+
+/* 🎭 动画效果 - Animation Effects */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateX(-50px);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05) translateX(10px);
+  }
+  70% {
+    opacity: 0.9;
+    transform: scale(0.98) translateX(-5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+}
+
+.nav-item {
+  animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-item-badge {
+  animation: bounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 🚀 Tooltip 提示框 */
+.nav-item {
+  position: relative;
+}
+
+.nav-item::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.modern-sidebar.collapsed .nav-item:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(4px);
+}
+
+/* ===== 兼容旧版类名 ===== */
+.modern-top-nav { @extend .modern-nav; }
+.nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 var(--spacing-6);
+  max-width: 100%;
+}
+.modern-sidebar-toggle { @extend .nav-toggle; }
+.nav-brand-info { @extend .brand-content; }
+.brand-logo { @extend .brand-icon; }
+.brand-text,
+.brand-title { @extend .brand-title; }
+.nav-actions { @extend .nav-actions-section; }
+.nav-user-dropdown { @extend .user-menu; }
+.nav-user-profile {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-normal) var(--ease-out);
+  min-width: 120px;
+}
+.nav-user-avatar { @extend .user-avatar; }
+.modern-nav-item { @extend .nav-item; }
+.modern-nav-link { @extend .nav-item; }
+.modern-nav-icon { @extend .nav-item-icon; }
+.modern-nav-text { @extend .nav-item-text; }
+.nav-badge { @extend .nav-item-badge; }

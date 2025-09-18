@@ -15,161 +15,158 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/common-dashboard.css">
-    <link rel="stylesheet" href="/css/dashboard-theme.css">
-    <link rel="stylesheet" href="/css/modern-developer-dashboard.css">
-    <link rel="stylesheet" href="/css/modern-dashboard-stats.css">
+    <!-- 新设计系统CSS -->
+    <link rel="stylesheet" href="/css/main.css">
     <script src="/js/theme.js"></script>
 </head>
-<body class="modern-dashboard-body developer-theme theme-body">
-    <!-- 现代化头部导航 -->
-    <header class="modern-header">
-        <div class="header-brand">
-            <div class="brand-logo">
-                <div class="logo-icon">🚀</div>
-                <div class="brand-text">
-                    <span class="brand-name">Dev Debug Platform</span>
-                    <span class="brand-subtitle">开发者工作台</span>
+<body>
+    <!-- 应用容器 -->
+    <div class="app-container">
+        <!-- 现代化头部导航 -->
+        <header class="modern-top-nav" id="topNav">
+            <div class="nav-brand">
+                <div class="brand-container">
+                    <div class="brand-icon">🚀</div>
+                    <div class="brand-content">
+                        <span class="brand-title">Dev Debug Platform</span>
+                        <span class="brand-subtitle">开发者工作台</span>
+                    </div>
                 </div>
-            </div>
-            <button class="mobile-menu-toggle" id="mobileMenuToggle">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-        </div>
-        
-        <div class="header-search">
-            <div class="search-container">
-                <input type="text" class="search-input" placeholder="搜索应用、日志、命令...">
-                <button class="search-btn">
-                    <span class="search-icon">🔍</span>
+                <button class="nav-mobile-toggle" id="navMobileToggle">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
                 </button>
             </div>
-        </div>
         
-        <div class="header-actions">
-            <button class="action-btn notification-btn" title="通知">
-                <span class="icon">🔔</span>
-                <span class="badge">3</span>
-            </button>
-            
-            <button class="action-btn theme-toggle-btn" onclick="toggleTheme()" title="切换主题">
-                <span class="theme-icon">🌙</span>
-            </button>
-            
-            <div class="user-menu">
-                <div class="user-trigger">
-                    <div class="user-avatar">
-                        <span th:text="${#strings.substring(username, 0, 1)}">D</span>
-                    </div>
-                    <div class="user-info">
-                        <span class="user-name" th:text="${username}">开发者</span>
-                        <span class="user-role">开发者</span>
-                    </div>
-                    <span class="dropdown-arrow">▼</span>
-                </div>
-                <div class="user-dropdown">
-                    <a href="/profile" class="dropdown-item">
-                        <span class="item-icon">👤</span>
-                        <span>个人档案</span>
-                    </a>
-                    <a href="/apps" class="dropdown-item">
-                        <span class="item-icon">📱</span>
-                        <span>应用管理</span>
-                    </a>
-                    <div class="dropdown-divider"></div>
-                    <form th:action="@{/logout}" method="post" class="dropdown-form">
-                        <button type="submit" class="dropdown-item logout-item">
-                            <span class="item-icon">🚪</span>
-                            <span>安全退出</span>
-                        </button>
-                    </form>
+            <div class="nav-search">
+                <div class="search-container">
+                    <input type="text" class="search-input" placeholder="搜索应用、日志、命令...">
+                    <button class="search-button">
+                        <span class="search-icon">🔍</span>
+                    </button>
                 </div>
             </div>
-        </div>
-    </header>
+        
+            <div class="nav-actions">
+                <button class="nav-action-btn nav-notification-btn" data-tooltip="通知">
+                    <span class="action-icon">🔔</span>
+                    <span class="notification-badge">3</span>
+                </button>
 
-    <!-- 主要仪表板容器 -->
-    <div class="modern-dashboard-container">
+                <button class="nav-action-btn nav-theme-toggle" onclick="toggleTheme()" data-tooltip="切换主题">
+                    <span class="theme-icon">🌙</span>
+                </button>
+
+                <div class="nav-user-menu">
+                    <button class="nav-user-trigger" id="navUserTrigger">
+                        <div class="user-avatar">
+                            <span th:text="${#strings.substring(username, 0, 1)}">D</span>
+                        </div>
+                        <div class="user-info">
+                            <span class="user-name" th:text="${username}">开发者</span>
+                            <span class="user-role">开发者</span>
+                        </div>
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="nav-user-dropdown" id="navUserDropdown">
+                        <a href="/profile" class="nav-dropdown-item">
+                            <span class="item-icon">👤</span>
+                            <span>个人档案</span>
+                        </a>
+                        <a href="/apps" class="nav-dropdown-item">
+                            <span class="item-icon">📱</span>
+                            <span>应用管理</span>
+                        </a>
+                        <div class="nav-dropdown-divider"></div>
+                        <form th:action="@{/logout}" method="post" class="nav-dropdown-form">
+                            <button type="submit" class="nav-dropdown-item nav-logout-item">
+                                <span class="item-icon">🚪</span>
+                                <span>安全退出</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </header>
+
         <!-- 现代化侧边栏 -->
         <aside class="modern-sidebar" id="modernSidebar">
             <div class="sidebar-header">
-                <div class="sidebar-title">
-                    <span class="title-icon">🎯</span>
-                    <span class="title-text">开发工作台</span>
+                <div class="sidebar-brand">
+                    <span class="sidebar-icon">🎯</span>
+                    <span class="sidebar-title">开发工作台</span>
                 </div>
-                <button class="sidebar-collapse" id="sidebarCollapse">
-                    <span class="collapse-icon">‹</span>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <span class="toggle-icon">‹</span>
                 </button>
             </div>
             
-            <nav class="sidebar-nav">
-                <div class="nav-section">
-                    <div class="section-title">主要功能</div>
+            <nav class="sidebar-navigation">
+                <div class="nav-group">
+                    <div class="nav-group-title">主要功能</div>
                     <ul class="nav-list">
-                        <li class="nav-item active">
-                            <a href="/developer/dashboard" class="nav-link">
+                        <li class="nav-item">
+                            <a href="/developer/dashboard" class="nav-link active">
                                 <span class="nav-icon">📊</span>
-                                <span class="nav-text">工作台概览</span>
-                                <span class="nav-badge">Hot</span>
+                                <span class="nav-label">工作台概览</span>
+                                <span class="nav-badge hot">Hot</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="/apps" class="nav-link">
                                 <span class="nav-icon">📱</span>
-                                <span class="nav-text">JAR管理</span>
-                                <span class="nav-count" th:text="${developerData.totalApplications ?: 0}">0</span>
+                                <span class="nav-label">JAR管理</span>
+                                <span class="nav-counter" th:text="${developerData.totalApplications ?: 0}">0</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="/apps/debug" class="nav-link">
                                 <span class="nav-icon">🔧</span>
-                                <span class="nav-text">调试区</span>
-                                <span class="nav-count" th:text="${developerData.activeDebugSessions ?: 0}">0</span>
+                                <span class="nav-label">调试区</span>
+                                <span class="nav-counter" th:text="${developerData.activeDebugSessions ?: 0}">0</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="/monitoring/apps" class="nav-link">
                                 <span class="nav-icon">📈</span>
-                                <span class="nav-text">应用监控</span>
+                                <span class="nav-label">应用监控</span>
                             </a>
                         </li>
                     </ul>
                 </div>
                 
-                <div class="nav-section">
-                    <div class="section-title">工具箱</div>
+                <div class="nav-group">
+                    <div class="nav-group-title">工具箱</div>
                     <ul class="nav-list">
                         <li class="nav-item">
                             <a href="/apps/history" class="nav-link">
                                 <span class="nav-icon">📜</span>
-                                <span class="nav-text">历史调试</span>
+                                <span class="nav-label">历史调试</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="/apps/logs" class="nav-link">
                                 <span class="nav-icon">📝</span>
-                                <span class="nav-text">日志查看</span>
+                                <span class="nav-label">日志查看</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="/terminal" class="nav-link">
                                 <span class="nav-icon">💻</span>
-                                <span class="nav-text">远程终端</span>
+                                <span class="nav-label">远程终端</span>
                             </a>
                         </li>
                     </ul>
                 </div>
-                
-                <div class="nav-section">
-                    <div class="section-title">个人中心</div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title">个人中心</div>
                     <ul class="nav-list">
                         <li class="nav-item">
                             <a href="/profile" class="nav-link">
                                 <span class="nav-icon">👤</span>
-                                <span class="nav-text">个人档案</span>
+                                <span class="nav-label">个人档案</span>
                             </a>
                         </li>
                     </ul>
@@ -177,12 +174,12 @@
             </nav>
             
             <div class="sidebar-footer">
-                <div class="status-indicator">
-                    <span class="status-dot online"></span>
-                    <span class="status-text">在线</span>
+                <div class="sidebar-status">
+                    <span class="status-indicator online"></span>
+                    <span class="status-label">在线</span>
                 </div>
-                <div class="quick-stats">
-                    <div class="stat-item">
+                <div class="sidebar-stats">
+                    <div class="footer-stat">
                         <span class="stat-label">运行应用</span>
                         <span class="stat-value" th:text="${developerData.runningApplications ?: 0}">0</span>
                     </div>
@@ -190,24 +187,30 @@
             </div>
         </aside>
 
-        <!-- 现代化主内容区 -->
-        <main class="modern-main-content">
-            <div class="content-header">
-                <div class="header-title">
-                    <h1 class="page-title">研发工作台</h1>
-                    <p class="page-subtitle">专注于应用开发、调试和监控的统一工作平台</p>
+        <!-- 移动端侧边栏覆盖层 -->
+        <div class="sidebar-mobile-overlay" id="sidebarOverlay"></div>
+
+        <!-- 主内容区域 -->
+        <main class="main-content" id="mainContent">
+            <div class="page-container">
+                <div class="page-header">
+                    <div class="page-title-group">
+                        <h1 class="page-title">研发工作台</h1>
+                        <p class="page-subtitle">专注于应用开发、调试和监控的统一工作平台</p>
+                    </div>
+                    <div class="page-actions">
+                        <div class="page-actions-right">
+                            <button class="btn btn-primary" onclick="window.location.href='/apps/upload'">
+                                <span class="btn-icon">📤</span>
+                                <span>上传应用</span>
+                            </button>
+                            <button class="btn btn-secondary" onclick="refreshDashboard()">
+                                <span class="btn-icon">🔄</span>
+                                <span>刷新</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="header-actions">
-                    <button class="btn-primary" onclick="window.location.href='/apps/upload'">
-                        <span class="btn-icon">📤</span>
-                        <span>上传应用</span>
-                    </button>
-                    <button class="btn-secondary" onclick="refreshDashboard()">
-                        <span class="btn-icon">🔄</span>
-                        <span>刷新</span>
-                    </button>
-                </div>
-            </div>
 
             <!-- 现代化统计面板 -->
             <section class="modern-stats-container">
@@ -226,10 +229,14 @@
                                 </div>
                             </div>
                             <div class="stats-icon-container">
-                                <div class="stats-icon icon-pulse">📱</div>
+                                <div class="stats-icon icon-pulse">▶</div>
                             </div>
                         </div>
                         <div class="stats-mini-chart">
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
                             <div class="mini-chart-bar"></div>
                             <div class="mini-chart-bar"></div>
                             <div class="mini-chart-bar"></div>
@@ -258,10 +265,14 @@
                                 </div>
                             </div>
                             <div class="stats-icon-container">
-                                <div class="stats-icon">⏸️</div>
+                                <div class="stats-icon">⏸</div>
                             </div>
                         </div>
                         <div class="stats-mini-chart">
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
                             <div class="mini-chart-bar"></div>
                             <div class="mini-chart-bar"></div>
                             <div class="mini-chart-bar"></div>
@@ -290,10 +301,14 @@
                                 </div>
                             </div>
                             <div class="stats-icon-container">
-                                <div class="stats-icon icon-spin">🔧</div>
+                                <div class="stats-icon icon-spin">⚙</div>
                             </div>
                         </div>
                         <div class="stats-mini-chart">
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
                             <div class="mini-chart-bar"></div>
                             <div class="mini-chart-bar"></div>
                             <div class="mini-chart-bar"></div>
@@ -322,10 +337,14 @@
                                 </div>
                             </div>
                             <div class="stats-icon-container">
-                                <div class="stats-icon icon-bounce">⚡</div>
+                                <div class="stats-icon icon-bounce">◈</div>
                             </div>
                         </div>
                         <div class="stats-mini-chart">
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
+                            <div class="mini-chart-bar"></div>
                             <div class="mini-chart-bar"></div>
                             <div class="mini-chart-bar"></div>
                             <div class="mini-chart-bar"></div>
@@ -508,6 +527,7 @@
             </div>
         </main>
     </div>
+</div>
 
     <script src="/js/dashboard.js"></script>
     
@@ -550,34 +570,73 @@
         // 侧边栏功能
         function initSidebar() {
             const sidebar = document.getElementById('modernSidebar');
-            const collapseBtn = document.getElementById('sidebarCollapse');
-            const mobileToggle = document.getElementById('mobileMenuToggle');
-            
-            collapseBtn?.addEventListener('click', function() {
+            const toggleBtn = document.getElementById('sidebarToggle');
+            const mobileToggle = document.getElementById('navMobileToggle');
+            const mainContent = document.getElementById('mainContent');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            // 桌面端侧边栏折叠
+            toggleBtn?.addEventListener('click', function() {
                 sidebar.classList.toggle('collapsed');
+                mainContent?.classList.toggle('sidebar-collapsed');
                 localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
             });
-            
+
+            // 移动端侧边栏开关
             mobileToggle?.addEventListener('click', function() {
                 sidebar.classList.toggle('mobile-open');
+                document.body.classList.toggle('sidebar-mobile-open');
             });
-            
-            // 恢复侧边栏状态
-            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+
+            // 点击覆盖层关闭侧边栏
+            overlay?.addEventListener('click', function() {
+                sidebar.classList.remove('mobile-open');
+                document.body.classList.remove('sidebar-mobile-open');
+            });
+
+            // ESC键关闭移动端侧边栏
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && sidebar.classList.contains('mobile-open')) {
+                    sidebar.classList.remove('mobile-open');
+                    document.body.classList.remove('sidebar-mobile-open');
+                }
+            });
+
+            // 恢复侧边栏状态（仅桌面端）
+            if (window.innerWidth > 768 && localStorage.getItem('sidebarCollapsed') === 'true') {
                 sidebar.classList.add('collapsed');
+                mainContent?.classList.add('sidebar-collapsed');
             }
+
+            // 监听窗口大小变化
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) {
+                    // 桌面端：移除移动端类，恢复折叠状态
+                    sidebar.classList.remove('mobile-open');
+                    document.body.classList.remove('sidebar-mobile-open');
+
+                    if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                        sidebar.classList.add('collapsed');
+                        mainContent?.classList.add('sidebar-collapsed');
+                    }
+                } else {
+                    // 移动端：移除桌面端类
+                    sidebar.classList.remove('collapsed');
+                    mainContent?.classList.remove('sidebar-collapsed');
+                }
+            });
         }
 
         // 用户菜单功能
         function initUserMenu() {
-            const userTrigger = document.querySelector('.user-trigger');
-            const userDropdown = document.querySelector('.user-dropdown');
-            
+            const userTrigger = document.getElementById('navUserTrigger');
+            const userDropdown = document.getElementById('navUserDropdown');
+
             userTrigger?.addEventListener('click', function(e) {
                 e.stopPropagation();
                 userDropdown.classList.toggle('show');
             });
-            
+
             document.addEventListener('click', function() {
                 userDropdown?.classList.remove('show');
             });
@@ -600,7 +659,64 @@
             // 触发数值计数动画
             setTimeout(() => {
                 animateCounters();
+                initMiniCharts();
             }, 500);
+        }
+
+        // 初始化迷你图表
+        function initMiniCharts() {
+            const charts = document.querySelectorAll('.stats-mini-chart');
+
+            charts.forEach(chart => {
+                const bars = chart.querySelectorAll('.mini-chart-bar');
+
+                // 为每个柱状条添加随机的动态高度
+                bars.forEach((bar, index) => {
+                    const randomHeight = Math.random() * 60 + 30; // 30-90%的高度
+                    setTimeout(() => {
+                        bar.style.height = `${randomHeight}%`;
+                    }, index * 100); // 错开动画时间
+                });
+
+                // 添加悬停效果
+                chart.addEventListener('mouseenter', function() {
+                    bars.forEach((bar, index) => {
+                        setTimeout(() => {
+                            const newHeight = Math.random() * 70 + 20;
+                            bar.style.height = `${newHeight}%`;
+                            bar.style.background = '#5855eb';
+                        }, index * 50);
+                    });
+                });
+
+                chart.addEventListener('mouseleave', function() {
+                    bars.forEach((bar, index) => {
+                        setTimeout(() => {
+                            const originalHeight = Math.random() * 60 + 30;
+                            bar.style.height = `${originalHeight}%`;
+                            bar.style.background = '#6366f1';
+                        }, index * 30);
+                    });
+                });
+            });
+        }
+
+        // 更新图表数据
+        function updateChartData(chartElement, data) {
+            const bars = chartElement.querySelectorAll('.mini-chart-bar');
+
+            data.forEach((value, index) => {
+                if (bars[index]) {
+                    setTimeout(() => {
+                        bars[index].style.height = `${Math.min(value, 95)}%`;
+                        bars[index].classList.add('chart-updating');
+
+                        setTimeout(() => {
+                            bars[index].classList.remove('chart-updating');
+                        }, 300);
+                    }, index * 50);
+                }
+            });
         }
 
         // 数值计数动画
@@ -631,14 +747,14 @@
         // 搜索功能
         function initSearch() {
             const searchInput = document.querySelector('.search-input');
-            const searchBtn = document.querySelector('.search-btn');
-            
+            const searchBtn = document.querySelector('.search-button');
+
             searchInput?.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     performSearch(this.value);
                 }
             });
-            
+
             searchBtn?.addEventListener('click', function() {
                 performSearch(searchInput.value);
             });

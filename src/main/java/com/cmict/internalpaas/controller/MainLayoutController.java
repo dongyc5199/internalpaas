@@ -198,7 +198,7 @@ public class MainLayoutController {
             // 现代化快捷操作区域
             htmlBuilder.append("<section class=\"modern-apps-section\">");
             htmlBuilder.append("<div class=\"section-header\">");
-            htmlBuilder.append("<h2 class=\"section-title\">管理功能</h2>");
+            htmlBuilder.append("<h2 class=\"section-title\"><i class=\"fas fa-cogs section-icon\"></i>管理功能</h2>");
             htmlBuilder.append("<div class=\"section-actions\">");
             htmlBuilder.append("<button class=\"action-btn secondary\" onclick=\"refreshAllData()\">");
             htmlBuilder.append("<i class=\"fas fa-sync-alt\"></i>");

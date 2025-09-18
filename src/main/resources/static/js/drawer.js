@@ -24,6 +24,41 @@ class DrawerManager {
         }
     }
 
+    // 清理已存在的抽屉元素
+    cleanupExistingDrawers() {
+        try {
+            // 清理所有存在的抽屉遮罩层
+            const existingOverlays = document.querySelectorAll('.drawer-overlay');
+            existingOverlays.forEach(overlay => overlay.remove());
+
+            // 清理所有存在的抽屉
+            const existingDrawers = document.querySelectorAll('.drawer');
+            existingDrawers.forEach(drawer => drawer.remove());
+
+            // 清理所有带有特定ID的抽屉表单
+            const duplicateElements = [
+                'serverDrawerForm', 'userDrawerForm', 'userDrawerFormRight',
+                'server-name', 'server-hostname', 'server-ssh-port', 'server-ssh-username', 'server-ssh-password',
+                'server-work-directory', 'server-description', 'server-active', 'server-auto-init-usergroups',
+                'userUsername', 'userEmail', 'userPassword', 'userPasswordConfirm',
+                'roleAdmin', 'roleSuperAdmin', 'roleUser', 'userEnabled',
+                'current-workdir-path'
+            ];
+
+            duplicateElements.forEach(id => {
+                const elements = document.querySelectorAll(`#${id}`);
+                // 保留第一个，删除其余的
+                for (let i = 1; i < elements.length; i++) {
+                    elements[i].remove();
+                }
+            });
+
+            console.log('✅ 清理重复抽屉元素完成');
+        } catch (error) {
+            console.warn('清理抽屉元素时出错:', error);
+        }
+    }
+
     // 创建抽屉容器
     createDrawerContainers() {
         // 检查body是否存在
@@ -31,7 +66,10 @@ class DrawerManager {
             console.error('document.body不存在，无法初始化抽屉组件');
             return false;
         }
-        
+
+        // 清理已存在的抽屉元素，防止重复创建
+        this.cleanupExistingDrawers();
+
         // 创建遮罩层
         this.overlay = document.createElement('div');
         this.overlay.className = 'drawer-overlay';

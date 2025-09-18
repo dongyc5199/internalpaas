@@ -18,8 +18,10 @@
     position: relative;
 }
 
-/* 顶部导航栏 */
+/* 旧版顶部导航栏 - 已被modern-top-nav替代 */
 .top-nav {
+    /* 旧样式已迁移到modern-navigation.css中的.modern-top-nav */
+    /* 保留此处是为了向后兼容某些独立页面 */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -31,6 +33,12 @@
     top: 0;
     z-index: 100;
     transition: all var(--transition-normal);
+}
+
+/* 防止旧导航栏样式与现代化导航冲突 */
+.modern-top-nav + .top-nav,
+.modern-sidebar ~ * .top-nav {
+    display: none !important;
 }
 
 .nav-brand {

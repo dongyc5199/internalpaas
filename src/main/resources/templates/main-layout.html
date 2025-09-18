@@ -46,45 +46,61 @@
     <link rel="preload" href="/vendor/fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/vendor/fontawesome/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin>
 
+    <!-- 保留FontAwesome -->
     <link rel="stylesheet" href="/css/fontawesome-local.css">
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/common-dashboard.css">
-    <link rel="stylesheet" href="/css/dashboard-theme.css">
-    <link rel="stylesheet" href="/css/drawer.css">
+
+    <!-- 新的现代化设计系统 -->
+    <link rel="stylesheet" href="/css/design-tokens.css">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/components/navigation.css">
+    <link rel="stylesheet" href="/css/components/cards.css">
+    <link rel="stylesheet" href="/css/components/buttons.css">
+    <link rel="stylesheet" href="/css/responsive.css">
+    <link rel="stylesheet" href="/css/animations.css">
+
+    <!-- 保留特定功能的CSS -->
     <link rel="stylesheet" href="/css/server-status-tags.css">
     <link rel="stylesheet" href="/css/server-detail-modal.css">
-    <!-- 现代化开发者工作台样式 -->
-    <link rel="stylesheet" href="/css/modern-developer-dashboard.css">
-    <link rel="stylesheet" href="/css/modern-dashboard-stats.css">
-    <link rel="stylesheet" href="/css/modern-app-cards.css">
     <link rel="stylesheet" href="/css/modern-upload-modal.css">
     <link rel="stylesheet" href="/css/batch-operations.css">
-    <!-- 现代化管理员页面样式 -->
-    <link rel="stylesheet" href="/css/modern-admin-pages.css">
-    <link rel="stylesheet" href="/css/modern-sidebar.css">
-    <!-- 现代化导航栏样式 -->
-    <link rel="stylesheet" href="/css/modern-navigation.css">
 
     <!-- WebSocket依赖库 -->
     <script src="/vendor/sockjs/sockjs.min.js"></script>
     <script src="/vendor/sockjs/stomp.min.js"></script>
     <script src="/js/server-status-tags.js"></script>
+    <script src="/js/drawer.js"></script>
 </head>
-<body class="dashboard-body admin-theme theme-body has-modern-nav">
-    <!-- 现代化顶部导航栏 (使用片段) -->
-    <div th:replace="~{fragments/modern-navigation :: modern-top-nav}"></div>
+<body>
+    <!-- 应用容器 -->
+    <div class="app-container">
+        <!-- 现代化顶部导航栏 (使用片段) -->
+        <div th:replace="~{fragments/modern-navigation :: modern-top-nav}"></div>
 
-    <!-- 现代化侧边栏 (使用片段) -->
-    <div th:replace="~{fragments/modern-navigation :: modern-sidebar}"></div>
+        <!-- 现代化侧边栏 (使用片段) -->
+        <div th:replace="~{fragments/modern-navigation :: modern-sidebar}"></div>
 
-    <!-- 移动端遮罩层 (使用片段) -->
-    <div th:replace="~{fragments/modern-navigation :: mobile-overlay}"></div>
+        <!-- 移动端遮罩层 -->
+        <div class="sidebar-mobile-overlay" id="sidebarOverlay"></div>
 
-    <!-- 现代化内容区域 (使用片段) -->
-    <main th:replace="~{fragments/modern-navigation :: modern-content-area}"></main>
+        <!-- SPA主内容区域 -->
+        <main class="main-content" id="mainContent">
+            <!-- 加载动画 -->
+            <div id="loadingSpinner" class="loading-spinner">
+                <div class="spinner-content">
+                    <div class="spinner"></div>
+                    <p>加载中...</p>
+                </div>
+            </div>
 
-    <!-- 引入现代化导航片段集成脚本 -->
-    <div th:replace="~{fragments/modern-navigation :: modern-nav-integration}"></div>
+            <div class="page-container">
+                <!-- 动态内容将在这里加载 -->
+                <div id="contentWrapper">
+                    <!-- SPA动态内容 -->
+                </div>
+            </div>
+        </main>
+    </div>
 
     <!-- 保留原有的SPA JavaScript逻辑 -->
     <script th:inline="javascript">
@@ -107,10 +123,154 @@
     <script src="/js/modern-navigation.js"></script>
 
     <!-- 原有SPA功能脚本的完整复制将在这里 -->
-    // 全局变量
-    let currentPage = '';
-    let isLoading = false;
-    
+    <script>
+    // 注意：全局变量已在上面的Thymeleaf内联脚本中声明
+
+    // 🎨 初始化现代化设计系统
+    function initModernDesignSystem() {
+        // 初始化侧边栏
+        initModernSidebar();
+
+        // 初始化用户菜单
+        initModernUserMenu();
+
+        // 初始化搜索功能
+        initModernSearch();
+
+        // 初始化主题切换
+        initModernTheme();
+    }
+
+    // 现代化侧边栏功能
+    function initModernSidebar() {
+        const sidebar = document.getElementById('modernSidebar');
+        const toggleBtn = document.getElementById('sidebarToggle');
+        const mobileToggle = document.getElementById('navMobileToggle');
+        const mainContent = document.getElementById('mainContent');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        // 桌面端侧边栏折叠
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                sidebar?.classList.toggle('collapsed');
+                mainContent?.classList.toggle('sidebar-collapsed');
+                localStorage.setItem('sidebarCollapsed', sidebar?.classList.contains('collapsed'));
+            });
+        }
+
+        // 移动端侧边栏开关
+        if (mobileToggle) {
+            mobileToggle.addEventListener('click', function() {
+                sidebar?.classList.toggle('mobile-open');
+                document.body.classList.toggle('sidebar-mobile-open');
+            });
+        }
+
+        // 点击覆盖层关闭侧边栏
+        if (overlay) {
+            overlay.addEventListener('click', function() {
+                sidebar?.classList.remove('mobile-open');
+                document.body.classList.remove('sidebar-mobile-open');
+            });
+        }
+
+        // ESC键关闭移动端侧边栏
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && sidebar?.classList.contains('mobile-open')) {
+                sidebar.classList.remove('mobile-open');
+                document.body.classList.remove('sidebar-mobile-open');
+            }
+        });
+
+        // 恢复侧边栏状态（仅桌面端）
+        if (window.innerWidth > 768 && localStorage.getItem('sidebarCollapsed') === 'true') {
+            sidebar?.classList.add('collapsed');
+            mainContent?.classList.add('sidebar-collapsed');
+        }
+
+        // 监听窗口大小变化
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                // 桌面端：移除移动端类，恢复折叠状态
+                sidebar?.classList.remove('mobile-open');
+                document.body.classList.remove('sidebar-mobile-open');
+
+                if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                    sidebar?.classList.add('collapsed');
+                    mainContent?.classList.add('sidebar-collapsed');
+                }
+            } else {
+                // 移动端：移除桌面端类
+                sidebar?.classList.remove('collapsed');
+                mainContent?.classList.remove('sidebar-collapsed');
+            }
+        });
+    }
+
+    // 现代化用户菜单功能
+    function initModernUserMenu() {
+        const userTrigger = document.getElementById('navUserTrigger');
+        const userDropdown = document.getElementById('navUserDropdown');
+
+        if (userTrigger && userDropdown) {
+            userTrigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                userDropdown.classList.toggle('show');
+            });
+
+            document.addEventListener('click', function() {
+                userDropdown.classList.remove('show');
+            });
+        }
+    }
+
+    // 现代化搜索功能
+    function initModernSearch() {
+        const searchInput = document.querySelector('.search-input');
+        const searchBtn = document.querySelector('.search-button');
+
+        if (searchInput && searchBtn) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performModernSearch(this.value);
+                }
+            });
+
+            searchBtn.addEventListener('click', function() {
+                performModernSearch(searchInput.value);
+            });
+        }
+    }
+
+    function performModernSearch(query) {
+        if (!query.trim()) return;
+
+        console.log('搜索:', query);
+        // 可以跳转到相应页面或显示搜索结果
+        // window.location.href = `/search?q=${encodeURIComponent(query)}`;
+    }
+
+    // 现代化主题切换
+    function initModernTheme() {
+        // 主题切换逻辑已存在，确保兼容
+        window.toggleTheme = function() {
+            const html = document.documentElement;
+            const body = document.body;
+
+            if (html.classList.contains('theme-dark')) {
+                html.classList.remove('theme-dark');
+                html.classList.add('theme-light');
+                body.classList.remove('dark-theme');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.remove('theme-light');
+                html.classList.add('theme-dark');
+                body.classList.add('dark-theme');
+                localStorage.setItem('theme', 'dark');
+            }
+        };
+    }
+
     // CSRF Token Helper Functions
     function getCSRFToken() {
         const csrfToken = document.querySelector('meta[name="_csrf"]');
@@ -153,7 +313,7 @@
         if (hash) {
             const validPages = ['dashboard', 'servers', 'users', 'applications', 'monitoring', 'terminal'];
             if (validPages.includes(hash)) {
-                console.log('从hash获取页面:', hash);
+                //('从hash获取页面:', hash);
                 return hash;
             }
         }
@@ -180,10 +340,13 @@
     // 页面加载完成后初始化
     document.addEventListener('DOMContentLoaded', function() {
         try {
+            // 初始化新设计系统
+            initModernDesignSystem();
+
             // 获取当前页面并加载对应内容
             const currentPageName = getCurrentPageFromUrl();
-            console.log('页面初始化，当前页面:', currentPageName);
-            
+            //('页面初始化，当前页面:', currentPageName);
+
             // 加载当前页面内容（第一次不显示加载动画）
             loadContent(currentPageName, false, false);
         } catch (error) {
@@ -191,28 +354,25 @@
             // 如果出错，回退到默认页面
             loadContent('dashboard', false, false);
         }
-        
+
         // 初始化移动端菜单
         initMobileMenu();
-        
+
         // 初始化侧边栏收起展开功能
         initSidebarToggle();
         
         // 全局测试函数
         window.testToggle = function() {
-            console.log('测试函数被调用');
+            //console.log('测试函数被调用');
             toggleSidebar();
         };
         
         
         // 绑定侧边栏切换事件
-        const toggleButton = document.querySelector('.sidebar-collapse');
+        const toggleButton = document.getElementById('sidebarToggle');
         if (toggleButton) {
-            console.log('找到侧边栏切换按钮，绑定事件');
-            
             // 绑定事件处理器
             toggleButton.addEventListener('click', function(e) {
-                console.log('侧边栏切换按钮被点击');
                 e.preventDefault();
                 e.stopPropagation();
                 toggleSidebar();
@@ -241,7 +401,7 @@
     });
 
     // 核心内容加载函数 (全局可访问)
-    console.log('🔧 正在定义window.loadContent函数...');
+    //console.log('🔧 正在定义window.loadContent函数...');
     window.loadContent = async function loadContent(page, addToHistory = true, showLoadingSpinner = true) {
         if (isLoading || page === currentPage) {
             return;
@@ -343,30 +503,44 @@
             isLoading = false;
         }
     }
-    console.log('✅ window.loadContent函数定义完成，立即验证:', typeof window.loadContent);
+    //('✅ window.loadContent函数定义完成，立即验证:', typeof window.loadContent);
 
     // 显示加载动画
     function showLoading() {
-        document.getElementById('loadingSpinner').classList.add('active');
-        document.getElementById('contentWrapper').style.opacity = '0.3';
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const contentWrapper = document.getElementById('contentWrapper');
+
+        if (loadingSpinner) {
+            loadingSpinner.classList.add('active');
+        }
+        if (contentWrapper) {
+            contentWrapper.style.opacity = '0.3';
+        }
     }
 
     // 隐藏加载动画
     function hideLoading() {
-        document.getElementById('loadingSpinner').classList.remove('active');
-        document.getElementById('contentWrapper').style.opacity = '1';
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const contentWrapper = document.getElementById('contentWrapper');
+
+        if (loadingSpinner) {
+            loadingSpinner.classList.remove('active');
+        }
+        if (contentWrapper) {
+            contentWrapper.style.opacity = '1';
+        }
     }
 
     // 更新内容
     function updateContent(content) {
-        console.log('🔄 updateContent called with content length:', content ? content.length : 0);
+        //console.log('🔄 updateContent called with content length:', content ? content.length : 0);
         const wrapper = document.getElementById('contentWrapper');
         if (!wrapper) {
             console.error('❌ contentWrapper element not found!');
-            console.log('Available elements:', document.querySelectorAll('[id]'));
+            //console.log('Available elements:', document.querySelectorAll('[id]'));
             return;
         }
-        console.log('✅ contentWrapper found, updating content...');
+        //console.log('✅ contentWrapper found, updating content...');
         wrapper.innerHTML = content;
         wrapper.classList.add('content-fade-in');
         
@@ -1093,14 +1267,12 @@
         return typeIcons[tag.tagType] || 'fas fa-info-circle';
     }
 
-    // 全局变量用于存储用户类型
+    // 全局变量用于存储用户类型（isAdmin已在上面的Thymeleaf脚本中声明）
     const userType = '[[${userType}]]';
-    const isAdmin = [[${isAdmin}]] || false;
 
     // 各个页面的内容加载函数
     async function loadDashboardContent() {
-        console.log('📊 loadDashboardContent started');
-        console.log('User info:', {userType, isAdmin, username});
+       
 
         // 根据用户类型选择正确的API端点
         let apiUrl;
@@ -1109,8 +1281,7 @@
         } else {
             apiUrl = '/developer/api/workspace-dashboard-content';
         }
-        console.log('🔗 API URL:', apiUrl);
-        console.log('🔑 CSRF Token:', getCSRFToken());
+        
 
         const response = await fetch(apiUrl, {
             method: 'GET',
@@ -1121,8 +1292,7 @@
             }
         });
 
-        console.log('📡 Response status:', response.status);
-        console.log('📡 Response ok:', response.ok);
+      
 
         if (!response.ok) {
             if (response.status === 401) {
@@ -1146,8 +1316,7 @@
         }
 
         const responseText = await response.text();
-        console.log('📝 Response text length:', responseText.length);
-        console.log('📝 Response preview:', responseText.substring(0, 200) + '...');
+        
         return responseText;
     }
 
@@ -1400,46 +1569,25 @@
             return;
         }
         
-        console.log('切换侧边栏状态');
-        console.log('侧边栏元素:', sidebar);
-        console.log('Body元素:', body);
-        
         // 切换收起状态
         sidebar.classList.toggle('collapsed');
         body.classList.toggle('sidebar-collapsed');
         
-        console.log('侧边栏', sidebar.classList.contains('collapsed') ? '已收起' : '已展开');
+        //console.log('侧边栏', sidebar.classList.contains('collapsed') ? '已收起' : '已展开');
         
-        // 更新图标显示状态
-        const navIcons = document.querySelectorAll('.nav-icon');
-        navIcons.forEach((icon, index) => {
-            
-            // 确保Font Awesome图标在收起状态下正确显示
-            const fontAwesomeIcon = icon.querySelector('i');
-            if (fontAwesomeIcon) {
-                console.log(`图标 ${index + 1} 类名:`, fontAwesomeIcon.className);
-                console.log(`图标 ${index + 1} 计算样式:`, {
-                    fontFamily: window.getComputedStyle(fontAwesomeIcon).fontFamily,
-                    fontSize: window.getComputedStyle(fontAwesomeIcon).fontSize,
-                    color: window.getComputedStyle(fontAwesomeIcon).color,
-                    display: window.getComputedStyle(fontAwesomeIcon).display
-                });
-            }
-        });
-        
-        // 强制更新现代化内容区域样式
-        const modernContentArea = document.querySelector('.modern-content-area');
+        // 更新现代化内容区域样式
+        const modernContentArea = document.querySelector('.main-content');
         if (modernContentArea) {
             const isCollapsed = sidebar.classList.contains('collapsed');
-            modernContentArea.style.marginLeft = isCollapsed ? '80px' : '280px';
-            console.log('现代化内容区域margin-left已设置为:', modernContentArea.style.marginLeft);
+            modernContentArea.classList.toggle('sidebar-collapsed', isCollapsed);
+            modernContentArea.classList.toggle('sidebar-open', !isCollapsed);
         }
         
         // 保存用户偏好到localStorage
         if (saveState) {
             const isCollapsed = sidebar.classList.contains('collapsed');
             localStorage.setItem('sidebar-collapsed', isCollapsed.toString());
-            console.log('状态已保存到localStorage:', isCollapsed);
+            //console.log('状态已保存到localStorage:', isCollapsed);
         }
     }
 
@@ -3510,7 +3658,7 @@
 <script>
     // 现代导航栏集成初始化
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 现代导航栏集成初始化开始...');
+        //console.log('🚀 现代导航栏集成初始化开始...');
         
         // 用户菜单切换功能
         window.toggleUserMenu = function() {
@@ -3607,56 +3755,52 @@
         
         // 监听现代导航事件
         document.addEventListener('modernNav:sidebarToggle', function(e) {
-            console.log('📱 侧边栏切换:', e.detail.collapsed ? '收起' : '展开');
+            //console.log('📱 侧边栏切换:', e.detail.collapsed ? '收起' : '展开');
         });
         
         document.addEventListener('modernNav:themeChanged', function(e) {
-            console.log('🎨 主题切换:', e.detail.theme);
+            //console.log('🎨 主题切换:', e.detail.theme);
         });
 
         // 监听现代导航点击事件
         document.addEventListener('modernNav:navigationItemClick', function(e) {
-            console.log('🎯 导航项点击:', e.detail);
+            //console.log('🎯 导航项点击:', e.detail);
 
             // 详细诊断信息
-            console.log('🔍 函数可用性检查:');
-            console.log('  - typeof window.loadContent:', typeof window.loadContent);
-            console.log('  - typeof loadContent:', typeof loadContent);
-            console.log('  - window.loadContent === undefined:', window.loadContent === undefined);
-            console.log('  - window 对象keys:', Object.keys(window).filter(k => k.includes('load')));
+
 
             const itemId = e.detail.itemId;
             if (itemId) {
                 // 移除#号前缀（如果有）
                 const page = itemId.replace('#', '');
-                console.log('📍 加载页面:', page);
+                //console.log('📍 加载页面:', page);
 
                 // 尝试多种方式调用loadContent函数
                 let loadContentFunc = null;
 
                 // 1. 尝试从window对象获取
                 if (typeof window.loadContent === 'function') {
-                    console.log('✅ 方法1成功: 从window对象找到loadContent');
+                    //console.log('✅ 方法1成功: 从window对象找到loadContent');
                     loadContentFunc = window.loadContent;
                 }
                 // 2. 尝试从全局作用域获取
                 else if (typeof loadContent === 'function') {
-                    console.log('✅ 方法2成功: 从全局作用域找到loadContent');
+                    //console.log('✅ 方法2成功: 从全局作用域找到loadContent');
                     loadContentFunc = loadContent;
                 }
                 // 3. 等待一下再尝试
                 else {
-                    console.log('🔄 loadContent暂时不可用，等待100ms后重试...');
+                    //console.log('🔄 loadContent暂时不可用，等待100ms后重试...');
                     setTimeout(() => {
-                        console.log('🔄 重试中，再次检查:');
-                        console.log('  - typeof window.loadContent:', typeof window.loadContent);
-                        console.log('  - typeof loadContent:', typeof loadContent);
+                        //console.log('🔄 重试中，再次检查:');
+                        //console.log('  - typeof window.loadContent:', typeof window.loadContent);
+                        //console.log('  - typeof loadContent:', typeof loadContent);
 
                         if (typeof window.loadContent === 'function') {
-                            console.log('✅ 重试成功: window.loadContent可用');
+                            //console.log('✅ 重试成功: window.loadContent可用');
                             window.loadContent(page, true, true);
                         } else if (typeof loadContent === 'function') {
-                            console.log('✅ 重试成功: loadContent可用');
+                            //console.log('✅ 重试成功: loadContent可用');
                             loadContent(page, true, true);
                         } else {
                             console.error('❌ loadContent函数仍然不可用，使用降级方案');
@@ -3668,7 +3812,7 @@
                 }
 
                 if (loadContentFunc) {
-                    console.log('✅ 找到loadContent函数，开始调用');
+                    //console.log('✅ 找到loadContent函数，开始调用');
                     loadContentFunc(page, true, true);
                 } else {
                     console.error('❌ loadContent函数不可用');
@@ -3702,7 +3846,7 @@
             attributeFilter: ['class']
         });
         
-        console.log('✅ 现代导航栏集成初始化完成');
+        //console.log('✅ 现代导航栏集成初始化完成');
     });
 </script>
 </html>
@@ -4887,144 +5031,6 @@
             </div>
         </div>
     </div>
-
-    <!-- 现代导航栏集成脚本 -->
-    <script>
-        // 现代导航栏集成初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 现代导航栏集成初始化开始...');
-            
-            // 用户菜单切换功能
-            window.toggleUserMenu = function() {
-                const userMenu = document.getElementById('userDropdownMenu');
-                if (userMenu) {
-                    userMenu.classList.toggle('show');
-                }
-            };
-            
-            // 点击外部关闭用户菜单
-            document.addEventListener('click', function(e) {
-                const userMenu = document.getElementById('userDropdownMenu');
-                const userProfile = document.querySelector('.nav-user-profile');
-                
-                if (userMenu && userProfile && !userProfile.contains(e.target)) {
-                    userMenu.classList.remove('show');
-                }
-            });
-            
-            // 搜索按钮功能（演示）
-            const searchBtn = document.querySelector('.search-btn');
-            if (searchBtn) {
-                searchBtn.addEventListener('click', function() {
-                    console.log('🔍 搜索功能触发');
-                    // TODO: 实现搜索功能
-                    alert('搜索功能即将推出！');
-                });
-            }
-            
-            // 通知按钮功能（演示）
-            const notificationBtn = document.querySelector('.notification-btn');
-            if (notificationBtn) {
-                notificationBtn.addEventListener('click', function() {
-                    console.log('🔔 通知功能触发');
-                    // TODO: 实现通知功能
-                    alert('通知中心即将推出！');
-                });
-            }
-            
-            // 导航链接点击处理 - 集成现有的loadContent功能
-            const modernNavLinks = document.querySelectorAll('.modern-nav-link');
-            modernNavLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    // 移除所有活跃状态
-                    modernNavLinks.forEach(l => l.classList.remove('active'));
-                    // 添加当前活跃状态
-                    this.classList.add('active');
-                    
-                    // 获取页面ID并调用现有的loadContent函数
-                    const pageId = this.getAttribute('data-page');
-                    if (pageId && typeof loadContent === 'function') {
-                        console.log('📄 切换到页面:', pageId);
-                        loadContent(pageId);
-                    }
-                    
-                    // 在移动端自动关闭侧边栏
-                    if (window.innerWidth <= 768 && window.modernNavController) {
-                        setTimeout(() => {
-                            window.modernNavController.closeMobileSidebar();
-                        }, 300);
-                    }
-                });
-            });
-            
-            // 键盘快捷键支持
-            document.addEventListener('keydown', function(e) {
-                // Ctrl+B 切换侧边栏
-                if (e.ctrlKey && e.key === 'b') {
-                    e.preventDefault();
-                    if (window.modernNavController) {
-                        window.modernNavController.toggle();
-                    }
-                }
-                
-                // Ctrl+Shift+T 切换主题（如果存在toggleTheme函数）
-                if (e.ctrlKey && e.shiftKey && e.key === 'T') {
-                    e.preventDefault();
-                    if (typeof toggleTheme === 'function') {
-                        toggleTheme();
-                    }
-                }
-                
-                // Ctrl+K 触发搜索
-                if (e.ctrlKey && e.key === 'k') {
-                    e.preventDefault();
-                    const searchBtn = document.querySelector('.search-btn');
-                    if (searchBtn) {
-                        searchBtn.click();
-                    }
-                }
-            });
-            
-            // 监听现代导航事件
-            document.addEventListener('modernNav:sidebarToggle', function(e) {
-                console.log('📱 侧边栏切换:', e.detail.collapsed ? '收起' : '展开');
-            });
-            
-            document.addEventListener('modernNav:themeChanged', function(e) {
-                console.log('🎨 主题切换:', e.detail.theme);
-            });
-            
-            // 确保主题图标正确显示
-            function updateThemeIcon() {
-                const themeIcon = document.querySelector('.theme-icon');
-                if (themeIcon) {
-                    const isDark = document.documentElement.classList.contains('theme-dark');
-                    themeIcon.className = isDark ? 'theme-icon fas fa-sun' : 'theme-icon fas fa-moon';
-                }
-            }
-            
-            // 初始化主题图标
-            updateThemeIcon();
-            
-            // 监听主题变化
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                        updateThemeIcon();
-                    }
-                });
-            });
-            
-            observer.observe(document.documentElement, {
-                attributes: true,
-                attributeFilter: ['class']
-            });
-            
-            console.log('✅ 现代导航栏集成初始化完成');
-        });
-    </script>
 
 </body>
 </html>
