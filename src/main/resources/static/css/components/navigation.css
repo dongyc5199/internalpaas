@@ -274,10 +274,10 @@
 
 .modern-sidebar {
   position: fixed;
-  top: var(--nav-height);
+  top: calc(var(--nav-height) + var(--spacing-4));
   left: 0;
   width: var(--sidebar-width-expanded);
-  height: calc(100vh - var(--nav-height));
+  height: calc(100vh - var(--nav-height) - var(--spacing-4));
   background: white;
   border-right: 1px solid rgba(0, 0, 0, 0.08);
   transform: translateX(0);

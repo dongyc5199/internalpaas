@@ -176,6 +176,10 @@
   --sidebar-width-collapsed: 80px;             /* 侧边栏收起宽度 */
 
   /* Z-index 层级 */
+  --z-sidebar: 890;
+  --z-navbar: 900;
+  --z-overlay: 950;
+  --z-debug: 980;
   --z-dropdown: 1000;
   --z-sticky: 1020;
   --z-fixed: 1030;

@@ -89,8 +89,8 @@ public class PasswordEncryptionService {
 
         // 检查是否为旧的明文密码（兼容性处理）
         if (!encryptedPassword.contains(SEPARATOR)) {
-            logger.warn("检测到可能的明文密码，建议升级加密存储");
-            return encryptedPassword; // 暂时返回明文，等待数据迁移
+            logger.error("检测到无效的加密格式，无法解密");
+            throw new PasswordDecryptionException("加密密码格式无效", null);
         }
 
         try {
@@ -174,6 +174,9 @@ public class PasswordEncryptionService {
         try {
             String encrypted = encryptPassword(originalPassword);
             String decrypted = decryptPassword(encrypted);
+            if (originalPassword == null || originalPassword.isEmpty()) {
+                return decrypted == null;
+            }
             return originalPassword.equals(decrypted);
         } catch (Exception e) {
             logger.error("密码加密解密验证失败", e);

@@ -30,7 +30,7 @@
 
   .main-content.sidebar-open {
     margin-left: 0;
-    transform: translateX(var(--sidebar-width));
+    transform: translateX(var(--sidebar-width-expanded));
   }
 }
 
@@ -317,16 +317,21 @@
   }
 
   /* 侧边栏展开模式 */
+  :root {
+    --sidebar-width-expanded: 280px;
+    --sidebar-width-collapsed: 72px;
+  }
+
   .modern-sidebar {
-    width: 280px;
+    width: var(--sidebar-width-expanded);
   }
 
   .main-content {
-    margin-left: 280px;
+    margin-left: var(--sidebar-width-expanded);
   }
 
   .main-content.sidebar-collapsed {
-    margin-left: 72px;
+    margin-left: var(--sidebar-width-collapsed);
   }
 
   /* 增强统计卡片 */

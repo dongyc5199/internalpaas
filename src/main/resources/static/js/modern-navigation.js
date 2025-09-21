@@ -465,13 +465,23 @@ class ModernNavigationController {
      * 📐 更新内容区域边距
      */
     updateContentAreaMargin() {
-        if (!this.elements.contentArea || this.state.isMobile) return;
+        if (!this.elements.contentArea) return;
 
-        const marginLeft = this.state.sidebarCollapsed ? 
-            this.config.selectors.sidebar.includes('collapsed') ? '68px' : '280px' :
-            '280px';
+        const contentArea = this.elements.contentArea;
 
-        this.elements.contentArea.style.marginLeft = this.state.sidebarCollapsed ? '68px' : '280px';
+        // Allow CSS variables to control the spacing by default
+        contentArea.style.marginLeft = '';
+        contentArea.classList.remove('sidebar-open', 'sidebar-collapsed');
+
+        if (this.state.isMobile) {
+            return;
+        }
+
+        if (this.state.sidebarCollapsed) {
+            contentArea.classList.add('sidebar-collapsed');
+        } else {
+            contentArea.classList.add('sidebar-open');
+        }
     }
 
     /**
