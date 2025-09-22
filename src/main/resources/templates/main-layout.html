@@ -49,6 +49,9 @@
     <!-- 保留FontAwesome -->
     <link rel="stylesheet" href="/css/fontawesome-local.css">
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/favicon.png">
+
     <!-- 新的现代化设计系统 -->
     <link rel="stylesheet" href="/css/design-tokens.css">
     <link rel="stylesheet" href="/css/base.css">
@@ -85,14 +88,6 @@
 
         <!-- SPA主内容区域 -->
         <main class="main-content" id="mainContent">
-            <!-- 加载动画 -->
-            <div id="loadingSpinner" class="loading-spinner">
-                <div class="spinner-content">
-                    <div class="spinner"></div>
-                    <p>加载中...</p>
-                </div>
-            </div>
-
             <div class="page-container">
                 <!-- 动态内容将在这里加载 -->
                 <div id="contentWrapper">
@@ -116,7 +111,6 @@
         // 传递管理员数据（如果存在）
         const adminData = /*[[${adminData != null ? adminData : null}]]*/ null;
 
-        console.log('用户信息:', {username, isAdmin, userRole, adminData});
     </script>
 
     <!-- 现代化导航JavaScript控制器 -->
@@ -143,6 +137,10 @@
 
     // 现代化侧边栏功能
     function initModernSidebar() {
+        if (window.modernNavController) {
+            return;
+        }
+
         const sidebar = document.getElementById('modernSidebar');
         const toggleBtn = document.getElementById('sidebarToggle');
         const mobileToggle = document.getElementById('navMobileToggle');
@@ -347,40 +345,43 @@
             const currentPageName = getCurrentPageFromUrl();
             //('页面初始化，当前页面:', currentPageName);
 
-            // 加载当前页面内容（第一次不显示加载动画）
-            loadContent(currentPageName, false, false);
+            // 加载当前页面内容（首次加载保持当前视图）
+            loadContent(currentPageName, false);
         } catch (error) {
             console.error('Error calling loadContent:', error);
             // 如果出错，回退到默认页面
-            loadContent('dashboard', false, false);
+            loadContent('dashboard', false);
         }
 
         // 初始化移动端菜单
         initMobileMenu();
 
         // 初始化侧边栏收起展开功能
-        initSidebarToggle();
-        
+        if (!window.modernNavController) {
+            initSidebarToggle();
+        }
+
         // 全局测试函数
         window.testToggle = function() {
-            //console.log('测试函数被调用');
-            toggleSidebar();
+            if (window.modernNavController) {
+                window.modernNavController.toggle();
+            } else {
+                toggleSidebar();
+            }
         };
-        
-        
-        // 绑定侧边栏切换事件
+
+        // 绑定侧边栏切换事件（无控制器时的后备逻辑）
         const toggleButton = document.getElementById('sidebarToggle');
-        if (toggleButton) {
-            // 绑定事件处理器
+        if (toggleButton && !window.modernNavController) {
             toggleButton.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 toggleSidebar();
             });
-        } else {
+        } else if (!toggleButton) {
             console.error('未找到侧边栏切换按钮');
         }
-        
+
         // 初始化抽屉管理器
         try {
             window.drawerManager = new DrawerManager();
@@ -402,20 +403,17 @@
 
     // 核心内容加载函数 (全局可访问)
     //console.log('🔧 正在定义window.loadContent函数...');
-    window.loadContent = async function loadContent(page, addToHistory = true, showLoadingSpinner = true) {
+    window.loadContent = async function loadContent(page, addToHistory = true) {
         if (isLoading || page === currentPage) {
             return;
         }
-        
+
         isLoading = true;
-        if (showLoadingSpinner) {
-            showLoading();
-        }
-        
+
         try {
             // 更新菜单激活状态
             updateActiveMenu(page);
-            
+
             // 根据页面类型决定加载方式
             let content;
             switch (page) {
@@ -428,10 +426,10 @@
                     setTimeout(() => {
                         // 绑定服务器事件处理器
                         bindServerEvents();
-                        
+
                         // 初始化服务器名称滚动效果
                         initServerNameScrolling();
-                        
+
                         // 加载服务器状态标签
                         if (serverStatusManager) {
                             serverStatusManager.loadAllServerStatus();
@@ -449,9 +447,10 @@
                     break;
                 case 'users':
                     content = await loadUsersContent();
-                    // 加载完用户内容后，绑定事件处理器
+                    // 加载完用户内容后，绑定事件处理器并执行页面初始化
                     setTimeout(() => {
                         bindContentEvents();
+                        initUsersContent();
                     }, 100);
                     break;
                 case 'applications':
@@ -470,20 +469,19 @@
                 default:
                     content = '<p>页面不存在</p>';
             }
-            
+
             // 更新内容
             updateContent(content);
-            
+
             // 更新浏览器历史
             if (addToHistory) {
-                history.pushState({ page: page }, '', `#${page}`);
+                history.pushState({ page: page }, '', '#' + page);
             }
-            
+
             currentPage = page;
-            
         } catch (error) {
             console.error('加载内容失败:', error);
-            
+
             // 检查是否是会话过期错误
             if (error.message && error.message.includes('401') && error.sessionExpired) {
                 // 会话过期，重定向到登录页面
@@ -494,42 +492,14 @@
                 window.location.href = '/login?expired';
                 return;
             }
-            
-            updateContent(`<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> 加载失败: ${error.message}</div>`);
+
+            updateContent('<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> 加载失败: ' + error.message + '</div>');
         } finally {
-            if (showLoadingSpinner) {
-                hideLoading();
-            }
             isLoading = false;
         }
     }
     //('✅ window.loadContent函数定义完成，立即验证:', typeof window.loadContent);
 
-    // 显示加载动画
-    function showLoading() {
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const contentWrapper = document.getElementById('contentWrapper');
-
-        if (loadingSpinner) {
-            loadingSpinner.classList.add('active');
-        }
-        if (contentWrapper) {
-            contentWrapper.style.opacity = '0.3';
-        }
-    }
-
-    // 隐藏加载动画
-    function hideLoading() {
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const contentWrapper = document.getElementById('contentWrapper');
-
-        if (loadingSpinner) {
-            loadingSpinner.classList.remove('active');
-        }
-        if (contentWrapper) {
-            contentWrapper.style.opacity = '1';
-        }
-    }
 
     // 更新内容
     function updateContent(content) {
@@ -1528,6 +1498,10 @@
     // =====================
 
     function initSidebarToggle() {
+        if (window.modernNavController) {
+            return;
+        }
+
         // 检查是否为移动端，如果是则不初始化桌面端收起功能
         const mediaQuery = window.matchMedia('(max-width: 768px)');
         if (mediaQuery.matches) {
@@ -2116,6 +2090,10 @@
     // 为了兼容性，保留旧函数名
     function bindServerEvents() {
         bindContentEvents();
+    }
+
+    function initUsersContent() {
+        // Placeholder for user-management specific hooks; keep logic centralized here.
     }
     
     function handleContentEvents(event) {
@@ -3798,10 +3776,10 @@
 
                         if (typeof window.loadContent === 'function') {
                             //console.log('✅ 重试成功: window.loadContent可用');
-                            window.loadContent(page, true, true);
+                            window.loadContent(page, true);
                         } else if (typeof loadContent === 'function') {
                             //console.log('✅ 重试成功: loadContent可用');
-                            loadContent(page, true, true);
+                            loadContent(page, true);
                         } else {
                             console.error('❌ loadContent函数仍然不可用，使用降级方案');
                             // 作为最后的备选方案，触发页面跳转

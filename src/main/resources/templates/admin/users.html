@@ -1,4 +1,5 @@
 <!-- 用户管理内容片段 -->
+<!-- ⚠️ JavaScript逻辑统一在 main-layout.html 内维护 -->
 <div th:fragment="users-content" xmlns:th="http://www.thymeleaf.org">
     <style>
         :root {
@@ -807,23 +808,5 @@
             </div>
         </div>
 
-    <script>
-        // CSRF Token 获取
-        function getCsrfToken() {
-            const csrfMeta = document.querySelector('meta[name="_csrf"]');
-            return csrfMeta ? csrfMeta.getAttribute('content') : '';
-        }
-        function getCsrfHeader() {
-            const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
-            return csrfHeaderMeta ? csrfHeaderMeta.getAttribute('content') : 'X-CSRF-TOKEN';
-        }
-        
-        // 页面片段加载完成后的初始化 (用于SPA动态加载)
-        document.addEventListener('DOMContentLoaded', function() {
-            // 如果在SPA环境中，延迟执行初始化
-            setTimeout(() => {
-                // 任何用户管理特定的初始化逻辑可以在这里添加
-            }, 100);
-        });
-    </script>
+    <!-- ⚠️ JavaScript逻辑统一在 main-layout.html 管理; 此片段仅包含结构与样式 -->
 </div>

@@ -3,6 +3,7 @@ package com.cmict.internalpaas.config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -200,7 +201,9 @@ public class GlobalExceptionHandler {
         errorResponse.put("error", userMessage);
         errorResponse.put("timestamp", System.currentTimeMillis());
         
-        return ResponseEntity.status(status).body(errorResponse);
+        return ResponseEntity.status(status)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(errorResponse);
     }
 
     /**

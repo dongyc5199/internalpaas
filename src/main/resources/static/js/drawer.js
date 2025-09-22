@@ -53,7 +53,6 @@ class DrawerManager {
                 }
             });
 
-            console.log('✅ 清理重复抽屉元素完成');
         } catch (error) {
             console.warn('清理抽屉元素时出错:', error);
         }

@@ -93,6 +93,7 @@ class ModernNavigationController {
             this.initializeTheme();
             this.setupAccessibility();
             this.performanceOptimization();
+            this.updateSidebarUI();
             
             //console.log('✅ 现代化导航系统初始化完成');
             
@@ -125,6 +126,10 @@ class ModernNavigationController {
                 }
             }
         });
+
+        if (!this.elements.sidebarNav) {
+            this.elements.sidebarNav = this.elements.sidebar?.querySelector('.sidebar-nav') || document.querySelector('.sidebar-nav');
+        }
     }
 
     /**
@@ -490,14 +495,25 @@ class ModernNavigationController {
     updateToggleButtonState() {
         if (!this.elements.toggle) return;
 
-        const icon = this.elements.toggle.querySelector('.hamburger-icon');
-        if (icon) {
+        const iconPath = this.elements.toggle.querySelector('.icon path');
+        const srLabel = this.elements.toggle.querySelector('.sr-only');
+
+        if (iconPath) {
             if (this.state.sidebarCollapsed) {
-                icon.classList.add('active');
+                iconPath.setAttribute('d', 'M8 5l8 7-8 7z');
+                this.elements.toggle.setAttribute('aria-label', '展开侧边栏');
             } else {
-                icon.classList.remove('active');
+                iconPath.setAttribute('d', 'M16 5l-8 7 8 7z');
+                this.elements.toggle.setAttribute('aria-label', '收起侧边栏');
             }
         }
+
+        if (srLabel) {
+            srLabel.textContent = this.state.sidebarCollapsed ? '展开侧边栏' : '收起侧边栏';
+        }
+
+        this.elements.toggle.classList.toggle('is-collapsed', this.state.sidebarCollapsed);
+        this.elements.toggle.classList.toggle('is-expanded', !this.state.sidebarCollapsed);
     }
 
     /**
@@ -614,15 +630,14 @@ class ModernNavigationController {
             this.elements.toggle.setAttribute('aria-expanded', !this.state.sidebarCollapsed);
         }
 
-        // 为侧边栏添加ARIA属性和tabindex管理
-        if (this.elements.sidebar) {
+        const navContainer = this.elements.sidebarNav || this.elements.sidebar;
+        if (navContainer) {
             const isHidden = this.state.sidebarCollapsed;
+            const focusableSelectors = 'a, button, [tabindex]';
+            const sidebarLinks = navContainer.querySelectorAll(focusableSelectors);
 
-            // 管理侧边栏内链接的可访问性
-            const sidebarLinks = this.elements.sidebar.querySelectorAll('a, button');
             sidebarLinks.forEach(link => {
                 if (isHidden) {
-                    // 如果元素有焦点，先移除焦点再设置aria-hidden
                     if (link === document.activeElement) {
                         link.blur();
                     }
@@ -634,11 +649,19 @@ class ModernNavigationController {
                 }
             });
 
-            // 设置侧边栏的aria-hidden属性
-            this.elements.sidebar.setAttribute('aria-hidden', isHidden);
+            if (isHidden) {
+                navContainer.setAttribute('aria-hidden', 'true');
+                navContainer.setAttribute('inert', '');
+            } else {
+                navContainer.removeAttribute('aria-hidden');
+                navContainer.removeAttribute('inert');
+            }
         }
 
-        // 更新ARIA状态
+        if (this.elements.sidebar) {
+            this.elements.sidebar.removeAttribute('aria-hidden');
+        }
+
         this.updateAriaStates();
     }
 
@@ -650,21 +673,27 @@ class ModernNavigationController {
             this.elements.toggle.setAttribute('aria-expanded', !this.state.sidebarCollapsed);
         }
         
-        if (this.elements.sidebar) {
+        const navContainer = this.elements.sidebarNav || this.elements.sidebar;
+        if (navContainer) {
             const isHidden = this.state.sidebarCollapsed;
 
-            // 如果要隐藏侧边栏，先处理焦点管理
             if (isHidden) {
-                const focusedElement = this.elements.sidebar.querySelector(':focus');
+                const focusedElement = navContainer.querySelector(':focus');
                 if (focusedElement) {
                     focusedElement.blur();
                 }
             }
 
-            this.elements.sidebar.setAttribute('aria-hidden', isHidden);
+            if (isHidden) {
+                navContainer.setAttribute('aria-hidden', 'true');
+                navContainer.setAttribute('inert', '');
+            } else {
+                navContainer.removeAttribute('aria-hidden');
+                navContainer.removeAttribute('inert');
+            }
 
-            // 管理侧边栏内链接的可访问性
-            const sidebarLinks = this.elements.sidebar.querySelectorAll('a, button');
+            const focusableSelectors = 'a, button, [tabindex]';
+            const sidebarLinks = navContainer.querySelectorAll(focusableSelectors);
             sidebarLinks.forEach(link => {
                 if (isHidden) {
                     link.setAttribute('tabindex', '-1');
@@ -674,6 +703,10 @@ class ModernNavigationController {
                     link.removeAttribute('aria-hidden');
                 }
             });
+        }
+
+        if (this.elements.sidebar) {
+            this.elements.sidebar.removeAttribute('aria-hidden');
         }
     }
 
@@ -914,7 +947,6 @@ class ModernNavigationController {
         // 清理事件监听器
         // 恢复原始状态
         // 清理DOM修改
-        console.log('🗑️  导航控制器已销毁');
     }
 }
 
@@ -946,7 +978,6 @@ function initializeNavigation() {
     window.toggleSidebar = () => window.modernNavController.toggle();
     window.toggleTheme = () => window.modernNavController.toggleTheme();
 
-    console.log('🎯 现代化导航系统已就绪');
 }
 
 // ===========================================
@@ -955,4 +986,3 @@ function initializeNavigation() {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = ModernNavigationController;
 }
-

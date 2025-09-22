@@ -1,16 +1,34 @@
-﻿# Repository Guidelines
+# Repository Guidelines
 
 ## Project Structure & Module Organization
-The Spring Boot application code resides in `src/main/java/com/cmict/internalpaas`, organized by feature packages such as `controller`, `service`, and `config`, with shared DTOs and events grouped under `dto` and `event`. Thymeleaf templates and static assets live under `src/main/resources/templates` and `src/main/resources/static`, while Flyway migrations sit in `src/main/resources/db/migration`. Operational scripts for vendor asset management are in `scripts/`, documentation in `doc/`, and sample datasets in `data/`. Keep build outputs in `target/` out of version control.
+- Java services live in `src/main/java/com/cmict/internalpaas`, grouped by feature packages such as `controller`, `service`, and `config`; shared DTOs and events stay under `dto` and `event`.
+- Thymeleaf views are stored in `src/main/resources/templates`, while static assets (JS, CSS, images) belong in `src/main/resources/static`.
+- Database change sets reside in `src/main/resources/db/migration`; operational scripts are in `scripts/`, documentation in `doc/`, and sample datasets in `data/`.
+- Keep generated artifacts inside `target/` and out of version control.
 
 ## Build, Test, and Development Commands
-Run `./mvnw.cmd clean verify` to compile, run unit tests, and produce the Spring Boot jar. Use `./mvnw.cmd spring-boot:run` for a local dev server with auto-reload; append `-Dspring-boot.run.profiles=dev` (or `prod`/`offline`) to match environment settings. Package for offline delivery with `./mvnw.cmd -Poffline package`, and refresh vendor bundles with `scripts\download-vendor-libs.bat` (use the `.sh` variant on Unix-like systems).
+- `./mvnw.cmd clean verify` builds the project, runs unit tests, and assembles the Spring Boot jar.
+- `./mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=dev` starts a local server with auto-reload; swap the profile to `prod` or `offline` when needed.
+- `./mvnw.cmd -Poffline package` creates an offline distributable without network downloads.
+- `scripts/download-vendor-libs.bat` (or the `.sh` variant) refreshes bundled vendor dependencies.
 
 ## Coding Style & Naming Conventions
-Target Java 17 and four-space indentation. Follow Spring naming patterns (`*Controller`, `*Service`, `*Repository`) and keep package names lowercase. Prefer constructor injection, Lombok annotations such as `@RequiredArgsConstructor`, and immutable DTOs. Name templates with kebab-case, group static assets by type, and store configuration in `application-<profile>.properties`.
+- Target Java 17 with four-space indentation and lowercase package names.
+- Prefer constructor injection and Lombok annotations such as `@RequiredArgsConstructor` to reduce boilerplate.
+- Name Spring components with the standard suffixes (`*Controller`, `*Service`, `*Repository`) and Thymeleaf templates in kebab-case.
+- Store configuration overrides in `application-<profile>.properties`.
 
 ## Testing Guidelines
-Tests live in `src/test/java`, rely on JUnit 5 and `spring-boot-starter-test`, and follow the `*Test` suffix (`CommandSecurityServiceTest`, `PasswordEncryptionFixTest`). Run the suite with `./mvnw.cmd test`; target a single class via `./mvnw.cmd -Dtest=PasswordEncryptionFixTest test`. Extend coverage for security, encryption, and remote server orchestration paths before merging.
+- Tests live in `src/test/java` and use JUnit 5 through `spring-boot-starter-test`.
+- Name test classes `<Feature>Test`; run a single suite via `./mvnw.cmd -Dtest=PasswordEncryptionFixTest test`.
+- Prioritize coverage for security, encryption, and remote orchestration flows; add supporting fixtures under `data/` when relevant.
 
 ## Commit & Pull Request Guidelines
-Follow Conventional Commits as in `feat(服务器管理): …`; scope nouns may be English or Chinese but keep them concise. Use imperative subjects under 60 characters, reference issue IDs when available, and split large work into focused commits. Pull requests should state motivation, list verification steps, and include UI screenshots whenever templates or static assets change.
+- Follow Conventional Commits, e.g. `feat(server-management): add remote reboot hook`; keep subjects imperative and under 60 characters. Scope nouns may be English or Chinese.
+- Reference issue IDs where possible and keep each commit focused on one change.
+- Pull requests should explain motivation, list verification steps, and attach UI screenshots when templates or static assets change.
+- Ensure `./mvnw.cmd clean verify` passes before requesting review.
+
+## Security & Configuration Tips
+- Keep secrets in profile-specific property files and never commit production credentials.
+- Review Flyway migrations and vendor scripts before promoting changes to shared environments.
