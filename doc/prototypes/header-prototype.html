@@ -1,0 +1,520 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>标题栏原型</title>
+    <style>
+        :root {
+            font-family: "Inter", "Segoe UI", sans-serif;
+            background: #E9EDF7;
+            color: #0F172A;
+        }
+        body {
+            margin: 0;
+            padding: 48px;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 24px 0;
+        }
+        section {
+            margin-bottom: 48px;
+        }
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 32px;
+        }
+        .preview-card {
+            padding: 28px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+        }
+        .preview-card header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        .tag {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 999px;
+            letter-spacing: 0.6px;
+        }
+        .tag.admin {
+            background: linear-gradient(135deg, #2F9BFF, #3BC6B8);
+            color: #FFFFFF;
+        }
+        .tag.dev {
+            background: linear-gradient(135deg, #6C63FF, #3D8BFF);
+            color: #FFFFFF;
+        }
+        .toolbar {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            height: 64px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            backdrop-filter: blur(12px);
+            gap: 16px;
+        }
+        .toolbar[data-theme="dev"] {
+            background: rgba(248, 249, 255, 0.78);
+            border-color: rgba(234, 238, 255, 0.6);
+        }
+        .toolbar[data-state="scrolled"] {
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+        }
+        .toolbar[data-theme="dark"] {
+            background: rgba(15, 23, 42, 0.85);
+            color: rgba(255, 255, 255, 0.92);
+        }
+        .toolbar[data-theme="dark"] .search-input {
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.92);
+        }
+        .toolbar[data-theme="dark"] .button,
+        .toolbar[data-theme="dark"] .lang-switch {
+            color: rgba(255, 255, 255, 0.92);
+        }
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 20%;
+            min-width: 200px;
+        }
+        .logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2F9BFF, #3BC6B8);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .toolbar[data-theme="dev"] .logo {
+            background: linear-gradient(135deg, #6C63FF, #3D8BFF);
+        }
+        .workspace-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .toolbar[data-theme="dev"] .workspace-title {
+            color: #343C83;
+        }
+        .toolbar-center {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+        .search-input {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 18px;
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.04);
+            border: 1px solid transparent;
+            color: rgba(15, 23, 42, 0.85);
+        }
+        .search-input[data-state="focus"] {
+            border: 1px solid transparent;
+            box-shadow: 0 0 0 1px rgba(47, 155, 255, 0.8), 0 0 0 6px rgba(47, 155, 255, 0.15);
+            animation: breathe 0.6s linear infinite alternate;
+        }
+        .toolbar[data-theme="dev"] .search-input[data-state="focus"] {
+            box-shadow: 0 0 0 1px rgba(108, 99, 255, 0.9), 0 0 0 6px rgba(108, 99, 255, 0.18);
+        }
+        .search-input[data-state="error"] {
+            border: 1px solid #F87171;
+            box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.28);
+        }
+        .search-icon {
+            width: 18px;
+            height: 18px;
+            opacity: 0.6;
+        }
+        .search-placeholder {
+            flex: 1;
+            font-size: 14px;
+        }
+        .shortcut-tag {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.08);
+        }
+        .toolbar[data-theme="dev"] .shortcut-tag {
+            background: rgba(108, 99, 255, 0.12);
+            color: rgba(76, 81, 191, 0.85);
+        }
+        .toolbar[data-theme="dark"] .shortcut-tag {
+            background: rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .button {
+            position: relative;
+            width: 32px;
+            height: 32px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.65);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            color: rgba(47, 155, 255, 0.95);
+        }
+        .toolbar[data-theme="dev"] .button {
+            color: rgba(108, 99, 255, 0.95);
+        }
+        .button[data-state="hover"] {
+            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.85);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.22);
+        }
+        .button[data-state="focus"],
+        .button[data-state="focus"]:after {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+        }
+        .toolbar[data-theme="dev"] .button[data-state="hover"] {
+            box-shadow: 0 8px 20px rgba(108, 99, 255, 0.22);
+        }
+        .button[data-state="active"] {
+            transform: scale(0.96);
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.28);
+        }
+        .button[data-state="unread"]::after {
+            content: attr(data-count);
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 4px;
+            border-radius: 999px;
+            background: #F34762;
+            color: #FFFFFF;
+            font-size: 10px;
+            font-weight: 600;
+            line-height: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-toggle {
+            width: 56px;
+            height: 32px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.72);
+            display: inline-flex;
+            align-items: center;
+            padding: 4px;
+            position: relative;
+            transition: box-shadow 0.2s ease, background 0.2s ease;
+        }
+        .theme-toggle .thumb {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            transition: transform 0.28s ease, background 0.28s ease;
+        }
+        .theme-toggle[data-mode="light"] .thumb {
+            transform: translateX(0);
+            background: linear-gradient(135deg, #2F9BFF, #3BC6B8);
+        }
+        .theme-toggle[data-mode="dark"] .thumb {
+            transform: translateX(24px);
+            background: linear-gradient(135deg, #1F78FF, #25A8A0);
+        }
+        .toolbar[data-theme="dev"] .theme-toggle[data-mode="light"] .thumb {
+            background: linear-gradient(135deg, #6C63FF, #3D8BFF);
+        }
+        .toolbar[data-theme="dev"] .theme-toggle[data-mode="dark"] .thumb {
+            background: linear-gradient(135deg, #4F4AFF, #2F6DFF);
+        }
+        .lang-switch {
+            font-size: 14px;
+            font-weight: 500;
+            padding: 0 10px;
+            height: 32px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            color: rgba(15, 23, 42, 0.7);
+            transition: color 0.2s ease;
+        }
+        .lang-switch[data-state="hover"] {
+            color: rgba(47, 155, 255, 1);
+            border-bottom: 2px solid transparent;
+            box-shadow: inset 0 -2px 0 linear-gradient(135deg, #2F9BFF, #3BC6B8);
+        }
+        .toolbar[data-theme="dev"] .lang-switch[data-state="hover"] {
+            color: rgba(76, 81, 191, 1);
+            box-shadow: inset 0 -2px 0 linear-gradient(135deg, #6C63FF, #3D8BFF);
+        }
+        .divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(15, 23, 42, 0.08);
+        }
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.16);
+        }
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .state-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px;
+            margin-top: 24px;
+        }
+        .state-card {
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .state-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0;
+        }
+        .note {
+            font-size: 12px;
+            color: rgba(15, 23, 42, 0.6);
+            margin-top: 16px;
+            line-height: 1.6;
+        }
+        @keyframes breathe {
+            from {
+                box-shadow: 0 0 0 1px rgba(47, 155, 255, 0.7), 0 0 0 4px rgba(47, 155, 255, 0.12);
+            }
+            to {
+                box-shadow: 0 0 0 1px rgba(47, 155, 255, 0.9), 0 0 0 6px rgba(47, 155, 255, 0.18);
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .toolbar,
+            .search-input,
+            .button,
+            .theme-toggle {
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>标题栏原型</h1>
+    <section>
+        <div class="preview-grid">
+            <article class="preview-card">
+                <header>
+                    <strong>管理员标题栏 · 默认/滚动</strong>
+                    <span class="tag admin">ADMIN</span>
+                </header>
+                <div class="toolbar" data-theme="admin" data-state="default">
+                    <div class="toolbar-left">
+                        <span class="logo">DW</span>
+                        <span class="workspace-title">Admin Workspace</span>
+                    </div>
+                    <div class="toolbar-center">
+                        <div class="search-input" data-state="default">
+                            <span class="search-icon">🔍</span>
+                            <span class="search-placeholder">搜索服务器 / Cmd/Ctrl+K</span>
+                            <span class="shortcut-tag">⌘K</span>
+                        </div>
+                    </div>
+                    <div class="toolbar-right">
+                        <button class="button" aria-label="查看通知" data-state="unread" data-count="3">🔔</button>
+                        <div class="theme-toggle" data-mode="light" role="switch" aria-checked="false">
+                            <span class="thumb">☀️</span>
+                        </div>
+                        <button class="lang-switch" aria-label="语言切换">ZH</button>
+                        <span class="divider"></span>
+                        <div class="avatar"><img src="https://dummyimage.com/64x64/bae6fd/0284c7" alt="管理员头像" /></div>
+                    </div>
+                </div>
+                <div class="toolbar" data-theme="admin" data-state="scrolled" style="margin-top:16px;">
+                    <div class="toolbar-left">
+                        <span class="logo">DW</span>
+                        <span class="workspace-title">Admin Workspace</span>
+                    </div>
+                    <div class="toolbar-center">
+                        <div class="search-input" data-state="focus">
+                            <span class="search-icon">🔍</span>
+                            <span class="search-placeholder">正在搜索："GPU"</span>
+                            <span class="shortcut-tag">⌘K</span>
+                        </div>
+                    </div>
+                    <div class="toolbar-right">
+                        <button class="button" aria-label="通知" data-state="hover">🔔</button>
+                        <div class="theme-toggle" data-mode="dark" role="switch" aria-checked="true">
+                            <span class="thumb">🌙</span>
+                        </div>
+                        <button class="lang-switch" data-state="hover">EN</button>
+                        <span class="divider"></span>
+                        <div class="avatar"><img src="https://dummyimage.com/64x64/bae6fd/0284c7" alt="管理员头像" /></div>
+                    </div>
+                </div>
+                <div class="state-grid">
+                    <div class="state-card">
+                        <h3>搜索框 · 错误态</h3>
+                        <p>描边转为 `#F87171`，显示错误提示文字：无法找到服务器，请重试。</p>
+                    </div>
+                    <div class="state-card">
+                        <h3>语言按钮 · Hover</h3>
+                        <p>下方出现 2px 蓝绿渐变下划线，同时改变文字颜色。</p>
+                    </div>
+                    <div class="state-card">
+                        <h3>按钮焦点</h3>
+                        <p>键盘焦点添加 3px 渐变外描边，确保可访问性提示。</p>
+                    </div>
+                    <div class="state-card">
+                        <h3>响应式</h3>
+                        <p>&lt;1280px 搜索框收缩，右侧新增“更多”按钮折叠主题和语言切换。</p>
+                    </div>
+                </div>
+                <p class="note">默认与滚动态展示背景透明度与阴影变化；管理员主题使用蓝绿渐变描边与按钮色彩。</p>
+            </article>
+            <article class="preview-card">
+                <header>
+                    <strong>开发者标题栏 · 默认/暗色</strong>
+                    <span class="tag dev">DEV</span>
+                </header>
+                <div class="toolbar" data-theme="dev">
+                    <div class="toolbar-left">
+                        <span class="logo">DW</span>
+                        <span class="workspace-title">Developer Workspace</span>
+                    </div>
+                    <div class="toolbar-center">
+                        <div class="search-input" data-state="default">
+                            <span class="search-icon">🔍</span>
+                            <span class="search-placeholder">搜索应用 / Cmd/Ctrl+K</span>
+                            <span class="shortcut-tag">⌘K</span>
+                        </div>
+                    </div>
+                    <div class="toolbar-right">
+                        <button class="button" aria-label="通知" data-state="unread" data-count="·">🔔</button>
+                        <div class="theme-toggle" data-mode="light" role="switch" aria-checked="false">
+                            <span class="thumb">☀️</span>
+                        </div>
+                        <button class="lang-switch">ZH</button>
+                        <span class="divider"></span>
+                        <div class="avatar"><img src="https://dummyimage.com/64x64/e0e7ff/4338ca" alt="开发者头像" /></div>
+                    </div>
+                </div>
+                <div class="toolbar" data-theme="dark" style="margin-top:16px;">
+                    <div class="toolbar-left">
+                        <span class="logo">DW</span>
+                        <span class="workspace-title">Developer Workspace</span>
+                    </div>
+                    <div class="toolbar-center">
+                        <div class="search-input" data-state="focus">
+                            <span class="search-icon">🔍</span>
+                            <span class="search-placeholder">搜索日志："release"</span>
+                            <span class="shortcut-tag">⌘K</span>
+                        </div>
+                    </div>
+                    <div class="toolbar-right">
+                        <button class="button" aria-label="通知" data-state="hover">🔔</button>
+                        <div class="theme-toggle" data-mode="dark" role="switch" aria-checked="true">
+                            <span class="thumb">🌙</span>
+                        </div>
+                        <button class="lang-switch" data-state="hover">EN</button>
+                        <span class="divider"></span>
+                        <div class="avatar"><img src="https://dummyimage.com/64x64/e0e7ff/4338ca" alt="开发者头像" /></div>
+                    </div>
+                </div>
+                <div class="state-grid">
+                    <div class="state-card">
+                        <h3>暗色主题</h3>
+                        <p>背景 `rgba(15,23,42,0.85)`，标题文本 `rgba(255,255,255,0.92)`，保持渐变描边亮度。</p>
+                    </div>
+                    <div class="state-card">
+                        <h3>更多按钮</h3>
+                        <p>在窄屏下折叠主题/语言切换至 `More` 下拉，保留图标提示。</p>
+                    </div>
+                    <div class="state-card">
+                        <h3>快捷键提示</h3>
+                        <p>快捷键标签在 Hover 时转换为主色渐变背景，增强操作关联性。</p>
+                    </div>
+                    <div class="state-card">
+                        <h3>可访问性</h3>
+                        <p>Tab 顺序：Logo（跳过）→ 搜索 → 通知 → 主题 → 语言 → 用户中心。</p>
+                    </div>
+                </div>
+                <p class="note">开发者主题采用紫蓝渐变与更亮的快捷键标签，暗色模式下保持运行工具可读性。</p>
+            </article>
+        </div>
+    </section>
+    <section>
+        <article class="preview-card">
+            <header>
+                <strong>状态示意与响应式</strong>
+                <span class="tag admin">STATE</span>
+            </header>
+            <div class="state-grid">
+                <div class="state-card">
+                    <h3>滚动触发</h3>
+                    <p>滚动 80px 后标题栏透明度升至 0.92，阴影增至 `0 12px 32px`，防止与主内容冲突。</p>
+                </div>
+                <div class="state-card">
+                    <h3>Error 提示</h3>
+                    <p>错误状态在搜索框下方显示 12px 红色辅助文字，可选带 icon 提示。</p>
+                </div>
+                <div class="state-card">
+                    <h3>键盘支持</h3>
+                    <p>支持 `Cmd/Ctrl+K` 聚焦搜索，Esc 关闭下拉建议，Space/Enter 切换主题。</p>
+                </div>
+                <div class="state-card">
+                    <h3>窄屏折叠</h3>
+                    <p>高度缩减至 56px，Logo 收缩为字母图标，导航收起按钮放置左侧第一位。</p>
+                </div>
+            </div>
+            <p class="note">详见 `doc/prototypes/header-prototype.html`，可在浏览器调试不同 data-state / data-theme 组合验证效果。</p>
+        </article>
+    </section>
+</body>
+</html>
