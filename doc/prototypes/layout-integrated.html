@@ -1,0 +1,530 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>标题栏 + 导航栏整合原型</title>
+    <style>
+        :root {
+            font-family: "Inter", "Segoe UI", sans-serif;
+            background: #E4E8F5;
+            color: #0F172A;
+        }
+        body {
+            margin: 0;
+            padding: 48px;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 24px 0;
+        }
+        section {
+            margin-bottom: 48px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(520px, 1fr));
+            gap: 32px;
+        }
+        .card {
+            padding: 28px;
+            border-radius: 28px;
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 30px 60px rgba(15, 23, 42, 0.18);
+        }
+        .card header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .tag {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 999px;
+            color: #FFF;
+            letter-spacing: 0.6px;
+        }
+        .tag.admin { background: linear-gradient(135deg, #2F9BFF, #3BC6B8); }
+        .tag.dev { background: linear-gradient(135deg, #6C63FF, #3D8BFF); }
+        .layout-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .layout-canvas {
+            position: relative;
+            border-radius: 22px;
+            overflow: hidden;
+            background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(245,247,255,0.88));
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
+        }
+        .layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            min-height: 300px;
+        }
+        .layout.collapsed {
+            grid-template-columns: 72px 1fr;
+        }
+        .header-bar {
+            position: sticky;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 0 24px;
+            height: 64px;
+            backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.78);
+            border-bottom: 1px solid rgba(255,255,255,0.6);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            z-index: 2;
+        }
+        .header-bar.dev {
+            background: rgba(248, 249, 255, 0.8);
+            border-color: rgba(232, 235, 255, 0.6);
+        }
+        .logo-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFF;
+            font-weight: 700;
+            font-size: 14px;
+            background: linear-gradient(135deg, #2F9BFF, #3BC6B8);
+        }
+        .header-bar.dev .logo { background: linear-gradient(135deg, #6C63FF, #3D8BFF); }
+        .title { font-size: 18px; font-weight: 600; }
+        .search {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 18px;
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.04);
+        }
+        .toolbar-right { display: flex; align-items: center; gap: 12px; }
+        .btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .lang {
+            font-size: 13px;
+            font-weight: 500;
+            padding: 0 10px;
+            height: 32px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255,255,255,0.6);
+        }
+        .divider { width: 1px; height: 24px; background: rgba(15,23,42,0.08); }
+        .avatar { width: 32px; height: 32px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.6); }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .menu-group { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; }
+        .layout.collapsed .menu-group { margin-top: 0; }
+        .menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            color: rgba(15, 23, 42, 0.78);
+        }
+        .menu-item .meta { display: flex; align-items: center; gap: 12px; }
+        .menu-item.selected {
+            background: rgba(47,155,255,0.15);
+            position: relative;
+        }
+        .menu-item.selected::before {
+            content: "";
+            position: absolute;
+            left: -12px;
+            top: 10px;
+            bottom: 10px;
+            width: 4px;
+            border-radius: 4px;
+            background: linear-gradient(135deg, #2F9BFF, #3BC6B8);
+        }
+        .sidebar.dev .menu-item.selected { background: rgba(108,99,255,0.2); }
+        .sidebar.dev .menu-item.selected::before { background: linear-gradient(135deg, #6C63FF, #3D8BFF); }
+        .menu-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 10px;
+            background: rgba(59,130,246,0.12);
+            color: rgba(59,130,246,0.95);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        .sidebar.dev .menu-icon {
+            background: rgba(108,99,255,0.14);
+            color: rgba(108,99,255,0.95);
+        }
+        .badge {
+            min-width: 18px;
+            height: 18px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, 0.12);
+            color: rgba(59, 130, 246, 1);
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sidebar.dev .badge {
+            background: rgba(108, 99, 255, 0.12);
+            color: rgba(108, 99, 255, 1);
+        }
+        .footer-block {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.04);
+        }
+        .footer-block .pill {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            color: rgba(15, 23, 42, 0.65);
+            background: rgba(255, 255, 255, 0.72);
+        }
+        .footer-block .link {
+            font-size: 12px;
+            color: rgba(59, 130, 246, 0.85);
+            cursor: pointer;
+        }
+        .sidebar.dev .footer-block .link {
+            color: rgba(76, 81, 191, 0.9);
+        }
+        .content {
+            padding: 24px 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            background: rgba(248, 250, 255, 0.72);
+        }
+        .content .caption { font-size: 12px; color: rgba(15,23,42,0.55); }
+        .content .placeholder {
+            height: 180px;
+            border-radius: 18px;
+            background: repeating-linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.12) 12px, rgba(59,130,246,0.04) 12px, rgba(59,130,246,0.04) 24px);
+        }
+        .layout.collapsed .content .caption { margin-bottom: 8px; }
+        .collapsed-panel {
+            width: 72px;
+            border-radius: 24px;
+            padding: 18px 12px;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 24px 44px rgba(15, 23, 42, 0.14);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .collapsed-item {
+            width: 40px;
+            height: 40px;
+            border-radius: 16px;
+            background: rgba(59, 130, 246, 0.08);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(59, 130, 246, 1);
+            position: relative;
+        }
+        .collapsed-item[data-state="selected"]::before {
+            content: "";
+            position: absolute;
+            left: -12px;
+            top: 10px;
+            bottom: 10px;
+            width: 4px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #2F9BFF, #3BC6B8);
+        }
+        .collapsed-item[data-state="badge"]::after {
+            content: "";
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #F97316;
+        }
+        .collapsed-panel.dev .collapsed-item {
+            background: rgba(108, 99, 255, 0.1);
+            color: rgba(108, 99, 255, 1);
+        }
+        .hover-flyout { position: relative; }
+        .hover-flyout::after {
+            content: attr(data-label);
+            position: absolute;
+            left: 70px;
+            top: 50%;
+            transform: translateY(-50%);
+            min-width: 200px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            background: rgba(15, 23, 42, 0.78);
+            color: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.28);
+            opacity: 0;
+        }
+        .hover-flyout[data-state="hover"]::after { opacity: 1; }
+        .note {
+            font-size: 12px;
+            color: rgba(15, 23, 42, 0.6);
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { transition: none !important; animation: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <h1>标题栏 + 导航栏整合原型</h1>
+    <section>
+        <div class="grid">
+            <article class="card">
+                <header>
+                    <strong>管理员布局 · 导航展开</strong>
+                    <span class="tag admin">ADMIN</span>
+                </header>
+                <div class="layout-wrap">
+                    <div class="layout-canvas">
+                        <div class="header-bar">
+                            <div class="logo-title">
+                                <span class="logo">DW</span>
+                                <span class="title">Admin Workspace</span>
+                            </div>
+                            <div class="search">
+                                <span>&#128269;</span>
+                                <span style="flex:1;opacity:0.7;">搜索服务器 / Cmd/Ctrl+K</span>
+                                <span style="font-size:12px;padding:4px 8px;border-radius:12px;background:rgba(15,23,42,0.08);">⌘K</span>
+                            </div>
+                            <div class="toolbar-right">
+                                <span class="btn" style="position:relative;">&#128276;<span style="position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#F34762;color:#FFF;font-size:10px;line-height:16px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;">3</span></span>
+                                <span class="btn">&#9728;</span>
+                                <span class="lang">ZH</span>
+                                <span class="divider"></span>
+                                <span class="avatar"><img src="https://dummyimage.com/64x64/bae6fd/0284c7" alt="Admin" /></span>
+                            </div>
+                        </div>
+                        <div class="layout">
+                            <aside class="sidebar">
+                                <div class="menu-group">
+                                    <div class="menu-item selected">
+                                        <span class="meta">
+                                            <span class="menu-icon">OV</span>
+                                            <span class="text">控制台概览</span>
+                                        </span>
+                                        <span class="badge">3</span>
+                                    </div>
+                                    <div class="menu-item" data-state="hover">
+                                        <span class="meta">
+                                            <span class="menu-icon">SV</span>
+                                            <span class="text">服务器管理</span>
+                                        </span>
+                                        <span class="badge">NEW</span>
+                                    </div>
+                                    <div class="menu-item">
+                                        <span class="meta">
+                                            <span class="menu-icon">UP</span>
+                                            <span class="text">用户权限</span>
+                                        </span>
+                                    </div>
+                                    <div class="menu-item">
+                                        <span class="meta">
+                                            <span class="menu-icon">AU</span>
+                                            <span class="text">审计记录</span>
+                                        </span>
+                                    </div>
+                                    <div class="menu-item">
+                                        <span class="meta">
+                                            <span class="menu-icon">AL</span>
+                                            <span class="text">告警配置</span>
+                                        </span>
+                                        <span class="badge">!</span>
+                                    </div>
+                                    <div class="menu-item">
+                                        <span class="meta">
+                                            <span class="menu-icon">SC</span>
+                                            <span class="text">系统配置</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="footer-block">
+                                    <span class="pill">
+                                        <span style="width:6px;height:6px;border-radius:50%;background:#22C55E;"></span>
+                                        <span>环境：PROD</span>
+                                    </span>
+                                    <span class="link">帮助与反馈</span>
+                                    <span class="link">版本信息 2.5.1</span>
+                                </div>
+                            </aside>
+                            <main class="content">
+                                <div class="caption">示例主内容区域</div>
+                                <div class="placeholder"></div>
+                                <div class="placeholder" style="height:120px;"></div>
+                            </main>
+                        </div>
+                    </div>
+                    <span class="caption">说明：标题栏与导航栏保持 12px 间距，导航展开宽 240px，指示条与按钮共享蓝绿渐变。</span>
+                </div>
+            </article>
+            <article class="card">
+                <header>
+                    <strong>开发者布局 · 导航展开</strong>
+                    <span class="tag dev">DEV</span>
+                </header>
+                <div class="layout-wrap">
+                    <div class="layout-canvas">
+                        <div class="header-bar dev">
+                            <div class="logo-title">
+                                <span class="logo">DW</span>
+                                <span class="title" style="color:#3D3F8F;">Developer Workspace</span>
+                            </div>
+                            <div class="search">
+                                <span>&#128269;</span>
+                                <span style="flex:1;opacity:0.7;">搜索应用 / Cmd/Ctrl+K</span>
+                                <span style="font-size:12px;padding:4px 8px;border-radius:12px;background:rgba(108,99,255,0.12);color:rgba(61,139,255,0.9);">⌘K</span>
+                            </div>
+                            <div class="toolbar-right">
+                                <span class="btn">&#128276;</span>
+                                <span class="btn">&#9728;</span>
+                                <span class="lang" style="color:#3D3F8F;">ZH</span>
+                                <span class="divider"></span>
+                                <span class="avatar"><img src="https://dummyimage.com/64x64/e0e7ff/4338ca" alt="Developer" /></span>
+                            </div>
+                        </div>
+                        <div class="layout">
+                            <aside class="sidebar dev">
+                                <div class="menu-group">
+                                    <div class="menu-item selected">
+                                        <span class="meta">
+                                            <span class="menu-icon">WB</span>
+                                            <span class="text">工作台概览</span>
+                                        </span>
+                                        <span class="badge">2</span>
+                                    </div>
+                                    <div class="menu-item" data-state="hover">
+                                        <span class="meta">
+                                            <span class="menu-icon">AP</span>
+                                            <span class="text">应用管理</span>
+                                        </span>
+                                        <span class="badge">整合</span>
+                                    </div>
+                                    <div class="menu-item">
+                                        <span class="meta">
+                                            <span class="menu-icon">DP</span>
+                                            <span class="text">部署任务</span>
+                                        </span>
+                                    </div>
+                                    <div class="menu-item">
+                                        <span class="meta">
+                                            <span class="menu-icon">PS</span>
+                                            <span class="text">个人设置</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="footer-block">
+                                    <span class="link">API 文档</span>
+                                    <span class="link">问题反馈</span>
+                                    <span class="link">CI 状态</span>
+                                </div>
+                            </aside>
+                            <main class="content" style="background:rgba(240,242,255,0.75);">
+                                <div class="caption">示例主内容区域</div>
+                                <div class="placeholder" style="background:repeating-linear-gradient(135deg, rgba(108,99,255,0.14), rgba(108,99,255,0.14) 12px, rgba(108,99,255,0.05) 12px, rgba(108,99,255,0.05) 24px);"></div>
+                                <div class="placeholder" style="height:120px;background:repeating-linear-gradient(135deg, rgba(108,99,255,0.14), rgba(108,99,255,0.14) 12px, rgba(108,99,255,0.05) 12px, rgba(108,99,255,0.05) 24px);"></div>
+                            </main>
+                        </div>
+                    </div>
+                    <span class="caption">说明：保持与管理员一致的结构，仅替换主色与菜单文案，底部链接可在内容区域置入。</span>
+                </div>
+            </article>
+        </div>
+    </section>
+    <section>
+        <article class="card">
+            <header>
+                <strong>收起导航 · 滚动标题栏</strong>
+                <span class="tag admin">COMPACT</span>
+            </header>
+            <div class="layout-wrap">
+                <div class="layout-canvas">
+                    <div class="header-bar" data-state="scrolled">
+                        <div class="logo-title">
+                            <span class="logo">DW</span>
+                            <span class="title">Admin Workspace</span>
+                        </div>
+                        <div class="search">
+                            <span>&#128269;</span>
+                            <span style="flex:1;opacity:0.7;">正在搜索：“GPU”</span>
+                            <span style="font-size:12px;padding:4px 8px;border-radius:12px;background:rgba(59,130,246,0.12);">⌘K</span>
+                        </div>
+                        <div class="toolbar-right">
+                            <span class="btn">&#128276;</span>
+                            <span class="btn">&#127769;</span>
+                            <span class="lang">EN</span>
+                            <span class="divider"></span>
+                            <span class="avatar"><img src="https://dummyimage.com/64x64/bae6fd/0284c7" alt="Admin" /></span>
+                        </div>
+                    </div>
+                    <div class="layout collapsed">
+                        <div class="collapsed-panel">
+                            <div class="collapsed-item" data-state="selected">OV</div>
+                            <div class="collapsed-item" data-state="badge">SV</div>
+                            <div class="collapsed-item">UP</div>
+                            <div class="collapsed-item">AU</div>
+                            <div class="collapsed-item">AL</div>
+                            <div class="collapsed-item">SC</div>
+                            <div class="collapsed-item hover-flyout" data-label="帮助与反馈" data-state="hover">?</div>
+                        </div>
+                        <main class="content">
+                            <div class="caption">收起导航示例 - 内容区域可增加 Hover 浮层提示</div>
+                            <div class="placeholder" style="height:160px;"></div>
+                            <div class="placeholder" style="height:100px;"></div>
+                        </main>
+                    </div>
+                </div>
+                <span class="caption">说明：收起宽 72px，徽章与指示条保留，Hover 时展示 Tooltip/Flyout。</span>
+            </div>
+            <div class="note">可将导航折叠按钮放在标题栏左侧，便于在窄屏时快速切换；滚动状态下标题栏透明度提升以增强可读性。</div>
+        </article>
+    </section>
+</body>
+</html>
+
