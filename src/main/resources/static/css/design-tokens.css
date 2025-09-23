@@ -1,108 +1,108 @@
-/* ================================================================
- * Dev Debug Platform - 设计令牌系统
- * 版本: v1.0
- * 创建日期: 2025-09-18
- * 设计理念: 现代化简约 • 专业高效 • 统一一致
+﻿/* ================================================================
+ * Dev Debug Platform - 璁捐浠ょ墝绯荤粺
+ * 鐗堟湰: v1.0
+ * 鍒涘缓鏃ユ湡: 2025-09-18
+ * 璁捐鐞嗗康: 鐜颁唬鍖栫畝绾?鈥?涓撲笟楂樻晥 鈥?缁熶竴涓€鑷?
  * ================================================================ */
 
-/* 🌍 全局设计令牌 */
+/* 馃實 鍏ㄥ眬璁捐浠ょ墝 */
 :root {
-  /* ===== 主品牌色 (Primary Colors) ===== */
-  --color-primary: #6366f1;                    /* Indigo 500 - 主色调 */
-  --color-primary-light: #818cf8;              /* Indigo 400 - 悬停状态 */
-  --color-primary-dark: #4f46e5;               /* Indigo 600 - 激活状态 */
-  --color-primary-ultra-light: rgba(99, 102, 241, 0.1);  /* 背景提示 */
-  --color-primary-soft: rgba(99, 102, 241, 0.05);        /* 极浅背景 */
-  --color-primary-medium: rgba(99, 102, 241, 0.15);      /* 中等透明度 */
-  --color-primary-strong: rgba(99, 102, 241, 0.2);       /* 较强透明度 */
+  /* ===== 涓诲搧鐗岃壊 (Primary Colors) ===== */
+  --color-primary: #6366f1;                    /* Indigo 500 - 涓昏壊璋?*/
+  --color-primary-light: #818cf8;              /* Indigo 400 - 鎮仠鐘舵€?*/
+  --color-primary-dark: #4f46e5;               /* Indigo 600 - 婵€娲荤姸鎬?*/
+  --color-primary-ultra-light: rgba(99, 102, 241, 0.1);  /* 鑳屾櫙鎻愮ず */
+  --color-primary-soft: rgba(99, 102, 241, 0.05);        /* 鏋佹祬鑳屾櫙 */
+  --color-primary-medium: rgba(99, 102, 241, 0.15);      /* 涓瓑閫忔槑搴?*/
+  --color-primary-strong: rgba(99, 102, 241, 0.2);       /* 杈冨己閫忔槑搴?*/
 
-  /* ===== 亮色主题基础色 ===== */
-  /* 背景色系 */
-  --bg-primary: #ffffff;                       /* 纯白背景 */
-  --bg-secondary: #f8fafc;                     /* Slate 50 - 卡片/面板背景 */
-  --bg-tertiary: #f1f5f9;                      /* Slate 100 - 悬停背景 */
-  --bg-quaternary: #e2e8f0;                    /* Slate 200 - 输入框背景 */
-  --bg-overlay: rgba(15, 23, 42, 0.8);         /* 遮罩背景 */
+  /* ===== 浜壊涓婚鍩虹鑹?===== */
+  /* 鑳屾櫙鑹茬郴 */
+  --bg-primary: #ffffff;                       /* 绾櫧鑳屾櫙 */
+  --bg-secondary: #f8fafc;                     /* Slate 50 - 鍗＄墖/闈㈡澘鑳屾櫙 */
+  --bg-tertiary: #f1f5f9;                      /* Slate 100 - 鎮仠鑳屾櫙 */
+  --bg-quaternary: #e2e8f0;                    /* Slate 200 - 杈撳叆妗嗚儗鏅?*/
+  --bg-overlay: rgba(15, 23, 42, 0.8);         /* 閬僵鑳屾櫙 */
 
-  /* 边框色系 */
-  --border-primary: #e2e8f0;                   /* Slate 200 - 主要边框 */
-  --border-secondary: #cbd5e1;                 /* Slate 300 - 次要边框 */
-  --border-light: #f1f5f9;                     /* Slate 100 - 轻边框 */
-  --border-focus: var(--color-primary);        /* 焦点边框 */
+  /* 杈规鑹茬郴 */
+  --border-primary: #e2e8f0;                   /* Slate 200 - 涓昏杈规 */
+  --border-secondary: #cbd5e1;                 /* Slate 300 - 娆¤杈规 */
+  --border-light: #f1f5f9;                     /* Slate 100 - 杞昏竟妗?*/
+  --border-focus: var(--color-primary);        /* 鐒︾偣杈规 */
 
-  /* 文字色系 */
-  --text-primary: #1e293b;                     /* Slate 800 - 主要文字 */
-  --text-secondary: #475569;                   /* Slate 600 - 次要文字 */
-  --text-tertiary: #64748b;                    /* Slate 500 - 提示文字 */
-  --text-quaternary: #94a3b8;                  /* Slate 400 - 占位符 */
-  --text-white: #ffffff;                       /* 白色文字 */
-  --text-muted: #6b7280;                       /* 弱化文字 */
+  /* 鏂囧瓧鑹茬郴 */
+  --text-primary: #1e293b;                     /* Slate 800 - 涓昏鏂囧瓧 */
+  --text-secondary: #475569;                   /* Slate 600 - 娆¤鏂囧瓧 */
+  --text-tertiary: #64748b;                    /* Slate 500 - 鎻愮ず鏂囧瓧 */
+  --text-quaternary: #94a3b8;                  /* Slate 400 - 鍗犱綅绗?*/
+  --text-white: #ffffff;                       /* 鐧借壊鏂囧瓧 */
+  --text-muted: #6b7280;                       /* 寮卞寲鏂囧瓧 */
 
-  /* ===== 语义色彩 (Semantic Colors) ===== */
-  /* 成功色 */
+  /* ===== 璇箟鑹插僵 (Semantic Colors) ===== */
+  /* 鎴愬姛鑹?*/
   --color-success: #10b981;                    /* Emerald 500 */
   --color-success-light: #34d399;              /* Emerald 400 */
   --color-success-dark: #059669;               /* Emerald 600 */
   --color-success-bg: rgba(16, 185, 129, 0.1);
   --color-success-border: rgba(16, 185, 129, 0.2);
 
-  /* 警告色 */
+  /* 璀﹀憡鑹?*/
   --color-warning: #f59e0b;                    /* Amber 500 */
   --color-warning-light: #fbbf24;              /* Amber 400 */
   --color-warning-dark: #d97706;               /* Amber 600 */
   --color-warning-bg: rgba(245, 158, 11, 0.1);
   --color-warning-border: rgba(245, 158, 11, 0.2);
 
-  /* 错误色 */
+  /* 閿欒鑹?*/
   --color-error: #ef4444;                      /* Red 500 */
   --color-error-light: #f87171;                /* Red 400 */
   --color-error-dark: #dc2626;                 /* Red 600 */
   --color-error-bg: rgba(239, 68, 68, 0.1);
   --color-error-border: rgba(239, 68, 68, 0.2);
 
-  /* 信息色 */
+  /* 淇℃伅鑹?*/
   --color-info: #3b82f6;                       /* Blue 500 */
   --color-info-light: #60a5fa;                 /* Blue 400 */
   --color-info-dark: #2563eb;                  /* Blue 600 */
   --color-info-bg: rgba(59, 130, 246, 0.1);
   --color-info-border: rgba(59, 130, 246, 0.2);
 
-  /* 紫色系 */
+  /* 绱壊绯?*/
   --color-violet: #8b5cf6;                     /* Violet 500 */
   --color-violet-light: #a78bfa;               /* Violet 400 */
   --color-violet-dark: #7c3aed;                /* Violet 600 */
   --color-violet-bg: rgba(139, 92, 246, 0.1);
   --color-violet-border: rgba(139, 92, 246, 0.2);
 
-  /* ===== 字体系统 ===== */
-  /* 字体族 */
+  /* ===== 瀛椾綋绯荤粺 ===== */
+  /* 瀛椾綋鏃?*/
   --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-family-mono: 'JetBrains Mono', 'Fira Code', Consolas, 'Liberation Mono', monospace;
   --font-family-display: 'Inter', system-ui, sans-serif;
 
-  /* 字体大小 (基于16px) */
-  --font-size-xs: 0.75rem;                     /* 12px - 标签、徽章 */
-  --font-size-sm: 0.875rem;                    /* 14px - 小文字、导航 */
-  --font-size-base: 1rem;                      /* 16px - 基础文字 */
-  --font-size-lg: 1.125rem;                    /* 18px - 大文字 */
-  --font-size-xl: 1.25rem;                     /* 20px - 小标题 */
-  --font-size-2xl: 1.5rem;                     /* 24px - 中标题 */
-  --font-size-3xl: 1.875rem;                   /* 30px - 大标题 */
-  --font-size-4xl: 2.25rem;                    /* 36px - 展示标题 */
+  /* 瀛椾綋澶у皬 (鍩轰簬16px) */
+  --font-size-xs: 0.75rem;                     /* 12px - 鏍囩銆佸窘绔?*/
+  --font-size-sm: 0.875rem;                    /* 14px - 灏忔枃瀛椼€佸鑸?*/
+  --font-size-base: 1rem;                      /* 16px - 鍩虹鏂囧瓧 */
+  --font-size-lg: 1.125rem;                    /* 18px - 澶ф枃瀛?*/
+  --font-size-xl: 1.25rem;                     /* 20px - 灏忔爣棰?*/
+  --font-size-2xl: 1.5rem;                     /* 24px - 涓爣棰?*/
+  --font-size-3xl: 1.875rem;                   /* 30px - 澶ф爣棰?*/
+  --font-size-4xl: 2.25rem;                    /* 36px - 灞曠ず鏍囬 */
 
-  /* 字体粗细 */
-  --font-weight-normal: 400;                   /* 常规文字 */
-  --font-weight-medium: 500;                   /* 中等粗细 */
-  --font-weight-semibold: 600;                 /* 半粗体 */
-  --font-weight-bold: 700;                     /* 粗体 */
-  --font-weight-extrabold: 800;                /* 超粗体 */
+  /* 瀛椾綋绮楃粏 */
+  --font-weight-normal: 400;                   /* 甯歌鏂囧瓧 */
+  --font-weight-medium: 500;                   /* 涓瓑绮楃粏 */
+  --font-weight-semibold: 600;                 /* 鍗婄矖浣?*/
+  --font-weight-bold: 700;                     /* 绮椾綋 */
+  --font-weight-extrabold: 800;                /* 瓒呯矖浣?*/
 
-  /* 行高 */
-  --line-height-tight: 1.25;                   /* 标题用 */
-  --line-height-normal: 1.5;                   /* 正文用 */
-  --line-height-relaxed: 1.75;                 /* 长文本用 */
+  /* 琛岄珮 */
+  --line-height-tight: 1.25;                   /* 鏍囬鐢?*/
+  --line-height-normal: 1.5;                   /* 姝ｆ枃鐢?*/
+  --line-height-relaxed: 1.75;                 /* 闀挎枃鏈敤 */
 
-  /* ===== 间距系统 (基于4px网格) ===== */
+  /* ===== 闂磋窛绯荤粺 (鍩轰簬4px缃戞牸) ===== */
   --spacing-0: 0;                              /* 0px */
   --spacing-1: 0.25rem;                        /* 4px */
   --spacing-2: 0.5rem;                         /* 8px */
@@ -117,14 +117,14 @@
   --spacing-20: 5rem;                          /* 80px */
   --spacing-24: 6rem;                          /* 96px */
 
-  /* 组件专用间距 */
-  --container-padding: var(--spacing-6);       /* 容器内边距 */
-  --card-padding: var(--spacing-6);            /* 卡片内边距 */
-  --section-gap: var(--spacing-8);             /* 区块间距 */
-  --component-gap: var(--spacing-4);           /* 组件间距 */
-  --element-gap: var(--spacing-2);             /* 元素间距 */
+  /* 缁勪欢涓撶敤闂磋窛 */
+  --container-padding: var(--spacing-6);       /* 瀹瑰櫒鍐呰竟璺?*/
+  --card-padding: var(--spacing-6);            /* 鍗＄墖鍐呰竟璺?*/
+  --section-gap: var(--spacing-8);             /* 鍖哄潡闂磋窛 */
+  --component-gap: var(--spacing-4);           /* 缁勪欢闂磋窛 */
+  --element-gap: var(--spacing-2);             /* 鍏冪礌闂磋窛 */
 
-  /* ===== 阴影系统 ===== */
+  /* ===== 闃村奖绯荤粺 ===== */
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -132,29 +132,29 @@
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 
-  /* 特殊阴影 */
+  /* 鐗规畩闃村奖 */
   --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
   --shadow-outline: 0 0 0 3px var(--color-primary-ultra-light);
   --shadow-outline-error: 0 0 0 3px var(--color-error-bg);
   --shadow-outline-success: 0 0 0 3px var(--color-success-bg);
 
-  /* ===== 圆角系统 ===== */
+  /* ===== 鍦嗚绯荤粺 ===== */
   --radius-none: 0;
-  --radius-sm: 0.25rem;                        /* 4px - 小元素 */
-  --radius-md: 0.375rem;                       /* 6px - 按钮、输入框 */
-  --radius-lg: 0.5rem;                         /* 8px - 卡片、面板 */
-  --radius-xl: 0.75rem;                        /* 12px - 大卡片 */
-  --radius-2xl: 1rem;                          /* 16px - 特大组件 */
-  --radius-3xl: 1.5rem;                        /* 24px - 特殊用途 */
-  --radius-full: 9999px;                       /* 完全圆形 */
+  --radius-sm: 0.25rem;                        /* 4px - 灏忓厓绱?*/
+  --radius-md: 0.375rem;                       /* 6px - 鎸夐挳銆佽緭鍏ユ */
+  --radius-lg: 0.5rem;                         /* 8px - 鍗＄墖銆侀潰鏉?*/
+  --radius-xl: 0.75rem;                        /* 12px - 澶у崱鐗?*/
+  --radius-2xl: 1rem;                          /* 16px - 鐗瑰ぇ缁勪欢 */
+  --radius-3xl: 1.5rem;                        /* 24px - 鐗规畩鐢ㄩ€?*/
+  --radius-full: 9999px;                       /* 瀹屽叏鍦嗗舰 */
 
-  /* ===== 动画系统 ===== */
-  /* 过渡时间 */
-  --transition-fast: 150ms;                    /* 快速交互 */
-  --transition-normal: 300ms;                  /* 标准交互 */
-  --transition-slow: 500ms;                    /* 复杂动画 */
+  /* ===== 鍔ㄧ敾绯荤粺 ===== */
+  /* 杩囨浮鏃堕棿 */
+  --transition-fast: 150ms;                    /* 蹇€熶氦浜?*/
+  --transition-normal: 300ms;                  /* 鏍囧噯浜や簰 */
+  --transition-slow: 500ms;                    /* 澶嶆潅鍔ㄧ敾 */
 
-  /* 缓动函数 */
+  /* 缂撳姩鍑芥暟 */
   --ease-linear: linear;
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
@@ -162,20 +162,20 @@
   --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
   --ease-smooth: cubic-bezier(0.4, 0.0, 0.2, 1);
 
-  /* ===== 布局系统 ===== */
-  /* 断点 */
-  --breakpoint-sm: 640px;                      /* 手机 */
-  --breakpoint-md: 768px;                      /* 平板 */
-  --breakpoint-lg: 1024px;                     /* 小桌面 */
-  --breakpoint-xl: 1280px;                     /* 大桌面 */
-  --breakpoint-2xl: 1536px;                    /* 超大屏 */
+  /* ===== 甯冨眬绯荤粺 ===== */
+  /* 鏂偣 */
+  --breakpoint-sm: 640px;                      /* 鎵嬫満 */
+  --breakpoint-md: 768px;                      /* 骞虫澘 */
+  --breakpoint-lg: 1024px;                     /* 灏忔闈?*/
+  --breakpoint-xl: 1280px;                     /* 澶ф闈?*/
+  --breakpoint-2xl: 1536px;                    /* 瓒呭ぇ灞?*/
 
-  /* 导航系统尺寸 */
-  --nav-height: 64px;                          /* 顶部导航高度 */
-  --sidebar-width-expanded: 240px;             /* 侧边栏展开宽度 */
-  --sidebar-width-collapsed: 80px;             /* 侧边栏收起宽度 */
+  /* 瀵艰埅绯荤粺灏哄 */
+  --nav-height: 72px;                          /* 椤堕儴瀵艰埅楂樺害 */
+  --sidebar-width-expanded: 280px;             /* 渚ц竟鏍忓睍寮€瀹藉害 */
+  --sidebar-width-collapsed: 88px;             /* 渚ц竟鏍忔敹璧峰搴?*/
 
-  /* Z-index 层级 */
+  /* Z-index 灞傜骇 */
   --z-sidebar: 890;
   --z-navbar: 900;
   --z-overlay: 950;
@@ -190,28 +190,28 @@
   --z-toast: 1080;
 }
 
-/* 🌙 暗色主题覆盖 */
+/* 馃寵 鏆楄壊涓婚瑕嗙洊 */
 [data-theme="dark"] {
-  /* 背景色系 */
+  /* 鑳屾櫙鑹茬郴 */
   --bg-primary: #0f172a;                       /* Slate 900 */
   --bg-secondary: #1e293b;                     /* Slate 800 */
   --bg-tertiary: #334155;                      /* Slate 700 */
   --bg-quaternary: #475569;                    /* Slate 600 */
-  --bg-overlay: rgba(15, 23, 42, 0.9);         /* 更深的遮罩 */
+  --bg-overlay: rgba(15, 23, 42, 0.9);         /* 鏇存繁鐨勯伄缃?*/
 
-  /* 边框色系 */
+  /* 杈规鑹茬郴 */
   --border-primary: #475569;                   /* Slate 600 */
   --border-secondary: #334155;                 /* Slate 700 */
   --border-light: #1e293b;                     /* Slate 800 */
 
-  /* 文字色系 */
+  /* 鏂囧瓧鑹茬郴 */
   --text-primary: #f1f5f9;                     /* Slate 100 */
   --text-secondary: #cbd5e1;                   /* Slate 300 */
   --text-tertiary: #94a3b8;                    /* Slate 400 */
   --text-quaternary: #64748b;                  /* Slate 500 */
   --text-muted: #6b7280;                       /* Gray 500 */
 
-  /* 调整阴影以适应暗色主题 */
+  /* 璋冩暣闃村奖浠ラ€傚簲鏆楄壊涓婚 */
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
@@ -220,9 +220,9 @@
   --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
 }
 
-/* 🎨 特殊状态变量 */
+/* 馃帹 鐗规畩鐘舵€佸彉閲?*/
 :root {
-  /* 交互状态 */
+  /* 浜や簰鐘舵€?*/
   --state-hover-overlay: rgba(0, 0, 0, 0.04);
   --state-active-overlay: rgba(0, 0, 0, 0.08);
   --state-focus-ring: var(--color-primary-ultra-light);
@@ -235,9 +235,9 @@
   --state-active-overlay: rgba(255, 255, 255, 0.1);
 }
 
-/* 📐 组件特定变量 */
+/* 馃搻 缁勪欢鐗瑰畾鍙橀噺 */
 :root {
-  /* 按钮 */
+  /* 鎸夐挳 */
   --btn-height-sm: 32px;
   --btn-height-md: 40px;
   --btn-height-lg: 48px;
@@ -245,41 +245,41 @@
   --btn-padding-x-md: var(--spacing-4);
   --btn-padding-x-lg: var(--spacing-6);
 
-  /* 输入框 */
+  /* 杈撳叆妗?*/
   --input-height: 40px;
   --input-padding-x: var(--spacing-3);
   --input-padding-y: var(--spacing-2);
 
-  /* 卡片 */
+  /* 鍗＄墖 */
   --card-border-width: 1px;
   --card-header-padding: var(--spacing-4);
   --card-body-padding: var(--spacing-6);
   --card-footer-padding: var(--spacing-4);
 
-  /* 导航 */
-  --nav-height: 64px;                          /* 顶部导航高度 */
-  --nav-height-mobile: 56px;                   /* 移动端导航高度 */
+  /* 瀵艰埅 */
+  --nav-height: 72px;                          /* 椤堕儴瀵艰埅楂樺害 */
+  --nav-height-mobile: 56px;                   /* 绉诲姩绔鑸珮搴?*/
   --nav-item-height: 44px;
   --nav-item-padding: var(--spacing-3) var(--spacing-4);
   --nav-icon-size: 18px;
   --nav-badge-size: 18px;
 
-  /* 布局 */
-  --max-width: 1200px;                         /* 最大内容宽度 */
+  /* 甯冨眬 */
+  --max-width: 1200px;                         /* 鏈€澶у唴瀹瑰搴?*/
 
-  /* 表格 */
+  /* 琛ㄦ牸 */
   --table-cell-padding: var(--spacing-3) var(--spacing-4);
   --table-header-height: 48px;
   --table-row-height: 52px;
 
-  /* 模态框 */
+  /* 妯℃€佹 */
   --modal-width-sm: 400px;
   --modal-width-md: 600px;
   --modal-width-lg: 800px;
   --modal-width-xl: 1200px;
 }
 
-/* 🚀 性能优化 */
+/* 馃殌 鎬ц兘浼樺寲 */
 * {
   box-sizing: border-box;
 }
@@ -289,19 +289,19 @@
   box-sizing: border-box;
 }
 
-/* 减少重绘 */
+/* 鍑忓皯閲嶇粯 */
 .gpu-accelerated {
   transform: translateZ(0);
   backface-visibility: hidden;
   perspective: 1000px;
 }
 
-/* 平滑滚动 */
+/* 骞虫粦婊氬姩 */
 html {
   scroll-behavior: smooth;
 }
 
-/* 🎯 实用工具类基础 */
+/* 馃幆 瀹炵敤宸ュ叿绫诲熀纭€ */
 .sr-only {
   position: absolute;
   width: 1px;

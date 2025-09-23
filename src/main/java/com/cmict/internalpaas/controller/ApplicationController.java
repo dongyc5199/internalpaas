@@ -546,14 +546,14 @@ public class ApplicationController {
             StringBuilder htmlBuilder = new StringBuilder();
             
             // 页面标题
-            htmlBuilder.append("<div class=\"content-header\">");
-            htmlBuilder.append("<div class=\"page-title-group\">");
-            htmlBuilder.append("<h1 class=\"page-title\">应用管理控制面板</h1>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"content-header\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"page-title-group\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<h1 class=\\\\\\\\\\\\\\\"page-title\\\\\\\\\\\\\\\">应用管理控制面板</h1>");
             htmlBuilder.append("</div></div>");
             
             // 现代化统计面板
-            htmlBuilder.append("<section class=\"modern-stats-container\">");
-            htmlBuilder.append("<div class=\"stats-grid\">");
+            htmlBuilder.append("<section class=\\\\\\\\\\\\\\\"modern-stats-container\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-grid\\\\\\\\\\\\\\\">");
             
             // 应用状态统计
             long runningCount = applications.stream().filter(app -> "RUNNING".equals(app.getStatus())).count();
@@ -562,69 +562,69 @@ public class ApplicationController {
             long totalCount = applications.size();
             
             // 运行中应用卡片
-            htmlBuilder.append("<div class=\"modern-stats-card running\" onclick=\"filterApplications('running')\">");
-            htmlBuilder.append("<div class=\"stats-card-content\">");
-            htmlBuilder.append("<div class=\"stats-info\">");
-            htmlBuilder.append("<div class=\"stats-label\">运行中</div>");
-            htmlBuilder.append("<div class=\"stats-value\">");
-            htmlBuilder.append("<span class=\"stats-value-main\">").append(runningCount).append("</span>");
-            htmlBuilder.append("<span class=\"stats-value-unit\">个</span>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"modern-stats-card running\\\\\\\\\\\\\\\" onclick=\\\\\\\\\\\\\\\"filterApplications('running')\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-card-content\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-info\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-label\\\\\\\\\\\\\\\">运行中</div>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-value\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<span class=\\\\\\\\\\\\\\\"stats-value-main\\\\\\\\\\\\\\\">\\\\\\\").append(runningCount).append(\\\\\\\"</span>");
+            htmlBuilder.append("<span class=\\\\\\\\\\\\\\\"stats-value-unit\\\\\\\\\\\\\\\">个</span>");
             htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-up\">↗</span>应用正常运行</div>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-trend\\\\\\\\\\\\\\\"><span class=\\\\\\\\\\\\\\\"trend-icon trend-up\\\\\\\\\\\\\\\">↗</span>应用正常运行</div>");
             htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-icon-container\">");
-            htmlBuilder.append("<i class=\"stats-icon fas fa-check-circle icon-pulse\"></i>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-icon-container\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<i class=\\\\\\\\\\\\\\\"stats-icon fas fa-check-circle icon-pulse\\\\\\\\\\\\\\\"></i>");
             htmlBuilder.append("</div>");
             htmlBuilder.append("</div>");
             htmlBuilder.append("</div>");
             
             // 已停止应用卡片  
-            htmlBuilder.append("<div class=\"modern-stats-card stopped\" onclick=\"filterApplications('stopped')\">");
-            htmlBuilder.append("<div class=\"stats-card-content\">");
-            htmlBuilder.append("<div class=\"stats-info\">");
-            htmlBuilder.append("<div class=\"stats-label\">已停止</div>");
-            htmlBuilder.append("<div class=\"stats-value\">");
-            htmlBuilder.append("<span class=\"stats-value-main\">").append(stoppedCount).append("</span>");
-            htmlBuilder.append("<span class=\"stats-value-unit\">个</span>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"modern-stats-card stopped\\\\\\\\\\\\\\\" onclick=\\\\\\\\\\\\\\\"filterApplications('stopped')\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-card-content\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-info\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-label\\\\\\\\\\\\\\\">已停止</div>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-value\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<span class=\\\\\\\\\\\\\\\"stats-value-main\\\\\\\\\\\\\\\">\\\\\\\").append(stoppedCount).append(\\\\\\\"</span>");
+            htmlBuilder.append("<span class=\\\\\\\\\\\\\\\"stats-value-unit\\\\\\\\\\\\\\\">个</span>");
             htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>待启动</div>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-trend\\\\\\\\\\\\\\\"><span class=\\\\\\\\\\\\\\\"trend-icon trend-stable\\\\\\\\\\\\\\\">~</span>待启动</div>");
             htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-icon-container\">");
-            htmlBuilder.append("<i class=\"stats-icon fas fa-times-circle\"></i>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-icon-container\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<i class=\\\\\\\\\\\\\\\"stats-icon fas fa-times-circle\\\\\\\\\\\\\\\"></i>");
             htmlBuilder.append("</div>");
             htmlBuilder.append("</div>");
             htmlBuilder.append("</div>");
             
             // 启动中应用卡片
-            htmlBuilder.append("<div class=\"modern-stats-card starting\" onclick=\"filterApplications('starting')\">");
-            htmlBuilder.append("<div class=\"stats-card-content\">");
-            htmlBuilder.append("<div class=\"stats-info\">");
-            htmlBuilder.append("<div class=\"stats-label\">启动中</div>");
-            htmlBuilder.append("<div class=\"stats-value\">");
-            htmlBuilder.append("<span class=\"stats-value-main\">").append(startingCount).append("</span>");
-            htmlBuilder.append("<span class=\"stats-value-unit\">个</span>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"modern-stats-card starting\\\\\\\\\\\\\\\" onclick=\\\\\\\\\\\\\\\"filterApplications('starting')\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-card-content\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-info\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-label\\\\\\\\\\\\\\\">启动中</div>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-value\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<span class=\\\\\\\\\\\\\\\"stats-value-main\\\\\\\\\\\\\\\">\\\\\\\").append(startingCount).append(\\\\\\\"</span>");
+            htmlBuilder.append("<span class=\\\\\\\\\\\\\\\"stats-value-unit\\\\\\\\\\\\\\\">个</span>");
             htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-up\">↗</span>正在启动</div>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-trend\\\\\\\\\\\\\\\"><span class=\\\\\\\\\\\\\\\"trend-icon trend-up\\\\\\\\\\\\\\\">↗</span>正在启动</div>");
             htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-icon-container\">");
-            htmlBuilder.append("<i class=\"stats-icon fas fa-spinner icon-spin\"></i>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-icon-container\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<i class=\\\\\\\\\\\\\\\"stats-icon fas fa-spinner icon-spin\\\\\\\\\\\\\\\"></i>");
             htmlBuilder.append("</div>");
             htmlBuilder.append("</div>");
             htmlBuilder.append("</div>");
             
             // 总应用数卡片
-            htmlBuilder.append("<div class=\"modern-stats-card total\" onclick=\"filterApplications('all')\">");
-            htmlBuilder.append("<div class=\"stats-card-content\">");
-            htmlBuilder.append("<div class=\"stats-info\">");
-            htmlBuilder.append("<div class=\"stats-label\">总应用数</div>");
-            htmlBuilder.append("<div class=\"stats-value\">");
-            htmlBuilder.append("<span class=\"stats-value-main\">").append(totalCount).append("</span>");
-            htmlBuilder.append("<span class=\"stats-value-unit\">个</span>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"modern-stats-card total\\\\\\\\\\\\\\\" onclick=\\\\\\\\\\\\\\\"filterApplications('all')\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-card-content\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-info\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-label\\\\\\\\\\\\\\\">总应用数</div>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-value\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<span class=\\\\\\\\\\\\\\\"stats-value-main\\\\\\\\\\\\\\\">\\\\\\\").append(totalCount).append(\\\\\\\"</span>");
+            htmlBuilder.append("<span class=\\\\\\\\\\\\\\\"stats-value-unit\\\\\\\\\\\\\\\">个</span>");
             htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>应用概览</div>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-trend\\\\\\\\\\\\\\\"><span class=\\\\\\\\\\\\\\\"trend-icon trend-stable\\\\\\\\\\\\\\\">~</span>应用概览</div>");
             htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-icon-container\">");
-            htmlBuilder.append("<i class=\"stats-icon fas fa-rocket\"></i>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"stats-icon-container\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<i class=\\\\\\\\\\\\\\\"stats-icon fas fa-rocket\\\\\\\\\\\\\\\"></i>");
             htmlBuilder.append("</div>");
             htmlBuilder.append("</div>");
             htmlBuilder.append("</div>");
@@ -633,16 +633,16 @@ public class ApplicationController {
             htmlBuilder.append("</section>");
             
             // 应用卡片网格
-            htmlBuilder.append("<section class=\"modern-apps-section\">");
-            htmlBuilder.append("<div class=\"section-header\">");
-            htmlBuilder.append("<h2 class=\"section-title\">我的应用</h2>");
-            htmlBuilder.append("<div class=\"section-actions\">");
-            htmlBuilder.append("<button class=\"action-btn secondary\" onclick=\"refreshApps()\">");
-            htmlBuilder.append("<i class=\"fas fa-sync-alt\"></i>");
+            htmlBuilder.append("<section class=\\\\\\\\\\\\\\\"modern-apps-section\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"section-header\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<h2 class=\\\\\\\\\\\\\\\"section-title\\\\\\\\\\\\\\\">我的应用</h2>");
+            htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"section-actions\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<button class=\\\\\\\\\\\\\\\"action-btn secondary\\\\\\\\\\\\\\\" onclick=\\\\\\\\\\\\\\\"refreshApps()\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<i class=\\\\\\\\\\\\\\\"fas fa-sync-alt\\\\\\\\\\\\\\\"></i>");
             htmlBuilder.append("<span>刷新数据</span>");
             htmlBuilder.append("</button>");
-            htmlBuilder.append("<button class=\"action-btn primary\" onclick=\"uploadApp()\">");
-            htmlBuilder.append("<i class=\"fas fa-plus\"></i>");
+            htmlBuilder.append("<button class=\\\\\\\\\\\\\\\"action-btn primary\\\\\\\\\\\\\\\" onclick=\\\\\\\\\\\\\\\"uploadApp()\\\\\\\\\\\\\\\">");
+            htmlBuilder.append("<i class=\\\\\\\\\\\\\\\"fas fa-plus\\\\\\\\\\\\\\\"></i>");
             htmlBuilder.append("<span>上传新应用</span>");
             htmlBuilder.append("</button>");
             htmlBuilder.append("</div>");
@@ -650,62 +650,62 @@ public class ApplicationController {
             
             if (applications.isEmpty()) {
                 // 空状态
-                htmlBuilder.append("<div class=\"empty-state\">");
-                htmlBuilder.append("<div class=\"empty-icon\">");
-                htmlBuilder.append("<i class=\"fas fa-rocket\"></i>");
+                htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"empty-state\\\\\\\\\\\\\\\">");
+                htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"empty-icon\\\\\\\\\\\\\\\">");
+                htmlBuilder.append("<i class=\\\\\\\\\\\\\\\"fas fa-rocket\\\\\\\\\\\\\\\"></i>");
                 htmlBuilder.append("</div>");
-                htmlBuilder.append("<h3 class=\"empty-title\">还没有应用</h3>");
-                htmlBuilder.append("<p class=\"empty-description\">上传您的第一个JAR应用开始使用管理功能</p>");
-                htmlBuilder.append("<div class=\"empty-actions\">");
-                htmlBuilder.append("<button class=\"modern-action-btn primary\" onclick=\"uploadApp()\">");
-                htmlBuilder.append("<i class=\"fas fa-plus\"></i>");
+                htmlBuilder.append("<h3 class=\\\\\\\\\\\\\\\"empty-title\\\\\\\\\\\\\\\">还没有应用</h3>");
+                htmlBuilder.append("<p class=\\\\\\\\\\\\\\\"empty-description\\\\\\\\\\\\\\\">上传您的第一个JAR应用开始使用管理功能</p>");
+                htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"empty-actions\\\\\\\\\\\\\\\">");
+                htmlBuilder.append("<button class=\\\\\\\\\\\\\\\"modern-action-btn primary\\\\\\\\\\\\\\\" onclick=\\\\\\\\\\\\\\\"uploadApp()\\\\\\\\\\\\\\\">");
+                htmlBuilder.append("<i class=\\\\\\\\\\\\\\\"fas fa-plus\\\\\\\\\\\\\\\"></i>");
                 htmlBuilder.append("<span>上传应用</span>");
                 htmlBuilder.append("</button>");
                 htmlBuilder.append("</div>");
                 htmlBuilder.append("</div>");
             } else {
                 // 应用卡片网格
-                htmlBuilder.append("<div class=\"modern-apps-grid\">");
+                htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"modern-apps-grid\\\\\\\\\\\\\\\">");
                 for (Application app : applications) {
                     String statusClass = getModernStatusClass(app.getStatus());
                     String statusText = getStatusText(app.getStatus());
                     String statusIcon = getStatusIcon(app.getStatus());
                     
-                    htmlBuilder.append("<div class=\"modern-app-card ").append(statusClass).append("\">");
+                    htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"modern-app-card \\\\\\\").append(statusClass).append(\\\\\\\"\\\\\\\\\\\\\\\">");
                     
                     // 卡片头部
-                    htmlBuilder.append("<div class=\"app-header\">");
-                    htmlBuilder.append("<div class=\"app-info\">");
-                    htmlBuilder.append("<div class=\"app-name\">").append(escapeHtml(app.getName())).append("</div>");
-                    htmlBuilder.append("<div class=\"app-meta\">");
-                    htmlBuilder.append("<span class=\"app-id\">ID: ").append(app.getId()).append("</span>");
+                    htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"app-header\\\\\\\\\\\\\\\">");
+                    htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"app-info\\\\\\\\\\\\\\\">");
+                    htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"app-name\\\\\\\\\\\\\\\">\\\\\\\").append(escapeHtml(app.getName())).append(\\\\\\\"</div>");
+                    htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"app-meta\\\\\\\\\\\\\\\">");
+                    htmlBuilder.append("<span class=\\\\\\\\\\\\\\\"app-id\\\\\\\\\\\\\\\">ID: \\\\\\\").append(app.getId()).append(\\\\\\\"</span>");
                     if (app.getLastStartedAt() != null) {
-                        htmlBuilder.append("<span class=\"app-time\">").append(formatRelativeTime(app.getLastStartedAt())).append("</span>");
+                        htmlBuilder.append("<span class=\\\\\\\\\\\\\\\"app-time\\\\\\\\\\\\\\\">\\\\\\\").append(formatRelativeTime(app.getLastStartedAt())).append(\\\\\\\"</span>");
                     }
                     htmlBuilder.append("</div>");
                     htmlBuilder.append("</div>");
-                    htmlBuilder.append("<div class=\"status-indicator ").append(statusClass).append("\">");
-                    htmlBuilder.append("<i class=\"").append(statusIcon).append("\"></i>");
-                    htmlBuilder.append("<span>").append(statusText).append("</span>");
+                    htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"status-indicator \\\\\\\").append(statusClass).append(\\\\\\\"\\\\\\\\\\\\\\\">");
+                    htmlBuilder.append("<i class=\\\\\\\\\\\\\\\"\\\\\\\").append(statusIcon).append(\\\\\\\"\\\\\\\\\\\\\\\"></i>");
+                    htmlBuilder.append("<span>\\\\\\\").append(statusText).append(\\\\\\\"</span>");
                     htmlBuilder.append("</div>");
                     htmlBuilder.append("</div>");
                     
                     // 应用指标
-                    htmlBuilder.append("<div class=\"app-metrics\">");
-                    htmlBuilder.append("<div class=\"metrics-grid\">");
-                    htmlBuilder.append("<div class=\"metric-item\">");
-                    htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-plug\"></i></div>");
-                    htmlBuilder.append("<div class=\"metric-info\">");
-                    htmlBuilder.append("<div class=\"metric-label\">端口</div>");
-                    htmlBuilder.append("<div class=\"metric-value\">").append(app.getPort() != null ? app.getPort() : "N/A").append("</div>");
+                    htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"app-metrics\\\\\\\\\\\\\\\">");
+                    htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"metrics-grid\\\\\\\\\\\\\\\">");
+                    htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"metric-item\\\\\\\\\\\\\\\">");
+                    htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"metric-icon\\\\\\\\\\\\\\\"><i class=\\\\\\\\\\\\\\\"fas fa-plug\\\\\\\\\\\\\\\"></i></div>");
+                    htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"metric-info\\\\\\\\\\\\\\\">");
+                    htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"metric-label\\\\\\\\\\\\\\\">端口</div>");
+                    htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"metric-value\\\\\\\\\\\\\\\">\\\\\\\").append(app.getPort() != null ? app.getPort() : \\\\\\\"N/A\\\\\\\").append(\\\\\\\"</div>");
                     htmlBuilder.append("</div>");
                     htmlBuilder.append("</div>");
                     if (app.getDebugPort() != null) {
-                        htmlBuilder.append("<div class=\"metric-item\">");
-                        htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-bug\"></i></div>");
-                        htmlBuilder.append("<div class=\"metric-info\">");
-                        htmlBuilder.append("<div class=\"metric-label\">调试</div>");
-                        htmlBuilder.append("<div class=\"metric-value\">").append(app.getDebugPort()).append("</div>");
+                        htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"metric-item\\\\\\\\\\\\\\\">");
+                        htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"metric-icon\\\\\\\\\\\\\\\"><i class=\\\\\\\\\\\\\\\"fas fa-bug\\\\\\\\\\\\\\\"></i></div>");
+                        htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"metric-info\\\\\\\\\\\\\\\">");
+                        htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"metric-label\\\\\\\\\\\\\\\">调试</div>");
+                        htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"metric-value\\\\\\\\\\\\\\\">\\\\\\\").append(app.getDebugPort()).append(\\\\\\\"</div>");
                         htmlBuilder.append("</div>");
                         htmlBuilder.append("</div>");
                     }
@@ -713,24 +713,24 @@ public class ApplicationController {
                     htmlBuilder.append("</div>");
                     
                     // 操作按钮
-                    htmlBuilder.append("<div class=\"app-actions\">");
+                    htmlBuilder.append("<div class=\\\\\\\\\\\\\\\"app-actions\\\\\\\\\\\\\\\">");
                     if ("RUNNING".equals(app.getStatus())) {
-                        htmlBuilder.append("<button class=\"app-action-btn secondary\" onclick=\"stopApplication('").append(app.getId()).append("')\">");
-                        htmlBuilder.append("<i class=\"fas fa-stop\"></i>");
+                        htmlBuilder.append("<button class=\\\\\\\\\\\\\\\"app-action-btn secondary\\\\\\\\\\\\\\\" onclick=\\\\\\\\\\\\\\\"stopApplication('\\\\\\\").append(app.getId()).append(\\\\\\\"')\\\\\\\\\\\\\\\">");
+                        htmlBuilder.append("<i class=\\\\\\\\\\\\\\\"fas fa-stop\\\\\\\\\\\\\\\"></i>");
                         htmlBuilder.append("<span>停止</span>");
                         htmlBuilder.append("</button>");
-                        htmlBuilder.append("<button class=\"app-action-btn primary\" onclick=\"restartApplication('").append(app.getId()).append("')\">");
-                        htmlBuilder.append("<i class=\"fas fa-redo\"></i>");
+                        htmlBuilder.append("<button class=\\\\\\\\\\\\\\\"app-action-btn primary\\\\\\\\\\\\\\\" onclick=\\\\\\\\\\\\\\\"restartApplication('\\\\\\\").append(app.getId()).append(\\\\\\\"')\\\\\\\\\\\\\\\">");
+                        htmlBuilder.append("<i class=\\\\\\\\\\\\\\\"fas fa-redo\\\\\\\\\\\\\\\"></i>");
                         htmlBuilder.append("<span>重启</span>");
                         htmlBuilder.append("</button>");
                     } else {
-                        htmlBuilder.append("<button class=\"app-action-btn success\" onclick=\"startApplication('").append(app.getId()).append("')\">");
-                        htmlBuilder.append("<i class=\"fas fa-play\"></i>");
+                        htmlBuilder.append("<button class=\\\\\\\\\\\\\\\"app-action-btn success\\\\\\\\\\\\\\\" onclick=\\\\\\\\\\\\\\\"startApplication('\\\\\\\").append(app.getId()).append(\\\\\\\"')\\\\\\\\\\\\\\\">");
+                        htmlBuilder.append("<i class=\\\\\\\\\\\\\\\"fas fa-play\\\\\\\\\\\\\\\"></i>");
                         htmlBuilder.append("<span>启动</span>");
                         htmlBuilder.append("</button>");
                     }
-                    htmlBuilder.append("<button class=\"app-action-btn secondary\" onclick=\"viewApplicationDetails('").append(app.getId()).append("')\">");
-                    htmlBuilder.append("<i class=\"fas fa-info-circle\"></i>");
+                    htmlBuilder.append("<button class=\\\\\\\\\\\\\\\"app-action-btn secondary\\\\\\\\\\\\\\\" onclick=\\\\\\\\\\\\\\\"viewApplicationDetails('\\\\\\\").append(app.getId()).append(\\\\\\\"')\\\\\\\\\\\\\\\">");
+                    htmlBuilder.append("<i class=\\\\\\\\\\\\\\\"fas fa-info-circle\\\\\\\\\\\\\\\"></i>");
                     htmlBuilder.append("<span>详情</span>");
                     htmlBuilder.append("</button>");
                     htmlBuilder.append("</div>");
@@ -745,7 +745,7 @@ public class ApplicationController {
             return ResponseEntity.ok(htmlBuilder.toString());
             
         } catch (Exception e) {
-            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载应用内容失败: " + e.getMessage() + "</div>";
+            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载应用内容失败: " + escapeHtml(e.getMessage()) + "</div>";
             return ResponseEntity.status(500).body(errorContent);
         }
     }

@@ -87,6 +87,7 @@
     <link rel="stylesheet" href="/css/components/navigation.css">
     <link rel="stylesheet" href="/css/components/cards.css">
     <link rel="stylesheet" href="/css/components/buttons.css">
+    <link rel="stylesheet" href="/css/workspace-dashboards.css">
     <link rel="stylesheet" href="/css/responsive.css">
     <link rel="stylesheet" href="/css/animations.css">
 
@@ -529,6 +530,12 @@
                 case 'applications':
                     content = await loadApplicationsContent();
                     // 加载完应用内容后，绑定事件处理器
+                    setTimeout(() => {
+                        bindContentEvents();
+                    }, 100);
+                    break;
+                case 'settings':
+                    content = await loadSettingsContent();
                     setTimeout(() => {
                         bindContentEvents();
                     }, 100);
@@ -1428,6 +1435,37 @@
             throw error;
         }
         
+        return await response.text();
+    }
+
+    async function loadSettingsContent() {
+        const response = await fetch('/admin/api/settings-content', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                [getCSRFHeaderName()]: getCSRFToken()
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                try {
+                    const errorData = await response.json();
+                    if (errorData.error === 'session_expired') {
+                        window.location.href = errorData.redirect || '/login?expired';
+                        return '';
+                    }
+                } catch (e) {
+                    window.location.href = '/login?expired';
+                    return '';
+                }
+            }
+            const error = new Error(`HTTP ${response.status}`);
+            error.sessionExpired = response.status === 401;
+            throw error;
+        }
+
         return await response.text();
     }
 

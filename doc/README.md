@@ -28,11 +28,12 @@
 15. [SSH密码解密修复报告](./ssh-password-decryption-fix-report.md) - SSH连接密码处理修复记录
 
 ### 设计文档
-16. [服务器状态标签设计](./server-status-tags-design.md) - 服务器状态标签功能设计
-17. [用户服务器账户同步](./user-server-account-sync.md) - 用户与服务器账户同步机制
+16. [现代化UI实施报告](./modern-ui-implementation-report.md) - v2.0界面体系实施范围、阶段成果与代码映射
+17. [服务器状态标签设计](./server-status-tags-design.md) - 服务器状态标签功能设计
+18. [用户服务器账户同步](./user-server-account-sync.md) - 用户与服务器账户同步机制
 
 ### 故障排查文档
-18. [SPA架构JavaScript事件失效问题](./troubleshooting/spa-javascript-events-not-working.md) - ⚠️ **重要排查指南**: SPA动态片段中JavaScript事件不工作的完整解决方案
+19. [SPA架构JavaScript事件失效问题](./troubleshooting/spa-javascript-events-not-working.md) - ⚠️ **重要排查指南**: SPA动态片段中JavaScript事件不工作的完整解决方案
 
 ---
-*最后更新: 2025-09-11*
+*最后更新 2025-09-18*

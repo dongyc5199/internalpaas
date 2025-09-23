@@ -1,68 +1,88 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity">
-
-<!-- 🎯 现代化顶部导航栏 -->
-<header th:fragment="modern-top-nav" class="modern-nav" id="topNav">
+﻿<header th:fragment="modern-top-nav" class="modern-nav" id="topNav">
     <div class="nav-brand-section">
-        <!-- 品牌区域 -->
+        <button class="nav-sidebar-toggle" id="sidebarToggle" type="button" aria-label="收起或展开侧边栏">
+            <span class="toggle-icon" aria-hidden="true"></span>
+        </button>
         <div class="brand-content">
-            <div class="brand-icon">🚀</div>
-            <h1 class="brand-title">Dev Debug Platform</h1>
+            <div class="brand-icon" aria-hidden="true">
+                <span class="brand-initials">DDP</span>
+            </div>
+            <div class="brand-meta">
+                <h1 class="brand-title">Dev Debug Platform</h1>
+                <p class="brand-subtitle">内部调试与运维控制中心</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-metrics">
+        <div class="metric-item">
+            <span class="metric-label">今日部署</span>
+            <span class="metric-value" th:text="${deployCount ?: 0}">0</span>
+        </div>
+        <div class="metric-item">
+            <span class="metric-label">在线节点</span>
+            <span class="metric-value" th:text="${onlineServers ?: 0}">0</span>
+        </div>
+        <div class="metric-item">
+            <span class="metric-label">待办工单</span>
+            <span class="metric-value" th:text="${pendingTasks ?: 0}">0</span>
         </div>
     </div>
 
     <div class="nav-actions-section">
-        <!-- 搜索按钮 -->
-        <button class="nav-action-btn search-btn" data-tooltip="搜索" aria-label="搜索">
-            <i class="fas fa-search"></i>
-        </button>
+        <div class="nav-search" role="search">
+            <i class="fas fa-search" aria-hidden="true"></i>
+            <input type="text" class="search-input" placeholder="搜索服务器、应用或用户">
+        </div>
 
-        <!-- 通知按钮 -->
         <button class="nav-action-btn notification-btn"
-                data-count="3"
                 data-tooltip="通知"
-                aria-label="通知">
-            <i class="fas fa-bell"></i>
+                aria-label="查看通知">
+            <i class="fas fa-bell" aria-hidden="true"></i>
+            <span class="notification-indicator" aria-hidden="true"></span>
         </button>
 
-        <!-- 主题切换按钮 -->
         <button class="nav-action-btn theme-switcher theme-toggle-btn"
                 data-tooltip="切换主题"
                 aria-label="切换主题">
-            <i class="fas fa-sun sun-icon theme-icon"></i>
-            <i class="fas fa-moon moon-icon theme-icon"></i>
+            <i class="fas fa-circle-half-stroke theme-icon" aria-hidden="true"></i>
         </button>
 
-        <!-- 用户菜单 -->
         <div class="user-menu">
             <button class="user-avatar"
                     id="userMenuToggle"
-                    aria-label="用户菜单"
-                    data-tooltip="用户菜单">
-                <span th:text="${#strings.substring(username ?: 'A', 0, 1).toUpperCase()}">U</span>
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    aria-label="打开用户菜单">
+                <span class="avatar-initial" th:text="${#strings.substring(username ?: 'A', 0, 1).toUpperCase()}">U</span>
             </button>
 
-            <div class="dropdown-menu" id="userDropdown">
-                <a href="/profile" class="dropdown-item">
-                    <i class="fas fa-user"></i>
+            <div class="dropdown-menu" id="userDropdown" role="menu">
+                <div class="dropdown-header">
+                    <span class="dropdown-user" th:text="${username ?: 'Guest'}">Guest</span>
+                    <span class="dropdown-role" th:text="${userRole ?: 'Developer'}">Developer</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <a href="/profile" class="dropdown-item" role="menuitem">
+                    <i class="fas fa-user" aria-hidden="true"></i>
                     <span>个人资料</span>
                 </a>
-                <a href="/settings" class="dropdown-item">
-                    <i class="fas fa-cog"></i>
-                    <span>账户设置</span>
+                <a href="/settings" class="dropdown-item" role="menuitem">
+                    <i class="fas fa-sliders-h" aria-hidden="true"></i>
+                    <span>偏好设置</span>
                 </a>
-                <a href="/admin" class="dropdown-item" sec:authorize="hasRole('ADMIN')">
-                    <i class="fas fa-shield-alt"></i>
+                <a href="/admin" class="dropdown-item" role="menuitem" sec:authorize="hasRole('ADMIN')">
+                    <i class="fas fa-shield-alt" aria-hidden="true"></i>
                     <span>管理面板</span>
                 </a>
                 <div class="dropdown-divider"></div>
-                <a href="/help" class="dropdown-item">
-                    <i class="fas fa-question-circle"></i>
+                <a href="/help" class="dropdown-item" role="menuitem">
+                    <i class="fas fa-life-ring" aria-hidden="true"></i>
                     <span>帮助中心</span>
                 </a>
-                <form th:action="@{/logout}" method="post" style="margin: 0;">
-                    <button type="submit" class="dropdown-item" style="width: 100%; border: none; background: none; text-align: left;">
-                        <i class="fas fa-sign-out-alt"></i>
+                <form th:action="@{/logout}" method="post" class="dropdown-form" role="none">
+                    <button type="submit" class="dropdown-item" role="menuitem">
+                        <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
                         <span>退出登录</span>
                     </button>
                 </form>
@@ -71,229 +91,105 @@
     </div>
 </header>
 
-<!-- 🧭 现代化侧边栏 -->
 <aside th:fragment="modern-sidebar" class="modern-sidebar" id="modernSidebar">
-    <nav class="sidebar-nav">
-        <!-- 工作台 -->
+    <div class="sidebar-header">
+        <div class="sidebar-title">工作台导航</div>
+        <div class="sidebar-caption">快速抵达关键功能</div>
+    </div>
+
+    <nav class="sidebar-nav" th:with="role=${userType != null ? userType : 'developer'}">
         <a href="#dashboard"
-           class="nav-item main-nav-item modern-nav-link"
+           class="nav-item modern-nav-link"
            data-nav-id="dashboard"
            data-page="dashboard"
-           data-tooltip="工作台"
            th:classappend="${currentPage == 'dashboard'} ? 'active' : ''">
-            <i class="nav-item-icon fas fa-tachometer-alt"></i>
-            <span class="nav-item-text">工作台</span>
-            <span class="nav-item-badge info">2</span>
+            <i class="nav-item-icon fas fa-gauge" aria-hidden="true"></i>
+            <span class="nav-item-text" th:text="${role == 'admin'} ? '管理员工作台' : '开发者工作台'">工作台</span>
         </a>
 
-        <!-- 服务器管理 -->
         <a href="#servers"
-           class="nav-item main-nav-item modern-nav-link"
+           class="nav-item modern-nav-link"
            data-nav-id="servers"
            data-page="servers"
-           data-tooltip="服务器管理"
+           th:if="${role == 'admin'}"
            th:classappend="${currentPage == 'servers'} ? 'active' : ''">
-            <i class="nav-item-icon fas fa-server"></i>
-            <span class="nav-item-text">服务器管理</span>
-            <span class="nav-item-badge warning" th:if="${offlineServers > 0}" th:text="${offlineServers}">1</span>
+            <i class="nav-item-icon fas fa-server" aria-hidden="true"></i>
+            <span class="nav-item-text">服务器</span>
+            <span class="nav-item-chip warning" th:if="${offlineServers > 0}" th:text="${offlineServers}">1</span>
         </a>
 
-        <!-- 用户管理 -->
+        <a href="#applications"
+           class="nav-item modern-nav-link"
+           data-nav-id="applications"
+           data-page="applications"
+           th:if="${role != 'admin'}"
+           th:classappend="${currentPage == 'applications'} ? 'active' : ''">
+            <i class="nav-item-icon fas fa-cubes" aria-hidden="true"></i>
+            <span class="nav-item-text">应用中心</span>
+        </a>
+
         <a href="#users"
-           class="nav-item main-nav-item modern-nav-link"
+           class="nav-item modern-nav-link"
            data-nav-id="users"
            data-page="users"
-           data-tooltip="用户管理"
+           th:if="${role == 'admin'}"
            th:classappend="${currentPage == 'users'} ? 'active' : ''">
-            <i class="nav-item-icon fas fa-users"></i>
-            <span class="nav-item-text">用户管理</span>
+            <i class="nav-item-icon fas fa-users" aria-hidden="true"></i>
+            <span class="nav-item-text">用户与权限</span>
         </a>
 
-        <!-- 系统设置 -->
-        <a href="/settings"
-           class="nav-item main-nav-item modern-nav-link"
+        <a href="#monitoring"
+           class="nav-item modern-nav-link"
+           data-nav-id="monitoring"
+           data-page="monitoring"
+           th:if="${role == 'admin'}"
+           th:classappend="${currentPage == 'monitoring'} ? 'active' : ''">
+            <i class="nav-item-icon fas fa-chart-line" aria-hidden="true"></i>
+            <span class="nav-item-text">监控视图</span>
+        </a>
+
+        <a href="#terminal"
+           class="nav-item modern-nav-link"
+           data-nav-id="terminal"
+           data-page="terminal"
+           th:if="${role == 'admin'}"
+           th:classappend="${currentPage == 'terminal'} ? 'active' : ''">
+            <i class="nav-item-icon fas fa-terminal" aria-hidden="true"></i>
+            <span class="nav-item-text">远程终端</span>
+        </a>
+
+        <a href="#settings"
+           class="nav-item modern-nav-link"
            data-nav-id="settings"
            data-page="settings"
-           data-tooltip="系统设置"
+           th:if="${role == 'admin'}"
            th:classappend="${currentPage == 'settings'} ? 'active' : ''">
-            <i class="nav-item-icon fas fa-cog"></i>
-           <span class="nav-item-text">系统设置</span>
+            <i class="nav-item-icon fas fa-gear" aria-hidden="true"></i>
+            <span class="nav-item-text">系统设置</span>
         </a>
     </nav>
 
-    <div class="sidebar-controls">
-        <button class="nav-toggle modern-sidebar-toggle" id="sidebarToggle" aria-label="切换侧边栏">
-            <span class="sr-only">切换侧边栏</span>
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M16 5l-8 7 8 7z" fill="currentColor" />
-            </svg>
-        </button>
+    <div class="sidebar-footer">
+        <div class="footer-card">
+            <div class="footer-title">平台运行状态</div>
+            <div class="footer-meta">
+                <span>在线节点</span>
+                <strong th:text="${onlineServers ?: 0}">0</strong>
+            </div>
+            <div class="footer-meta">
+                <span>离线节点</span>
+                <strong class="warning" th:text="${offlineServers ?: 0}">0</strong>
+            </div>
+        </div>
+        <a href="/docs" class="footer-link">查看操作手册</a>
     </div>
 </aside>
 
-<!-- 📱 移动端遮罩层 -->
-<div th:fragment="mobile-overlay" class="mobile-nav-overlay" id="mobileNavOverlay"></div>
-
-<!-- 🎯 现代化内容区域包装器 -->
 <main th:fragment="modern-content-area" class="modern-content-area" id="modernContentArea">
-    <!-- 加载动画 -->
-    <div class="loading-spinner" id="loadingSpinner" role="status" aria-live="polite" aria-label="Loading content">
-        <div class="spinner" aria-hidden="true"></div>
+    <div class="loading-overlay" id="loadingSpinner" role="status" aria-live="polite" aria-hidden="true">
+        <div class="loading-indicator"></div>
+        <span class="loading-text">正在加载内容...</span>
     </div>
 
-    <!-- 内容容器 -->
-    <div class="content-wrapper" id="contentWrapper">
-        <!-- 内容将由 JavaScript 动态加载 -->
-    </div>
+    <div class="content-wrapper" id="contentWrapper"></div>
 </main>
-
-<!-- 🔧 JavaScript增强脚本 -->
-<script th:fragment="modern-nav-scripts">
-document.addEventListener('DOMContentLoaded', function() {
-    // 初始化现代导航交互
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    const userMenuToggle = document.getElementById('userMenuToggle');
-    const userDropdown = document.getElementById('userDropdown');
-    const sidebar = document.getElementById('modernSidebar');
-    const mobileOverlay = document.getElementById('mobileNavOverlay');
-
-    function closeUserDropdown() {
-        userDropdown?.classList.remove('open');
-    }
-
-    if (sidebarToggle && !window.modernNavController) {
-        sidebarToggle.addEventListener('click', function() {
-            sidebar?.classList.toggle('show');
-            mobileOverlay?.classList.toggle('active');
-        });
-    }
-
-    if (userMenuToggle && userDropdown) {
-        userMenuToggle.addEventListener('click', function(event) {
-            event.stopPropagation();
-            userDropdown.classList.toggle('open');
-        });
-
-        document.addEventListener('click', closeUserDropdown);
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeUserDropdown();
-            }
-        });
-    }
-
-    if (mobileOverlay) {
-        mobileOverlay.addEventListener('click', function() {
-            sidebar?.classList.remove('show');
-            mobileOverlay.classList.remove('active');
-        });
-    }
-
-    // 根据屏幕宽度调整侧边栏展示
-    function handleMobileNavigation() {
-        if (window.innerWidth <= 768) {
-            sidebar?.classList.add('hidden');
-        } else {
-            sidebar?.classList.remove('hidden');
-            sidebar?.classList.remove('show');
-            mobileOverlay?.classList.remove('active');
-        }
-    }
-
-    window.addEventListener('resize', handleMobileNavigation);
-    handleMobileNavigation();
-
-    // 导航项点击处理
-    document.querySelectorAll('.nav-item[data-nav-id]').forEach(item => {
-        item.addEventListener('click', function(event) {
-            const href = this.getAttribute('href');
-            const navId = this.getAttribute('data-nav-id');
-
-            if (href && href.startsWith('#')) {
-                event.preventDefault();
-
-                document.querySelectorAll('.nav-item.active').forEach(el => el.classList.remove('active'));
-                this.classList.add('active');
-
-                if (typeof loadContent === 'function') {
-                    loadContent(navId);
-                }
-
-                if (window.innerWidth <= 768) {
-                    sidebar?.classList.remove('show');
-                    mobileOverlay?.classList.remove('active');
-                }
-            }
-        });
-    });
-
-    // 搜索按钮
-    const searchBtn = document.querySelector('.search-btn');
-    searchBtn?.addEventListener('click', function() {
-        console.log('搜索功能待实现');
-    });
-
-    // 通知按钮
-    const notificationBtn = document.querySelector('.notification-btn');
-    notificationBtn?.addEventListener('click', function() {
-        console.log('通知功能待实现');
-    });
-
-    // 键盘快捷键
-    document.addEventListener('keydown', function(event) {
-        if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
-            event.preventDefault();
-            searchBtn?.click();
-        }
-
-        if ((event.ctrlKey || event.metaKey) && event.key === '\') {
-            event.preventDefault();
-            sidebarToggle?.click();
-        }
-    });
-
-    console.log('✅ 现代导航初始化完成');
-});
-
-// 主题切换函数
-function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-
-    document.documentElement.style.transition = 'all 0.3s ease';
-    setTimeout(() => {
-        document.documentElement.style.transition = '';
-    }, 300);
-}
-
-// 初始化主题
-function initTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-}
-
-document.addEventListener('DOMContentLoaded', initTheme);
-
-// 现代导航初始化函数（供其他脚本调用）
-function initModernNavigation() {
-    const nav = document.querySelector('.modern-nav');
-
-    window.addEventListener('scroll', () => {
-        const scrollY = window.scrollY;
-        if (scrollY > 10) {
-            nav?.classList.add('scrolled');
-        } else {
-            nav?.classList.remove('scrolled');
-        }
-    });
-
-    document.querySelectorAll('.nav-item').forEach((item, index) => {
-        item.style.animationDelay = `${index * 0.1}s`;
-    });
-}
-</script>
-
-</html>

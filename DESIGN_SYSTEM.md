@@ -1114,6 +1114,8 @@ userMenuToggle.addEventListener('click', function(e) {
 
 ## 🛠️ 实施指南
 
+> 📘 配套文档：详见 `doc/modern-ui-implementation-report.md`，涵盖项目阶段成果、代码映射及验证记录。
+
 ### 第一阶段：基础变量定义
 1. 创建 `design-tokens.css` 文件，定义所有CSS变量
 2. 在主CSS文件中导入设计令牌
