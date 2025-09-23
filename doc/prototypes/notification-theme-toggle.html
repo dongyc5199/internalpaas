@@ -1,0 +1,397 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>通知按钮与主题切换组件静态原型</title>
+    <style>
+        :root {
+            font-family: "Inter", "Segoe UI", sans-serif;
+            background: #EEF1F8;
+            color: #0F172A;
+        }
+        body {
+            margin: 0;
+            padding: 48px;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 24px 0;
+        }
+        section {
+            margin-bottom: 48px;
+        }
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 32px;
+        }
+        .preview-card {
+            padding: 24px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
+        }
+        .preview-card header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        .tag {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 999px;
+            letter-spacing: 0.6px;
+        }
+        .tag.admin {
+            background: linear-gradient(135deg, #2F9BFF, #3BC6B8);
+            color: #FFFFFF;
+        }
+        .tag.dev {
+            background: linear-gradient(135deg, #6C63FF, #3D8BFF);
+            color: #FFFFFF;
+        }
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        }
+        .toolbar.dev {
+            border: 1px solid rgba(108, 99, 255, 0.32);
+        }
+        .toolbar.admin {
+            border: 1px solid rgba(47, 155, 255, 0.32);
+        }
+        .icon-button {
+            position: relative;
+            width: 32px;
+            height: 32px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.65);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+        }
+        .icon-button svg {
+            width: 18px;
+            height: 18px;
+        }
+        .icon-button svg.gradient-admin {
+            fill: url(#adminBellGradient);
+        }
+        .icon-button svg.gradient-dev {
+            fill: url(#devBellGradient);
+        }
+        .icon-button[data-hover="true"] {
+            background: rgba(255, 255, 255, 0.85);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(59, 130, 246, 0.2);
+        }
+        .icon-button[data-unread="true"]::after {
+            content: attr(data-count);
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            min-width: 8px;
+            height: 16px;
+            padding: 0 4px;
+            border-radius: 999px;
+            background: #F34762;
+            color: #FFFFFF;
+            font-size: 10px;
+            font-weight: 600;
+            line-height: 16px;
+            text-align: center;
+        }
+        .state-hint {
+            font-size: 12px;
+            color: rgba(15, 23, 42, 0.6);
+            margin-top: 8px;
+        }
+        .theme-toggle {
+            position: relative;
+            width: 56px;
+            height: 32px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.7);
+            display: inline-flex;
+            align-items: center;
+            padding: 4px;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+        .theme-toggle .thumb {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            transition: transform 0.28s ease;
+        }
+        .theme-toggle .thumb svg {
+            width: 16px;
+            height: 16px;
+        }
+        .theme-toggle[data-mode="light"].admin .thumb {
+            background: linear-gradient(135deg, #2F9BFF, #3BC6B8);
+            transform: translateX(0);
+        }
+        .theme-toggle[data-mode="dark"].admin .thumb {
+            background: linear-gradient(135deg, #1F78FF, #25A8A0);
+            transform: translateX(24px);
+        }
+        .theme-toggle[data-mode="light"].dev .thumb {
+            background: linear-gradient(135deg, #6C63FF, #3D8BFF);
+            transform: translateX(0);
+        }
+        .theme-toggle[data-mode="dark"].dev .thumb {
+            background: linear-gradient(135deg, #4F4AFF, #2F6DFF);
+            transform: translateX(24px);
+        }
+        .theme-toggle[data-mode="dark"] {
+            background: rgba(15, 23, 42, 0.85);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+        .theme-toggle .ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+            transition: box-shadow 0.3s ease;
+        }
+        .theme-toggle[data-focus="true"] .ring {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+        }
+        .state-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+        }
+        .state-card {
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .state-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0;
+        }
+        footer {
+            font-size: 12px;
+            color: rgba(15, 23, 42, 0.5);
+            margin-top: 64px;
+        }
+    </style>
+</head>
+<body>
+    <h1>通知按钮与主题切换组件静态原型</h1>
+    <section>
+        <div class="preview-grid">
+            <article class="preview-card">
+                <header>
+                    <strong>管理员主题</strong>
+                    <span class="tag admin">ADMIN</span>
+                </header>
+                <div class="state-grid">
+                    <div class="state-card">
+                        <h3>通知按钮 · 默认</h3>
+                        <div class="toolbar admin">
+                            <button class="icon-button" aria-label="查看通知">
+                                <svg class="gradient-admin" viewBox="0 0 24 24" aria-hidden="true">
+                                    <use href="#bell-shape" />
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="state-hint">毛玻璃背景、渐变描边与 32px 圆角统一沿用标题栏规范。</p>
+                    </div>
+                    <div class="state-card">
+                        <h3>通知按钮 · 未读</h3>
+                        <div class="toolbar admin">
+                            <button class="icon-button" aria-label="3 条未读通知" data-unread="true" data-count="3">
+                                <svg class="gradient-admin" viewBox="0 0 24 24" aria-hidden="true">
+                                    <use href="#bell-shape" />
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="state-hint">右上角徽章支持数字或红点，字体 600、字号 10px。</p>
+                    </div>
+                    <div class="state-card">
+                        <h3>通知按钮 · Hover</h3>
+                        <div class="toolbar admin">
+                            <button class="icon-button" aria-label="查看通知" data-hover="true">
+                                <svg class="gradient-admin" viewBox="0 0 24 24" aria-hidden="true">
+                                    <use href="#bell-shape" />
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="state-hint">Hover 态透明度提升至 0.85，投影增强并上浮 1px。</p>
+                    </div>
+                </div>
+                <div class="state-grid" style="margin-top: 24px;">
+                    <div class="state-card">
+                        <h3>主题切换 · 浅色</h3>
+                        <div class="toolbar admin">
+                            <div class="theme-toggle admin" data-mode="light">
+                                <span class="ring" aria-hidden="true"></span>
+                                <span class="thumb">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 4a1 1 0 0 1 1-1 1 1 0 0 1 1 1v1a1 1 0 0 1-2 0V4Zm0 15a1 1 0 0 1 1 1v1a1 1 0 0 1-2 0v-1a1 1 0 0 1 1-1Zm8-7a1 1 0 0 1 1 1 1 1 0 0 1-1 1h-1a1 1 0 0 1 0-2h1Zm-15 0a1 1 0 0 1 1-1H7a1 1 0 0 1 0 2H6a1 1 0 0 1-1-1Zm12.95-4.536a1 1 0 1 1 1.414-1.414l.707.707a1 1 0 0 1-1.414 1.414l-.707-.707Zm-11.314 9.9a1 1 0 0 1 1.414-1.414l.707.707a1 1 0 0 1-1.414 1.414l-.707-.707ZM7.05 6.464a1 1 0 1 1-1.414-1.414l.707-.707A1 1 0 0 1 7.757 6.05l-.707.707Zm9.9 11.314a1 1 0 1 1-1.414 1.414l-.707-.707a1 1 0 0 1 1.414-1.414l.707.707ZM12 8a4 4 0 0 1 0 8 4 4 0 0 1 0-8Z" />
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                        <p class="state-hint">默认展示太阳图标，描边保持主色渐变亮度。</p>
+                    </div>
+                    <div class="state-card">
+                        <h3>主题切换 · 暗色</h3>
+                        <div class="toolbar admin">
+                            <div class="theme-toggle admin" data-mode="dark">
+                                <span class="ring" aria-hidden="true"></span>
+                                <span class="thumb">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 1 0 21 12.79Z" />
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                        <p class="state-hint">暗色背景透明度加深，thumb 向右平移 24px 切换月亮图标。</p>
+                    </div>
+                    <div class="state-card">
+                        <h3>主题切换 · 焦点</h3>
+                        <div class="toolbar admin">
+                            <div class="theme-toggle admin" data-mode="light" data-focus="true">
+                                <span class="ring" aria-hidden="true"></span>
+                                <span class="thumb">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" />
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                        <p class="state-hint">键盘焦点时出现 3px 主色焦点环，满足无鼠标场景。</p>
+                    </div>
+                </div>
+            </article>
+            <article class="preview-card">
+                <header>
+                    <strong>开发者主题</strong>
+                    <span class="tag dev">DEV</span>
+                </header>
+                <div class="state-grid">
+                    <div class="state-card">
+                        <h3>通知按钮 · 默认</h3>
+                        <div class="toolbar dev">
+                            <button class="icon-button" aria-label="查看通知">
+                                <svg class="gradient-dev" viewBox="0 0 24 24" aria-hidden="true">
+                                    <use href="#bell-shape" />
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="state-hint">配色与描边切换为紫蓝渐变，符合开发者工作台主色。</p>
+                    </div>
+                    <div class="state-card">
+                        <h3>通知按钮 · 未读</h3>
+                        <div class="toolbar dev">
+                            <button class="icon-button" aria-label="存在未读通知" data-unread="true" data-count="">
+                                <svg class="gradient-dev" viewBox="0 0 24 24" aria-hidden="true">
+                                    <use href="#bell-shape" />
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="state-hint">无数字时默认呈现红色圆点，凸显紧急状态。</p>
+                    </div>
+                    <div class="state-card">
+                        <h3>通知按钮 · Hover</h3>
+                        <div class="toolbar dev">
+                            <button class="icon-button" aria-label="查看通知" data-hover="true">
+                                <svg class="gradient-dev" viewBox="0 0 24 24" aria-hidden="true">
+                                    <use href="#bell-shape" />
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="state-hint">Hover 投影与 Admin 规范一致，保持跨角色一致性。</p>
+                    </div>
+                </div>
+                <div class="state-grid" style="margin-top: 24px;">
+                    <div class="state-card">
+                        <h3>主题切换 · 浅色</h3>
+                        <div class="toolbar dev">
+                            <div class="theme-toggle dev" data-mode="light">
+                                <span class="ring" aria-hidden="true"></span>
+                                <span class="thumb">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" />
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                        <p class="state-hint">与管理员版保持一致的交互节奏，仅替换渐变颜色。</p>
+                    </div>
+                    <div class="state-card">
+                        <h3>主题切换 · 暗色</h3>
+                        <div class="toolbar dev">
+                            <div class="theme-toggle dev" data-mode="dark">
+                                <span class="ring" aria-hidden="true"></span>
+                                <span class="thumb">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 1 0 21 12.79Z" />
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                        <p class="state-hint">暗色主题下滑块亮度提升 8%，便于暗背景中辨识。</p>
+                    </div>
+                    <div class="state-card">
+                        <h3>主题切换 · 焦点</h3>
+                        <div class="toolbar dev">
+                            <div class="theme-toggle dev" data-mode="dark" data-focus="true">
+                                <span class="ring" aria-hidden="true"></span>
+                                <span class="thumb">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 1 0 21 12.79Z" />
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                        <p class="state-hint">焦点环同样使用紫蓝渐变的透明外发光。</p>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </section>
+    <footer>
+        说明：该页面仅用于静态视觉与状态校验，后续整合时请结合交互规格实现动画与 ARIA 行为。
+    </footer>
+    <svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute;">
+        <defs>
+            <linearGradient id="adminBellGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#2F9BFF" />
+                <stop offset="100%" stop-color="#3BC6B8" />
+            </linearGradient>
+            <linearGradient id="devBellGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#6C63FF" />
+                <stop offset="100%" stop-color="#3D8BFF" />
+            </linearGradient>
+            <path id="bell-shape" d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2Zm6-6V11a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2Z" />
+        </defs>
+    </svg>
+</body>
+</html>
