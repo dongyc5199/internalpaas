@@ -1,14 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity" class="theme-light" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Debug Platform - 统一管理平台</title>
+    <title>Dev Debug Platform - 缁熶竴绠＄悊骞冲彴</title>
     <!-- CSRF Meta Tags -->
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 
-    <!-- 更强的防闪烁策略 - 立即执行 -->
+    <!-- 鏇村己鐨勯槻闂儊绛栫暐 - 绔嬪嵆鎵ц -->
     <script>
         (function() {
             function updateBodyTheme(theme) {
@@ -60,7 +60,7 @@
     </script>
 
     <style>
-        /* 预设暗色主题样式避免闪烁 */
+        /* 棰勮鏆楄壊涓婚鏍峰紡閬垮厤闂儊 */
         .theme-dark {
             background-color: #121212 !important;
             color: #e0e0e0 !important;
@@ -70,17 +70,17 @@
         }
     </style>
 
-    <!-- 预加载关键字体 -->
+    <!-- 棰勫姞杞藉叧閿瓧浣?-->
     <link rel="preload" href="/vendor/fontawesome/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/vendor/fontawesome/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin>
 
-    <!-- 保留FontAwesome -->
+    <!-- 淇濈暀FontAwesome -->
     <link rel="stylesheet" href="/css/fontawesome-local.css">
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/favicon.png">
 
-    <!-- 新的现代化设计系统 -->
+    <!-- 鏂扮殑鐜颁唬鍖栬璁＄郴缁?-->
     <link rel="stylesheet" href="/css/design-tokens.css">
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/main.css">
@@ -91,80 +91,90 @@
     <link rel="stylesheet" href="/css/responsive.css">
     <link rel="stylesheet" href="/css/animations.css">
 
-    <!-- 保留特定功能的CSS -->
+    <!-- 淇濈暀鐗瑰畾鍔熻兘鐨凜SS -->
     <link rel="stylesheet" href="/css/server-status-tags.css">
     <link rel="stylesheet" href="/css/server-detail-modal.css">
     <link rel="stylesheet" href="/css/modern-upload-modal.css">
     <link rel="stylesheet" href="/css/batch-operations.css">
 
-    <!-- WebSocket依赖库 -->
+    <!-- WebSocket渚濊禆搴?-->
     <script src="/vendor/sockjs/sockjs.min.js"></script>
     <script src="/vendor/sockjs/stomp.min.js"></script>
     <script src="/js/server-status-tags.js"></script>
     <script src="/js/drawer.js"></script>
 </head>
 <body>
-    <!-- 应用容器 -->
+    <!-- 搴旂敤瀹瑰櫒 -->
     <div class="app-container">
-        <!-- 现代化顶部导航栏 (使用片段) -->
+        <!-- 鐜颁唬鍖栭《閮ㄥ鑸爮 (浣跨敤鐗囨) -->
         <div th:replace="~{fragments/modern-navigation :: modern-top-nav}"></div>
 
-        <!-- 现代化侧边栏 (使用片段) -->
+        <!-- 鐜颁唬鍖栦晶杈规爮 (浣跨敤鐗囨) -->
         <div th:replace="~{fragments/modern-navigation :: modern-sidebar}"></div>
 
-        <!-- 移动端遮罩层 -->
+        <!-- 绉诲姩绔伄缃╁眰 -->
         <div class="sidebar-mobile-overlay" id="sidebarOverlay"></div>
 
-        <!-- SPA主内容区域 -->
-        <main class="main-content" id="mainContent">
-            <div class="page-container">
-                <!-- 动态内容将在这里加载 -->
-                <div id="contentWrapper">
-                    <!-- SPA动态内容 -->
-                </div>
+        <!-- SPA 主内容区域 -->
+        <main class="main-content workspace-content" id="mainContent">
+            <div class="workspace-loading" id="loadingSpinner" role="status" aria-live="polite" hidden>
+                <div class="loading-indicator"></div>
+                <span class="loading-text">正在加载内容...</span>
+            </div>
+            <div class="workspace-content__inner" id="contentWrapper">
+                <!-- SPA 动态内容 -->
             </div>
         </main>
     </div>
 
-    <!-- 保留原有的SPA JavaScript逻辑 -->
+    <!-- 淇濈暀鍘熸湁鐨凷PA JavaScript閫昏緫 -->
     <script th:inline="javascript">
         // 全局变量
         let currentPage = '';
         let isLoading = false;
+        const pageLoadingOverlayId = 'loadingSpinner';
 
-        // 传递服务器端数据到客户端
+        function togglePageLoading(show) {
+            const overlay = document.getElementById(pageLoadingOverlayId);
+            if (!overlay) {
+                return;
+            }
+            overlay.hidden = !show;
+        }
+
+        // 浼犻€掓湇鍔″櫒绔暟鎹埌瀹㈡埛绔?
         const username = /*[[${username}]]*/ 'guest';
         const isAdmin = /*[[${isAdmin}]]*/ false;
         const userRole = /*[[${userRole}]]*/ 'DEVELOPER';
 
-        // 传递管理员数据（如果存在）
+        // 浼犻€掔鐞嗗憳鏁版嵁锛堝鏋滃瓨鍦級
         const adminData = /*[[${adminData != null ? adminData : null}]]*/ null;
 
     </script>
 
-    <!-- 现代化导航JavaScript控制器 -->
+    <!-- 鐜颁唬鍖栧鑸狫avaScript鎺у埗鍣?-->
     <script src="/js/modern-navigation.js"></script>
 
-    <!-- 原有SPA功能脚本的完整复制将在这里 -->
+    <!-- 鍘熸湁SPA鍔熻兘鑴氭湰鐨勫畬鏁村鍒跺皢鍦ㄨ繖閲?-->
     <script>
-    // 注意：全局变量已在上面的Thymeleaf内联脚本中声明
+    // 娉ㄦ剰锛氬叏灞€鍙橀噺宸插湪涓婇潰鐨凾hymeleaf鍐呰仈鑴氭湰涓０鏄?
 
-    // 🎨 初始化现代化设计系统
+    // 馃帹 鍒濆鍖栫幇浠ｅ寲璁捐绯荤粺
     function initModernDesignSystem() {
-        // 初始化侧边栏
+        // 鍒濆鍖栦晶杈规爮
         initModernSidebar();
 
-        // 初始化用户菜单
+        // 鍒濆鍖栫敤鎴疯彍鍗?
         initModernUserMenu();
 
-        // 初始化搜索功能
+        // 鍒濆鍖栨悳绱㈠姛鑳?
         initModernSearch();
 
-        // 初始化主题切换
+        // 鍒濆鍖栦富棰樺垏鎹?
         initModernTheme();
     }
 
-    // 现代化侧边栏功能
+    // 鐜颁唬鍖栦晶杈规爮鍔熻兘
     function initModernSidebar() {
         if (window.modernNavController) {
             return;
@@ -176,7 +186,7 @@
         const mainContent = document.getElementById('mainContent');
         const overlay = document.getElementById('sidebarOverlay');
 
-        // 桌面端侧边栏折叠
+        // 妗岄潰绔晶杈规爮鎶樺彔
         if (toggleBtn) {
             toggleBtn.addEventListener('click', function() {
                 sidebar?.classList.toggle('collapsed');
@@ -185,7 +195,7 @@
             });
         }
 
-        // 移动端侧边栏开关
+        // 绉诲姩绔晶杈规爮寮€鍏?
         if (mobileToggle) {
             mobileToggle.addEventListener('click', function() {
                 sidebar?.classList.toggle('mobile-open');
@@ -193,7 +203,7 @@
             });
         }
 
-        // 点击覆盖层关闭侧边栏
+        // 鐐瑰嚮瑕嗙洊灞傚叧闂晶杈规爮
         if (overlay) {
             overlay.addEventListener('click', function() {
                 sidebar?.classList.remove('mobile-open');
@@ -201,7 +211,7 @@
             });
         }
 
-        // ESC键关闭移动端侧边栏
+        // ESC閿叧闂Щ鍔ㄧ渚ц竟鏍?
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && sidebar?.classList.contains('mobile-open')) {
                 sidebar.classList.remove('mobile-open');
@@ -209,16 +219,16 @@
             }
         });
 
-        // 恢复侧边栏状态（仅桌面端）
+        // 鎭㈠渚ц竟鏍忕姸鎬侊紙浠呮闈㈢锛?
         if (window.innerWidth > 768 && localStorage.getItem('sidebarCollapsed') === 'true') {
             sidebar?.classList.add('collapsed');
             mainContent?.classList.add('sidebar-collapsed');
         }
 
-        // 监听窗口大小变化
+        // 鐩戝惉绐楀彛澶у皬鍙樺寲
         window.addEventListener('resize', function() {
             if (window.innerWidth > 768) {
-                // 桌面端：移除移动端类，恢复折叠状态
+                // 妗岄潰绔細绉婚櫎绉诲姩绔被锛屾仮澶嶆姌鍙犵姸鎬?
                 sidebar?.classList.remove('mobile-open');
                 document.body.classList.remove('sidebar-mobile-open');
 
@@ -227,14 +237,14 @@
                     mainContent?.classList.add('sidebar-collapsed');
                 }
             } else {
-                // 移动端：移除桌面端类
+                // 绉诲姩绔細绉婚櫎妗岄潰绔被
                 sidebar?.classList.remove('collapsed');
                 mainContent?.classList.remove('sidebar-collapsed');
             }
         });
     }
 
-    // 现代化用户菜单功能
+    // 鐜颁唬鍖栫敤鎴疯彍鍗曞姛鑳?
     function initModernUserMenu() {
         const userTrigger = document.getElementById('navUserTrigger');
         const userDropdown = document.getElementById('navUserDropdown');
@@ -251,7 +261,7 @@
         }
     }
 
-    // 现代化搜索功能
+    // 鐜颁唬鍖栨悳绱㈠姛鑳?
     function initModernSearch() {
         const searchInput = document.querySelector('.search-input');
         const searchBtn = document.querySelector('.search-button');
@@ -272,12 +282,12 @@
     function performModernSearch(query) {
         if (!query.trim()) return;
 
-        console.log('搜索:', query);
-        // 可以跳转到相应页面或显示搜索结果
+        console.log('鎼滅储:', query);
+        // 鍙互璺宠浆鍒扮浉搴旈〉闈㈡垨鏄剧ず鎼滅储缁撴灉
         // window.location.href = `/search?q=${encodeURIComponent(query)}`;
     }
 
-    // 现代化主题切换
+    // 鐜颁唬鍖栦富棰樺垏鎹?
     function initModernTheme() {
         window.toggleTheme = function() {
             if (window.modernNavController) {
@@ -317,10 +327,10 @@
         return csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
     }
 
-    // 全局AJAX错误处理器，用于处理会话超时
+    // 鍏ㄥ眬AJAX閿欒澶勭悊鍣紝鐢ㄤ簬澶勭悊浼氳瘽瓒呮椂
     function handleAjaxError(response) {
         if (response.status === 401) {
-            // 检查是否是JSON响应
+            // 妫€鏌ユ槸鍚︽槸JSON鍝嶅簲
             const contentType = response.headers.get('content-type');
             if (contentType && contentType.includes('application/json')) {
                 return response.json().then(errorData => {
@@ -331,7 +341,7 @@
                     return Promise.reject(new Error('Unauthorized'));
                 });
             } else {
-                // 非JSON响应，可能是登录页面HTML
+                // 闈濲SON鍝嶅簲锛屽彲鑳芥槸鐧诲綍椤甸潰HTML
                 window.location.href = '/login?expired';
                 return Promise.reject(new Error('Session expired'));
             }
@@ -339,21 +349,21 @@
         return response;
     }
 
-    // 根据当前URL获取页面名称
+    // 鏍规嵁褰撳墠URL鑾峰彇椤甸潰鍚嶇О
     function getCurrentPageFromUrl() {
-        const hash = window.location.hash.substring(1); // 移除 # 号
+        const hash = window.location.hash.substring(1); // 绉婚櫎 # 鍙?
         const pathname = window.location.pathname;
         
-        // 检查hash是否存在且有效
+        // 妫€鏌ash鏄惁瀛樺湪涓旀湁鏁?
         if (hash) {
             const validPages = ['dashboard', 'servers', 'users', 'applications', 'monitoring', 'terminal'];
             if (validPages.includes(hash)) {
-                //('从hash获取页面:', hash);
+                //('浠巋ash鑾峰彇椤甸潰:', hash);
                 return hash;
             }
         }
         
-        // 根据pathname推断页面
+        // 鏍规嵁pathname鎺ㄦ柇椤甸潰
         if (pathname.includes('/admin/workspace') || pathname === '/admin/workspace') {
             return 'dashboard';
         } else if (pathname.includes('/admin/servers')) {
@@ -368,11 +378,11 @@
             return 'terminal';
         }
         
-        // 默认返回dashboard
+        // 榛樿杩斿洖dashboard
         return 'dashboard';
     }
 
-    // 页面加载完成后初始化
+    // 椤甸潰鍔犺浇瀹屾垚鍚庡垵濮嬪寲
     document.addEventListener('themeChanged', function(event) {
         if (typeof window.__applyThemePreferences !== 'function') {
             return;
@@ -412,30 +422,30 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         try {
-            // 初始化新设计系统
+            // 鍒濆鍖栨柊璁捐绯荤粺
             initModernDesignSystem();
 
-            // 获取当前页面并加载对应内容
+            // 鑾峰彇褰撳墠椤甸潰骞跺姞杞藉搴斿唴瀹?
             const currentPageName = getCurrentPageFromUrl();
-            //('页面初始化，当前页面:', currentPageName);
+            //('椤甸潰鍒濆鍖栵紝褰撳墠椤甸潰:', currentPageName);
 
-            // 加载当前页面内容（首次加载保持当前视图）
+            // 鍔犺浇褰撳墠椤甸潰鍐呭锛堥娆″姞杞戒繚鎸佸綋鍓嶈鍥撅級
             loadContent(currentPageName, false);
         } catch (error) {
             console.error('Error calling loadContent:', error);
-            // 如果出错，回退到默认页面
+            // 濡傛灉鍑洪敊锛屽洖閫€鍒伴粯璁ら〉闈?
             loadContent('dashboard', false);
         }
 
-        // 初始化移动端菜单
+        // 鍒濆鍖栫Щ鍔ㄧ鑿滃崟
         initMobileMenu();
 
-        // 初始化侧边栏收起展开功能
+        // 鍒濆鍖栦晶杈规爮鏀惰捣灞曞紑鍔熻兘
         if (!window.modernNavController) {
             initSidebarToggle();
         }
 
-        // 全局测试函数
+        // 鍏ㄥ眬娴嬭瘯鍑芥暟
         window.testToggle = function() {
             if (window.modernNavController) {
                 window.modernNavController.toggle();
@@ -444,7 +454,7 @@
             }
         };
 
-        // 绑定侧边栏切换事件（无控制器时的后备逻辑）
+        // 缁戝畾渚ц竟鏍忓垏鎹簨浠讹紙鏃犳帶鍒跺櫒鏃剁殑鍚庡閫昏緫锛?
         const toggleButton = document.getElementById('sidebarToggle');
         if (toggleButton && !window.modernNavController) {
             toggleButton.addEventListener('click', function(e) {
@@ -453,30 +463,56 @@
                 toggleSidebar();
             });
         } else if (!toggleButton) {
-            console.error('未找到侧边栏切换按钮');
+            console.error('鏈壘鍒颁晶杈规爮鍒囨崲鎸夐挳');
         }
 
-        // 初始化抽屉管理器
+        // 鍒濆鍖栨娊灞夌鐞嗗櫒
         try {
             window.drawerManager = new DrawerManager();
         } catch (error) {
-            console.error('❌ DrawerManager 初始化失败:', error);
+            console.error('鉂?DrawerManager 鍒濆鍖栧け璐?', error);
         }
         
-        // 监听浏览器后退/前进按钮
+        // 鐩戝惉娴忚鍣ㄥ悗閫€/鍓嶈繘鎸夐挳
         window.addEventListener('popstate', function(e) {
             if (e.state && e.state.page) {
                 loadContent(e.state.page, false);
             }
         });
         
-        // 设置初始状态为当前页面
+        // 璁剧疆鍒濆鐘舵€佷负褰撳墠椤甸潰
         const currentPageName = getCurrentPageFromUrl();
         history.replaceState({ page: currentPageName }, '', `#${currentPageName}`);
     });
 
-    // 核心内容加载函数 (全局可访问)
-    //console.log('🔧 正在定义window.loadContent函数...');
+    // 鏍稿績鍐呭鍔犺浇鍑芥暟 (鍏ㄥ眬鍙闂?
+    function buildPlaceholderContent(config) {
+        const defaultConfig = {
+            icon: '🚧',
+            title: '功能建设中',
+            description: '我们正在补充该模块的实现，欢迎稍后再试。',
+            tips: []
+        };
+        const data = Object.assign({}, defaultConfig, config || {});
+        const hasTips = Array.isArray(data.tips) && data.tips.length > 0;
+        const tips = hasTips
+            ? `<ul class="placeholder-tips">${data.tips.map(item => `<li>${item}</li>`).join('')}</ul>`
+            : '';
+        return `
+        <section class="workspace-placeholder">
+            <div class="placeholder-icon">${data.icon}</div>
+            <h2 class="placeholder-title">${data.title}</h2>
+            <p class="placeholder-desc">${data.description}</p>
+            ${tips}
+        </section>
+        `;
+    }
+
+    async function loadPlaceholderContent(config) {
+        return buildPlaceholderContent(config);
+    }
+
+    //console.log('馃敡 姝ｅ湪瀹氫箟window.loadContent鍑芥暟...');
     window.loadContent = async function loadContent(page, addToHistory = true) {
         if (isLoading || page === currentPage) {
             return;
@@ -485,10 +521,10 @@
         isLoading = true;
 
         try {
-            // 更新菜单激活状态
+            // 鏇存柊鑿滃崟婵€娲荤姸鎬?
             updateActiveMenu(page);
 
-            // 根据页面类型决定加载方式
+            // 鏍规嵁椤甸潰绫诲瀷鍐冲畾鍔犺浇鏂瑰紡
             let content;
             switch (page) {
                 case 'dashboard':
@@ -496,19 +532,19 @@
                     break;
                 case 'servers':
                     content = await loadServersContent();
-                    // 加载完服务器内容后，绑定事件处理器并加载状态标签
+                    // 鍔犺浇瀹屾湇鍔″櫒鍐呭鍚庯紝缁戝畾浜嬩欢澶勭悊鍣ㄥ苟鍔犺浇鐘舵€佹爣绛?
                     setTimeout(() => {
-                        // 绑定服务器事件处理器
+                        // 缁戝畾鏈嶅姟鍣ㄤ簨浠跺鐞嗗櫒
                         bindServerEvents();
 
-                        // 初始化服务器名称滚动效果
+                        // 鍒濆鍖栨湇鍔″櫒鍚嶇О婊氬姩鏁堟灉
                         initServerNameScrolling();
 
-                        // 加载服务器状态标签
+                        // 鍔犺浇鏈嶅姟鍣ㄧ姸鎬佹爣绛?
                         if (serverStatusManager) {
                             serverStatusManager.loadAllServerStatus();
                         } else {
-                            // 如果状态管理器还未初始化，使用备用方法
+                            // 濡傛灉鐘舵€佺鐞嗗櫒杩樻湭鍒濆鍖栵紝浣跨敤澶囩敤鏂规硶
                             const serverCards = document.querySelectorAll('[data-server-id]');
                             serverCards.forEach(card => {
                                 const serverId = card.getAttribute('data-server-id');
@@ -521,7 +557,7 @@
                     break;
                 case 'users':
                     content = await loadUsersContent();
-                    // 加载完用户内容后，绑定事件处理器并执行页面初始化
+                    // 鍔犺浇瀹岀敤鎴峰唴瀹瑰悗锛岀粦瀹氫簨浠跺鐞嗗櫒骞舵墽琛岄〉闈㈠垵濮嬪寲
                     setTimeout(() => {
                         bindContentEvents();
                         initUsersContent();
@@ -529,7 +565,7 @@
                     break;
                 case 'applications':
                     content = await loadApplicationsContent();
-                    // 加载完应用内容后，绑定事件处理器
+                    // 鍔犺浇瀹屽簲鐢ㄥ唴瀹瑰悗锛岀粦瀹氫簨浠跺鐞嗗櫒
                     setTimeout(() => {
                         bindContentEvents();
                     }, 100);
@@ -546,98 +582,142 @@
                 case 'terminal':
                     content = await loadTerminalContent();
                     break;
+                case 'audit':
+                    content = await loadPlaceholderContent({
+                        icon: '📜',
+                        title: '审计记录即将上线',
+                        description: '我们正在整合操作留痕与导出功能，敬请期待。',
+                        tips: [
+                            '将支持按时间、用户与资源多维过滤',
+                            '计划提供导出 CSV 与异地留存策略'
+                        ]
+                    });
+                    break;
+                case 'alerts':
+                    content = await loadPlaceholderContent({
+                        icon: '🚨',
+                        title: '告警配置中心建设中',
+                        description: '可视化阈值、渠道策略与联动计划开发中。',
+                        tips: [
+                            '将支持多环境阈值模板与批量套用',
+                            'Webhook、短信与企业 IM 通知将统一配置'
+                        ]
+                    });
+                    break;
+                case 'deployments':
+                    content = await loadPlaceholderContent({
+                        icon: '🚀',
+                        title: '部署任务面板策划中',
+                        description: '部署编排与进度追踪能力正在接入。',
+                        tips: [
+                            '计划支持蓝绿/金丝雀策略与审批节点',
+                            '部署记录将与应用版本、构建产物联动'
+                        ]
+                    });
+                    break;
+                case 'profile':
+                    content = await loadPlaceholderContent({
+                        icon: '🧩',
+                        title: '个人设置正在完善',
+                        description: 'SSH 密钥、通知偏好与 API Token 管理即将到位。',
+                        tips: [
+                            '将新增安全日志与会话管理',
+                            '支持独立的主题与语言偏好设置'
+                        ]
+                    });
+                    break;
                 default:
-                    content = '<p>页面不存在</p>';
+                    content = '<p>椤甸潰涓嶅瓨鍦?/p>';
             }
 
-            // 更新内容
+            // 鏇存柊鍐呭
             updateContent(content);
 
-            // 更新浏览器历史
+            // 鏇存柊娴忚鍣ㄥ巻鍙?
             if (addToHistory) {
                 history.pushState({ page: page }, '', '#' + page);
             }
 
             currentPage = page;
         } catch (error) {
-            console.error('加载内容失败:', error);
+            console.error('鍔犺浇鍐呭澶辫触:', error);
 
-            // 检查是否是会话过期错误
+            // 妫€鏌ユ槸鍚︽槸浼氳瘽杩囨湡閿欒
             if (error.message && error.message.includes('401') && error.sessionExpired) {
-                // 会话过期，重定向到登录页面
+                // 浼氳瘽杩囨湡锛岄噸瀹氬悜鍒扮櫥褰曢〉闈?
                 window.location.href = '/login?expired';
                 return;
             } else if (error.message && error.message.includes('401')) {
-                // 可能是会话过期，检查响应内容
+                // 鍙兘鏄細璇濊繃鏈燂紝妫€鏌ュ搷搴斿唴瀹?
                 window.location.href = '/login?expired';
                 return;
             }
 
-            updateContent('<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> 加载失败: ' + error.message + '</div>');
+            updateContent('<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> 鍔犺浇澶辫触: ' + error.message + '</div>');
         } finally {
             isLoading = false;
         }
     }
-    //('✅ window.loadContent函数定义完成，立即验证:', typeof window.loadContent);
+    //('鉁?window.loadContent鍑芥暟瀹氫箟瀹屾垚锛岀珛鍗抽獙璇?', typeof window.loadContent);
 
 
-    // 更新内容
+    // 鏇存柊鍐呭
     function updateContent(content) {
-        //console.log('🔄 updateContent called with content length:', content ? content.length : 0);
+        //console.log('馃攧 updateContent called with content length:', content ? content.length : 0);
         const wrapper = document.getElementById('contentWrapper');
         if (!wrapper) {
-            console.error('❌ contentWrapper element not found!');
+            console.error('鉂?contentWrapper element not found!');
             //console.log('Available elements:', document.querySelectorAll('[id]'));
             return;
         }
-        //console.log('✅ contentWrapper found, updating content...');
+        //console.log('鉁?contentWrapper found, updating content...');
         wrapper.innerHTML = content;
         wrapper.classList.add('content-fade-in');
         
-        // 执行新加载内容中的JavaScript
+        // 鎵ц鏂板姞杞藉唴瀹逛腑鐨凧avaScript
         executeScriptsInElement(wrapper);
         
-        // 移除动画类，为下次使用准备
+        // 绉婚櫎鍔ㄧ敾绫伙紝涓轰笅娆′娇鐢ㄥ噯澶?
         setTimeout(() => {
             wrapper.classList.remove('content-fade-in');
         }, 300);
     }
     
-    // 执行元素中的JavaScript代码
+    // 鎵ц鍏冪礌涓殑JavaScript浠ｇ爜
     function executeScriptsInElement(element) {
         const scripts = element.querySelectorAll('script');
         scripts.forEach(script => {
             if (script.src) {
-                // 外部脚本，创建新的script标签
+                // 澶栭儴鑴氭湰锛屽垱寤烘柊鐨剆cript鏍囩
                 const newScript = document.createElement('script');
                 newScript.src = script.src;
                 document.head.appendChild(newScript);
             } else {
-                // 内联脚本，直接执行
+                // 鍐呰仈鑴氭湰锛岀洿鎺ユ墽琛?
                 try {
                     eval(script.innerHTML);
                 } catch (error) {
-                    console.error('执行脚本出错:', error);
+                    console.error('鎵ц鑴氭湰鍑洪敊:', error);
                 }
             }
         });
     }
 
-    // 更新菜单激活状态 - 兼容现代导航栏
+    // 鏇存柊鑿滃崟婵€娲荤姸鎬?- 鍏煎鐜颁唬瀵艰埅鏍?
     function updateActiveMenu(page) {
-        // 移除所有激活状态 - 兼容新旧导航栏
+        // 绉婚櫎鎵€鏈夋縺娲荤姸鎬?- 鍏煎鏂版棫瀵艰埅鏍?
         document.querySelectorAll('.nav-item, .modern-nav-link').forEach(item => {
             item.classList.remove('active');
         });
         
-        // 设置当前页面为激活状态
+        // 璁剧疆褰撳墠椤甸潰涓烘縺娲荤姸鎬?
         const currentItem = document.querySelector(`[data-page="${page}"]`);
         if (currentItem) {
-            // 新的现代导航栏结构
+            // 鏂扮殑鐜颁唬瀵艰埅鏍忕粨鏋?
             if (currentItem.classList.contains('modern-nav-link')) {
                 currentItem.classList.add('active');
             } 
-            // 旧的导航栏结构（向后兼容）
+            // 鏃х殑瀵艰埅鏍忕粨鏋勶紙鍚戝悗鍏煎锛?
             else {
                 const navItem = currentItem.closest('.nav-item');
                 if (navItem) {
@@ -647,12 +727,12 @@
         }
     }
     
-    // 全局下拉菜单函数
+    // 鍏ㄥ眬涓嬫媺鑿滃崟鍑芥暟
     function toggleDropdown(button) {
         const dropdown = button.nextElementSibling;
         const isOpen = dropdown.classList.contains('show');
         
-        // 关闭所有其他下拉菜单
+        // 鍏抽棴鎵€鏈夊叾浠栦笅鎷夎彍鍗?
         document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
             menu.classList.remove('show');
         });
@@ -662,7 +742,7 @@
         }
     }
     
-    // 点击外部关闭下拉菜单
+    // 鐐瑰嚮澶栭儴鍏抽棴涓嬫媺鑿滃崟
     document.addEventListener('click', function(event) {
         if (!event.target.closest('.server-actions-dropdown')) {
             document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
@@ -671,7 +751,7 @@
         }
     });
     
-    // 全局服务器操作函数
+    // 鍏ㄥ眬鏈嶅姟鍣ㄦ搷浣滃嚱鏁?
     function toggleServerMetrics(element) {
         const serverId = element.getAttribute('data-id');
         const card = element.closest('.modern-server-card');
@@ -682,7 +762,7 @@
         if (isHidden) {
             metricsContent.style.display = 'block';
             toggleIcon.className = 'fas fa-chevron-up';
-            // 加载监控数据
+            // 鍔犺浇鐩戞帶鏁版嵁
             fetchServerMetrics(serverId);
         } else {
             metricsContent.style.display = 'none';
@@ -697,9 +777,9 @@
     
     function viewServer(element) {
         const serverId = element.getAttribute('data-id');
-        const serverName = element.getAttribute('data-server-name') || '未知服务器';
+        const serverName = element.getAttribute('data-server-name') || '鏈煡鏈嶅姟鍣?;
         
-        // 调用新的系统风格服务器详情模态框
+        // 璋冪敤鏂扮殑绯荤粺椋庢牸鏈嶅姟鍣ㄨ鎯呮ā鎬佹
         showSystemServerDetailModal(serverId, serverName);
     }
     
@@ -708,29 +788,29 @@
         window.location.href = '/admin/servers/' + serverId + '/logs';
     }
     
-    // 服务器日志弹窗相关函数
+    // 鏈嶅姟鍣ㄦ棩蹇楀脊绐楃浉鍏冲嚱鏁?
     function showServerLogsModal(serverId, serverName) {
-        // 创建弹窗HTML
+        // 鍒涘缓寮圭獥HTML
         const modalHtml = createServerLogsModalHtml(serverId, serverName);
         
-        // 移除已存在的弹窗
+        // 绉婚櫎宸插瓨鍦ㄧ殑寮圭獥
         const existingModal = document.getElementById('serverLogsModal');
         if (existingModal) {
             existingModal.remove();
         }
         
-        // 添加弹窗到页面
+        // 娣诲姞寮圭獥鍒伴〉闈?
         document.body.insertAdjacentHTML('beforeend', modalHtml);
         
-        // 显示弹窗
+        // 鏄剧ず寮圭獥
         setTimeout(() => {
             const modal = document.getElementById('serverLogsModal');
             modal.classList.add('show');
             
-            // 加载日志数据
+            // 鍔犺浇鏃ュ織鏁版嵁
             loadServerLogsData(serverId);
             
-            // 绑定弹窗内部事件
+            // 缁戝畾寮圭獥鍐呴儴浜嬩欢
             bindServerLogsModalEvents();
         }, 50);
     }
@@ -749,7 +829,7 @@
         return `
             <div class="logs-modal-overlay" id="serverLogsModal">
                 <div class="logs-modal">
-                    <!-- 弹窗头部 -->
+                    <!-- 寮圭獥澶撮儴 -->
                     <div class="logs-modal-header">
                         <div class="server-info-header">
                             <div class="server-status-indicator online"></div>
@@ -757,9 +837,9 @@
                         </div>
                         
                         <div class="time-range-selector">
-                            <button class="time-range-btn active" data-range="1day">最近1天</button>
-                            <button class="time-range-btn" data-range="7days">最近7天</button>
-                            <button class="time-range-btn" data-range="30days">最近30天</button>
+                            <button class="time-range-btn active" data-range="1day">鏈€杩?澶?/button>
+                            <button class="time-range-btn" data-range="7days">鏈€杩?澶?/button>
+                            <button class="time-range-btn" data-range="30days">鏈€杩?0澶?/button>
                         </div>
                         
                         <button class="modal-close-btn" onclick="hideServerLogsModal()">
@@ -767,24 +847,24 @@
                         </button>
                     </div>
 
-                    <!-- 弹窗主体 -->
+                    <!-- 寮圭獥涓讳綋 -->
                     <div class="logs-modal-body">
-                        <!-- 左侧时间轴 -->
+                        <!-- 宸︿晶鏃堕棿杞?-->
                         <div class="timeline-panel">
                             <div class="timeline-header">
                                 <h3 class="timeline-title">
                                     <i class="fas fa-clock"></i>
-                                    用户操作时间轴
+                                    鐢ㄦ埛鎿嶄綔鏃堕棿杞?
                                 </h3>
                                 <div class="activity-summary">
                                     <div class="summary-item">
-                                        今日操作: <span class="summary-value">127次</span>
+                                        浠婃棩鎿嶄綔: <span class="summary-value">127娆?/span>
                                     </div>
                                     <div class="summary-item">
-                                        活跃用户: <span class="summary-value">8人</span>
+                                        娲昏穬鐢ㄦ埛: <span class="summary-value">8浜?/span>
                                     </div>
                                     <div class="summary-item">
-                                        错误次数: <span class="summary-value">3次</span>
+                                        閿欒娆℃暟: <span class="summary-value">3娆?/span>
                                     </div>
                                 </div>
                             </div>
@@ -794,16 +874,16 @@
                                     <div class="empty-icon">
                                         <i class="fas fa-hourglass-half"></i>
                                     </div>
-                                    <h4 class="empty-title">加载中...</h4>
-                                    <p class="empty-desc">正在获取服务器操作日志</p>
+                                    <h4 class="empty-title">鍔犺浇涓?..</h4>
+                                    <p class="empty-desc">姝ｅ湪鑾峰彇鏈嶅姟鍣ㄦ搷浣滄棩蹇?/p>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 右侧详情面板 -->
+                        <!-- 鍙充晶璇︽儏闈㈡澘 -->
                         <div class="details-panel">
                             <div class="details-header">
-                                <h3 class="details-title">操作详情</h3>
+                                <h3 class="details-title">鎿嶄綔璇︽儏</h3>
                             </div>
                             
                             <div class="details-content" id="detailsContent">
@@ -811,30 +891,30 @@
                                     <div class="empty-icon">
                                         <i class="fas fa-mouse-pointer"></i>
                                     </div>
-                                    <h4 class="empty-title">选择操作查看详情</h4>
-                                    <p class="empty-desc">点击左侧时间轴中的任意操作项目查看详细信息</p>
+                                    <h4 class="empty-title">閫夋嫨鎿嶄綔鏌ョ湅璇︽儏</h4>
+                                    <p class="empty-desc">鐐瑰嚮宸︿晶鏃堕棿杞翠腑鐨勪换鎰忔搷浣滈」鐩煡鐪嬭缁嗕俊鎭?/p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 底部工具栏 -->
+                    <!-- 搴曢儴宸ュ叿鏍?-->
                     <div class="logs-modal-footer">
                         <div class="search-controls">
-                            <input type="text" class="search-input" placeholder="搜索用户名、操作类型或关键词..." id="searchInput">
-                            <button class="filter-btn active" data-filter="all">全部</button>
-                            <button class="filter-btn" data-filter="command">命令</button>
-                            <button class="filter-btn" data-filter="error">错误</button>
+                            <input type="text" class="search-input" placeholder="鎼滅储鐢ㄦ埛鍚嶃€佹搷浣滅被鍨嬫垨鍏抽敭璇?.." id="searchInput">
+                            <button class="filter-btn active" data-filter="all">鍏ㄩ儴</button>
+                            <button class="filter-btn" data-filter="command">鍛戒护</button>
+                            <button class="filter-btn" data-filter="error">閿欒</button>
                         </div>
                         
                         <div class="action-controls">
                             <button class="export-btn" onclick="exportServerLogs('${serverId}')">
                                 <i class="fas fa-download"></i>
-                                导出日志
+                                瀵煎嚭鏃ュ織
                             </button>
                             <button class="refresh-btn" onclick="refreshServerLogs('${serverId}')">
                                 <i class="fas fa-sync-alt"></i>
-                                刷新
+                                鍒锋柊
                             </button>
                         </div>
                         
@@ -854,12 +934,12 @@
     }
     
     function bindServerLogsModalEvents() {
-        // 时间范围切换
+        // 鏃堕棿鑼冨洿鍒囨崲
         document.querySelectorAll('.time-range-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.time-range-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
-                // 重新加载数据
+                // 閲嶆柊鍔犺浇鏁版嵁
                 const modal = document.getElementById('serverLogsModal');
                 const serverId = modal.getAttribute('data-server-id');
                 if (serverId) {
@@ -868,7 +948,7 @@
             });
         });
         
-        // 搜索功能
+        // 鎼滅储鍔熻兘
         const searchInput = document.getElementById('searchInput');
         if (searchInput) {
             searchInput.addEventListener('input', function() {
@@ -876,7 +956,7 @@
             });
         }
         
-        // 过滤功能
+        // 杩囨护鍔熻兘
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -885,7 +965,7 @@
             });
         });
         
-        // 点击遮罩关闭
+        // 鐐瑰嚮閬僵鍏抽棴
         document.getElementById('serverLogsModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 hideServerLogsModal();
@@ -896,7 +976,7 @@
     function loadServerLogsData(serverId, timeRange = '1day') {
         const timelineContent = document.getElementById('timelineContent');
         
-        // 模拟加载数据
+        // 妯℃嫙鍔犺浇鏁版嵁
         setTimeout(() => {
             const mockData = generateMockLogData();
             renderTimelineData(mockData);
@@ -908,7 +988,7 @@
             {
                 id: 1,
                 user: 'zhangsan',
-                username: '张三',
+                username: '寮犱笁',
                 timestamp: '2024-09-11 15:42:35',
                 type: 'command',
                 operation: 'systemctl status nginx',
@@ -920,24 +1000,24 @@
             {
                 id: 2,
                 user: 'lisi',
-                username: '李四',
+                username: '鏉庡洓',
                 timestamp: '2024-09-11 15:38:21',
                 type: 'file',
-                operation: '上传文件: /opt/deploy/app.jar',
+                operation: '涓婁紶鏂囦欢: /opt/deploy/app.jar',
                 status: 'success',
                 duration: '25.6MB',
-                output: '文件上传成功，大小: 25.6MB',
+                output: '鏂囦欢涓婁紶鎴愬姛锛屽ぇ灏? 25.6MB',
                 metrics: { disk: 75, network: 60, io: 45 }
             },
             {
                 id: 3,
                 user: 'wangwu',
-                username: '王五',
+                username: '鐜嬩簲',
                 timestamp: '2024-09-11 15:35:12',
                 type: 'app',
-                operation: '重启应用: SpringBoot-Demo',
+                operation: '閲嶅惎搴旂敤: SpringBoot-Demo',
                 status: 'error',
-                duration: '失败',
+                duration: '澶辫触',
                 output: 'Error: Port 8080 is already in use',
                 metrics: { cpu: 95, memory: 85, error: 1 }
             }
@@ -947,7 +1027,7 @@
     function renderTimelineData(data) {
         const container = document.getElementById('timelineContent');
         
-        // 按日期分组
+        // 鎸夋棩鏈熷垎缁?
         const groupedData = {};
         data.forEach(log => {
             const date = log.timestamp.split(' ')[0];
@@ -961,14 +1041,14 @@
         Object.keys(groupedData).forEach(date => {
             const logs = groupedData[date];
             const today = new Date().toISOString().split('T')[0];
-            const dateLabel = date === today ? '今天 ' + date : date;
+            const dateLabel = date === today ? '浠婂ぉ ' + date : date;
 
             html += `
                 <div class="date-group">
                     <div class="date-header">
                         <i class="fas fa-calendar-day"></i>
                         ${dateLabel}
-                        <span class="date-stats">${logs.length} 次操作</span>
+                        <span class="date-stats">${logs.length} 娆℃搷浣?/span>
                     </div>
                     <div class="timeline-items">
             `;
@@ -1009,13 +1089,13 @@
     }
     
     function selectServerLog(logId) {
-        // 更新选中状态
+        // 鏇存柊閫変腑鐘舵€?
         document.querySelectorAll('.timeline-item').forEach(item => {
             item.classList.remove('active');
         });
         document.querySelector(`[data-log-id="${logId}"]`).classList.add('active');
         
-        // 加载详情
+        // 鍔犺浇璇︽儏
         loadServerLogDetails(logId);
     }
     
@@ -1030,14 +1110,14 @@
             <div class="detail-card">
                 <div class="card-header">
                     <i class="fas fa-info-circle"></i>
-                    基本信息
+                    鍩烘湰淇℃伅
                 </div>
                 <div class="card-content">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div><strong>用户:</strong> ${log.username} (${log.user})</div>
-                        <div><strong>时间:</strong> ${log.timestamp}</div>
-                        <div><strong>操作:</strong> ${log.operation}</div>
-                        <div><strong>状态:</strong> 
+                        <div><strong>鐢ㄦ埛:</strong> ${log.username} (${log.user})</div>
+                        <div><strong>鏃堕棿:</strong> ${log.timestamp}</div>
+                        <div><strong>鎿嶄綔:</strong> ${log.operation}</div>
+                        <div><strong>鐘舵€?</strong> 
                             <span class="status-indicator ${log.status}">
                                 <i class="fas fa-${getServerLogStatusIcon(log.status)}"></i>
                                 ${getServerLogStatusLabel(log.status)}
@@ -1050,7 +1130,7 @@
             <div class="detail-card">
                 <div class="card-header">
                     <i class="fas fa-terminal"></i>
-                    执行结果
+                    鎵ц缁撴灉
                 </div>
                 <div class="card-content">
                     <div class="command-output">${log.output}</div>
@@ -1060,7 +1140,7 @@
             <div class="detail-card">
                 <div class="card-header">
                     <i class="fas fa-chart-line"></i>
-                    系统影响
+                    绯荤粺褰卞搷
                 </div>
                 <div class="card-content">
                     <div class="resource-metrics">
@@ -1095,12 +1175,12 @@
     
     function getServerLogTypeLabel(type) {
         const labels = {
-            command: '命令执行',
-            file: '文件操作',
-            app: '应用管理',
-            log: '日志查看',
-            ssh: '登录认证',
-            system: '系统维护'
+            command: '鍛戒护鎵ц',
+            file: '鏂囦欢鎿嶄綔',
+            app: '搴旂敤绠＄悊',
+            log: '鏃ュ織鏌ョ湅',
+            ssh: '鐧诲綍璁よ瘉',
+            system: '绯荤粺缁存姢'
         };
         return labels[type] || type;
     }
@@ -1116,9 +1196,9 @@
     
     function getServerLogStatusLabel(status) {
         const labels = {
-            success: '成功',
-            warning: '警告',
-            error: '错误'
+            success: '鎴愬姛',
+            warning: '璀﹀憡',
+            error: '閿欒'
         };
         return labels[status] || status;
     }
@@ -1148,22 +1228,22 @@
     }
     
     function exportServerLogs(serverId) {
-        // 模拟导出功能
-        console.log('导出服务器日志:', serverId);
-        showToast('日志导出功能开发中...', 'info');
+        // 妯℃嫙瀵煎嚭鍔熻兘
+        console.log('瀵煎嚭鏈嶅姟鍣ㄦ棩蹇?', serverId);
+        showToast('鏃ュ織瀵煎嚭鍔熻兘寮€鍙戜腑...', 'info');
     }
     
     function refreshServerLogs(serverId) {
         loadServerLogsData(serverId);
-        showToast('日志已刷新', 'success');
+        showToast('鏃ュ織宸插埛鏂?, 'success');
     }
     
     function prevServerLogsPage() {
-        console.log('上一页');
+        console.log('涓婁竴椤?);
     }
     
     function nextServerLogsPage() {
-        console.log('下一页');
+        console.log('涓嬩竴椤?);
     }
     
     function fetchServerMetrics(serverId) {
@@ -1185,7 +1265,7 @@
             }
         })
         .catch(error => {
-            console.error('获取监控数据失败:', error);
+            console.error('鑾峰彇鐩戞帶鏁版嵁澶辫触:', error);
         });
     }
     
@@ -1214,13 +1294,13 @@
         }
         
         if (lastUpdate) {
-            lastUpdate.textContent = `最后更新: ${new Date().toLocaleTimeString()}`;
+            lastUpdate.textContent = `鏈€鍚庢洿鏂? ${new Date().toLocaleTimeString()}`;
         }
     }
     
-    // 加载服务器状态标签
+    // 鍔犺浇鏈嶅姟鍣ㄧ姸鎬佹爣绛?
     function loadServerStatusTags(serverId) {
-        // 首先查找HTML模板中的server-status-tags-row类，然后查找备用的server-status-tags类
+        // 棣栧厛鏌ユ壘HTML妯℃澘涓殑server-status-tags-row绫伙紝鐒跺悗鏌ユ壘澶囩敤鐨剆erver-status-tags绫?
         let tagsContainer = document.querySelector(`.server-status-tags-row[data-server-id="${serverId}"]`);
         if (!tagsContainer) {
             tagsContainer = document.querySelector(`.server-status-tags[data-server-id="${serverId}"]`);
@@ -1240,18 +1320,18 @@
             if (data.status === 'success') {
                 displayServerStatusTags(tagsContainer, data.tags);
             } else {
-                tagsContainer.innerHTML = '<div class="status-tags-empty">无状态信息</div>';
+                tagsContainer.innerHTML = '<div class="status-tags-empty">鏃犵姸鎬佷俊鎭?/div>';
             }
         })
         .catch(error => {
-            console.error('加载状态标签失败:', error);
-            tagsContainer.innerHTML = '<div class="status-tags-empty">加载失败</div>';
+            console.error('鍔犺浇鐘舵€佹爣绛惧け璐?', error);
+            tagsContainer.innerHTML = '<div class="status-tags-empty">鍔犺浇澶辫触</div>';
         });
     }
     
     function displayServerStatusTags(container, tags) {
         if (!tags || tags.length === 0) {
-            container.innerHTML = '<div class="status-tags-empty">无状态信息</div>';
+            container.innerHTML = '<div class="status-tags-empty">鏃犵姸鎬佷俊鎭?/div>';
             return;
         }
         
@@ -1259,7 +1339,7 @@
             const tagClass = getTagClass(tag);
             const iconClass = getTagIcon(tag);
             
-            // 调试日志
+            // 璋冭瘯鏃ュ織
             
             return `<span class="status-tag ${tagClass}" title="${tag.details || tag.displayText}" data-debug-class="${tagClass}">
                 <i class="${iconClass}"></i>
@@ -1269,7 +1349,7 @@
         
         container.innerHTML = tagsHtml;
         
-        // 验证DOM结构
+        // 楠岃瘉DOM缁撴瀯
         setTimeout(() => {
             const appliedTags = container.querySelectorAll('.status-tag');
             appliedTags.forEach((tagElement, index) => {
@@ -1278,10 +1358,10 @@
     }
     
     function getTagClass(tag) {
-        // 根据服务端返回的字段判断标签类型
+        // 鏍规嵁鏈嶅姟绔繑鍥炵殑瀛楁鍒ゆ柇鏍囩绫诲瀷
         if (tag.status === 'CRITICAL' || tag.colorScheme === 'danger') {
-            // 系统资源紧张标签使用特殊样式
-            if (tag.displayText && tag.displayText.includes('系统资源紧张')) {
+            // 绯荤粺璧勬簮绱у紶鏍囩浣跨敤鐗规畩鏍峰紡
+            if (tag.displayText && tag.displayText.includes('绯荤粺璧勬簮绱у紶')) {
                 return 'tag-danger memory-critical';
             }
             return 'tag-danger';
@@ -1291,7 +1371,7 @@
         if (tag.colorScheme === 'info') return 'tag-info';
         if (tag.colorScheme === 'secondary') return 'tag-secondary';
         
-        // 回退：基于标签类型判断
+        // 鍥為€€锛氬熀浜庢爣绛剧被鍨嬪垽鏂?
         switch(tag.tagType) {
             case 'CONNECTION': return tag.status === 'OK' ? 'tag-success' : 'tag-danger';
             case 'SYSTEM_RESOURCE': return 'tag-danger memory-critical';
@@ -1317,14 +1397,14 @@
         return typeIcons[tag.tagType] || 'fas fa-info-circle';
     }
 
-    // 全局变量用于存储用户类型（isAdmin已在上面的Thymeleaf脚本中声明）
+    // 鍏ㄥ眬鍙橀噺鐢ㄤ簬瀛樺偍鐢ㄦ埛绫诲瀷锛坕sAdmin宸插湪涓婇潰鐨凾hymeleaf鑴氭湰涓０鏄庯級
     const userType = '[[${userType}]]';
 
-    // 各个页面的内容加载函数
+    // 鍚勪釜椤甸潰鐨勫唴瀹瑰姞杞藉嚱鏁?
     async function loadDashboardContent() {
        
 
-        // 根据用户类型选择正确的API端点
+        // 鏍规嵁鐢ㄦ埛绫诲瀷閫夋嫨姝ｇ‘鐨凙PI绔偣
         let apiUrl;
         if (userType === 'admin' || isAdmin) {
             apiUrl = '/admin/api/workspace-dashboard-content';
@@ -1346,16 +1426,16 @@
 
         if (!response.ok) {
             if (response.status === 401) {
-                // 会话过期，尝试解析JSON响应
+                // 浼氳瘽杩囨湡锛屽皾璇曡В鏋怞SON鍝嶅簲
                 try {
                     const errorData = await response.json();
                     if (errorData.error === 'session_expired') {
-                        // 直接跳转到登录页面
+                        // 鐩存帴璺宠浆鍒扮櫥褰曢〉闈?
                         window.location.href = errorData.redirect || '/login?expired';
                         return '';
                     }
                 } catch (e) {
-                    // JSON解析失败，直接跳转
+                    // JSON瑙ｆ瀽澶辫触锛岀洿鎺ヨ烦杞?
                     window.location.href = '/login?expired';
                     return '';
                 }
@@ -1382,16 +1462,16 @@
         
         if (!response.ok) {
             if (response.status === 401) {
-                // 会话过期，尝试解析JSON响应
+                // 浼氳瘽杩囨湡锛屽皾璇曡В鏋怞SON鍝嶅簲
                 try {
                     const errorData = await response.json();
                     if (errorData.error === 'session_expired') {
-                        // 直接跳转到登录页面
+                        // 鐩存帴璺宠浆鍒扮櫥褰曢〉闈?
                         window.location.href = errorData.redirect || '/login?expired';
                         return '';
                     }
                 } catch (e) {
-                    // JSON解析失败，直接跳转
+                    // JSON瑙ｆ瀽澶辫触锛岀洿鎺ヨ烦杞?
                     window.location.href = '/login?expired';
                     return '';
                 }
@@ -1416,16 +1496,16 @@
         
         if (!response.ok) {
             if (response.status === 401) {
-                // 会话过期，尝试解析JSON响应
+                // 浼氳瘽杩囨湡锛屽皾璇曡В鏋怞SON鍝嶅簲
                 try {
                     const errorData = await response.json();
                     if (errorData.error === 'session_expired') {
-                        // 直接跳转到登录页面
+                        // 鐩存帴璺宠浆鍒扮櫥褰曢〉闈?
                         window.location.href = errorData.redirect || '/login?expired';
                         return '';
                     }
                 } catch (e) {
-                    // JSON解析失败，直接跳转
+                    // JSON瑙ｆ瀽澶辫触锛岀洿鎺ヨ烦杞?
                     window.location.href = '/login?expired';
                     return '';
                 }
@@ -1481,16 +1561,16 @@
         
         if (!response.ok) {
             if (response.status === 401) {
-                // 会话过期，尝试解析JSON响应
+                // 浼氳瘽杩囨湡锛屽皾璇曡В鏋怞SON鍝嶅簲
                 try {
                     const errorData = await response.json();
                     if (errorData.error === 'session_expired') {
-                        // 直接跳转到登录页面
+                        // 鐩存帴璺宠浆鍒扮櫥褰曢〉闈?
                         window.location.href = errorData.redirect || '/login?expired';
                         return '';
                     }
                 } catch (e) {
-                    // JSON解析失败，直接跳转
+                    // JSON瑙ｆ瀽澶辫触锛岀洿鎺ヨ烦杞?
                     window.location.href = '/login?expired';
                     return '';
                 }
@@ -1506,10 +1586,10 @@
     async function loadMonitoringContent() {
         return `
             <div class="content-header">
-                <h1 class="page-title"><i class="fas fa-chart-line"></i> 系统监控</h1>
+                <h1 class="page-title"><i class="fas fa-chart-line"></i> 绯荤粺鐩戞帶</h1>
             </div>
             <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> 监控功能正在开发中...
+                <i class="fas fa-info-circle"></i> 鐩戞帶鍔熻兘姝ｅ湪寮€鍙戜腑...
             </div>
         `;
     }
@@ -1517,24 +1597,24 @@
     async function loadTerminalContent() {
         return `
             <div class="content-header">
-                <h1 class="page-title"><i class="fas fa-terminal"></i> 终端管理</h1>
+                <h1 class="page-title"><i class="fas fa-terminal"></i> 缁堢绠＄悊</h1>
             </div>
             <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> 终端功能正在开发中...
+                <i class="fas fa-info-circle"></i> 缁堢鍔熻兘姝ｅ湪寮€鍙戜腑...
             </div>
         `;
     }
 
-    // 移动端菜单管理
+    // 绉诲姩绔彍鍗曠鐞?
     function initMobileMenu() {
         const mediaQuery = window.matchMedia('(max-width: 768px)');
         
-        // 添加菜单切换按钮（在移动端）
+        // 娣诲姞鑿滃崟鍒囨崲鎸夐挳锛堝湪绉诲姩绔級
         if (mediaQuery.matches) {
             addMobileMenuToggle();
         }
         
-        // 监听屏幕尺寸变化
+        // 鐩戝惉灞忓箷灏哄鍙樺寲
         mediaQuery.addEventListener('change', function(e) {
             if (e.matches) {
                 addMobileMenuToggle();
@@ -1557,7 +1637,7 @@
             menuToggle.onclick = toggleMobileMenu;
             navBrand.parentNode.insertBefore(menuToggle, navBrand);
             
-            // 添加样式
+            // 娣诲姞鏍峰紡
             const style = document.createElement('style');
             style.textContent = `
                 .mobile-menu-toggle {
@@ -1605,7 +1685,7 @@
     }
 
     // =====================
-    // 侧边栏收起展开功能
+    // 渚ц竟鏍忔敹璧峰睍寮€鍔熻兘
     // =====================
 
     function initSidebarToggle() {
@@ -1613,22 +1693,22 @@
             return;
         }
 
-        // 检查是否为移动端，如果是则不初始化桌面端收起功能
+        // 妫€鏌ユ槸鍚︿负绉诲姩绔紝濡傛灉鏄垯涓嶅垵濮嬪寲妗岄潰绔敹璧峰姛鑳?
         const mediaQuery = window.matchMedia('(max-width: 768px)');
         if (mediaQuery.matches) {
             return;
         }
 
-        // 从localStorage读取用户偏好
+        // 浠巐ocalStorage璇诲彇鐢ㄦ埛鍋忓ソ
         const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
         if (isCollapsed) {
             toggleSidebar(false);
         }
 
-        // 监听屏幕尺寸变化
+        // 鐩戝惉灞忓箷灏哄鍙樺寲
         mediaQuery.addEventListener('change', function(e) {
             if (e.matches) {
-                // 切换到移动端时，重置侧边栏状态
+                // 鍒囨崲鍒扮Щ鍔ㄧ鏃讹紝閲嶇疆渚ц竟鏍忕姸鎬?
                 document.body.classList.remove('sidebar-collapsed');
                 document.querySelector('.modern-sidebar').classList.remove('collapsed');
             }
@@ -1636,13 +1716,13 @@
     }
 
     function toggleSidebar(saveState = true) {
-        console.log('toggleSidebar 函数被调用');
-        console.log('当前屏幕宽度:', window.innerWidth);
-        console.log('媒体查询结果:', window.matchMedia('(max-width: 768px)').matches);
+        console.log('toggleSidebar 鍑芥暟琚皟鐢?);
+        console.log('褰撳墠灞忓箷瀹藉害:', window.innerWidth);
+        console.log('濯掍綋鏌ヨ缁撴灉:', window.matchMedia('(max-width: 768px)').matches);
         
-        // 检查是否为移动端
+        // 妫€鏌ユ槸鍚︿负绉诲姩绔?
         if (window.matchMedia('(max-width: 768px)').matches) {
-            console.log('检测到移动端，退出函数');
+            console.log('妫€娴嬪埌绉诲姩绔紝閫€鍑哄嚱鏁?);
             return;
         }
 
@@ -1650,17 +1730,17 @@
         const body = document.body;
 
         if (!sidebar) {
-            console.error('找不到现代化侧边栏元素');
+            console.error('鎵句笉鍒扮幇浠ｅ寲渚ц竟鏍忓厓绱?);
             return;
         }
         
-        // 切换收起状态
+        // 鍒囨崲鏀惰捣鐘舵€?
         sidebar.classList.toggle('collapsed');
         body.classList.toggle('sidebar-collapsed');
         
-        //console.log('侧边栏', sidebar.classList.contains('collapsed') ? '已收起' : '已展开');
+        //console.log('渚ц竟鏍?, sidebar.classList.contains('collapsed') ? '宸叉敹璧? : '宸插睍寮€');
         
-        // 更新现代化内容区域样式
+        // 鏇存柊鐜颁唬鍖栧唴瀹瑰尯鍩熸牱寮?
         const modernContentArea = document.querySelector('.main-content');
         if (modernContentArea) {
             const isCollapsed = sidebar.classList.contains('collapsed');
@@ -1668,19 +1748,19 @@
             modernContentArea.classList.toggle('sidebar-open', !isCollapsed);
         }
         
-        // 保存用户偏好到localStorage
+        // 淇濆瓨鐢ㄦ埛鍋忓ソ鍒發ocalStorage
         if (saveState) {
             const isCollapsed = sidebar.classList.contains('collapsed');
             localStorage.setItem('sidebar-collapsed', isCollapsed.toString());
-            //console.log('状态已保存到localStorage:', isCollapsed);
+            //console.log('鐘舵€佸凡淇濆瓨鍒發ocalStorage:', isCollapsed);
         }
     }
 
     // ===================
-    // 服务器管理相关函数
+    // 鏈嶅姟鍣ㄧ鐞嗙浉鍏冲嚱鏁?
     // ===================
     
-    // 服务器刷新状态管理器
+    // 鏈嶅姟鍣ㄥ埛鏂扮姸鎬佺鐞嗗櫒
     class ServerRefreshManager {
         constructor() {
             this.storageKey = 'serverRefreshStates';
@@ -1693,7 +1773,7 @@
                 const stored = localStorage.getItem(this.storageKey);
                 return stored ? JSON.parse(stored) : {};
             } catch (e) {
-                console.warn('无法加载服务器刷新状态:', e);
+                console.warn('鏃犳硶鍔犺浇鏈嶅姟鍣ㄥ埛鏂扮姸鎬?', e);
                 return {};
             }
         }
@@ -1702,7 +1782,7 @@
             try {
                 localStorage.setItem(this.storageKey, JSON.stringify(this.refreshStates));
             } catch (e) {
-                console.warn('无法保存服务器刷新状态:', e);
+                console.warn('鏃犳硶淇濆瓨鏈嶅姟鍣ㄥ埛鏂扮姸鎬?', e);
             }
         }
         
@@ -1726,7 +1806,7 @@
                 };
                 this.saveStates();
                 
-                // 30秒后清理状态
+                // 30绉掑悗娓呯悊鐘舵€?
                 setTimeout(() => {
                     delete this.refreshStates[serverId];
                     this.saveStates();
@@ -1738,10 +1818,10 @@
             const state = this.refreshStates[serverId];
             if (!state || !state.isRefreshing) return false;
             
-            // 检查是否超时 (超过40秒认为异常)
+            // 妫€鏌ユ槸鍚﹁秴鏃?(瓒呰繃40绉掕涓哄紓甯?
             const elapsed = Date.now() - state.startTime;
             if (elapsed > 40000) {
-                this.finishRefresh(serverId, false, '刷新超时');
+                this.finishRefresh(serverId, false, '鍒锋柊瓒呮椂');
                 return false;
             }
             
@@ -1752,7 +1832,7 @@
             const now = Date.now();
             Object.keys(this.refreshStates).forEach(serverId => {
                 const state = this.refreshStates[serverId];
-                // 清理超过5分钟的状态
+                // 娓呯悊瓒呰繃5鍒嗛挓鐨勭姸鎬?
                 if (state.startTime && (now - state.startTime) > 300000) {
                     delete this.refreshStates[serverId];
                 }
@@ -1763,7 +1843,7 @@
         applyRefreshingState(serverId) {
             const serverCard = document.querySelector(`[data-server-id="${serverId}"]`)?.closest('.modern-server-card');
             if (!serverCard) {
-                // 尝试其他选择器
+                // 灏濊瘯鍏朵粬閫夋嫨鍣?
                 const altCard = document.querySelector(`[data-id="${serverId}"]`)?.closest('.modern-server-card');
                 if (altCard) {
                     this._applyRefreshingToCard(altCard, serverId);
@@ -1775,16 +1855,16 @@
         }
         
         _applyRefreshingToCard(serverCard, serverId) {
-            // 添加刷新状态样式
+            // 娣诲姞鍒锋柊鐘舵€佹牱寮?
             serverCard.classList.add('server-card-refreshing');
             
-            // 创建加载指示器
+            // 鍒涘缓鍔犺浇鎸囩ず鍣?
             if (!serverCard.querySelector('.refresh-loading-indicator')) {
                 const loadingIndicator = document.createElement('div');
                 loadingIndicator.className = 'refresh-loading-indicator';
                 loadingIndicator.innerHTML = `
                     <div class="refresh-spinner"></div>
-                    <span>正在刷新服务器状态...</span>
+                    <span>姝ｅ湪鍒锋柊鏈嶅姟鍣ㄧ姸鎬?..</span>
                 `;
                 serverCard.appendChild(loadingIndicator);
             }
@@ -1793,7 +1873,7 @@
         clearRefreshingState(serverId) {
             const serverCard = document.querySelector(`[data-server-id="${serverId}"]`)?.closest('.modern-server-card');
             if (!serverCard) {
-                // 尝试其他选择器
+                // 灏濊瘯鍏朵粬閫夋嫨鍣?
                 const altCard = document.querySelector(`[data-id="${serverId}"]`)?.closest('.modern-server-card');
                 if (altCard) {
                     this._clearRefreshingFromCard(altCard);
@@ -1805,7 +1885,7 @@
         }
         
         _clearRefreshingFromCard(serverCard) {
-            // 移除刷新状态
+            // 绉婚櫎鍒锋柊鐘舵€?
             serverCard.classList.remove('server-card-refreshing');
             const indicator = serverCard.querySelector('.refresh-loading-indicator');
             if (indicator) {
@@ -1814,31 +1894,31 @@
         }
     }
     
-    // 初始化刷新管理器
+    // 鍒濆鍖栧埛鏂扮鐞嗗櫒
     const refreshManager = new ServerRefreshManager();
     
-    // 服务器相关函数
+    // 鏈嶅姟鍣ㄧ浉鍏冲嚱鏁?
     function refreshServer(element) {
         const serverId = element.getAttribute('data-id');
         
-        // 防止重复刷新
+        // 闃叉閲嶅鍒锋柊
         if (refreshManager.isRefreshing(serverId)) {
-            alert('服务器正在刷新中，请等待完成');
+            alert('鏈嶅姟鍣ㄦ鍦ㄥ埛鏂颁腑锛岃绛夊緟瀹屾垚');
             return;
         }
         
-        // 开始刷新状态管理
+        // 寮€濮嬪埛鏂扮姸鎬佺鐞?
         refreshManager.startRefresh(serverId);
         
-        // 应用服务器卡片刷新状态
+        // 搴旂敤鏈嶅姟鍣ㄥ崱鐗囧埛鏂扮姸鎬?
         refreshManager.applyRefreshingState(serverId);
         
-        // 添加按钮视觉反馈
+        // 娣诲姞鎸夐挳瑙嗚鍙嶉
         const originalText = element.innerHTML;
-        element.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 刷新中...';
+        element.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 鍒锋柊涓?..';
         element.disabled = true;
         
-        // 添加30秒超时控制
+        // 娣诲姞30绉掕秴鏃舵帶鍒?
         const controller = new AbortController();
         const timeoutId = setTimeout(() => {
             controller.abort();
@@ -1856,34 +1936,34 @@
             if (response.ok) {
                 return response.json();
             } else {
-                throw new Error('服务器响应错误: ' + response.status);
+                throw new Error('鏈嶅姟鍣ㄥ搷搴旈敊璇? ' + response.status);
             }
         }).then(data => {
-            // 标记刷新完成
-            refreshManager.finishRefresh(serverId, true, '刷新成功');
+            // 鏍囪鍒锋柊瀹屾垚
+            refreshManager.finishRefresh(serverId, true, '鍒锋柊鎴愬姛');
             
-            alert('服务器状态已刷新');
-            // 重新加载服务器内容
+            alert('鏈嶅姟鍣ㄧ姸鎬佸凡鍒锋柊');
+            // 閲嶆柊鍔犺浇鏈嶅姟鍣ㄥ唴瀹?
             loadContent('servers');
         }).catch(error => {
             clearTimeout(timeoutId);
-            console.error('刷新服务器状态失败:', error);
+            console.error('鍒锋柊鏈嶅姟鍣ㄧ姸鎬佸け璐?', error);
             
-            let errorMessage = '刷新失败';
+            let errorMessage = '鍒锋柊澶辫触';
             if (error.name === 'AbortError') {
-                errorMessage = '刷新超时(30秒)，请检查服务器SSH配置或网络连接';
+                errorMessage = '鍒锋柊瓒呮椂(30绉?锛岃妫€鏌ユ湇鍔″櫒SSH閰嶇疆鎴栫綉缁滆繛鎺?;
             } else if (error.message) {
-                errorMessage = '刷新失败: ' + error.message;
+                errorMessage = '鍒锋柊澶辫触: ' + error.message;
             }
             
-            // 标记刷新失败
+            // 鏍囪鍒锋柊澶辫触
             refreshManager.finishRefresh(serverId, false, errorMessage);
             alert(errorMessage);
         }).finally(() => {
-            // 清理刷新状态视觉效果
+            // 娓呯悊鍒锋柊鐘舵€佽瑙夋晥鏋?
             refreshManager.clearRefreshingState(serverId);
             
-            // 恢复按钮状态
+            // 鎭㈠鎸夐挳鐘舵€?
             element.innerHTML = originalText;
             element.disabled = false;
         });
@@ -1892,7 +1972,7 @@
     function deleteServer(element) {
         const serverId = element.getAttribute('data-id');
         
-        if (confirm('确定要删除这个服务器吗？此操作不可撤销。')) {
+        if (confirm('纭畾瑕佸垹闄よ繖涓湇鍔″櫒鍚楋紵姝ゆ搷浣滀笉鍙挙閿€銆?)) {
             fetch('/admin/servers/' + serverId + '/delete', {
                 method: 'POST',
                 headers: {
@@ -1901,25 +1981,25 @@
                 }
             }).then(response => {
                 if (response.ok) {
-                    alert('服务器删除成功');
-                    loadContent('servers'); // 重新加载服务器内容
+                    alert('鏈嶅姟鍣ㄥ垹闄ゆ垚鍔?);
+                    loadContent('servers'); // 閲嶆柊鍔犺浇鏈嶅姟鍣ㄥ唴瀹?
                 } else {
-                    alert('删除失败，请稍后重试');
+                    alert('鍒犻櫎澶辫触锛岃绋嶅悗閲嶈瘯');
                 }
             }).catch(error => {
-                console.error('删除服务器失败:', error);
-                alert('删除失败，请稍后重试');
+                console.error('鍒犻櫎鏈嶅姟鍣ㄥけ璐?', error);
+                alert('鍒犻櫎澶辫触锛岃绋嶅悗閲嶈瘯');
             });
         }
     }
     
     function editServer(element) {
         const serverId = element.getAttribute('data-id');
-        // 使用抽屉组件
+        // 浣跨敤鎶藉眽缁勪欢
         if (typeof drawerManager !== 'undefined' && drawerManager) {
             drawerManager.openServerDrawer(serverId);
         } else {
-            // 后备方案：跳转到服务器详情页面
+            // 鍚庡鏂规锛氳烦杞埌鏈嶅姟鍣ㄨ鎯呴〉闈?
             window.location.href = '/admin/servers/' + serverId;
         }
     }
@@ -1931,11 +2011,11 @@
     
     function viewLogs(element) {
         const serverId = element.getAttribute('data-id');
-        alert(`查看服务器 ${serverId} 日志功能开发中...`);
+        alert(`鏌ョ湅鏈嶅姟鍣?${serverId} 鏃ュ織鍔熻兘寮€鍙戜腑...`);
     }
     
     function refreshAllData() {
-        // 兼容新旧导航栏结构
+        // 鍏煎鏂版棫瀵艰埅鏍忕粨鏋?
         const modernNavLink = document.querySelector('.modern-nav-link.active');
         const oldNavLink = document.querySelector('.nav-link.active');
         const currentPage = (modernNavLink || oldNavLink)?.getAttribute('data-page') || 'dashboard';
@@ -1943,21 +2023,21 @@
     }
     
     // ===================
-    // 用户管理相关函数
+    // 鐢ㄦ埛绠＄悊鐩稿叧鍑芥暟
     // ===================
     
     function editUser(userId) {
-        // 使用抽屉组件
+        // 浣跨敤鎶藉眽缁勪欢
         if (typeof drawerManager !== 'undefined' && drawerManager) {
             drawerManager.openUserDrawer(userId);
         } else {
-            // 后备方案：跳转到原页面
+            // 鍚庡鏂规锛氳烦杞埌鍘熼〉闈?
             window.location.href = '/admin/users/' + userId + '/edit';
         }
     }
     
     function resetPassword(userId) {
-        if (confirm('确定要重置该用户的密码吗？')) {
+        if (confirm('纭畾瑕侀噸缃鐢ㄦ埛鐨勫瘑鐮佸悧锛?)) {
             fetch('/admin/users/' + userId + '/reset-password', {
                 method: 'POST',
                 headers: {
@@ -1966,20 +2046,20 @@
                 }
             }).then(response => {
                 if (response.ok) {
-                    alert('密码重置成功，新密码已发送到用户邮箱');
+                    alert('瀵嗙爜閲嶇疆鎴愬姛锛屾柊瀵嗙爜宸插彂閫佸埌鐢ㄦ埛閭');
                     loadContent('users');
                 } else {
-                    alert('密码重置失败，请重试');
+                    alert('瀵嗙爜閲嶇疆澶辫触锛岃閲嶈瘯');
                 }
             }).catch(error => {
-                console.error('重置密码失败:', error);
-                alert('密码重置失败，请检查网络连接');
+                console.error('閲嶇疆瀵嗙爜澶辫触:', error);
+                alert('瀵嗙爜閲嶇疆澶辫触锛岃妫€鏌ョ綉缁滆繛鎺?);
             });
         }
     }
     
     function deleteUser(userId, username) {
-        if (confirm(`确定要删除用户 "${username}" 吗？此操作不可撤销！`)) {
+        if (confirm(`纭畾瑕佸垹闄ょ敤鎴?"${username}" 鍚楋紵姝ゆ搷浣滀笉鍙挙閿€锛乣)) {
             fetch('/admin/users/' + userId, {
                 method: 'DELETE',
                 headers: {
@@ -1987,25 +2067,25 @@
                 }
             }).then(response => {
                 if (response.ok) {
-                    alert('用户删除成功');
+                    alert('鐢ㄦ埛鍒犻櫎鎴愬姛');
                     loadContent('users');
                 } else {
-                    alert('用户删除失败，请重试');
+                    alert('鐢ㄦ埛鍒犻櫎澶辫触锛岃閲嶈瘯');
                 }
             }).catch(error => {
-                console.error('删除用户失败:', error);
-                alert('用户删除失败，请检查网络连接');
+                console.error('鍒犻櫎鐢ㄦ埛澶辫触:', error);
+                alert('鐢ㄦ埛鍒犻櫎澶辫触锛岃妫€鏌ョ綉缁滆繛鎺?);
             });
         }
     }
     
     function addUser() {
-        // 使用抽屉组件
+        // 浣跨敤鎶藉眽缁勪欢
         if (typeof drawerManager !== 'undefined' && drawerManager) {
             drawerManager.openUserDrawer();
         } else {
-            // 后备方案：使用简单的提示
-            alert('添加用户功能需要抽屉组件支持，请联系管理员');
+            // 鍚庡鏂规锛氫娇鐢ㄧ畝鍗曠殑鎻愮ず
+            alert('娣诲姞鐢ㄦ埛鍔熻兘闇€瑕佹娊灞夌粍浠舵敮鎸侊紝璇疯仈绯荤鐞嗗憳');
         }
     }
     
@@ -2014,11 +2094,11 @@
     }
     
     // ===================
-    // 应用管理相关函数
+    // 搴旂敤绠＄悊鐩稿叧鍑芥暟
     // ===================
     
     function startApplication(appId) {
-        if (confirm('确定要启动这个应用吗？')) {
+        if (confirm('纭畾瑕佸惎鍔ㄨ繖涓簲鐢ㄥ悧锛?)) {
             fetch('/apps/' + appId + '/start', {
                 method: 'POST',
                 headers: {
@@ -2027,20 +2107,20 @@
                 }
             }).then(response => {
                 if (response.ok) {
-                    alert('应用启动成功');
+                    alert('搴旂敤鍚姩鎴愬姛');
                     loadContent('applications');
                 } else {
-                    alert('应用启动失败，请重试');
+                    alert('搴旂敤鍚姩澶辫触锛岃閲嶈瘯');
                 }
             }).catch(error => {
-                console.error('启动应用失败:', error);
-                alert('应用启动失败，请检查网络连接');
+                console.error('鍚姩搴旂敤澶辫触:', error);
+                alert('搴旂敤鍚姩澶辫触锛岃妫€鏌ョ綉缁滆繛鎺?);
             });
         }
     }
     
     function stopApplication(appId) {
-        if (confirm('确定要停止这个应用吗？')) {
+        if (confirm('纭畾瑕佸仠姝㈣繖涓簲鐢ㄥ悧锛?)) {
             fetch('/apps/' + appId + '/stop', {
                 method: 'POST',
                 headers: {
@@ -2049,20 +2129,20 @@
                 }
             }).then(response => {
                 if (response.ok) {
-                    alert('应用停止成功');
+                    alert('搴旂敤鍋滄鎴愬姛');
                     loadContent('applications');
                 } else {
-                    alert('应用停止失败，请重试');
+                    alert('搴旂敤鍋滄澶辫触锛岃閲嶈瘯');
                 }
             }).catch(error => {
-                console.error('停止应用失败:', error);
-                alert('应用停止失败，请检查网络连接');
+                console.error('鍋滄搴旂敤澶辫触:', error);
+                alert('搴旂敤鍋滄澶辫触锛岃妫€鏌ョ綉缁滆繛鎺?);
             });
         }
     }
     
     function restartApplication(appId) {
-        if (confirm('确定要重启这个应用吗？')) {
+        if (confirm('纭畾瑕侀噸鍚繖涓簲鐢ㄥ悧锛?)) {
             fetch('/apps/' + appId + '/restart', {
                 method: 'POST',
                 headers: {
@@ -2071,20 +2151,20 @@
                 }
             }).then(response => {
                 if (response.ok) {
-                    alert('应用重启成功');
+                    alert('搴旂敤閲嶅惎鎴愬姛');
                     loadContent('applications');
                 } else {
-                    alert('应用重启失败，请重试');
+                    alert('搴旂敤閲嶅惎澶辫触锛岃閲嶈瘯');
                 }
             }).catch(error => {
-                console.error('重启应用失败:', error);
-                alert('应用重启失败，请检查网络连接');
+                console.error('閲嶅惎搴旂敤澶辫触:', error);
+                alert('搴旂敤閲嶅惎澶辫触锛岃妫€鏌ョ綉缁滆繛鎺?);
             });
         }
     }
     
     function deleteApplication(appId) {
-        if (confirm('确定要删除这个应用吗？此操作不可撤销！')) {
+        if (confirm('纭畾瑕佸垹闄よ繖涓簲鐢ㄥ悧锛熸鎿嶄綔涓嶅彲鎾ら攢锛?)) {
             fetch('/apps/' + appId + '/delete', {
                 method: 'POST',
                 headers: {
@@ -2093,14 +2173,14 @@
                 }
             }).then(response => {
                 if (response.ok) {
-                    alert('应用删除成功');
+                    alert('搴旂敤鍒犻櫎鎴愬姛');
                     loadContent('applications');
                 } else {
-                    alert('应用删除失败，请重试');
+                    alert('搴旂敤鍒犻櫎澶辫触锛岃閲嶈瘯');
                 }
             }).catch(error => {
-                console.error('删除应用失败:', error);
-                alert('应用删除失败，请检查网络连接');
+                console.error('鍒犻櫎搴旂敤澶辫触:', error);
+                alert('搴旂敤鍒犻櫎澶辫触锛岃妫€鏌ョ綉缁滆繛鎺?);
             });
         }
     }
@@ -2113,18 +2193,18 @@
         window.location.href = '/apps/' + appId;
     }
     
-    // 现代化应用管理页面的额外函数
+    // 鐜颁唬鍖栧簲鐢ㄧ鐞嗛〉闈㈢殑棰濆鍑芥暟
     function refreshApps() {
         loadContent('applications');
     }
     
     function uploadApp() {
-        // 使用抽屉组件或模态框上传应用
-        alert('上传应用功能开发中...');
+        // 浣跨敤鎶藉眽缁勪欢鎴栨ā鎬佹涓婁紶搴旂敤
+        alert('涓婁紶搴旂敤鍔熻兘寮€鍙戜腑...');
     }
     
     function filterApplications(filter) {
-        // 根据状态过滤应用
+        // 鏍规嵁鐘舵€佽繃婊ゅ簲鐢?
         const appCards = document.querySelectorAll('.modern-app-card');
         appCards.forEach(card => {
             const statusClass = card.classList.contains('running') ? 'running' :
@@ -2138,7 +2218,7 @@
             }
         });
         
-        // 更新统计卡片的激活状态
+        // 鏇存柊缁熻鍗＄墖鐨勬縺娲荤姸鎬?
         document.querySelectorAll('.modern-stats-card').forEach(card => {
             card.classList.remove('active');
         });
@@ -2149,56 +2229,56 @@
         }
     }
     
-    // 下拉菜单切换函数
+    // 涓嬫媺鑿滃崟鍒囨崲鍑芥暟
     function toggleDropdown(button) {
         const dropdown = button.parentNode;
         const menu = dropdown.querySelector('.dropdown-menu');
         
-        // 关闭其他所有下拉菜单
+        // 鍏抽棴鍏朵粬鎵€鏈変笅鎷夎彍鍗?
         document.querySelectorAll('.dropdown-menu.show').forEach(otherMenu => {
             if (otherMenu !== menu) {
                 otherMenu.classList.remove('show');
             }
         });
         
-        // 切换当前下拉菜单
+        // 鍒囨崲褰撳墠涓嬫媺鑿滃崟
         menu.classList.toggle('show');
     }
     
-    // 添加服务器函数
+    // 娣诲姞鏈嶅姟鍣ㄥ嚱鏁?
     function addServer() {
-        // 使用抽屉组件
+        // 浣跨敤鎶藉眽缁勪欢
         if (typeof drawerManager !== 'undefined' && drawerManager) {
             drawerManager.openServerDrawer();
         } else {
-            console.error('❌ drawerManager 未定义或为空:', typeof drawerManager);
-            // 后备方案：使用简单的提示
-            alert('添加服务器功能需要抽屉组件支持，请联系管理员');
+            console.error('鉂?drawerManager 鏈畾涔夋垨涓虹┖:', typeof drawerManager);
+            // 鍚庡鏂规锛氫娇鐢ㄧ畝鍗曠殑鎻愮ず
+            alert('娣诲姞鏈嶅姟鍣ㄥ姛鑳介渶瑕佹娊灞夌粍浠舵敮鎸侊紝璇疯仈绯荤鐞嗗憳');
         }
     }
 
-    // 编辑服务器函数
+    // 缂栬緫鏈嶅姟鍣ㄥ嚱鏁?
     function editServer(element) {
         const serverId = element.getAttribute('data-id');
-        // 使用抽屉组件
+        // 浣跨敤鎶藉眽缁勪欢
         if (typeof drawerManager !== 'undefined' && drawerManager) {
             drawerManager.openServerDrawer(serverId);
         } else {
-            console.error('❌ drawerManager 未定义或为空:', typeof drawerManager);
-            // 后备方案：使用简单的提示
-            alert('编辑服务器功能需要抽屉组件支持，请联系管理员');
+            console.error('鉂?drawerManager 鏈畾涔夋垨涓虹┖:', typeof drawerManager);
+            // 鍚庡鏂规锛氫娇鐢ㄧ畝鍗曠殑鎻愮ず
+            alert('缂栬緫鏈嶅姟鍣ㄥ姛鑳介渶瑕佹娊灞夌粍浠舵敮鎸侊紝璇疯仈绯荤鐞嗗憳');
         }
     }
     
-    // 统一事件委托处理器 (在内容加载完成后绑定)
+    // 缁熶竴浜嬩欢濮旀墭澶勭悊鍣?(鍦ㄥ唴瀹瑰姞杞藉畬鎴愬悗缁戝畾)
     function bindContentEvents() {
-        // 移除之前的事件监听器（避免重复绑定）
+        // 绉婚櫎涔嬪墠鐨勪簨浠剁洃鍚櫒锛堥伩鍏嶉噸澶嶇粦瀹氾級
         document.removeEventListener('click', handleContentEvents);
-        // 添加新的事件监听器
+        // 娣诲姞鏂扮殑浜嬩欢鐩戝惉鍣?
         document.addEventListener('click', handleContentEvents);
     }
     
-    // 为了兼容性，保留旧函数名
+    // 涓轰簡鍏煎鎬э紝淇濈暀鏃у嚱鏁板悕
     function bindServerEvents() {
         bindContentEvents();
     }
@@ -2208,7 +2288,7 @@
     }
     
     function handleContentEvents(event) {
-        // 处理下拉菜单关闭
+        // 澶勭悊涓嬫媺鑿滃崟鍏抽棴
         if (!event.target.closest('.server-actions-dropdown')) {
             document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
                 menu.classList.remove('show');
@@ -2218,44 +2298,44 @@
         const target = event.target.closest('button, a, .quick-action-btn');
         if (!target) return;
         
-        // 调试信息 - 查看点击的元素
+        // 璋冭瘯淇℃伅 - 鏌ョ湅鐐瑰嚮鐨勫厓绱?
         if (target.classList.contains('btn-view-logs') || target.classList.contains('quick-action-btn')) {
-            console.log('点击的元素:', target, '类名:', target.className, '属性:', {
+            console.log('鐐瑰嚮鐨勫厓绱?', target, '绫诲悕:', target.className, '灞炴€?', {
                 serverId: target.getAttribute('data-server-id'),
                 id: target.getAttribute('data-id'),
                 serverName: target.getAttribute('data-server-name')
             });
         }
         
-        // 刷新服务器按钮
+        // 鍒锋柊鏈嶅姟鍣ㄦ寜閽?
         if (target.classList.contains('btn-refresh-server')) {
             event.preventDefault();
             refreshServer(target);
             return;
         }
         
-        // 删除服务器按钮
+        // 鍒犻櫎鏈嶅姟鍣ㄦ寜閽?
         if (target.classList.contains('btn-delete-server')) {
             event.preventDefault();
             deleteServer(target);
             return;
         }
         
-        // 编辑服务器按钮
+        // 缂栬緫鏈嶅姟鍣ㄦ寜閽?
         if (target.classList.contains('btn-edit-server')) {
             event.preventDefault();
             editServer(target);
             return;
         }
         
-        // 重新生成工作目录按钮
+        // 閲嶆柊鐢熸垚宸ヤ綔鐩綍鎸夐挳
         if (target.classList.contains('btn-regenerate-workdir')) {
             event.preventDefault();
             const serverId = target.getAttribute('data-id');
             const workdir = target.getAttribute('data-workdir');
             showRegenerateWorkdirModal(serverId, workdir);
             
-            // 关闭下拉菜单
+            // 鍏抽棴涓嬫媺鑿滃崟
             const dropdown = target.closest('.server-actions-dropdown');
             if (dropdown) {
                 const menu = dropdown.querySelector('.dropdown-menu');
@@ -2266,34 +2346,34 @@
             return;
         }
         
-        // 查看服务器详情按钮
+        // 鏌ョ湅鏈嶅姟鍣ㄨ鎯呮寜閽?
         if (target.classList.contains('btn-view-server')) {
             event.preventDefault();
             viewServer(target);
             return;
         }
         
-        // 打开终端按钮
+        // 鎵撳紑缁堢鎸夐挳
         if (target.classList.contains('btn-open-terminal')) {
             event.preventDefault();
             openTerminal(target);
             return;
         }
         
-        // 查看服务器日志按钮
+        // 鏌ョ湅鏈嶅姟鍣ㄦ棩蹇楁寜閽?
         if (target.classList.contains('btn-server-logs') || target.classList.contains('server-logs-btn') || target.classList.contains('btn-view-logs')) {
             event.preventDefault();
-            console.log('日志按钮被点击了!', target);
+            console.log('鏃ュ織鎸夐挳琚偣鍑讳簡!', target);
             const serverId = target.getAttribute('data-server-id') || target.getAttribute('data-id');
             const serverName = target.getAttribute('data-server-name');
-            console.log('服务器信息:', { serverId, serverName });
+            console.log('鏈嶅姟鍣ㄤ俊鎭?', { serverId, serverName });
             showServerLogsModal(serverId, serverName);
             return;
         }
         
-        // ===== 用户管理相关按钮事件 =====
+        // ===== 鐢ㄦ埛绠＄悊鐩稿叧鎸夐挳浜嬩欢 =====
         
-        // 编辑用户按钮
+        // 缂栬緫鐢ㄦ埛鎸夐挳
         if (target.classList.contains('edit-user-btn')) {
             event.preventDefault();
             const userId = target.getAttribute('data-user-id');
@@ -2301,7 +2381,7 @@
             return;
         }
         
-        // 重置密码按钮
+        // 閲嶇疆瀵嗙爜鎸夐挳
         if (target.classList.contains('reset-password-btn')) {
             event.preventDefault();
             const userId = target.getAttribute('data-user-id');
@@ -2309,7 +2389,7 @@
             return;
         }
         
-        // 删除用户按钮
+        // 鍒犻櫎鐢ㄦ埛鎸夐挳
         if (target.classList.contains('delete-user-btn')) {
             event.preventDefault();
             const userId = target.getAttribute('data-user-id');
@@ -2318,9 +2398,9 @@
             return;
         }
         
-        // ===== 应用管理相关按钮事件 =====
+        // ===== 搴旂敤绠＄悊鐩稿叧鎸夐挳浜嬩欢 =====
         
-        // 启动应用按钮
+        // 鍚姩搴旂敤鎸夐挳
         if (target.classList.contains('btn-start-app') || target.classList.contains('start-app-btn')) {
             event.preventDefault();
             const appId = target.getAttribute('data-app-id') || target.getAttribute('data-id');
@@ -2328,7 +2408,7 @@
             return;
         }
         
-        // 停止应用按钮
+        // 鍋滄搴旂敤鎸夐挳
         if (target.classList.contains('btn-stop-app') || target.classList.contains('stop-app-btn')) {
             event.preventDefault();
             const appId = target.getAttribute('data-app-id') || target.getAttribute('data-id');
@@ -2336,7 +2416,7 @@
             return;
         }
         
-        // 重启应用按钮
+        // 閲嶅惎搴旂敤鎸夐挳
         if (target.classList.contains('btn-restart-app') || target.classList.contains('restart-app-btn')) {
             event.preventDefault();
             const appId = target.getAttribute('data-app-id') || target.getAttribute('data-id');
@@ -2344,7 +2424,7 @@
             return;
         }
         
-        // 删除应用按钮
+        // 鍒犻櫎搴旂敤鎸夐挳
         if (target.classList.contains('btn-delete-app') || target.classList.contains('delete-app-btn')) {
             event.preventDefault();
             const appId = target.getAttribute('data-app-id') || target.getAttribute('data-id');
@@ -2352,7 +2432,7 @@
             return;
         }
         
-        // 查看应用日志按钮
+        // 鏌ョ湅搴旂敤鏃ュ織鎸夐挳
         if (target.classList.contains('btn-app-logs') || target.classList.contains('app-logs-btn')) {
             event.preventDefault();
             const appId = target.getAttribute('data-app-id') || target.getAttribute('data-id');
@@ -2360,7 +2440,7 @@
             return;
         }
         
-        // 查看应用详情按钮
+        // 鏌ョ湅搴旂敤璇︽儏鎸夐挳
         if (target.classList.contains('btn-app-details') || target.classList.contains('app-details-btn')) {
             event.preventDefault();
             const appId = target.getAttribute('data-app-id') || target.getAttribute('data-id');
@@ -2369,15 +2449,15 @@
         }
     }
     
-    // 错误处理
+    // 閿欒澶勭悊
     window.addEventListener('error', function(e) {
-        console.error('页面错误:', e.error);
+        console.error('椤甸潰閿欒:', e.error);
     });
 
-    // 全局变量用于状态管理
+    // 鍏ㄥ眬鍙橀噺鐢ㄤ簬鐘舵€佺鐞?
     let serverStatusManager = null;
     
-    // 备用的服务器状态标签加载函数
+    // 澶囩敤鐨勬湇鍔″櫒鐘舵€佹爣绛惧姞杞藉嚱鏁?
     async function loadServerStatusTagsFallback(serverId) {
         try {
             const response = await fetch(`/admin/api/servers/${serverId}/status-tags`);
@@ -2390,29 +2470,29 @@
                 }
             }
         } catch (error) {
-            console.error(`加载服务器 ${serverId} 状态标签失败:`, error);
+            console.error(`鍔犺浇鏈嶅姟鍣?${serverId} 鐘舵€佹爣绛惧け璐?`, error);
             const statusContainer = document.querySelector(`[data-server-id="${serverId}"] .server-status-tags-row`);
             if (statusContainer) {
-                statusContainer.innerHTML = '<div class="status-tags-empty">加载失败</div>';
+                statusContainer.innerHTML = '<div class="status-tags-empty">鍔犺浇澶辫触</div>';
             }
         }
     }
 
-    // 检查服务器名称长度并添加滚动效果
+    // 妫€鏌ユ湇鍔″櫒鍚嶇О闀垮害骞舵坊鍔犳粴鍔ㄦ晥鏋?
     function initServerNameScrolling() {
         const serverNames = document.querySelectorAll('.server-name');
         
         serverNames.forEach((nameElement, index) => {
-            // 首先移除所有可能存在的long-text类
+            // 棣栧厛绉婚櫎鎵€鏈夊彲鑳藉瓨鍦ㄧ殑long-text绫?
             nameElement.classList.remove('long-text');
             
-            // 彻底清理文本内容，移除所有空白字符、换行符等
+            // 褰诲簳娓呯悊鏂囨湰鍐呭锛岀Щ闄ゆ墍鏈夌┖鐧藉瓧绗︺€佹崲琛岀绛?
             let textContent = nameElement.textContent || nameElement.innerText || '';
             const originalLength = textContent.length;
-            textContent = textContent.replace(/\s+/g, ' ').trim(); // 将所有连续空白字符替换为单个空格
+            textContent = textContent.replace(/\s+/g, ' ').trim(); // 灏嗘墍鏈夎繛缁┖鐧藉瓧绗︽浛鎹负鍗曚釜绌烘牸
             
             
-            // 检查文本长度是否超过13个字符（在15ch容器中考虑图标占用空间）
+            // 妫€鏌ユ枃鏈暱搴︽槸鍚﹁秴杩?3涓瓧绗︼紙鍦?5ch瀹瑰櫒涓€冭檻鍥炬爣鍗犵敤绌洪棿锛?
             if (textContent.length > 13) {
                 nameElement.classList.add('long-text');
             } else {
@@ -2421,70 +2501,70 @@
         
     }
 
-    // ===== 重新生成工作目录功能 =====
+    // ===== 閲嶆柊鐢熸垚宸ヤ綔鐩綍鍔熻兘 =====
     let currentRegenerateServerId = null;
 
-    // 显示重新生成工作目录弹出窗口
+    // 鏄剧ず閲嶆柊鐢熸垚宸ヤ綔鐩綍寮瑰嚭绐楀彛
     function showRegenerateWorkdirModal(serverId, currentWorkdir) {
         currentRegenerateServerId = serverId;
         
-        // 设置当前工作目录
+        // 璁剧疆褰撳墠宸ヤ綔鐩綍
         const workdirInput = document.getElementById('current-workdir-path');
         if (!workdirInput) {
-            console.error('找不到输入框: current-workdir-path');
+            console.error('鎵句笉鍒拌緭鍏ユ: current-workdir-path');
             return;
         }
-        workdirInput.value = currentWorkdir || '未设置工作目录';
+        workdirInput.value = currentWorkdir || '鏈缃伐浣滅洰褰?;
         
-        // 显示弹出窗口
+        // 鏄剧ず寮瑰嚭绐楀彛
         const modal = document.getElementById('regenerate-workdir-modal');
         if (!modal) {
-            console.error('找不到modal: regenerate-workdir-modal');
+            console.error('鎵句笉鍒癿odal: regenerate-workdir-modal');
             return;
         }
         
         modal.style.display = 'flex';
         
-        // 添加显示动画
+        // 娣诲姞鏄剧ず鍔ㄧ敾
         setTimeout(() => {
             modal.classList.add('show');
         }, 10);
         
-        // 阻止页面滚动
+        // 闃绘椤甸潰婊氬姩
         document.body.style.overflow = 'hidden';
     }
 
-    // 关闭重新生成工作目录弹出窗口
+    // 鍏抽棴閲嶆柊鐢熸垚宸ヤ綔鐩綍寮瑰嚭绐楀彛
     function closeRegenerateWorkdirModal() {
         const modal = document.getElementById('regenerate-workdir-modal');
         
-        // 移除显示动画
+        // 绉婚櫎鏄剧ず鍔ㄧ敾
         modal.classList.remove('show');
         
-        // 等待动画完成后隐藏
+        // 绛夊緟鍔ㄧ敾瀹屾垚鍚庨殣钘?
         setTimeout(() => {
             modal.style.display = 'none';
         }, 300);
         
-        // 恢复页面滚动
+        // 鎭㈠椤甸潰婊氬姩
         document.body.style.overflow = '';
     }
 
-    // 确认重新生成工作目录
+    // 纭閲嶆柊鐢熸垚宸ヤ綔鐩綍
     function confirmRegenerateWorkdir() {
         if (!currentRegenerateServerId) {
-            console.error('未选择服务器');
+            console.error('鏈€夋嫨鏈嶅姟鍣?);
             return;
         }
         
         const confirmBtn = document.getElementById('btn-confirm-regenerate');
         const originalHtml = confirmBtn.innerHTML;
         
-        // 禁用按钮并显示加载状态
+        // 绂佺敤鎸夐挳骞舵樉绀哄姞杞界姸鎬?
         confirmBtn.disabled = true;
-        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>检查中...</span>';
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>妫€鏌ヤ腑...</span>';
         
-        // 发送请求
+        // 鍙戦€佽姹?
         fetch(`/admin/servers/${currentRegenerateServerId}/initialize-working-directory`, {
             method: 'POST',
             headers: {
@@ -2497,36 +2577,36 @@
                 let alertTitle = '';
                 
                 if (data.created === true) {
-                    // 目录是新创建的
-                    alertTitle = '✅ 工作目录创建成功';
-                    alertMessage = `${data.message}\n\n目录路径: ${data.workingDirectory || '已设置'}`;
+                    // 鐩綍鏄柊鍒涘缓鐨?
+                    alertTitle = '鉁?宸ヤ綔鐩綍鍒涘缓鎴愬姛';
+                    alertMessage = `${data.message}\n\n鐩綍璺緞: ${data.workingDirectory || '宸茶缃?}`;
                 } else if (data.created === false) {
-                    // 目录已存在，没有创建新的
-                    alertTitle = 'ℹ️ 工作目录检查完成';
-                    alertMessage = `${data.message}\n\n目录路径: ${data.workingDirectory || '已设置'}\n\n📝 提示: 目录已存在，无需重新创建`;
+                    // 鐩綍宸插瓨鍦紝娌℃湁鍒涘缓鏂扮殑
+                    alertTitle = '鈩癸笍 宸ヤ綔鐩綍妫€鏌ュ畬鎴?;
+                    alertMessage = `${data.message}\n\n鐩綍璺緞: ${data.workingDirectory || '宸茶缃?}\n\n馃摑 鎻愮ず: 鐩綍宸插瓨鍦紝鏃犻渶閲嶆柊鍒涘缓`;
                 } else {
-                    // 其他成功情况
-                    alertTitle = '✅ 操作完成';
+                    // 鍏朵粬鎴愬姛鎯呭喌
+                    alertTitle = '鉁?鎿嶄綔瀹屾垚';
                     alertMessage = data.message;
                 }
                 
                 alert(`${alertTitle}\n\n${alertMessage}`);
                 closeRegenerateWorkdirModal();
-                // 重新加载服务器页面以更新状态
+                // 閲嶆柊鍔犺浇鏈嶅姟鍣ㄩ〉闈互鏇存柊鐘舵€?
                 loadContent('servers');
             } else {
-                alert('❌ 操作失败\n\n' + (data.message || '未知错误'));
+                alert('鉂?鎿嶄綔澶辫触\n\n' + (data.message || '鏈煡閿欒'));
             }
         }).catch(error => {
-            console.error('重新生成工作目录失败:', error);
-            alert('❌ 网络错误\n\n请检查网络连接或服务器配置。\n错误详情: ' + (error.message || error));
+            console.error('閲嶆柊鐢熸垚宸ヤ綔鐩綍澶辫触:', error);
+            alert('鉂?缃戠粶閿欒\n\n璇锋鏌ョ綉缁滆繛鎺ユ垨鏈嶅姟鍣ㄩ厤缃€俓n閿欒璇︽儏: ' + (error.message || error));
         }).finally(() => {
             confirmBtn.disabled = false;
             confirmBtn.innerHTML = originalHtml;
         });
     }
 
-    // 添加遮罩层和ESC键关闭功能
+    // 娣诲姞閬僵灞傚拰ESC閿叧闂姛鑳?
     document.addEventListener('click', function(e) {
         if (e.target.id === 'regenerate-workdir-modal') {
             closeRegenerateWorkdirModal();
@@ -2539,54 +2619,54 @@
         }
     });
 
-    // 全局样式类
+    // 鍏ㄥ眬鏍峰紡绫?
     window.addEventListener('load', function() {
         document.body.classList.add('layout-loaded');
         
-        // 初始化服务器状态标签管理器
+        // 鍒濆鍖栨湇鍔″櫒鐘舵€佹爣绛剧鐞嗗櫒
         if (typeof ServerStatusManager !== 'undefined') {
             serverStatusManager = new ServerStatusManager();
         } else {
-            console.warn('ServerStatusManager类未找到，状态标签功能不可用');
+            console.warn('ServerStatusManager绫绘湭鎵惧埌锛岀姸鎬佹爣绛惧姛鑳戒笉鍙敤');
         }
     });
 </script>
 
-<!-- 重新生成工作目录弹出窗口 -->
+<!-- 閲嶆柊鐢熸垚宸ヤ綔鐩綍寮瑰嚭绐楀彛 -->
 <div id="regenerate-workdir-modal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 class="modal-title">重新生成工作目录</h3>
+            <h3 class="modal-title">閲嶆柊鐢熸垚宸ヤ綔鐩綍</h3>
             <button class="modal-close" onclick="closeRegenerateWorkdirModal()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
         <div class="modal-body">
             <div class="form-group">
-                <label class="form-label">当前工作目录：</label>
-                <input type="text" id="current-workdir-path" class="form-control" readonly placeholder="未设置工作目录">
+                <label class="form-label">褰撳墠宸ヤ綔鐩綍锛?/label>
+                <input type="text" id="current-workdir-path" class="form-control" readonly placeholder="鏈缃伐浣滅洰褰?>
             </div>
             <div class="form-group">
-                <label class="form-label">操作说明：</label>
+                <label class="form-label">鎿嶄綔璇存槑锛?/label>
                 <div class="info-box">
                     <i class="fas fa-info-circle"></i>
-                    <span><strong>智能检查:</strong> 系统会先检查工作目录是否已存在。如果目录不存在，会自动创建；如果目录已存在，会跳过创建并确认目录状态。</span>
+                    <span><strong>鏅鸿兘妫€鏌?</strong> 绯荤粺浼氬厛妫€鏌ュ伐浣滅洰褰曟槸鍚﹀凡瀛樺湪銆傚鏋滅洰褰曚笉瀛樺湪锛屼細鑷姩鍒涘缓锛涘鏋滅洰褰曞凡瀛樺湪锛屼細璺宠繃鍒涘缓骞剁‘璁ょ洰褰曠姸鎬併€?/span>
                 </div>
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeRegenerateWorkdirModal()">取消</button>
+            <button class="btn btn-secondary" onclick="closeRegenerateWorkdirModal()">鍙栨秷</button>
             <button class="btn btn-primary" id="btn-confirm-regenerate" onclick="confirmRegenerateWorkdir()">
                 <i class="fas fa-folder"></i>
-                <span>检查并生成</span>
+                <span>妫€鏌ュ苟鐢熸垚</span>
             </button>
         </div>
     </div>
 </div>
 
-<!-- 服务器日志弹窗样式 -->
+<!-- 鏈嶅姟鍣ㄦ棩蹇楀脊绐楁牱寮?-->
 <style>
-    /* 服务器日志弹窗样式 - 兼容现有系统 */
+    /* 鏈嶅姟鍣ㄦ棩蹇楀脊绐楁牱寮?- 鍏煎鐜版湁绯荤粺 */
     .logs-modal-overlay {
         position: fixed;
         top: 0;
@@ -3229,27 +3309,27 @@
 </style>
 
 <script>
-    // 新的系统风格服务器详情模态框函数
+    // 鏂扮殑绯荤粺椋庢牸鏈嶅姟鍣ㄨ鎯呮ā鎬佹鍑芥暟
     function showSystemServerDetailModal(serverId, serverName) {
-        console.log('显示系统风格服务器详情模态框:', { serverId, serverName });
+        console.log('鏄剧ず绯荤粺椋庢牸鏈嶅姟鍣ㄨ鎯呮ā鎬佹:', { serverId, serverName });
         
         const modal = document.getElementById('systemServerDetailModal');
         if (!modal) {
-            console.error('找不到模态框元素');
+            console.error('鎵句笉鍒版ā鎬佹鍏冪礌');
             return;
         }
         
-        // 更新模态框标题
+        // 鏇存柊妯℃€佹鏍囬
         const titleElement = document.getElementById('systemModalServerName');
         if (titleElement) {
-            titleElement.textContent = (serverName || 'Server-' + serverId) + ' 详情';
+            titleElement.textContent = (serverName || 'Server-' + serverId) + ' 璇︽儏';
         }
         
-        // 显示模态框
+        // 鏄剧ず妯℃€佹
         modal.classList.add('show');
         document.body.style.overflow = 'hidden';
         
-        // 加载服务器数据
+        // 鍔犺浇鏈嶅姟鍣ㄦ暟鎹?
         loadSystemServerData(serverId);
     }
 
@@ -3262,17 +3342,17 @@
     }
 
     function loadSystemServerData(serverId) {
-        console.log('加载服务器数据:', serverId);
+        console.log('鍔犺浇鏈嶅姟鍣ㄦ暟鎹?', serverId);
         
-        // 显示加载状态
-        document.getElementById('systemHostname').textContent = '加载中...';
-        document.getElementById('systemIpAddress').textContent = '加载中...';
-        document.getElementById('systemUptime').textContent = '加载中...';
-        document.getElementById('systemOperatingSystem').textContent = '加载中...';
-        document.getElementById('systemWorkDirectory').textContent = '加载中...';
-        document.getElementById('systemConnectionStatus').textContent = '检查中...';
+        // 鏄剧ず鍔犺浇鐘舵€?
+        document.getElementById('systemHostname').textContent = '鍔犺浇涓?..';
+        document.getElementById('systemIpAddress').textContent = '鍔犺浇涓?..';
+        document.getElementById('systemUptime').textContent = '鍔犺浇涓?..';
+        document.getElementById('systemOperatingSystem').textContent = '鍔犺浇涓?..';
+        document.getElementById('systemWorkDirectory').textContent = '鍔犺浇涓?..';
+        document.getElementById('systemConnectionStatus').textContent = '妫€鏌ヤ腑...';
         
-        // 调用真实API获取服务器详情
+        // 璋冪敤鐪熷疄API鑾峰彇鏈嶅姟鍣ㄨ鎯?
         fetch(`/admin/api/servers/${serverId}/details`, {
             method: 'GET',
             headers: {
@@ -3282,50 +3362,50 @@
         })
         .then(response => response.json())
         .then(data => {
-            console.log('服务器详情API响应:', data);
+            console.log('鏈嶅姟鍣ㄨ鎯匒PI鍝嶅簲:', data);
             
             if (data.success) {
-                // 更新服务器基本信息
+                // 鏇存柊鏈嶅姟鍣ㄥ熀鏈俊鎭?
                 const basicInfo = data.basicInfo;
-                document.getElementById('systemHostname').textContent = basicInfo.hostname || '未知';
-                document.getElementById('systemIpAddress').textContent = basicInfo.ipAddress || '未知';
-                document.getElementById('systemUptime').textContent = basicInfo.uptime || '未知';
+                document.getElementById('systemHostname').textContent = basicInfo.hostname || '鏈煡';
+                document.getElementById('systemIpAddress').textContent = basicInfo.ipAddress || '鏈煡';
+                document.getElementById('systemUptime').textContent = basicInfo.uptime || '鏈煡';
                 document.getElementById('systemOperatingSystem').textContent = basicInfo.operatingSystem || 'Linux';
                 document.getElementById('systemWorkDirectory').textContent = basicInfo.workDirectory || '/opt/apps';
                 
-                // 更新连接状态
-                const statusText = basicInfo.connectionStatus === 'CONNECTED' ? '在线' : 
-                                  basicInfo.connectionStatus === 'MONITORING' ? '监控中' : '离线';
+                // 鏇存柊杩炴帴鐘舵€?
+                const statusText = basicInfo.connectionStatus === 'CONNECTED' ? '鍦ㄧ嚎' : 
+                                  basicInfo.connectionStatus === 'MONITORING' ? '鐩戞帶涓? : '绂荤嚎';
                 document.getElementById('systemConnectionStatus').textContent = `${statusText} ${basicInfo.lastCheck}`;
                 
-                // 加载应用列表和操作日志
+                // 鍔犺浇搴旂敤鍒楄〃鍜屾搷浣滄棩蹇?
                 loadSystemApplications(data.applications);
                 loadSystemOperationLogs(serverId);
             } else {
-                // 处理错误情况
-                console.error('获取服务器详情失败:', data.error);
-                document.getElementById('systemHostname').textContent = '获取失败';
-                document.getElementById('systemIpAddress').textContent = data.error || '未知错误';
+                // 澶勭悊閿欒鎯呭喌
+                console.error('鑾峰彇鏈嶅姟鍣ㄨ鎯呭け璐?', data.error);
+                document.getElementById('systemHostname').textContent = '鑾峰彇澶辫触';
+                document.getElementById('systemIpAddress').textContent = data.error || '鏈煡閿欒';
                 document.getElementById('systemUptime').textContent = '';
                 document.getElementById('systemOperatingSystem').textContent = '';
                 document.getElementById('systemWorkDirectory').textContent = '';
-                document.getElementById('systemConnectionStatus').textContent = '无法连接';
+                document.getElementById('systemConnectionStatus').textContent = '鏃犳硶杩炴帴';
                 
-                // 显示错误的应用和日志
+                // 鏄剧ず閿欒鐨勫簲鐢ㄥ拰鏃ュ織
                 loadSystemApplications([]);
                 loadSystemOperationLogs(null);
             }
         })
         .catch(error => {
-            console.error('服务器详情API调用失败:', error);
-            document.getElementById('systemHostname').textContent = '网络错误';
-            document.getElementById('systemIpAddress').textContent = '请检查网络连接';
+            console.error('鏈嶅姟鍣ㄨ鎯匒PI璋冪敤澶辫触:', error);
+            document.getElementById('systemHostname').textContent = '缃戠粶閿欒';
+            document.getElementById('systemIpAddress').textContent = '璇锋鏌ョ綉缁滆繛鎺?;
             document.getElementById('systemUptime').textContent = '';
             document.getElementById('systemOperatingSystem').textContent = '';
             document.getElementById('systemWorkDirectory').textContent = '';
-            document.getElementById('systemConnectionStatus').textContent = '连接失败';
+            document.getElementById('systemConnectionStatus').textContent = '杩炴帴澶辫触';
             
-            // 显示空的应用和日志
+            // 鏄剧ず绌虹殑搴旂敤鍜屾棩蹇?
             loadSystemApplications([]);
             loadSystemOperationLogs(null);
         });
@@ -3337,10 +3417,10 @@
         if (!applications || applications.length === 0) {
             container.innerHTML = `
                 <div class="system-app-card system-fade-in" style="text-align: center; padding: 40px;">
-                    <div style="font-size: 1.2rem; color: #6b7280; margin-bottom: 10px;">📱</div>
-                    <div style="color: #6b7280;">暂无应用部署</div>
+                    <div style="font-size: 1.2rem; color: #6b7280; margin-bottom: 10px;">馃摫</div>
+                    <div style="color: #6b7280;">鏆傛棤搴旂敤閮ㄧ讲</div>
                     <div style="font-size: 0.875rem; color: #9ca3af; margin-top: 5px;">
-                        该服务器上暂时没有部署的应用
+                        璇ユ湇鍔″櫒涓婃殏鏃舵病鏈夐儴缃茬殑搴旂敤
                     </div>
                 </div>
             `;
@@ -3349,49 +3429,49 @@
         
         let html = '';
         applications.forEach(app => {
-            // 处理应用状态
+            // 澶勭悊搴旂敤鐘舵€?
             const status = app.status ? app.status.toLowerCase() : 'unknown';
             const statusClass = status === 'running' ? 'running' : 
                                status === 'stopped' ? 'stopped' : 
                                status === 'error' ? 'stopped' : 'starting';
-            const statusText = status === 'running' ? '运行中' :
-                              status === 'stopped' ? '已停止' :
-                              status === 'error' ? '错误' : '未知';
+            const statusText = status === 'running' ? '杩愯涓? :
+                              status === 'stopped' ? '宸插仠姝? :
+                              status === 'error' ? '閿欒' : '鏈煡';
             
-            // 构建应用卡片
+            // 鏋勫缓搴旂敤鍗＄墖
             html += `
                 <div class="system-app-card ${statusClass} system-fade-in">
                     <div class="system-app-header">
-                        <h3 class="system-app-name">${app.name || '未知应用'}</h3>
+                        <h3 class="system-app-name">${app.name || '鏈煡搴旂敤'}</h3>
                         <span class="system-app-status ${statusClass}">${statusText}</span>
                     </div>
                     <div class="system-app-metrics">
-                        ${app.owner ? `<div class="system-app-metric">所有者: ${app.owner}</div>` : ''}
-                        ${app.port ? `<div class="system-app-metric">端口: ${app.port}</div>` : ''}
-                        ${app.debugPort ? `<div class="system-app-metric">调试: ${app.debugPort}</div>` : ''}
-                        ${app.uptime && app.uptime !== '未运行' ? `<div class="system-app-metric">运行: ${app.uptime}</div>` : ''}
-                        ${app.jarFileName ? `<div class="system-app-metric">文件: ${app.jarFileName}</div>` : ''}
+                        ${app.owner ? `<div class="system-app-metric">鎵€鏈夎€? ${app.owner}</div>` : ''}
+                        ${app.port ? `<div class="system-app-metric">绔彛: ${app.port}</div>` : ''}
+                        ${app.debugPort ? `<div class="system-app-metric">璋冭瘯: ${app.debugPort}</div>` : ''}
+                        ${app.uptime && app.uptime !== '鏈繍琛? ? `<div class="system-app-metric">杩愯: ${app.uptime}</div>` : ''}
+                        ${app.jarFileName ? `<div class="system-app-metric">鏂囦欢: ${app.jarFileName}</div>` : ''}
                         ${app.processId ? `<div class="system-app-metric">PID: ${app.processId}</div>` : ''}
-                        ${app.error ? `<div class="system-app-metric" style="color: #dc3545;">错误: ${app.error}</div>` : ''}
+                        ${app.error ? `<div class="system-app-metric" style="color: #dc3545;">閿欒: ${app.error}</div>` : ''}
                     </div>
                 </div>
             `;
         });
         
-        // 计算统计信息
+        // 璁＄畻缁熻淇℃伅
         const runningCount = applications.filter(a => a.status && a.status.toLowerCase() === 'running').length;
         const stoppedCount = applications.filter(a => a.status && a.status.toLowerCase() === 'stopped').length;
         const errorCount = applications.filter(a => a.status && a.status.toLowerCase() === 'error').length;
         
         html += `
             <div class="system-app-summary">
-                💻 总计: ${applications.length}个应用 • 
-                ${runningCount > 0 ? `${runningCount}个运行中` : ''} 
-                ${runningCount > 0 && (stoppedCount > 0 || errorCount > 0) ? ' • ' : ''}
-                ${stoppedCount > 0 ? `${stoppedCount}个已停止` : ''} 
-                ${stoppedCount > 0 && errorCount > 0 ? ' • ' : ''}
-                ${errorCount > 0 ? `${errorCount}个错误` : ''}
-                ${runningCount === 0 && stoppedCount === 0 && errorCount === 0 ? '0个运行中' : ''}
+                馃捇 鎬昏: ${applications.length}涓簲鐢?鈥?
+                ${runningCount > 0 ? `${runningCount}涓繍琛屼腑` : ''} 
+                ${runningCount > 0 && (stoppedCount > 0 || errorCount > 0) ? ' 鈥?' : ''}
+                ${stoppedCount > 0 ? `${stoppedCount}涓凡鍋滄` : ''} 
+                ${stoppedCount > 0 && errorCount > 0 ? ' 鈥?' : ''}
+                ${errorCount > 0 ? `${errorCount}涓敊璇痐 : ''}
+                ${runningCount === 0 && stoppedCount === 0 && errorCount === 0 ? '0涓繍琛屼腑' : ''}
             </div>
         `;
         
@@ -3401,32 +3481,32 @@
     function loadSystemOperationLogs(serverId) {
         const container = document.getElementById('systemOperationLogs');
         
-        // 显示加载状态
+        // 鏄剧ず鍔犺浇鐘舵€?
         container.innerHTML = `
             <div style="text-align: center; padding: 40px; color: var(--color-text-secondary);">
                 <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                <div>正在加载用户操作详情...</div>
+                <div>姝ｅ湪鍔犺浇鐢ㄦ埛鎿嶄綔璇︽儏...</div>
             </div>
         `;
         
-        // 如果没有serverId,显示空状态
+        // 濡傛灉娌℃湁serverId,鏄剧ず绌虹姸鎬?
         if (!serverId) {
             console.log('loadSystemOperationLogs called with empty serverId, showing empty state');
             container.innerHTML = `
                 <div style="text-align: center; padding: 40px; color: var(--color-text-secondary);">
                     <i class="fas fa-user-slash" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                    <div>暂无用户操作记录</div>
+                    <div>鏆傛棤鐢ㄦ埛鎿嶄綔璁板綍</div>
                     <div style="font-size: 0.875rem; color: #9ca3af; margin-top: 5px;">
-                        该服务器上暂时没有用户操作记录
+                        璇ユ湇鍔″櫒涓婃殏鏃舵病鏈夌敤鎴锋搷浣滆褰?
                     </div>
                 </div>
             `;
             return;
         }
         
-        console.log('调用用户操作详情API，serverId:', serverId);
+        console.log('璋冪敤鐢ㄦ埛鎿嶄綔璇︽儏API锛宻erverId:', serverId);
         
-        // 构建查询参数
+        // 鏋勫缓鏌ヨ鍙傛暟
         const queryDto = {
             serverId: parseInt(serverId),
             page: 0,
@@ -3435,7 +3515,7 @@
             sortDirection: 'DESC'
         };
         
-        // 调用实际的用户操作详情API
+        // 璋冪敤瀹為檯鐨勭敤鎴锋搷浣滆鎯匒PI
         fetch('/user-operations/api/search', {
             method: 'POST',
             headers: {
@@ -3446,39 +3526,39 @@
         })
         .then(response => response.json())
         .then(data => {
-            console.log('用户操作详情API响应:', data);
+            console.log('鐢ㄦ埛鎿嶄綔璇︽儏API鍝嶅簲:', data);
             
             if (data.content && Array.isArray(data.content)) {
                 renderUserOperations(data.content, data.totalElements);
             } else if (data.error) {
-                console.error('获取用户操作详情失败:', data.error);
+                console.error('鑾峰彇鐢ㄦ埛鎿嶄綔璇︽儏澶辫触:', data.error);
                 container.innerHTML = `
                     <div style="text-align: center; padding: 40px; color: var(--color-danger);">
                         <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                        <div>加载用户操作详情失败</div>
+                        <div>鍔犺浇鐢ㄦ埛鎿嶄綔璇︽儏澶辫触</div>
                         <div style="font-size: 0.875rem; margin-top: 5px;">${data.error}</div>
                     </div>
                 `;
             } else {
-                // 空数据
+                // 绌烘暟鎹?
                 container.innerHTML = `
                     <div style="text-align: center; padding: 40px; color: var(--color-text-secondary);">
                         <i class="fas fa-user-slash" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                        <div>暂无用户操作记录</div>
+                        <div>鏆傛棤鐢ㄦ埛鎿嶄綔璁板綍</div>
                         <div style="font-size: 0.875rem; color: #9ca3af; margin-top: 5px;">
-                            该服务器上暂时没有用户操作记录
+                            璇ユ湇鍔″櫒涓婃殏鏃舵病鏈夌敤鎴锋搷浣滆褰?
                         </div>
                     </div>
                 `;
             }
         })
         .catch(error => {
-            console.error('用户操作详情API调用失败:', error);
+            console.error('鐢ㄦ埛鎿嶄綔璇︽儏API璋冪敤澶辫触:', error);
             container.innerHTML = `
                 <div style="text-align: center; padding: 40px; color: var(--color-danger);">
                     <i class="fas fa-network-wired" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                    <div>网络连接失败</div>
-                    <div style="font-size: 0.875rem; margin-top: 5px;">请检查网络连接后重试</div>
+                    <div>缃戠粶杩炴帴澶辫触</div>
+                    <div style="font-size: 0.875rem; margin-top: 5px;">璇锋鏌ョ綉缁滆繛鎺ュ悗閲嶈瘯</div>
                 </div>
             `;
         });
@@ -3491,9 +3571,9 @@
             container.innerHTML = `
                 <div style="text-align: center; padding: 40px; color: var(--color-text-secondary);">
                     <i class="fas fa-user-slash" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                    <div>暂无用户操作记录</div>
+                    <div>鏆傛棤鐢ㄦ埛鎿嶄綔璁板綍</div>
                     <div style="font-size: 0.875rem; color: #9ca3af; margin-top: 5px;">
-                        该服务器上暂时没有用户操作记录
+                        璇ユ湇鍔″櫒涓婃殏鏃舵病鏈夌敤鎴锋搷浣滆褰?
                     </div>
                 </div>
             `;
@@ -3508,7 +3588,7 @@
                     hour: '2-digit',
                     minute: '2-digit',
                     second: '2-digit'
-                }) : '未知时间';
+                }) : '鏈煡鏃堕棿';
             
             const activityIcon = getActivityIcon(operation.activityType);
             const riskColor = getRiskColor(operation.riskLevel);
@@ -3519,41 +3599,41 @@
                         <div class="system-log-time">${formatTime}</div>
                         <div class="system-log-user">
                             <i class="fas fa-user"></i>
-                            ${operation.username || '未知用户'}${operation.remoteIp ? ' @' + operation.remoteIp : ''}
+                            ${operation.username || '鏈煡鐢ㄦ埛'}${operation.remoteIp ? ' @' + operation.remoteIp : ''}
                         </div>
                     </div>
                     <div class="system-log-content">
                         <h3 class="system-log-action">
-                            ${activityIcon} ${operation.operationSummary || operation.activityTypeDescription || '未知操作'}
+                            ${activityIcon} ${operation.operationSummary || operation.activityTypeDescription || '鏈煡鎿嶄綔'}
                         </h3>
                         <div class="system-log-details">
                             ${operation.activityDetails ? `
                                 <div class="system-detail-row">
-                                    <span class="system-detail-label">操作详情:</span>
+                                    <span class="system-detail-label">鎿嶄綔璇︽儏:</span>
                                     <span class="system-detail-value">${operation.activityDetails}</span>
                                 </div>
                             ` : ''}
                             ${operation.sessionId ? `
                                 <div class="system-detail-row">
-                                    <span class="system-detail-label">会话ID:</span>
+                                    <span class="system-detail-label">浼氳瘽ID:</span>
                                     <span class="system-detail-value">${operation.sessionId}</span>
                                 </div>
                             ` : ''}
                             ${operation.commandCount && operation.commandCount > 0 ? `
                                 <div class="system-detail-row">
-                                    <span class="system-detail-label">命令数量:</span>
-                                    <span class="system-detail-value">${operation.commandCount}个</span>
+                                    <span class="system-detail-label">鍛戒护鏁伴噺:</span>
+                                    <span class="system-detail-value">${operation.commandCount}涓?/span>
                                 </div>
                             ` : ''}
                             ${operation.sessionDuration ? `
                                 <div class="system-detail-row">
-                                    <span class="system-detail-label">会话时长:</span>
-                                    <span class="system-detail-value">${operation.sessionDuration}分钟</span>
+                                    <span class="system-detail-label">浼氳瘽鏃堕暱:</span>
+                                    <span class="system-detail-value">${operation.sessionDuration}鍒嗛挓</span>
                                 </div>
                             ` : ''}
                             ${operation.riskLevel ? `
                                 <div class="system-detail-row">
-                                    <span class="system-detail-label">风险等级:</span>
+                                    <span class="system-detail-label">椋庨櫓绛夌骇:</span>
                                     <span class="system-detail-value" style="color: ${riskColor}">
                                         <i class="fas fa-shield-alt"></i>
                                         ${operation.riskLevel}
@@ -3562,9 +3642,9 @@
                             ` : ''}
                             ${operation.isActive !== null ? `
                                 <div class="system-detail-row">
-                                    <span class="system-detail-label">会话状态:</span>
+                                    <span class="system-detail-label">浼氳瘽鐘舵€?</span>
                                     <span class="system-detail-value system-status-${operation.isActive ? 'success' : 'error'}">
-                                        ${operation.isActive ? '<i class="fas fa-check-circle"></i>活跃' : '<i class="fas fa-times-circle"></i>已结束'}
+                                        ${operation.isActive ? '<i class="fas fa-check-circle"></i>娲昏穬' : '<i class="fas fa-times-circle"></i>宸茬粨鏉?}
                                     </span>
                                 </div>
                             ` : ''}
@@ -3574,13 +3654,13 @@
             `;
         });
         
-        // 如果有更多记录，显示加载更多按钮
+        // 濡傛灉鏈夋洿澶氳褰曪紝鏄剧ず鍔犺浇鏇村鎸夐挳
         const remainingCount = totalElements - operations.length;
         if (remainingCount > 0) {
             html += `
                 <button class="system-load-more" onclick="loadMoreUserOperations(${operations[0].serverId})">
                     <i class="fas fa-plus-circle"></i>
-                    加载更多操作记录 (还有${remainingCount}条)
+                    鍔犺浇鏇村鎿嶄綔璁板綍 (杩樻湁${remainingCount}鏉?
                 </button>
             `;
         }
@@ -3590,23 +3670,23 @@
     
     function getActivityIcon(activityType) {
         const iconMap = {
-            'SSH_LOGIN': '🔐',
-            'SSH_LOGOUT': '🚪',
-            'COMMAND_EXECUTE': '💻',
-            'FILE_EDIT': '📝',
-            'PROCESS_START': '▶️',
-            'PROCESS_STOP': '⏹️',
-            'SYSTEM_INFO': '📊',
-            'APPLICATION_DEPLOY': '🚀'
+            'SSH_LOGIN': '馃攼',
+            'SSH_LOGOUT': '馃毆',
+            'COMMAND_EXECUTE': '馃捇',
+            'FILE_EDIT': '馃摑',
+            'PROCESS_START': '鈻讹笍',
+            'PROCESS_STOP': '鈴癸笍',
+            'SYSTEM_INFO': '馃搳',
+            'APPLICATION_DEPLOY': '馃殌'
         };
-        return iconMap[activityType] || '⚙️';
+        return iconMap[activityType] || '鈿欙笍';
     }
     
     function getRiskColor(riskLevel) {
         const colorMap = {
-            '低': '#10b981',  // green
-            '中': '#f59e0b',  // amber
-            '高': '#ef4444'   // red
+            '浣?: '#10b981',  // green
+            '涓?: '#f59e0b',  // amber
+            '楂?: '#ef4444'   // red
         };
         return colorMap[riskLevel] || '#6b7280'; // default gray
     }
@@ -3615,12 +3695,12 @@
         const button = event.target.closest('.system-load-more');
         const originalHTML = button.innerHTML;
         
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>加载中...';
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>鍔犺浇涓?..';
         
-        // TODO: 实现分页加载更多用户操作记录
+        // TODO: 瀹炵幇鍒嗛〉鍔犺浇鏇村鐢ㄦ埛鎿嶄綔璁板綍
         setTimeout(() => {
             button.innerHTML = originalHTML;
-            console.log('加载更多用户操作记录:', serverId);
+            console.log('鍔犺浇鏇村鐢ㄦ埛鎿嶄綔璁板綍:', serverId);
         }, 1500);
     }
 
@@ -3628,26 +3708,26 @@
         const button = event.target.closest('.system-load-more');
         const originalHTML = button.innerHTML;
         
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>加载中...';
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>鍔犺浇涓?..';
         
         setTimeout(() => {
             button.innerHTML = originalHTML;
-            // 这里可以添加更多日志
-            console.log('加载更多日志记录');
+            // 杩欓噷鍙互娣诲姞鏇村鏃ュ織
+            console.log('鍔犺浇鏇村鏃ュ織璁板綍');
         }, 1500);
     }
 
-    // 更新现有的showServerLogsModal函数以使用新的模态框
+    // 鏇存柊鐜版湁鐨剆howServerLogsModal鍑芥暟浠ヤ娇鐢ㄦ柊鐨勬ā鎬佹
     if (typeof window.originalShowServerLogsModal === 'undefined') {
         const originalShowServerLogsModal = window.showServerLogsModal;
-        window.originalShowServerLogsModal = originalShowServerLogsModal; // 存储引用防止重复声明
+        window.originalShowServerLogsModal = originalShowServerLogsModal; // 瀛樺偍寮曠敤闃叉閲嶅澹版槑
         window.showServerLogsModal = function(serverId, serverName) {
-            // 使用新的系统风格模态框
+            // 浣跨敤鏂扮殑绯荤粺椋庢牸妯℃€佹
             showSystemServerDetailModal(serverId, serverName);
         };
     }
 
-    // 关闭模态框的事件处理
+    // 鍏抽棴妯℃€佹鐨勪簨浠跺鐞?
     document.addEventListener('click', function(event) {
         const modal = document.getElementById('systemServerDetailModal');
         if (modal && event.target === modal) {
@@ -3655,7 +3735,7 @@
         }
     });
 
-    // ESC键关闭模态框
+    // ESC閿叧闂ā鎬佹
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             hideSystemServerDetailModal();
@@ -3670,7 +3750,7 @@
         <div class="system-header">
             <h1 class="system-title">
                 <i class="fas fa-server"></i>
-                <span id="systemModalServerName">服务器详情</span>
+                <span id="systemModalServerName">鏈嶅姟鍣ㄨ鎯?/span>
             </h1>
             <button class="system-close-btn" onclick="hideSystemServerDetailModal()">
                 <i class="fas fa-times"></i>
@@ -3703,7 +3783,7 @@
                 <i class="fas fa-wifi system-info-icon"></i>
                 <div class="system-status-online">
                     <div class="system-status-dot"></div>
-                    <span id="systemConnectionStatus">检查中...</span>
+                    <span id="systemConnectionStatus">妫€鏌ヤ腑...</span>
                 </div>
             </div>
         </div>
@@ -3714,13 +3794,13 @@
             <div class="system-app-panel">
                 <h2 class="system-panel-title">
                     <i class="fas fa-cube"></i>
-                    应用运行状态
+                    搴旂敤杩愯鐘舵€?
                 </h2>
                 <div id="systemApplicationsList">
-                    <!-- 应用列表将通过JavaScript动态加载 -->
+                    <!-- 搴旂敤鍒楄〃灏嗛€氳繃JavaScript鍔ㄦ€佸姞杞?-->
                     <div style="text-align: center; padding: 40px; color: var(--color-text-secondary);">
                         <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                        <div>正在加载应用信息...</div>
+                        <div>姝ｅ湪鍔犺浇搴旂敤淇℃伅...</div>
                     </div>
                 </div>
             </div>
@@ -3729,13 +3809,13 @@
             <div class="system-logs-panel">
                 <h2 class="system-panel-title">
                     <i class="fas fa-file-alt"></i>
-                    用户操作详情
+                    鐢ㄦ埛鎿嶄綔璇︽儏
                 </h2>
                 <div id="systemOperationLogs">
-                    <!-- 日志列表将通过JavaScript动态加载 -->
+                    <!-- 鏃ュ織鍒楄〃灏嗛€氳繃JavaScript鍔ㄦ€佸姞杞?-->
                     <div style="text-align: center; padding: 40px; color: var(--color-text-secondary);">
                         <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                        <div>正在加载操作日志...</div>
+                        <div>姝ｅ湪鍔犺浇鎿嶄綔鏃ュ織...</div>
                     </div>
                 </div>
             </div>
@@ -3743,69 +3823,52 @@
     </div>
 </div>
 
-<!-- 现代导航栏集成脚本 -->
+<!-- 鐜颁唬瀵艰埅鏍忛泦鎴愯剼鏈?-->
 <script>
-    // 现代导航栏集成初始化
+    // 鐜颁唬瀵艰埅鏍忛泦鎴愬垵濮嬪寲
     document.addEventListener('DOMContentLoaded', function() {
-        //console.log('🚀 现代导航栏集成初始化开始...');
+        //console.log('馃殌 鐜颁唬瀵艰埅鏍忛泦鎴愬垵濮嬪寲寮€濮?..');
         
-        // 用户菜单切换功能
-        window.toggleUserMenu = function() {
-            const userMenu = document.getElementById('userDropdownMenu');
-            if (userMenu) {
-                userMenu.classList.toggle('show');
-            }
-        };
         
-        // 点击外部关闭用户菜单
-        document.addEventListener('click', function(e) {
-            const userMenu = document.getElementById('userDropdownMenu');
-            const userProfile = document.querySelector('.nav-user-profile');
-            
-            if (userMenu && userProfile && !userProfile.contains(e.target)) {
-                userMenu.classList.remove('show');
-            }
-        });
-        
-        // 搜索按钮功能（演示）
-        const searchBtn = document.querySelector('.search-btn');
-        if (searchBtn) {
-            searchBtn.addEventListener('click', function() {
-                console.log('🔍 搜索功能触发');
-                // TODO: 实现搜索功能
-                alert('搜索功能即将推出！');
+        // 搜索输入快捷键占位
+        const navSearchInput = document.querySelector('.workspace-nav .search-input');
+        if (navSearchInput) {
+            navSearchInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    navSearchInput.blur();
+                }
             });
         }
         
-        // 通知按钮功能（演示）
+        // 閫氱煡鎸夐挳鍔熻兘锛堟紨绀猴級
         const notificationBtn = document.querySelector('.notification-btn');
         if (notificationBtn) {
             notificationBtn.addEventListener('click', function() {
-                console.log('🔔 通知功能触发');
-                // TODO: 实现通知功能
-                alert('通知中心即将推出！');
+                console.log('馃敂 閫氱煡鍔熻兘瑙﹀彂');
+                // TODO: 瀹炵幇閫氱煡鍔熻兘
+                alert('閫氱煡涓績鍗冲皢鎺ㄥ嚭锛?);
             });
         }
         
-        // 导航链接点击处理 - 集成现有的loadContent功能
+        // 瀵艰埅閾炬帴鐐瑰嚮澶勭悊 - 闆嗘垚鐜版湁鐨刲oadContent鍔熻兘
         const modernNavLinks = document.querySelectorAll('.modern-nav-link');
         modernNavLinks.forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 
-                // 移除所有活跃状态
+                // 绉婚櫎鎵€鏈夋椿璺冪姸鎬?
                 modernNavLinks.forEach(l => l.classList.remove('active'));
-                // 添加当前活跃状态
+                // 娣诲姞褰撳墠娲昏穬鐘舵€?
                 this.classList.add('active');
                 
-                // 获取页面ID并调用现有的loadContent函数
+                // 鑾峰彇椤甸潰ID骞惰皟鐢ㄧ幇鏈夌殑loadContent鍑芥暟
                 const pageId = this.getAttribute('data-page');
                 if (pageId && typeof loadContent === 'function') {
-                    console.log('📄 切换到页面:', pageId);
+                    console.log('馃搫 鍒囨崲鍒伴〉闈?', pageId);
                     loadContent(pageId);
                 }
                 
-                // 在移动端自动关闭侧边栏
+                // 鍦ㄧЩ鍔ㄧ鑷姩鍏抽棴渚ц竟鏍?
                 if (window.innerWidth <= 768 && window.modernNavController) {
                     setTimeout(() => {
                         window.modernNavController.closeMobileSidebar();
@@ -3814,86 +3877,87 @@
             });
         });
         
-        // 键盘快捷键支持
+        // 閿洏蹇嵎閿敮鎸?
         document.addEventListener('keydown', function(e) {
-            // Ctrl+B 切换侧边栏
-            if (e.ctrlKey && e.key === 'b') {
+            // Ctrl+B 鍒囨崲渚ц竟鏍?
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
                 e.preventDefault();
                 if (window.modernNavController) {
                     window.modernNavController.toggle();
                 }
             }
             
-            // Ctrl+Shift+T 切换主题（如果存在toggleTheme函数）
-            if (e.ctrlKey && e.shiftKey && e.key === 'T') {
+            // Ctrl+Shift+T 鍒囨崲涓婚锛堝鏋滃瓨鍦╰oggleTheme鍑芥暟锛?
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 't') {
                 e.preventDefault();
                 if (typeof toggleTheme === 'function') {
                     toggleTheme();
                 }
             }
             
-            // Ctrl+K 触发搜索
-            if (e.ctrlKey && e.key === 'k') {
+            // Ctrl+K 瑙﹀彂鎼滅储
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
                 e.preventDefault();
-                const searchBtn = document.querySelector('.search-btn');
-                if (searchBtn) {
-                    searchBtn.click();
+                const searchInput = document.querySelector('.workspace-nav .search-input');
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.select();
                 }
             }
         });
         
-        // 监听现代导航事件
+        // 鐩戝惉鐜颁唬瀵艰埅浜嬩欢
         document.addEventListener('modernNav:sidebarToggle', function(e) {
-            //console.log('📱 侧边栏切换:', e.detail.collapsed ? '收起' : '展开');
+            //console.log('馃摫 渚ц竟鏍忓垏鎹?', e.detail.collapsed ? '鏀惰捣' : '灞曞紑');
         });
         
         document.addEventListener('modernNav:themeChanged', function(e) {
-            //console.log('🎨 主题切换:', e.detail.theme);
+            //console.log('馃帹 涓婚鍒囨崲:', e.detail.theme);
         });
 
-        // 监听现代导航点击事件
+        // 鐩戝惉鐜颁唬瀵艰埅鐐瑰嚮浜嬩欢
         document.addEventListener('modernNav:navigationItemClick', function(e) {
-            //console.log('🎯 导航项点击:', e.detail);
+            //console.log('馃幆 瀵艰埅椤圭偣鍑?', e.detail);
 
-            // 详细诊断信息
+            // 璇︾粏璇婃柇淇℃伅
 
 
             const itemId = e.detail.itemId;
             if (itemId) {
-                // 移除#号前缀（如果有）
+                // 绉婚櫎#鍙峰墠缂€锛堝鏋滄湁锛?
                 const page = itemId.replace('#', '');
-                //console.log('📍 加载页面:', page);
+                //console.log('馃搷 鍔犺浇椤甸潰:', page);
 
-                // 尝试多种方式调用loadContent函数
+                // 灏濊瘯澶氱鏂瑰紡璋冪敤loadContent鍑芥暟
                 let loadContentFunc = null;
 
-                // 1. 尝试从window对象获取
+                // 1. 灏濊瘯浠巜indow瀵硅薄鑾峰彇
                 if (typeof window.loadContent === 'function') {
-                    //console.log('✅ 方法1成功: 从window对象找到loadContent');
+                    //console.log('鉁?鏂规硶1鎴愬姛: 浠巜indow瀵硅薄鎵惧埌loadContent');
                     loadContentFunc = window.loadContent;
                 }
-                // 2. 尝试从全局作用域获取
+                // 2. 灏濊瘯浠庡叏灞€浣滅敤鍩熻幏鍙?
                 else if (typeof loadContent === 'function') {
-                    //console.log('✅ 方法2成功: 从全局作用域找到loadContent');
+                    //console.log('鉁?鏂规硶2鎴愬姛: 浠庡叏灞€浣滅敤鍩熸壘鍒發oadContent');
                     loadContentFunc = loadContent;
                 }
-                // 3. 等待一下再尝试
+                // 3. 绛夊緟涓€涓嬪啀灏濊瘯
                 else {
-                    //console.log('🔄 loadContent暂时不可用，等待100ms后重试...');
+                    //console.log('馃攧 loadContent鏆傛椂涓嶅彲鐢紝绛夊緟100ms鍚庨噸璇?..');
                     setTimeout(() => {
-                        //console.log('🔄 重试中，再次检查:');
+                        //console.log('馃攧 閲嶈瘯涓紝鍐嶆妫€鏌?');
                         //console.log('  - typeof window.loadContent:', typeof window.loadContent);
                         //console.log('  - typeof loadContent:', typeof loadContent);
 
                         if (typeof window.loadContent === 'function') {
-                            //console.log('✅ 重试成功: window.loadContent可用');
+                            //console.log('鉁?閲嶈瘯鎴愬姛: window.loadContent鍙敤');
                             window.loadContent(page, true);
                         } else if (typeof loadContent === 'function') {
-                            //console.log('✅ 重试成功: loadContent可用');
+                            //console.log('鉁?閲嶈瘯鎴愬姛: loadContent鍙敤');
                             loadContent(page, true);
                         } else {
-                            console.error('❌ loadContent函数仍然不可用，使用降级方案');
-                            // 作为最后的备选方案，触发页面跳转
+                            console.error('鉂?loadContent鍑芥暟浠嶇劧涓嶅彲鐢紝浣跨敤闄嶇骇鏂规');
+                            // 浣滀负鏈€鍚庣殑澶囬€夋柟妗堬紝瑙﹀彂椤甸潰璺宠浆
                             window.location.hash = page;
                         }
                     }, 100);
@@ -3901,15 +3965,15 @@
                 }
 
                 if (loadContentFunc) {
-                    //console.log('✅ 找到loadContent函数，开始调用');
+                    //console.log('鉁?鎵惧埌loadContent鍑芥暟锛屽紑濮嬭皟鐢?);
                     loadContentFunc(page, true, true);
                 } else {
-                    console.error('❌ loadContent函数不可用');
+                    console.error('鉂?loadContent鍑芥暟涓嶅彲鐢?);
                 }
             }
         });
         
-        // 确保主题图标正确显示
+        // 纭繚涓婚鍥炬爣姝ｇ‘鏄剧ず
         function updateThemeIcon() {
             const themeIcon = document.querySelector('.theme-icon');
             if (themeIcon) {
@@ -3918,10 +3982,10 @@
             }
         }
         
-        // 初始化主题图标
+        // 鍒濆鍖栦富棰樺浘鏍?
         updateThemeIcon();
         
-        // 监听主题变化
+        // 鐩戝惉涓婚鍙樺寲
         const observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
@@ -3935,45 +3999,45 @@
             attributeFilter: ['class']
         });
         
-        //console.log('✅ 现代导航栏集成初始化完成');
+        //console.log('鉁?鐜颁唬瀵艰埅鏍忛泦鎴愬垵濮嬪寲瀹屾垚');
     });
 </script>
 </html>
-    <!-- 重新生成工作目录弹出窗口 -->
+    <!-- 閲嶆柊鐢熸垚宸ヤ綔鐩綍寮瑰嚭绐楀彛 -->
     <div id="regenerate-workdir-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">重新生成工作目录</h3>
+                <h3 class="modal-title">閲嶆柊鐢熸垚宸ヤ綔鐩綍</h3>
                 <button class="modal-close" onclick="closeRegenerateWorkdirModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">当前工作目录：</label>
-                    <input type="text" id="current-workdir-path" class="form-control" readonly placeholder="未设置工作目录">
+                    <label class="form-label">褰撳墠宸ヤ綔鐩綍锛?/label>
+                    <input type="text" id="current-workdir-path" class="form-control" readonly placeholder="鏈缃伐浣滅洰褰?>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">操作说明：</label>
+                    <label class="form-label">鎿嶄綔璇存槑锛?/label>
                     <div class="info-box">
                         <i class="fas fa-info-circle"></i>
-                        <span><strong>智能检查:</strong> 系统会先检查工作目录是否已存在。如果目录不存在，会自动创建；如果目录已存在，会跳过创建并确认目录状态。</span>
+                        <span><strong>鏅鸿兘妫€鏌?</strong> 绯荤粺浼氬厛妫€鏌ュ伐浣滅洰褰曟槸鍚﹀凡瀛樺湪銆傚鏋滅洰褰曚笉瀛樺湪锛屼細鑷姩鍒涘缓锛涘鏋滅洰褰曞凡瀛樺湪锛屼細璺宠繃鍒涘缓骞剁‘璁ょ洰褰曠姸鎬併€?/span>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeRegenerateWorkdirModal()">取消</button>
+                <button class="btn btn-secondary" onclick="closeRegenerateWorkdirModal()">鍙栨秷</button>
                 <button class="btn btn-primary" id="btn-confirm-regenerate" onclick="confirmRegenerateWorkdir()">
                     <i class="fas fa-folder"></i>
-                    <span>检查并生成</span>
+                    <span>妫€鏌ュ苟鐢熸垚</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- 服务器日志弹窗样式 -->
+    <!-- 鏈嶅姟鍣ㄦ棩蹇楀脊绐楁牱寮?-->
     <style>
-        /* 服务器日志弹窗样式 - 兼容现有系统 */
+        /* 鏈嶅姟鍣ㄦ棩蹇楀脊绐楁牱寮?- 鍏煎鐜版湁绯荤粺 */
         .logs-modal-overlay {
             position: fixed;
             top: 0;
@@ -4617,3 +4681,19 @@
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

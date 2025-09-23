@@ -171,9 +171,9 @@
   --breakpoint-2xl: 1536px;                    /* 瓒呭ぇ灞?*/
 
   /* 瀵艰埅绯荤粺灏哄 */
-  --nav-height: 72px;                          /* 椤堕儴瀵艰埅楂樺害 */
-  --sidebar-width-expanded: 280px;             /* 渚ц竟鏍忓睍寮€瀹藉害 */
-  --sidebar-width-collapsed: 88px;             /* 渚ц竟鏍忔敹璧峰搴?*/
+  --nav-height: 64px;                          /* 椤堕儴瀵艰埅楂樺害 */
+  --sidebar-width-expanded: 240px;             /* 渚ц竟鏍忓睍寮€瀹藉害 */
+  --sidebar-width-collapsed: 72px;             /* 渚ц竟鏍忔敹璧峰搴?*/
 
   /* Z-index 灞傜骇 */
   --z-sidebar: 890;
@@ -257,7 +257,7 @@
   --card-footer-padding: var(--spacing-4);
 
   /* 瀵艰埅 */
-  --nav-height: 72px;                          /* 椤堕儴瀵艰埅楂樺害 */
+  --nav-height: 64px;                          /* 椤堕儴瀵艰埅楂樺害 */
   --nav-height-mobile: 56px;                   /* 绉诲姩绔鑸珮搴?*/
   --nav-item-height: 44px;
   --nav-item-padding: var(--spacing-3) var(--spacing-4);
