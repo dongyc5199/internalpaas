@@ -13,22 +13,12 @@ public class PageController {
         return "login";
     }
 
-    @GetMapping("/register")
-    public String register() {
-        return "register";
-    }
-
     @GetMapping("/")
     public String index(Authentication authentication, Model model) {
         if (authentication != null) {
             model.addAttribute("username", authentication.getName());
         }
         return "index";
-    }
-
-    @GetMapping("/initial-config")
-    public String initialConfig() {
-        return "initial-config";
     }
 }
 
