@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图标组件测试页面 - T7 导航图标定义</title>
+    <link rel="stylesheet" href="../../src/main/resources/static/css/icon-components.css">
+    <style>
+        body {
+            font-family: "Inter", "Segoe UI", sans-serif;
+            background: #F4F5FB;
+            color: #0F172A;
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: rgba(15, 23, 42, 0.6);
+            font-size: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .test-section {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 24px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .icon-demo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: rgba(15, 23, 42, 0.02);
+            border-radius: 16px;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+        }
+
+        .icon-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .icon-code {
+            font-size: 0.75rem;
+            font-family: "SF Mono", "Monaco", monospace;
+            color: rgba(15, 23, 42, 0.6);
+            background: rgba(15, 23, 42, 0.06);
+            padding: 0.25rem 0.5rem;
+            border-radius: 8px;
+        }
+
+        .nav-demo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(15, 23, 42, 0.02);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .nav-demo:hover {
+            background: rgba(59, 130, 246, 0.08);
+        }
+
+        .nav-demo--developer:hover {
+            background: rgba(108, 99, 255, 0.08);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(15, 23, 42, 0.12);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+        }
+
+        .theme-toggle:hover {
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+        }
+
+        [data-theme="dark"] body {
+            background: #111827;
+            color: #F9FAFB;
+        }
+
+        [data-theme="dark"] .test-section {
+            background: rgba(30, 41, 59, 0.9);
+        }
+
+        [data-theme="dark"] .icon-demo {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        [data-theme="dark"] .nav-demo {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        [data-theme="dark"] .theme-toggle {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: rgba(148, 163, 184, 0.3);
+            color: #F9FAFB;
+        }
+
+        .responsive-test {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .size-demo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌗 切换主题</button>
+
+    <div class="container">
+        <h1>图标组件测试页面</h1>
+        <p class="subtitle">T7 导航图标定义 - 验证图标编码、主题适配和响应式显示</p>
+
+        <div class="test-section">
+            <h2 class="section-title">🔧 管理员图标 - 蓝绿主题</h2>
+            <div class="test-grid">
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--admin">OV</span>
+                    <div class="icon-label">工作区概览</div>
+                    <div class="icon-code">OV</div>
+                </div>
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--admin">SV</span>
+                    <div class="icon-label">服务器群组</div>
+                    <div class="icon-code">SV</div>
+                </div>
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--admin">US</span>
+                    <div class="icon-label">用户与权限</div>
+                    <div class="icon-code">US</div>
+                </div>
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--admin">AU</span>
+                    <div class="icon-label">审计记录</div>
+                    <div class="icon-code">AU</div>
+                </div>
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--admin">AL</span>
+                    <div class="icon-label">告警配置</div>
+                    <div class="icon-code">AL</div>
+                </div>
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--admin">SC</span>
+                    <div class="icon-label">系统配置</div>
+                    <div class="icon-code">SC</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="section-title">💻 开发者图标 - 紫蓝主题</h2>
+            <div class="test-grid">
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--developer">AP</span>
+                    <div class="icon-label">应用总览</div>
+                    <div class="icon-code">AP</div>
+                </div>
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--developer">DP</span>
+                    <div class="icon-label">部署流水线</div>
+                    <div class="icon-code">DP</div>
+                </div>
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--developer">LG</span>
+                    <div class="icon-label">日志中心</div>
+                    <div class="icon-code">LG</div>
+                </div>
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--developer">EV</span>
+                    <div class="icon-label">环境面板</div>
+                    <div class="icon-code">EV</div>
+                </div>
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--developer">IN</span>
+                    <div class="icon-label">集成管理</div>
+                    <div class="icon-code">IN</div>
+                </div>
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--developer">PF</span>
+                    <div class="icon-label">个人档案</div>
+                    <div class="icon-code">PF</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="section-title">📏 尺寸变体测试</h2>
+            <div class="responsive-test">
+                <div class="size-demo">
+                    <span class="nav-icon nav-icon--small nav-icon--admin">DC</span>
+                    <div class="icon-code">Small (24px)</div>
+                </div>
+                <div class="size-demo">
+                    <span class="nav-icon nav-icon--admin">OV</span>
+                    <div class="icon-code">Medium (28px)</div>
+                </div>
+                <div class="size-demo">
+                    <span class="nav-icon nav-icon--large nav-icon--admin">SV</span>
+                    <div class="icon-code">Large (32px)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="section-title">🎯 交互状态测试</h2>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div class="nav-demo">
+                    <span class="nav-icon nav-icon--admin">OV</span>
+                    <span>默认状态 - 管理员主题</span>
+                </div>
+                <div class="nav-demo">
+                    <span class="nav-icon nav-icon--admin nav-icon--selected">SV</span>
+                    <span>选中状态 - 带阴影突出</span>
+                </div>
+                <div class="nav-demo nav-demo--developer">
+                    <span class="nav-icon nav-icon--developer">AP</span>
+                    <span>Hover 状态 - 开发者主题（悬停查看）</span>
+                </div>
+                <div class="nav-demo">
+                    <div class="nav-icon-with-badge">
+                        <span class="nav-icon nav-icon--admin">AL</span>
+                        <span class="nav-icon-badge">3</span>
+                    </div>
+                    <span>带数字徽章 - 告警提示</span>
+                </div>
+                <div class="nav-demo">
+                    <div class="nav-icon-with-badge">
+                        <span class="nav-icon nav-icon--developer">DP</span>
+                        <span class="nav-icon-badge nav-icon-badge--dot"></span>
+                    </div>
+                    <span>带圆点徽章 - 新消息提示</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="section-title">🔗 底部链接图标</h2>
+            <div class="test-grid">
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--small">DC</span>
+                    <div class="icon-label">文档中心</div>
+                    <div class="icon-code">DC</div>
+                </div>
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--small">SP</span>
+                    <div class="icon-label">支持服务</div>
+                    <div class="icon-code">SP</div>
+                </div>
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--small">API</span>
+                    <div class="icon-label">API 文档</div>
+                    <div class="icon-code">API</div>
+                </div>
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--small">FB</span>
+                    <div class="icon-label">意见反馈</div>
+                    <div class="icon-code">FB</div>
+                </div>
+                <div class="icon-demo">
+                    <span class="nav-icon nav-icon--small">CI</span>
+                    <div class="icon-label">CI 状态</div>
+                    <div class="icon-code">CI</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="section-title">📱 响应式测试</h2>
+            <p style="margin-bottom: 1rem; color: rgba(15, 23, 42, 0.6);">
+                调整浏览器窗口大小或查看移动设备上的显示效果。图标会根据屏幕尺寸自动调整大小。
+            </p>
+            <div class="responsive-test">
+                <span class="nav-icon nav-icon--admin">OV</span>
+                <span class="nav-icon nav-icon--developer">AP</span>
+                <span class="nav-icon nav-icon--admin nav-icon--selected">SV</span>
+                <span class="nav-icon nav-icon--developer nav-icon--selected">DP</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="section-title">♿ 无障碍测试</h2>
+            <p style="margin-bottom: 1rem; color: rgba(15, 23, 42, 0.6);">
+                所有图标均支持键盘导航和屏幕阅读器。在高对比度模式下会自动添加边框。
+            </p>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <button style="background: none; border: 1px solid rgba(15, 23, 42, 0.2); padding: 0.5rem; border-radius: 8px; cursor: pointer;"
+                        onclick="this.focus()">
+                    <span class="nav-icon nav-icon--admin">OV</span>
+                </button>
+                <span>← 点击测试键盘焦点效果</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+
+            const button = document.querySelector('.theme-toggle');
+            button.textContent = newTheme === 'dark' ? '☀️ 浅色模式' : '🌗 暗色模式';
+        }
+
+        // 模拟悬停效果演示
+        document.addEventListener('DOMContentLoaded', function() {
+            const navDemos = document.querySelectorAll('.nav-demo');
+            navDemos.forEach(demo => {
+                demo.addEventListener('mouseenter', function() {
+                    const icon = this.querySelector('.nav-icon');
+                    if (icon && !icon.classList.contains('nav-icon--selected')) {
+                        icon.style.transform = 'translateY(-1px)';
+                    }
+                });
+
+                demo.addEventListener('mouseleave', function() {
+                    const icon = this.querySelector('.nav-icon');
+                    if (icon) {
+                        icon.style.transform = '';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

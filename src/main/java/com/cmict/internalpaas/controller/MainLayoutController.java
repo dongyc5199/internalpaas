@@ -199,20 +199,8 @@ public class MainLayoutController {
                         .items(Arrays.asList(
                             createMenuItem("工作区概览", "overview", "overview", "OV", true),
                             createMenuItem("服务器群组", "servers", "servers", "SV", false),
-                            createMenuItem("应用发布", "applications", "applications", "AP", false),
                             createMenuItem("用户与权限", "users", "users", "US", false),
-                            createMenuItem("告警中心", "alerts", "alerts", "AL", false),
-                            createMenuItem("系统设置", "settings", "settings", "ST", false)
-                        ))
-                        .build()
-                );
-                sections.add(
-                    NavigationSectionDto.builder()
-                        .title("运维工具")
-                        .items(Arrays.asList(
-                            createMenuItem("实时监控", "monitoring", "monitoring", "MO", false),
-                            createMenuItem("批量任务", "tasks", "tasks", "TK", false),
-                            createMenuItem("运营报表", "reports", "reports", "RP", false)
+                            createMenuItem("系统设置", "settings", "settings", "SC", false)
                         ))
                         .build()
                 );

@@ -15,10 +15,24 @@
     <link rel="stylesheet" href="/css/components/navigation.css">
     <link rel="stylesheet" href="/css/components/buttons.css">
     <link rel="stylesheet" href="/css/components/cards.css">
+    <link rel="stylesheet" href="/css/icon-components.css">
     <link rel="stylesheet" href="/css/responsive.css">
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <style>
+        /* 统一去掉所有按钮和链接的焦点蓝框 */
+        *:focus,
+        *:focus-visible {
+            outline: none !important;
+        }
+
+        button:focus,
+        button:focus-visible,
+        a:focus,
+        a:focus-visible {
+            box-shadow: none !important;
+        }
+
         :root {
             color-scheme: light dark;
             --shell-header-height: 64px;
@@ -197,14 +211,32 @@
             color: inherit;
         }
 
+        .toolbar-toggle {
+            width: auto;
+            min-width: 36px;
+            padding: 0 12px;
+            gap: 6px;
+        }
+
+        .theme-label {
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
         .toolbar-btn:hover,
-        .toolbar-toggle:hover,
-        .toolbar-btn:focus-visible,
-        .toolbar-toggle:focus-visible {
+        .toolbar-toggle:hover {
             transform: translateY(-1px);
             box-shadow: 0 6px 18px rgba(15,23,42,0.2);
             border-color: rgba(37,99,235,0.45);
+        }
+
+        .toolbar-btn:focus,
+        .toolbar-btn:focus-visible,
+        .toolbar-toggle:focus,
+        .toolbar-toggle:focus-visible {
             outline: none;
+            box-shadow: none;
         }
 
         .toolbar-toggle[data-state="on"] .toggle-indicator {
@@ -253,6 +285,61 @@
         .shell-sidebar[data-state="collapsed"] {
             width: var(--shell-sidebar-width-collapsed);
             padding: 32px 12px;
+        }
+
+        /* 暗色主题侧边栏 */
+        .shell-theme-dark .shell-sidebar {
+            background: linear-gradient(180deg, rgba(30,41,59,0.95), rgba(17,24,39,0.92));
+            border-right: 1px solid rgba(148,163,184,0.32);
+        }
+
+        .shell-theme-dark .shell-sidebar[data-variant="glass"] {
+            background: rgba(15,23,42,0.78);
+            border-color: rgba(148,163,184,0.24);
+        }
+
+        /* 暗色主题导航项 */
+        .shell-theme-dark .nav-item {
+            color: rgba(255,255,255,0.88);
+            border-color: rgba(148,163,184,0.18);
+        }
+
+        .shell-theme-dark .nav-item[data-state="active"],
+        .shell-theme-dark .nav-item:hover {
+            background: rgba(96,165,250,0.18);
+            border-color: rgba(96,165,250,0.35);
+            color: rgba(147,197,253,1);
+        }
+
+        /* 暗色主题侧边栏链接 */
+        .shell-theme-dark .sidebar-link {
+            color: rgba(255,255,255,0.75);
+        }
+
+        .shell-theme-dark .sidebar-link:hover {
+            background: rgba(96,165,250,0.18);
+            border-color: rgba(96,165,250,0.35);
+            color: rgba(147,197,253,1);
+        }
+
+        .shell-theme-dark .sidebar-link:focus,
+        .shell-theme-dark .sidebar-link:focus-visible {
+            outline: none;
+            box-shadow: none;
+        }
+
+        /* 暗色主题侧边栏元数据 */
+        .shell-theme-dark .sidebar-meta .meta-label {
+            color: rgba(255,255,255,0.65);
+        }
+
+        .shell-theme-dark .sidebar-meta .meta-value {
+            color: rgba(255,255,255,0.88);
+        }
+
+        /* 暗色主题侧边栏底部 */
+        .shell-theme-dark .sidebar-footer {
+            border-top: 1px solid rgba(148,163,184,0.24);
         }
 
         .sidebar-scroll {
@@ -320,19 +407,12 @@
             color: #1D4ED8;
         }
 
-        .nav-item-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 10px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(37,99,235,0.1);
-            color: rgba(37,99,235,0.9);
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 0.3px;
+        .nav-item:focus,
+        .nav-item:focus-visible {
+            outline: none;
+            box-shadow: none;
         }
+
 
         .sidebar-footer {
             padding-top: 18px;
@@ -356,12 +436,17 @@
             transition: 0.2s ease;
         }
 
-        .sidebar-link:hover,
-        .sidebar-link:focus-visible {
+        .sidebar-link:hover {
             background: rgba(37,99,235,0.12);
             border-color: rgba(37,99,235,0.28);
             color: #1D4ED8;
             outline: none;
+        }
+
+        .sidebar-link:focus,
+        .sidebar-link:focus-visible {
+            outline: none;
+            box-shadow: none;
         }
 
         .sidebar-link__icon {
@@ -669,12 +754,9 @@
                 <button type="button" class="toolbar-btn" data-action="open-notifications" title="通知中心">
                     &#128276;
                 </button>
-                <button type="button" class="toolbar-toggle" data-action="toggle-theme" aria-pressed="false" title="&#x5207;&#x6362;&#x4E3B;&#x9898;">
-
-                    <span aria-hidden="true">&#127769;</span>
-
-                    <span class="theme-label" aria-hidden="true">&#x6D45;&#x8272;</span>
-
+                <button type="button" class="toolbar-toggle" data-action="toggle-theme" aria-pressed="false" title="切换主题">
+                    <span aria-hidden="true">☀️</span>
+                    <span class="theme-label" aria-hidden="true">浅色</span>
                 </button>
                 <div class="language-switcher" data-action="toggle-language" role="button" aria-pressed="false">
                     <span th:text="${languageTag ?: 'ZH'}">ZH</span>
@@ -758,7 +840,9 @@
                                 th:classappend="${menu.active} ? ' active' : ''"
                                 th:attr="data-route=${menu.route}, data-page=${menu.page != null ? menu.page : menu.route}"
                                 th:aria-current="${menu.active} ? 'page' : null">
-                            <span class="nav-item-icon" th:text="${menu.badge}">OV</span>
+                            <span class="nav-icon nav-item__icon"
+                                  th:class="'nav-icon nav-item__icon ' + (${userType == 'admin'} ? 'nav-icon--admin' : 'nav-icon--developer')"
+                                  th:text="${menu.badge}">OV</span>
                             <span class="nav-item-label" th:text="${menu.label}">工作区概览</span>
                         </button>
                     </li>
@@ -770,7 +854,9 @@
             <a th:each="link : ${sidebarFooterLinks}"
                th:href="${link.href}"
                class="sidebar-link">
-                <span class="sidebar-link__icon" th:text="${link.badge}">DC</span>
+                <span class="nav-icon nav-icon--small footer-link__icon"
+                      th:class="'nav-icon nav-icon--small footer-link__icon ' + (${userType == 'admin'} ? 'nav-icon--admin' : 'nav-icon--developer')"
+                      th:text="${link.badge}">DC</span>
                 <span class="sidebar-link__label" th:text="${link.label}">文档中心</span>
             </a>
             <div class="sidebar-meta" th:each="meta : ${sidebarFooterMeta}">
@@ -838,6 +924,18 @@
                 const toggle = document.querySelector('[data-action="toggle-theme"]');
                 if (toggle) {
                     toggle.setAttribute('aria-pressed', String(currentTheme === 'dark'));
+
+                    // 更新图标和文字
+                    const icon = toggle.querySelector('span[aria-hidden="true"]:first-child');
+                    const label = toggle.querySelector('.theme-label');
+
+                    if (currentTheme === 'dark') {
+                        if (icon) icon.innerHTML = '🌙'; // 月亮图标
+                        if (label) label.innerHTML = '暗色';
+                    } else {
+                        if (icon) icon.innerHTML = '☀️'; // 太阳图标
+                        if (label) label.innerHTML = '浅色';
+                    }
                 }
 
                 if (persistPref) {
@@ -1072,13 +1170,55 @@
                     return;
                 }
 
-                on('spa:navigate', ({ route }) => {
+                const loadContent = async (route) => {
                     if (!route) {
                         return;
                     }
+
+                    outlet.innerHTML = '<div class="spa-placeholder">正在加载...</div>';
+
+                    try {
+                        let apiUrl = '';
+                        switch (route) {
+                            case 'overview':
+                                apiUrl = '/admin/api/dashboard-content';
+                                break;
+                            case 'servers':
+                                apiUrl = '/admin/api/servers-content';
+                                break;
+                            case 'users':
+                                apiUrl = '/admin/api/users-content';
+                                break;
+                            case 'settings':
+                                outlet.innerHTML = '<div class="spa-placeholder">系统设置功能开发中...</div>';
+                                return;
+                            default:
+                                outlet.innerHTML = '<div class="spa-placeholder">页面不存在</div>';
+                                return;
+                        }
+
+                        const response = await fetch(apiUrl);
+                        if (response.ok) {
+                            const content = await response.text();
+                            outlet.innerHTML = content;
+                        } else {
+                            outlet.innerHTML = '<div class="spa-placeholder">加载失败，请重试</div>';
+                        }
+                    } catch (error) {
+                        console.error('加载内容失败:', error);
+                        outlet.innerHTML = '<div class="spa-placeholder">网络错误，请重试</div>';
+                    }
+                };
+
+                on('spa:navigate', ({ route }) => {
                     outlet.dataset.route = route;
                     emit('spa:loading', { route });
+                    loadContent(route);
                 });
+
+                // 初始加载默认内容
+                const initialRoute = outlet.dataset.route || 'overview';
+                loadContent(initialRoute);
             }
 
             loadPreferences();
