@@ -651,7 +651,9 @@
 
                 <span class="shell-search-placeholder"
 
-                      th:utext="${commandHint != null ? commandHint : (workspaceRole == 'admin' ? #strings.unescapeHtml('&#x641C;&#x7D22;&#x670D;&#x52A1;&#x5668;&#x3001;&#x4EFB;&#x52A1;&#x6216;&#x547D;&#x4EE4;') : #strings.unescapeHtml('&#x641C;&#x7D22;&#x5E94;&#x7528;&#x3001;&#x670D;&#x52A1;&#x6216;&#x547D;&#x4EE4;'))}">
+                      th:with="defaultCommandHint=${workspaceRole == 'admin' ? '&#x641C;&#x7D22;&#x670D;&#x52A1;&#x5668;&#x3001;&#x4EFB;&#x52A1;&#x6216;&#x547D;&#x4EE4;' : '&#x641C;&#x7D22;&#x5E94;&#x7528;&#x3001;&#x670D;&#x52A1;&#x6216;&#x547D;&#x4EE4;'}"
+
+                      th:utext="${#ctx.containsVariable('commandHint') and commandHint != null ? commandHint : defaultCommandHint}">
 
                     &#x641C;&#x7D22;&#x5DE5;&#x4F5C;&#x533A;&#x3001;&#x670D;&#x52A1;&#x6216;&#x547D;&#x4EE4;
 
@@ -764,7 +766,7 @@
             </section>
         </div>
 
-        <div class="sidebar-footer" th:if="${sidebarFooterLinks or sidebarFooterMeta}">
+        <div class="sidebar-footer" th:if="${(sidebarFooterLinks != null and !#lists.isEmpty(sidebarFooterLinks)) or (sidebarFooterMeta != null and !#lists.isEmpty(sidebarFooterMeta))}">
             <a th:each="link : ${sidebarFooterLinks}"
                th:href="${link.href}"
                class="sidebar-link">
