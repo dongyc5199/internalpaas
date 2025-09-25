@@ -29,6 +29,7 @@ body.login-body {
     display: flex;
     align-items: stretch;
     justify-content: center;
+    overflow-x: hidden;
 }
 
 .login-background {
@@ -42,9 +43,9 @@ body.login-body {
 .login-shell {
     position: relative;
     z-index: 1;
-    width: 1120px;
-    max-width: calc(100% - 120px);
-    margin: 60px 0;
+    width: 100%;
+    max-width: min(1120px, calc(100vw - 40px));
+    margin: 60px auto;
     display: grid;
     grid-template-columns: 1fr 1fr;
     border-radius: 28px;
@@ -62,10 +63,11 @@ body.login-body {
 
 .sidebar-inner {
     height: 100%;
-    padding: 72px 64px 64px;
+    padding: 48px 40px 40px;
     display: flex;
     flex-direction: column;
-    gap: 36px;
+    gap: 28px;
+    min-width: 0;
 }
 
 .brand-lockup {
@@ -212,9 +214,10 @@ body.login-body {
 
 .login-panel {
     background: var(--login-surface);
-    padding: 72px 72px 64px;
+    padding: 48px 48px 40px;
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .panel-header {
@@ -657,8 +660,8 @@ body.login-body {
 /* Desktop-only layout helpers */
 @media (max-width: 1024px) {
     .login-shell {
-        max-width: calc(100% - 32px);
-        margin: 32px 0;
+        max-width: calc(100vw - 32px);
+        margin: 32px auto;
     }
 
     .login-sidebar {
@@ -666,7 +669,7 @@ body.login-body {
     }
 
     .login-panel {
-        padding: 56px;
+        padding: 40px 32px 36px;
     }
 
     .login-shell {
@@ -675,8 +678,13 @@ body.login-body {
 }
 
 @media (max-width: 768px) {
+    .login-shell {
+        max-width: calc(100vw - 24px);
+        margin: 20px auto;
+    }
+
     .login-panel {
-        padding: 44px 32px 40px;
+        padding: 32px 24px 28px;
     }
 
     .panel-badges {
@@ -689,7 +697,7 @@ body.login-body {
     }
 
     .form-meta {
-        margin-top: 24px;
+        margin-top: 20px;
     }
 
     .submit-btn {
@@ -703,12 +711,18 @@ body.login-body {
 }
 
 @media (max-width: 480px) {
+    .login-shell {
+        max-width: calc(100vw - 16px);
+        margin: 16px auto;
+        border-radius: 20px;
+    }
+
     .login-panel {
-        padding: 36px 24px 32px;
+        padding: 28px 20px 24px;
     }
 
     .panel-title {
-        font-size: 28px;
+        font-size: 24px;
     }
 
     .panel-caption {
@@ -717,9 +731,82 @@ body.login-body {
 
     .panel-badges {
         gap: 6px;
+        margin-top: 16px;
+    }
+
+    .panel-badge {
+        font-size: 11px;
+        padding: 5px 10px;
     }
 
     .submit-btn {
         padding: 14px 0;
+    }
+
+    .form-meta {
+        margin-top: 16px;
+    }
+
+    .panel-footer {
+        padding-top: 28px;
+    }
+}
+
+/* Additional responsive safeguards */
+* {
+    box-sizing: border-box;
+}
+
+.login-shell * {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.field-control input {
+    min-width: 0;
+}
+
+.panel-badges {
+    flex-wrap: wrap;
+}
+
+.form-assist {
+    align-items: flex-start;
+}
+
+@media (max-width: 380px) {
+    .login-shell {
+        max-width: calc(100vw - 12px);
+        margin: 12px auto;
+        border-radius: 16px;
+    }
+
+    .login-panel {
+        padding: 24px 16px 20px;
+    }
+
+    .panel-title {
+        font-size: 22px;
+        line-height: 1.2;
+    }
+
+    .panel-badges {
+        gap: 4px;
+        margin-top: 12px;
+    }
+
+    .panel-badge {
+        font-size: 10px;
+        padding: 4px 8px;
+    }
+
+    .form-assist {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+    }
+
+    .assist-links {
+        justify-content: center;
     }
 }

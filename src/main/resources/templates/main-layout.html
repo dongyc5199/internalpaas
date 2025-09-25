@@ -284,7 +284,214 @@
 
         .shell-sidebar[data-state="collapsed"] {
             width: var(--shell-sidebar-width-collapsed);
-            padding: 32px 12px;
+            padding: 24px 12px;
+            align-items: center;
+            overflow-x: hidden; /* 隐藏横向滚动条 */
+            overflow-y: auto; /* 保持纵向滚动 */
+        }
+
+        /* 折叠状态下隐藏导航项文本 */
+        .shell-sidebar[data-state="collapsed"] .nav-item-label {
+            display: none;
+        }
+
+        /* 折叠状态下调整导航项样式 */
+        .shell-sidebar[data-state="collapsed"] .nav-item {
+            width: 48px;
+            height: 48px;
+            padding: 0; /* 移除padding，让图标完全居中 */
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin: 0 auto 6px auto; /* 水平居中并保持垂直间距 */
+            display: flex;
+            border-radius: 12px;
+        }
+
+        .shell-sidebar[data-state="collapsed"] .nav-icon {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        /* 折叠状态下的活跃指示条 */
+        .shell-sidebar[data-state="collapsed"] .nav-item[data-state="active"]::before {
+            content: "";
+            position: absolute;
+            left: -16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 24px;
+            border-radius: 2px;
+            background: var(--shell-accent);
+            z-index: 10;
+        }
+
+        /* 开发者主题下的活跃指示条 */
+        .shell-sidebar[data-variant="developer"][data-state="collapsed"] .nav-item[data-state="active"]::before {
+            background: var(--shell-accent-dev);
+        }
+
+        /* 折叠状态下隐藏侧边栏滚动区域的文本内容 */
+        .shell-sidebar[data-state="collapsed"] .nav-section-title {
+            display: none;
+        }
+
+        /* 折叠状态下的底部链接 */
+        .shell-sidebar[data-state="collapsed"] .sidebar-link {
+            width: 48px;
+            height: 48px;
+            padding: 0; /* 移除padding，让图标完全居中 */
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 6px auto; /* 水平居中并保持垂直间距 */
+            display: flex;
+            border-radius: 12px;
+        }
+
+        .shell-sidebar[data-state="collapsed"] .sidebar-link__label {
+            display: none;
+        }
+
+        .shell-sidebar[data-state="collapsed"] .sidebar-link__icon {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        /* 折叠状态下隐藏底部元数据 */
+        .shell-sidebar[data-state="collapsed"] .sidebar-meta {
+            display: none;
+        }
+
+        /* 折叠状态下的悬浮提示样式 */
+        .nav-tooltip {
+            position: absolute;
+            left: calc(100% + 12px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            color: rgba(255, 255, 255, 0.95);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.3);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        .nav-tooltip::before {
+            content: "";
+            position: absolute;
+            left: -4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 8px;
+            background: rgba(15, 23, 42, 0.9);
+            rotate: 45deg;
+        }
+
+        .shell-sidebar[data-state="collapsed"] .nav-item:hover .nav-tooltip,
+        .shell-sidebar[data-state="collapsed"] .sidebar-link:hover .nav-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* 暗色主题下的悬浮提示 */
+        .shell-theme-dark .nav-tooltip {
+            background: rgba(30, 41, 59, 0.95);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .shell-theme-dark .nav-tooltip::before {
+            background: rgba(30, 41, 59, 0.95);
+        }
+
+        /* 侧边栏过渡动画 */
+        .sidebar-transitioning {
+            transition: width 0.3s ease, padding 0.3s ease !important;
+        }
+
+        .sidebar-transitioning * {
+            transition: opacity 0.2s ease, transform 0.2s ease, width 0.2s ease, height 0.2s ease !important;
+        }
+
+        /* 背景遮罩样式 */
+        .sidebar-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 1;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .sidebar-backdrop[data-state="visible"] {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* 响应式断点调整 */
+        @media (max-width: 1024px) {
+            .shell-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: var(--shell-header-height) 1fr;
+            }
+
+            .shell-sidebar {
+                position: fixed;
+                top: var(--shell-header-height);
+                left: 0;
+                height: calc(100vh - var(--shell-header-height));
+                z-index: 2;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .shell-sidebar[data-state="expanded"] {
+                transform: translateX(0);
+            }
+
+            .shell-content {
+                grid-column: 1 / -1;
+                grid-row: 2 / -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .shell-header {
+                padding: 0 16px;
+            }
+
+            .brand-area {
+                min-width: 200px;
+            }
+
+            .shell-search {
+                max-width: 300px;
+            }
         }
 
         /* 暗色主题侧边栏 */
@@ -345,7 +552,15 @@
         .sidebar-scroll {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden; /* 确保没有横向滚动 */
             padding-right: 6px;
+        }
+
+        /* 折叠状态下的滚动区域 */
+        .shell-sidebar[data-state="collapsed"] .sidebar-scroll {
+            padding-right: 0;
+            overflow-x: hidden;
+            width: 100%;
         }
 
         .sidebar-scroll::-webkit-scrollbar {
@@ -355,6 +570,11 @@
         .sidebar-scroll::-webkit-scrollbar-thumb {
             background: var(--shell-scrollbar);
             border-radius: 999px;
+        }
+
+        /* 折叠状态下隐藏滚动条 */
+        .shell-sidebar[data-state="collapsed"] .sidebar-scroll::-webkit-scrollbar {
+            width: 0;
         }
 
         .nav-section {
@@ -844,6 +1064,7 @@
                                   th:class="'nav-icon nav-item__icon ' + (${userType == 'admin'} ? 'nav-icon--admin' : 'nav-icon--developer')"
                                   th:text="${menu.badge}">OV</span>
                             <span class="nav-item-label" th:text="${menu.label}">工作区概览</span>
+                            <span class="nav-tooltip" th:text="${menu.label}">工作区概览</span>
                         </button>
                     </li>
                 </ul>
@@ -858,6 +1079,7 @@
                       th:class="'nav-icon nav-icon--small footer-link__icon ' + (${userType == 'admin'} ? 'nav-icon--admin' : 'nav-icon--developer')"
                       th:text="${link.badge}">DC</span>
                 <span class="sidebar-link__label" th:text="${link.label}">文档中心</span>
+                <span class="nav-tooltip" th:text="${link.label}">文档中心</span>
             </a>
             <div class="sidebar-meta" th:each="meta : ${sidebarFooterMeta}">
                 <span class="meta-label" th:text="${meta.label}">当前环境</span>
@@ -948,17 +1170,32 @@
             function applySidebarState(state, persistPref = true) {
                 sidebarState = state === 'collapsed' ? 'collapsed' : 'expanded';
                 shellRoot.dataset.sidebarState = sidebarState;
+
                 if (sidebar) {
                     sidebar.setAttribute('data-state', sidebarState);
+                    // 添加动画类以确保平滑过渡
+                    sidebar.classList.add('sidebar-transitioning');
+
+                    // 在动画完成后移除过渡类
+                    setTimeout(() => {
+                        sidebar.classList.remove('sidebar-transitioning');
+                    }, 300);
                 }
+
                 if (backdrop) {
                     const shouldShow = sidebarState === 'expanded' && window.innerWidth <= 1024;
                     backdrop.setAttribute('data-state', shouldShow ? 'visible' : 'hidden');
                 }
+
                 const toggle = document.querySelector('[data-action="toggle-sidebar"]');
                 if (toggle) {
                     toggle.setAttribute('aria-expanded', String(sidebarState === 'expanded'));
+                    // 更新按钮图标
+                    const isCollapsed = sidebarState === 'collapsed';
+                    toggle.innerHTML = isCollapsed ? '&#9776;' : '&#10005;';
+                    toggle.setAttribute('title', isCollapsed ? '展开侧边栏' : '收起侧边栏');
                 }
+
                 if (persistPref) {
                     persist(SIDEBAR_KEY, sidebarState);
                 }
@@ -1221,10 +1458,36 @@
                 loadContent(initialRoute);
             }
 
+            function initResponsiveHandling() {
+                const handleResize = () => {
+                    const isMobile = window.innerWidth <= 1024;
+
+                    if (backdrop) {
+                        const shouldShow = sidebarState === 'expanded' && isMobile;
+                        backdrop.setAttribute('data-state', shouldShow ? 'visible' : 'hidden');
+                    }
+
+                    // 在桌面端自动展开侧边栏，移动端自动收起
+                    if (!isMobile && sidebarState === 'collapsed' && load(SIDEBAR_KEY) !== 'collapsed') {
+                        applySidebarState('expanded', false);
+                    }
+                };
+
+                let resizeTimer;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(handleResize, 100);
+                });
+
+                // 初始化时执行一次
+                handleResize();
+            }
+
             loadPreferences();
             initHeader();
             initSidebar();
             initSpaOutlet();
+            initResponsiveHandling();
             emit('app:ready', { theme: currentTheme, sidebar: sidebarState });
 
             window.AppShell = {

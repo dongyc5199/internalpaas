@@ -20,6 +20,22 @@ public class AdminDashboardDto {
     private double memoryUsage;
     private double diskUsage;
     
+    // 应用统计
+    private long totalApplications;
+    private long runningApplications;
+    private long stoppedApplications;
+    private long errorApplications;
+
+    // 告警统计
+    private long totalAlerts;
+    private long criticalAlerts;
+    private long warningAlerts;
+    private long activeThresholds;
+
+    // 系统健康度
+    private double systemHealthScore;
+    private String systemHealthStatus;
+
     // 最近活动记录
     private List<ActivityRecord> recentActivities;
     
@@ -118,6 +134,89 @@ public class AdminDashboardDto {
     
     public void setRecentActivities(List<ActivityRecord> recentActivities) {
         this.recentActivities = recentActivities;
+    }
+
+    // 应用统计的getter和setter方法
+    public long getTotalApplications() {
+        return totalApplications;
+    }
+
+    public void setTotalApplications(long totalApplications) {
+        this.totalApplications = totalApplications;
+    }
+
+    public long getRunningApplications() {
+        return runningApplications;
+    }
+
+    public void setRunningApplications(long runningApplications) {
+        this.runningApplications = runningApplications;
+    }
+
+    public long getStoppedApplications() {
+        return stoppedApplications;
+    }
+
+    public void setStoppedApplications(long stoppedApplications) {
+        this.stoppedApplications = stoppedApplications;
+    }
+
+    public long getErrorApplications() {
+        return errorApplications;
+    }
+
+    public void setErrorApplications(long errorApplications) {
+        this.errorApplications = errorApplications;
+    }
+
+    // 告警统计的getter和setter方法
+    public long getTotalAlerts() {
+        return totalAlerts;
+    }
+
+    public void setTotalAlerts(long totalAlerts) {
+        this.totalAlerts = totalAlerts;
+    }
+
+    public long getCriticalAlerts() {
+        return criticalAlerts;
+    }
+
+    public void setCriticalAlerts(long criticalAlerts) {
+        this.criticalAlerts = criticalAlerts;
+    }
+
+    public long getWarningAlerts() {
+        return warningAlerts;
+    }
+
+    public void setWarningAlerts(long warningAlerts) {
+        this.warningAlerts = warningAlerts;
+    }
+
+    public long getActiveThresholds() {
+        return activeThresholds;
+    }
+
+    public void setActiveThresholds(long activeThresholds) {
+        this.activeThresholds = activeThresholds;
+    }
+
+    // 系统健康度的getter和setter方法
+    public double getSystemHealthScore() {
+        return systemHealthScore;
+    }
+
+    public void setSystemHealthScore(double systemHealthScore) {
+        this.systemHealthScore = systemHealthScore;
+    }
+
+    public String getSystemHealthStatus() {
+        return systemHealthStatus;
+    }
+
+    public void setSystemHealthStatus(String systemHealthStatus) {
+        this.systemHealthStatus = systemHealthStatus;
     }
     
     // 内部类：活动记录
