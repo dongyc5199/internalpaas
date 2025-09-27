@@ -40,6 +40,15 @@ public class AdminDashboardController {
     }
 
     /**
+     * 返回管理员仪表板HTML内容片段
+     * 用于SPA路由系统加载
+     */
+    @GetMapping("/content")
+    public String adminDashboardContent() {
+        return "admin/admin-dashboard-content :: admin-dashboard-content";
+    }
+
+    /**
      * 获取仪表板总览数据 (JSON)
      * 遵循现有API路径规范: /admin/dashboard/overview
      */
@@ -49,6 +58,22 @@ public class AdminDashboardController {
         try {
             AdminDashboardDto dashboardData = dashboardService.getDashboardOverview();
             return ResponseEntity.ok(dashboardData);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * 获取服务器摘要数据 (JSON)
+     * 遵循现有API风格: /admin/dashboard/servers/summary
+     */
+    @GetMapping("/servers/summary")
+    @ResponseBody
+    public ResponseEntity<?> getServersSummary() {
+        try {
+            // 调用现有的服务器服务获取摘要数据
+            var serversSummary = dashboardService.getServersSummary();
+            return ResponseEntity.ok(serversSummary);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }

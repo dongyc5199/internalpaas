@@ -571,4 +571,115 @@ public class DashboardService {
             return null;
         }
     }
+
+
+    /**
+     * 获取服务器摘要列表
+     * 用于仪表板服务器监控面板显示
+     */
+    public List<ServerSummary> getServersSummary() {
+        List<ServerSummary> summaries = new java.util.ArrayList<>();
+
+        try {
+            List<Server> servers = serverRepository.findAll();
+
+            for (Server server : servers) {
+                ServerSummary summary = new ServerSummary();
+                summary.setId(server.getId());
+                summary.setName(server.getName());
+                summary.setHost(server.getHostname());
+                summary.setPort(server.getPort());
+                summary.setStatus(determineServerStatus(server));
+
+                // 获取服务器监控指标
+                try {
+                    ServerMetrics metrics = monitoringService.getLatestMetrics(server.getId());
+                    if (metrics != null) {
+                        summary.setCpuUsage(metrics.getCpuUsage());
+                        summary.setMemoryUsage(metrics.getMemoryUsage());
+                        summary.setDiskUsage(metrics.getDiskUsage());
+                    }
+                } catch (Exception e) {
+                    // 监控数据获取失败，使用默认值
+                    summary.setCpuUsage(0.0);
+                    summary.setMemoryUsage(0.0);
+                    summary.setDiskUsage(0.0);
+                }
+
+                summaries.add(summary);
+            }
+
+        } catch (Exception e) {
+            // 返回空列表而不是抛出异常
+            return new java.util.ArrayList<>();
+        }
+
+        return summaries;
+    }
+
+
+    /**
+     * 确定服务器状态
+     */
+    private String determineServerStatus(Server server) {
+        try {
+            // 尝试获取最新的监控数据来判断服务器状态
+            ServerMetrics metrics = monitoringService.getLatestMetrics(server.getId());
+            if (metrics == null) {
+                return "offline";
+            }
+
+            // 根据监控指标判断状态
+            Double cpuUsage = metrics.getCpuUsage();
+            Double memoryUsage = metrics.getMemoryUsage();
+
+            if (cpuUsage != null && cpuUsage > 90 || memoryUsage != null && memoryUsage > 90) {
+                return "warning";
+            }
+
+            return "online";
+        } catch (Exception e) {
+            return "offline";
+        }
+    }
+
+    /**
+     * 服务器摘要数据类
+     * 内部类，用于传输服务器基本信息和监控数据
+     */
+    public static class ServerSummary {
+        private Long id;
+        private String name;
+        private String host;
+        private Integer port;
+        private String status;
+        private Double cpuUsage;
+        private Double memoryUsage;
+        private Double diskUsage;
+
+        // Getters and Setters
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+
+        public String getHost() { return host; }
+        public void setHost(String host) { this.host = host; }
+
+        public Integer getPort() { return port; }
+        public void setPort(Integer port) { this.port = port; }
+
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
+
+        public Double getCpuUsage() { return cpuUsage; }
+        public void setCpuUsage(Double cpuUsage) { this.cpuUsage = cpuUsage; }
+
+        public Double getMemoryUsage() { return memoryUsage; }
+        public void setMemoryUsage(Double memoryUsage) { this.memoryUsage = memoryUsage; }
+
+        public Double getDiskUsage() { return diskUsage; }
+        public void setDiskUsage(Double diskUsage) { this.diskUsage = diskUsage; }
+    }
 }

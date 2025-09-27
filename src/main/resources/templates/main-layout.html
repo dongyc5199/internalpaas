@@ -15,8 +15,11 @@
     <link rel="stylesheet" href="/css/components/navigation.css">
     <link rel="stylesheet" href="/css/components/buttons.css">
     <link rel="stylesheet" href="/css/components/cards.css">
+    <link rel="stylesheet" href="/css/fontawesome-local.css">
     <link rel="stylesheet" href="/css/icon-components.css">
     <link rel="stylesheet" href="/css/responsive.css">
+    <link rel="stylesheet" href="/css/admin-dashboard.css">
+    <link rel="stylesheet" href="/css/content-framework.css">
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <style>
@@ -63,7 +66,8 @@
 
         body.layout-shell {
             margin: 0;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden; /* 防止body滚动 */
             background: var(--shell-background);
             color: var(--shell-text-primary);
             font-family: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", sans-serif;
@@ -74,7 +78,8 @@
             display: grid;
             grid-template-columns: var(--shell-sidebar-width) 1fr;
             grid-template-rows: var(--shell-header-height) 1fr;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden; /* 防止整个页面滚动 */
         }
 
         .shell-grid[data-sidebar-state="collapsed"] {
@@ -264,116 +269,206 @@
             background: rgba(15,23,42,0.12);
         }
 
-        .shell-sidebar {
+        .sidebar {
             grid-row: 2 / -1;
-            background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(245,247,255,0.92));
-            border-right: 1px solid rgba(255,255,255,0.65);
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 24px 44px rgba(15, 23, 42, 0.14);
             display: flex;
             flex-direction: column;
-            padding: 24px 16px;
-            gap: 24px;
+            overflow: hidden;
+            overflow-x: hidden;
+            transition: all var(--transition-slow);
             position: relative;
             z-index: 2;
-            transition: transform 0.3s ease;
         }
 
-        .shell-sidebar[data-variant="glass"] {
+        .sidebar-content {
+            flex: 1;
+            padding: 18px 16px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .sidebar-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar-content::-webkit-scrollbar-thumb {
+            background: rgba(15, 23, 42, 0.2);
+            border-radius: 3px;
+        }
+
+        .sidebar-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        /* 折叠状态下隐藏滚动条 */
+        .sidebar[data-state="collapsed"] .sidebar-content::-webkit-scrollbar {
+            width: 0;
+        }
+
+        .menu-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-y: auto;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            color: rgba(15, 23, 42, 0.78);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .menu-item .meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .menu-item .text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .menu-item.selected {
+            background: rgba(47,155,255,0.15);
+            position: relative;
+        }
+
+        .menu-item.selected::before {
+            content: "";
+            position: absolute;
+            left: -16px;
+            top: 10px;
+            bottom: 10px;
+            width: 4px;
+            border-radius: 4px;
+            background: var(--primary-gradient);
+        }
+
+        .menu-item:hover:not(.selected) {
+            background: rgba(47,155,255,0.05);
+        }
+
+        .menu-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 10px;
+            background: rgba(59,130,246,0.12);
+            color: rgba(59,130,246,0.95);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge {
+            min-width: 18px;
+            height: 18px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, 0.12);
+            color: rgba(59, 130, 246, 1);
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 折叠状态样式 */
+        .sidebar[data-state="collapsed"] {
+            width: 72px;
+        }
+
+        .sidebar[data-state="collapsed"] .sidebar-content {
+            align-items: center;
+        }
+
+        .sidebar[data-state="collapsed"] .menu-item .text,
+        .sidebar[data-state="collapsed"] .badge,
+        .sidebar[data-state="collapsed"] .nav-tooltip {
+            display: none;
+        }
+
+        .sidebar[data-state="collapsed"] .menu-item {
+            width: 48px;
+            height: 48px;
+            padding: 12px;
+            justify-content: center;
+        }
+
+        .sidebar[data-state="collapsed"] .menu-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Footer block样式 */
+        .footer-block {
+            height: 175px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.04);
+        }
+
+        .footer-block .pill {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            color: rgba(15, 23, 42, 0.65);
+            background: rgba(255, 255, 255, 0.72);
+        }
+
+        .footer-block .link {
+            font-size: 12px;
+            color: rgba(59, 130, 246, 0.85);
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .footer-block .link:hover {
+            text-decoration: underline;
+        }
+
+        /* 折叠状态下隐藏footer-block */
+        .sidebar[data-state="collapsed"] .footer-block {
+            display: none;
+        }
+
+        .sidebar[data-variant="glass"] {
             background: rgba(20,24,46,0.38);
             border-color: rgba(255,255,255,0.18);
         }
 
-        .shell-sidebar[data-state="collapsed"] {
-            width: var(--shell-sidebar-width-collapsed);
-            padding: 24px 12px;
-            align-items: center;
-            overflow-x: hidden; /* 隐藏横向滚动条 */
-            overflow-y: auto; /* 保持纵向滚动 */
-        }
 
-        /* 折叠状态下隐藏导航项文本 */
-        .shell-sidebar[data-state="collapsed"] .nav-item-label {
-            display: none;
-        }
 
-        /* 折叠状态下调整导航项样式 */
-        .shell-sidebar[data-state="collapsed"] .nav-item {
-            width: 48px;
-            height: 48px;
-            padding: 0; /* 移除padding，让图标完全居中 */
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            margin: 0 auto 6px auto; /* 水平居中并保持垂直间距 */
-            display: flex;
-            border-radius: 12px;
-        }
 
-        .shell-sidebar[data-state="collapsed"] .nav-icon {
-            width: 24px;
-            height: 24px;
-            min-width: 24px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-        }
 
-        /* 折叠状态下的活跃指示条 */
-        .shell-sidebar[data-state="collapsed"] .nav-item[data-state="active"]::before {
-            content: "";
-            position: absolute;
-            left: -16px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 4px;
-            height: 24px;
-            border-radius: 2px;
-            background: var(--shell-accent);
-            z-index: 10;
-        }
 
-        /* 开发者主题下的活跃指示条 */
-        .shell-sidebar[data-variant="developer"][data-state="collapsed"] .nav-item[data-state="active"]::before {
-            background: var(--shell-accent-dev);
-        }
-
-        /* 折叠状态下隐藏侧边栏滚动区域的文本内容 */
-        .shell-sidebar[data-state="collapsed"] .nav-section-title {
-            display: none;
-        }
-
-        /* 折叠状态下的底部链接 */
-        .shell-sidebar[data-state="collapsed"] .sidebar-link {
-            width: 48px;
-            height: 48px;
-            padding: 0; /* 移除padding，让图标完全居中 */
-            justify-content: center;
-            align-items: center;
-            margin: 0 auto 6px auto; /* 水平居中并保持垂直间距 */
-            display: flex;
-            border-radius: 12px;
-        }
-
-        .shell-sidebar[data-state="collapsed"] .sidebar-link__label {
-            display: none;
-        }
-
-        .shell-sidebar[data-state="collapsed"] .sidebar-link__icon {
-            width: 24px;
-            height: 24px;
-            min-width: 24px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-        }
-
-        /* 折叠状态下隐藏底部元数据 */
-        .shell-sidebar[data-state="collapsed"] .sidebar-meta {
-            display: none;
-        }
 
         /* 折叠状态下的悬浮提示样式 */
         .nav-tooltip {
@@ -408,11 +503,6 @@
             rotate: 45deg;
         }
 
-        .shell-sidebar[data-state="collapsed"] .nav-item:hover .nav-tooltip,
-        .shell-sidebar[data-state="collapsed"] .sidebar-link:hover .nav-tooltip {
-            opacity: 1;
-            visibility: visible;
-        }
 
         /* 暗色主题下的悬浮提示 */
         .shell-theme-dark .nav-tooltip {
@@ -460,7 +550,7 @@
                 grid-template-rows: var(--shell-header-height) 1fr;
             }
 
-            .shell-sidebar {
+            .sidebar {
                 position: fixed;
                 top: var(--shell-header-height);
                 left: 0;
@@ -470,11 +560,11 @@
                 transition: transform 0.3s ease;
             }
 
-            .shell-sidebar[data-state="expanded"] {
+            .sidebar[data-state="expanded"] {
                 transform: translateX(0);
             }
 
-            .shell-content {
+            .content {
                 grid-column: 1 / -1;
                 grid-row: 2 / -1;
             }
@@ -492,228 +582,110 @@
             .shell-search {
                 max-width: 300px;
             }
+
+            /* 移动端内容区域样式 */
+            .content {
+                padding: 16px;
+                gap: 16px;
+            }
         }
 
         /* 暗色主题侧边栏 */
-        .shell-theme-dark .shell-sidebar {
+        .shell-theme-dark .sidebar {
             background: linear-gradient(180deg, rgba(30,41,59,0.95), rgba(17,24,39,0.92));
             border-right: 1px solid rgba(148,163,184,0.32);
         }
 
-        .shell-theme-dark .shell-sidebar[data-variant="glass"] {
+        .shell-theme-dark .sidebar[data-variant="glass"] {
             background: rgba(15,23,42,0.78);
             border-color: rgba(148,163,184,0.24);
         }
 
-        /* 暗色主题导航项 */
-        .shell-theme-dark .nav-item {
-            color: rgba(255,255,255,0.88);
-            border-color: rgba(148,163,184,0.18);
-        }
-
-        .shell-theme-dark .nav-item[data-state="active"],
-        .shell-theme-dark .nav-item:hover {
-            background: rgba(96,165,250,0.18);
-            border-color: rgba(96,165,250,0.35);
-            color: rgba(147,197,253,1);
-        }
-
-        /* 暗色主题侧边栏链接 */
-        .shell-theme-dark .sidebar-link {
-            color: rgba(255,255,255,0.75);
-        }
-
-        .shell-theme-dark .sidebar-link:hover {
-            background: rgba(96,165,250,0.18);
-            border-color: rgba(96,165,250,0.35);
-            color: rgba(147,197,253,1);
-        }
-
-        .shell-theme-dark .sidebar-link:focus,
-        .shell-theme-dark .sidebar-link:focus-visible {
-            outline: none;
-            box-shadow: none;
-        }
-
-        /* 暗色主题侧边栏元数据 */
-        .shell-theme-dark .sidebar-meta .meta-label {
-            color: rgba(255,255,255,0.65);
-        }
-
-        .shell-theme-dark .sidebar-meta .meta-value {
+        /* 暗色主题菜单项 */
+        .shell-theme-dark .menu-item {
             color: rgba(255,255,255,0.88);
         }
 
-        /* 暗色主题侧边栏底部 */
-        .shell-theme-dark .sidebar-footer {
-            border-top: 1px solid rgba(148,163,184,0.24);
+        .shell-theme-dark .menu-item.selected {
+            background: rgba(96,165,250,0.18);
+            color: rgba(147,197,253,1);
         }
 
-        .sidebar-scroll {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden; /* 确保没有横向滚动 */
-            padding-right: 6px;
+        .shell-theme-dark .menu-item:hover:not(.selected) {
+            background: rgba(96,165,250,0.08);
         }
 
-        /* 折叠状态下的滚动区域 */
-        .shell-sidebar[data-state="collapsed"] .sidebar-scroll {
-            padding-right: 0;
-            overflow-x: hidden;
-            width: 100%;
+        .shell-theme-dark .menu-icon {
+            background: rgba(96,165,250,0.15);
+            color: rgba(147,197,253,0.9);
         }
 
-        .sidebar-scroll::-webkit-scrollbar {
-            width: 6px;
+        /* 暗色主题badge */
+        .shell-theme-dark .badge {
+            background: rgba(96,165,250,0.15);
+            color: rgba(147,197,253,0.95);
         }
 
-        .sidebar-scroll::-webkit-scrollbar-thumb {
-            background: var(--shell-scrollbar);
-            border-radius: 999px;
+        /* 暗色主题footer-block */
+        .shell-theme-dark .footer-block {
+            background: rgba(15, 23, 42, 0.15);
         }
 
-        /* 折叠状态下隐藏滚动条 */
-        .shell-sidebar[data-state="collapsed"] .sidebar-scroll::-webkit-scrollbar {
-            width: 0;
+        .shell-theme-dark .footer-block .pill {
+            background: rgba(15, 23, 42, 0.25);
+            color: rgba(255, 255, 255, 0.75);
         }
 
-        .nav-section {
-            margin-bottom: 28px;
-        }
-
-        .nav-section:last-of-type {
-            margin-bottom: 0;
-        }
-
-        .nav-section-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--shell-text-secondary);
-            letter-spacing: 0.6px;
-            text-transform: uppercase;
-            padding: 0 8px;
-            margin-bottom: 12px;
-        }
-
-        .nav-list {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-
-        .nav-item {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 14px;
-            border-radius: 14px;
-            background: transparent;
-            border: 1px solid transparent;
-            color: inherit;
-            cursor: pointer;
-            transition: 0.2s ease;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .nav-item[data-state="active"],
-        .nav-item:hover {
-            background: rgba(37,99,235,0.12);
-            border-color: rgba(37,99,235,0.28);
-            color: #1D4ED8;
-        }
-
-        .nav-item:focus,
-        .nav-item:focus-visible {
-            outline: none;
-            box-shadow: none;
+        .shell-theme-dark .footer-block .link {
+            color: rgba(147, 197, 253, 0.85);
         }
 
 
-        .sidebar-footer {
-            padding-top: 18px;
-            border-top: 1px solid rgba(15,23,42,0.08);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
 
-        .sidebar-link {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            border-radius: 12px;
-            background: transparent;
-            border: 1px solid transparent;
-            color: inherit;
-            text-decoration: none;
-            font-size: 13px;
-            transition: 0.2s ease;
-        }
 
-        .sidebar-link:hover {
-            background: rgba(37,99,235,0.12);
-            border-color: rgba(37,99,235,0.28);
-            color: #1D4ED8;
-            outline: none;
-        }
 
-        .sidebar-link:focus,
-        .sidebar-link:focus-visible {
-            outline: none;
-            box-shadow: none;
-        }
 
-        .sidebar-link__icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 28px;
-            height: 28px;
-            border-radius: 10px;
-            background: rgba(37,99,235,0.1);
-            color: rgba(37,99,235,0.9);
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-        }
 
-        .sidebar-link__label {
-            flex: 1;
-        }
 
-        .sidebar-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 4px 2px;
-            font-size: 12px;
-            color: var(--shell-text-secondary);
-        }
 
-        .sidebar-meta .meta-value {
-            font-weight: 600;
-            color: var(--shell-text-primary);
-        }
 
-        .shell-content {
+
+
+        .content {
             grid-column: 2 / -1;
             grid-row: 2 / -1;
+            padding: 24px 32px;
             display: flex;
             flex-direction: column;
-            background: linear-gradient(180deg, rgba(248,249,255,0.8), rgba(243,245,252,0.9));
+            gap: 18px;
+            background: rgba(248, 250, 255, 0.72);
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 0;
         }
 
-        .spa-outlet {
-            flex: 1;
-            min-height: 0;
-            padding: 32px;
+        /* Demo页面中的内容元素样式 */
+        .content .caption {
+            font-size: 12px;
+            color: rgba(15,23,42,0.55);
         }
+
+        .content .placeholder {
+            height: 180px;
+            border-radius: 18px;
+            background: repeating-linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.12) 12px, rgba(59,130,246,0.04) 12px, rgba(59,130,246,0.04) 24px);
+        }
+
+        /* 开发者主题的内容区域背景 */
+        .content.developer-theme {
+            background: rgba(240, 242, 255, 0.75);
+        }
+
+        /* 管理员主题的内容区域背景 */
+        .content.admin-theme {
+            background: rgba(248, 250, 255, 0.72);
+        }
+
 
         .spa-placeholder {
             height: 100%;
@@ -741,7 +713,7 @@
                 grid-template-columns: 1fr;
             }
 
-            .shell-sidebar {
+            .sidebar {
                 position: fixed;
                 inset: var(--shell-header-height) auto 0 0;
                 transform: translateX(-100%);
@@ -750,11 +722,11 @@
                 box-shadow: 12px 0 32px rgba(15,23,42,0.32);
             }
 
-            .shell-sidebar[data-state="expanded"] {
+            .sidebar[data-state="expanded"] {
                 transform: translateX(0);
             }
 
-            .shell-content {
+            .content {
                 grid-column: 1 / -1;
             }
 
@@ -1042,62 +1014,52 @@
         </header>
 
         <aside id="primarySidebar"
-               class="shell-sidebar"
+               class="sidebar"
                data-role="shell-sidebar"
                data-state="expanded"
                th:with="rawRole=${userType != null ? userType : userRole},
                         workspaceRole=${rawRole != null and #strings.equalsIgnoreCase(rawRole, 'ADMIN') ? 'admin' : 'developer'}">
-                                    <div class="sidebar-scroll" data-role="sidebar-scroll">
-            <section class="nav-section"
-                     th:each="section : ${navSections}"
+            <div class="sidebar-content">
+                <div class="menu-group" th:each="section : ${navSections}"
                      th:if="${section.items != null and !#lists.isEmpty(section.items)}">
-                <h2 class="nav-section-title"
-                    th:text="${section.title}">工作空间</h2>
-                <ul class="nav-list">
-                    <li class="nav-list-item" th:each="menu : ${section.items}">
-                        <button type="button"
-                                class="nav-item"
-                                th:classappend="${menu.active} ? ' active' : ''"
-                                th:attr="data-route=${menu.route}, data-page=${menu.page != null ? menu.page : menu.route}"
-                                th:aria-current="${menu.active} ? 'page' : null">
-                            <span class="nav-icon nav-item__icon"
-                                  th:class="'nav-icon nav-item__icon ' + (${userType == 'admin'} ? 'nav-icon--admin' : 'nav-icon--developer')"
+                    <div class="menu-item"
+                         th:each="menu : ${section.items}"
+                         th:classappend="${menu.active} ? ' selected' : ''"
+                         th:attr="data-route=${menu.route}, data-page=${menu.page != null ? menu.page : menu.route}"
+                         th:aria-current="${menu.active} ? 'page' : null">
+                        <span class="meta">
+                            <span class="menu-icon"
                                   th:text="${menu.badge}">OV</span>
-                            <span class="nav-item-label" th:text="${menu.label}">工作区概览</span>
-                            <span class="nav-tooltip" th:text="${menu.label}">工作区概览</span>
-                        </button>
-                    </li>
-                </ul>
-            </section>
-        </div>
-
-        <div class="sidebar-footer" th:if="${(sidebarFooterLinks != null and !#lists.isEmpty(sidebarFooterLinks)) or (sidebarFooterMeta != null and !#lists.isEmpty(sidebarFooterMeta))}">
-            <a th:each="link : ${sidebarFooterLinks}"
-               th:href="${link.href}"
-               class="sidebar-link">
-                <span class="nav-icon nav-icon--small footer-link__icon"
-                      th:class="'nav-icon nav-icon--small footer-link__icon ' + (${userType == 'admin'} ? 'nav-icon--admin' : 'nav-icon--developer')"
-                      th:text="${link.badge}">DC</span>
-                <span class="sidebar-link__label" th:text="${link.label}">文档中心</span>
-                <span class="nav-tooltip" th:text="${link.label}">文档中心</span>
-            </a>
-            <div class="sidebar-meta" th:each="meta : ${sidebarFooterMeta}">
-                <span class="meta-label" th:text="${meta.label}">当前环境</span>
-                <span class="meta-value" th:text="${meta.value}">DEV</span>
+                            <span class="text" th:text="${menu.label}">工作区概览</span>
+                        </span>
+                        <span class="nav-tooltip" th:text="${menu.label}">工作区概览</span>
+                    </div>
+                </div>
+                <div class="footer-block" th:if="${(sidebarFooterLinks != null and !#lists.isEmpty(sidebarFooterLinks)) or (sidebarFooterMeta != null and !#lists.isEmpty(sidebarFooterMeta))}">
+                    <span class="pill" th:each="meta : ${sidebarFooterMeta}" th:if="${sidebarFooterMeta != null}">
+                        <span style="width:6px;height:6px;border-radius:50%;background:#22C55E;"></span>
+                        <span th:text="${meta.label != null ? (meta.label + '：' + (meta.value != null ? meta.value : '')) : ''}">环境：DEV</span>
+                    </span>
+                    <a th:each="link : ${sidebarFooterLinks}"
+                       th:if="${sidebarFooterLinks != null}"
+                       th:href="${link.href != null ? link.href : '#'}"
+                       class="link"
+                       th:text="${link.label != null ? link.label : ''}">帮助与反馈</a>
+                </div>
             </div>
-        </div>
 </aside>
 
         <div class="sidebar-backdrop" data-role="sidebar-backdrop"></div>
 
-        <main class="shell-content" data-role="shell-content">
-            <section class="spa-outlet" id="spaOutlet" data-role="spa-outlet">
-                <div class="spa-placeholder" data-role="spa-placeholder">
-                    <p>SPA &#x5360;&#x4F4D;&#x5185;&#x5BB9;&#xFF1A;&#x7B49;&#x5F85;&#x5BFC;&#x822A;&#x4E8B;&#x4EF6;&#x6216;&#x8FDC;&#x7A0B;&#x6A21;&#x5757;&#x6302;&#x8F7D;&#x3002;</p>
-                </div>
-            </section>
+        <main class="content" id="spaOutlet" data-role="spa-outlet">
+            <div class="spa-placeholder" data-role="spa-placeholder">
+                <p>SPA &#x5360;&#x4F4D;&#x5185;&#x5BB9;&#xFF1A;&#x7B49;&#x5F85;&#x5BFC;&#x822A;&#x4E8B;&#x4EF6;&#x6216;&#x8FDC;&#x7A0B;&#x6A21;&#x5757;&#x6302;&#x8F7D;&#x3002;</p>
+            </div>
         </main>
     </div>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
     <script>
         (function () {
@@ -1355,17 +1317,17 @@
                     navItems.forEach((item) => {
                         const isActive = item.getAttribute('data-route') === route;
                         if (isActive) {
-                            item.setAttribute('data-state', 'active');
+                            item.classList.add('selected');
                             item.setAttribute('aria-current', 'page');
                         } else {
-                            item.removeAttribute('data-state');
+                            item.classList.remove('selected');
                             item.removeAttribute('aria-current');
                         }
                     });
                 };
 
                 if (navItems.length > 0) {
-                    const preset = navItems.find((item) => item.getAttribute('data-state') === 'active') || navItems[0];
+                    const preset = navItems.find((item) => item.classList.contains('selected')) || navItems[0];
                     if (preset) {
                         activateNav(preset.getAttribute('data-route'));
                     }
@@ -1407,6 +1369,8 @@
                     return;
                 }
 
+                // 简化后不需要复杂的类名管理
+
                 const loadContent = async (route) => {
                     if (!route) {
                         return;
@@ -1418,7 +1382,8 @@
                         let apiUrl = '';
                         switch (route) {
                             case 'overview':
-                                apiUrl = '/admin/api/dashboard-content';
+                            case 'admin-dashboard':
+                                apiUrl = '/admin/dashboard/content';
                                 break;
                             case 'servers':
                                 apiUrl = '/admin/api/servers-content';
@@ -1450,7 +1415,12 @@
                 on('spa:navigate', ({ route }) => {
                     outlet.dataset.route = route;
                     emit('spa:loading', { route });
-                    loadContent(route);
+                    loadContent(route).then(() => {
+                        // 路由加载完成后，初始化对应页面的逻辑
+                        if (route === 'admin-dashboard' || route === 'overview') {
+                            initAdminDashboard();
+                        }
+                    });
                 });
 
                 // 初始加载默认内容
@@ -1481,6 +1451,897 @@
 
                 // 初始化时执行一次
                 handleResize();
+            }
+
+            // 🎯 [管理员仪表板] 相关功能
+            function initAdminDashboard() {
+                if (!document.querySelector('.admin-dashboard')) {
+                    return; // 如果页面中没有仪表板元素，直接返回
+                }
+
+                console.log('初始化管理员仪表板...');
+
+                // 初始化所有仪表板功能
+                initDashboardData();
+                initDashboardEvents();
+                initDashboardRealTimeUpdates();
+
+                // 初始化图表
+                setTimeout(() => {
+                    initHealthTrendChart();
+                }, 500);
+
+                // 初始化键盘快捷键
+                initDashboardKeyboardShortcuts();
+
+                console.log('管理员仪表板初始化完成');
+            }
+
+            function initDashboardData() {
+                // 加载仪表板数据
+                loadDashboardOverview();
+                loadServerMonitoring();
+                loadAnalysisPanels();
+            }
+
+            function initDashboardEvents() {
+                // 刷新按钮事件
+                const refreshOverviewBtn = document.getElementById('refreshOverview');
+                if (refreshOverviewBtn) {
+                    refreshOverviewBtn.addEventListener('click', loadDashboardOverview);
+                }
+
+                const refreshServersBtn = document.getElementById('refreshServers');
+                if (refreshServersBtn) {
+                    refreshServersBtn.addEventListener('click', loadServerMonitoring);
+                }
+
+                // 初始的添加服务器按钮事件
+                const addFirstServerBtn = document.getElementById('addFirstServer');
+                if (addFirstServerBtn) {
+                    addFirstServerBtn.addEventListener('click', () => {
+                        emit('spa:navigate', { route: 'servers' });
+                    });
+                }
+
+                // 资源视图切换事件
+                const resourceBarViewBtn = document.getElementById('resourceBarView');
+                const resourceChartViewBtn = document.getElementById('resourceChartView');
+                if (resourceBarViewBtn && resourceChartViewBtn) {
+                    resourceBarViewBtn.addEventListener('click', () => {
+                        toggleResourceView('bar', resourceBarViewBtn, resourceChartViewBtn);
+                    });
+
+                    resourceChartViewBtn.addEventListener('click', () => {
+                        toggleResourceView('chart', resourceBarViewBtn, resourceChartViewBtn);
+                    });
+                }
+
+                // 视图切换事件
+                const gridViewBtn = document.getElementById('gridViewBtn');
+                const listViewBtn = document.getElementById('listViewBtn');
+                const serverGrid = document.getElementById('serverGrid');
+
+                if (gridViewBtn && listViewBtn && serverGrid) {
+                    gridViewBtn.addEventListener('click', () => {
+                        setViewMode('grid', gridViewBtn, listViewBtn, serverGrid);
+                    });
+
+                    listViewBtn.addEventListener('click', () => {
+                        setViewMode('list', gridViewBtn, listViewBtn, serverGrid);
+                    });
+                }
+
+                // 快速操作按钮事件
+                const addServerBtn = document.getElementById('addServerBtn');
+                if (addServerBtn) {
+                    addServerBtn.addEventListener('click', () => {
+                        emit('spa:navigate', { route: 'servers' });
+                    });
+                }
+
+                const viewAllAlertsBtn = document.getElementById('viewAllAlertsBtn');
+                if (viewAllAlertsBtn) {
+                    viewAllAlertsBtn.addEventListener('click', () => {
+                        // 导航到告警页面
+                        console.log('导航到告警页面');
+                    });
+                }
+
+                const viewAllActivitiesBtn = document.getElementById('viewAllActivitiesBtn');
+                if (viewAllActivitiesBtn) {
+                    viewAllActivitiesBtn.addEventListener('click', () => {
+                        // 导航到用户活动页面
+                        console.log('导航到用户活动页面');
+                    });
+                }
+            }
+
+            function initDashboardRealTimeUpdates() {
+                // 每30秒刷新一次数据
+                const updateInterval = setInterval(() => {
+                    if (document.querySelector('.admin-dashboard')) {
+                        loadDashboardOverview();
+                        loadServerMonitoring();
+                        updateLastRefreshTime();
+                    } else {
+                        // 如果页面不存在仪表板，清除定时器
+                        clearInterval(updateInterval);
+                    }
+                }, 30000);
+
+                // 初始更新时间
+                updateLastRefreshTime();
+            }
+
+            async function loadDashboardOverview() {
+                try {
+                    const response = await fetch('/admin/dashboard/overview');
+                    if (!response.ok) {
+                        throw new Error('Failed to load dashboard overview');
+                    }
+
+                    const data = await response.json();
+                    renderDashboardOverview(data);
+                } catch (error) {
+                    console.error('加载仪表板概览失败:', error);
+                    showErrorMessage('加载概览数据失败，请稍后重试');
+                }
+            }
+
+            async function loadServerMonitoring() {
+                try {
+                    const response = await fetch('/admin/dashboard/servers/summary');
+                    if (!response.ok) {
+                        throw new Error('Failed to load server monitoring');
+                    }
+
+                    const servers = await response.json();
+                    renderServerMonitoring(servers);
+                } catch (error) {
+                    console.error('加载服务器监控失败:', error);
+                    showErrorMessage('加载服务器数据失败，请稍后重试');
+                }
+            }
+
+            async function loadAnalysisPanels() {
+                try {
+                    // 加载资源统计
+                    const resourceResponse = await fetch('/admin/dashboard/system/health');
+                    if (resourceResponse.ok) {
+                        const resourceData = await resourceResponse.json();
+                        renderResourceAnalysis(resourceData);
+                    }
+                } catch (error) {
+                    console.error('加载分析面板失败:', error);
+                }
+            }
+
+            function renderDashboardOverview(data) {
+                // 渲染服务器统计
+                updateElement('totalServers', data.totalServers || 0);
+                updateElement('onlineServers', data.onlineServers || 0);
+                updateElement('offlineServers', data.offlineServers || 0);
+
+                // 渲染用户统计
+                updateElement('todayActiveUsers', data.todayActiveUsers || 0);
+                updateElement('yesterdayActiveUsers', data.yesterdayActiveUsers || 0);
+                updateElement('threeDaysAgoActiveUsers', data.threeDaysAgoActiveUsers || 0);
+
+                // 渲染应用统计
+                updateElement('totalApplications', data.totalApplications || 0);
+                updateElement('runningApplications', data.runningApplications || 0);
+                updateElement('stoppedApplications', data.stoppedApplications || 0);
+
+                // 渲染告警统计
+                updateElement('totalAlerts', data.totalAlerts || 0);
+                updateElement('criticalAlerts', data.criticalAlerts || 0);
+                updateElement('warningAlerts', data.warningAlerts || 0);
+
+                // 渲染系统健康度
+                updateElement('systemHealthScore', data.systemHealthScore || 0);
+                updateSystemHealthStatus(data.systemHealthStatus, data.systemHealthScore);
+            }
+
+            function renderServerMonitoring(servers) {
+                const serverGrid = document.getElementById('serverGrid');
+                if (!serverGrid || !servers) return;
+
+                if (servers.length === 0) {
+                    serverGrid.innerHTML = `
+                        <div class="no-servers">
+                            <i class="fas fa-server"></i>
+                            <p>暂无服务器数据</p>
+                            <button class="btn btn-primary" id="addFirstServer">
+                                <i class="fas fa-plus"></i>
+                                添加第一台服务器
+                            </button>
+                        </div>
+                    `;
+
+                    // 绑定添加服务器事件
+                    const addFirstServerBtn = document.getElementById('addFirstServer');
+                    if (addFirstServerBtn) {
+                        addFirstServerBtn.addEventListener('click', () => {
+                            emit('spa:navigate', { route: 'servers' });
+                        });
+                    }
+                    return;
+                }
+
+                const serverCards = servers.map(server => `
+                    <div class="server-status-card ${server.status || 'offline'}">
+                        <div class="server-header">
+                            <div class="server-info">
+                                <div class="server-name">${server.name || 'Unknown'}</div>
+                                <div class="server-address">${server.host || 'N/A'}:${server.port || 22}</div>
+                            </div>
+                            <div class="server-status">
+                                <span class="status-indicator ${server.status || 'offline'}"></span>
+                                <span class="status-text">${getStatusText(server.status)}</span>
+                            </div>
+                        </div>
+                        <div class="server-metrics">
+                            <div class="metric">
+                                <div class="metric-label">CPU</div>
+                                <div class="metric-value">${server.cpuUsage || 0}%</div>
+                                <div class="metric-bar">
+                                    <div class="metric-progress" style="width: ${server.cpuUsage || 0}%"></div>
+                                </div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-label">内存</div>
+                                <div class="metric-value">${server.memoryUsage || 0}%</div>
+                                <div class="metric-bar">
+                                    <div class="metric-progress" style="width: ${server.memoryUsage || 0}%"></div>
+                                </div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-label">磁盘</div>
+                                <div class="metric-value">${server.diskUsage || 0}%</div>
+                                <div class="metric-bar">
+                                    <div class="metric-progress" style="width: ${server.diskUsage || 0}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="server-actions">
+                            <button class="btn btn-link" onclick="viewServerDetail(${server.id})">
+                                <i class="fas fa-eye"></i>
+                                查看详情
+                            </button>
+                            <button class="btn btn-link" onclick="connectToServer(${server.id})">
+                                <i class="fas fa-terminal"></i>
+                                SSH连接
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+
+                serverGrid.innerHTML = serverCards;
+            }
+
+            function renderResourceAnalysis(data) {
+                // 更新资源使用率
+                updateElement('avgCpuUsage', Math.round(data.avgCpuUsage || 0));
+                updateElement('avgMemoryUsage', Math.round(data.avgMemoryUsage || 0));
+                updateElement('avgDiskUsage', Math.round(data.avgDiskUsage || 0));
+
+                // 更新进度条
+                updateProgressBar('cpuProgressBar', data.avgCpuUsage || 0);
+                updateProgressBar('memoryProgressBar', data.avgMemoryUsage || 0);
+                updateProgressBar('diskProgressBar', data.avgDiskUsage || 0);
+
+                // 存储数据供图表使用
+                window.resourceData = {
+                    cpu: data.avgCpuUsage || 0,
+                    memory: data.avgMemoryUsage || 0,
+                    disk: data.avgDiskUsage || 0
+                };
+
+                // 如果当前显示的是图表视图，更新图表
+                const chartContainer = document.getElementById('resourceChart');
+                if (chartContainer && chartContainer.style.display !== 'none') {
+                    updateResourceChart();
+                }
+            }
+
+            // 工具函数
+            function updateElement(id, value) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                }
+            }
+
+            function updateProgressBar(id, percentage) {
+                const progressBar = document.getElementById(id);
+                if (progressBar) {
+                    progressBar.style.width = `${Math.min(100, Math.max(0, percentage))}%`;
+                }
+            }
+
+            function updateSystemHealthStatus(status, score) {
+                const statusElement = document.getElementById('systemHealthStatus');
+                if (!statusElement) return;
+
+                const indicator = statusElement.querySelector('.health-indicator');
+                const text = statusElement.querySelector('.health-text');
+
+                if (indicator && text) {
+                    const statusConfig = getHealthStatusConfig(status, score);
+                    indicator.style.background = statusConfig.color;
+                    text.textContent = statusConfig.text;
+                }
+
+                // 更新健康度趋势图
+                updateHealthTrend(score);
+            }
+
+            function getHealthStatusConfig(status, score) {
+                switch (status) {
+                    case 'excellent':
+                        return { color: '#10b981', text: '优秀' };
+                    case 'good':
+                        return { color: '#3b82f6', text: '良好' };
+                    case 'warning':
+                        return { color: '#f59e0b', text: '警告' };
+                    case 'critical':
+                        return { color: '#ef4444', text: '严重' };
+                    default:
+                        return { color: '#6b7280', text: '评估中...' };
+                }
+            }
+
+            function getStatusText(status) {
+                switch (status) {
+                    case 'online':
+                        return '在线';
+                    case 'offline':
+                        return '离线';
+                    case 'warning':
+                        return '警告';
+                    case 'error':
+                        return '错误';
+                    default:
+                        return '未知';
+                }
+            }
+
+            function setViewMode(mode, gridBtn, listBtn, container) {
+                // 更新按钮状态
+                gridBtn.classList.toggle('active', mode === 'grid');
+                listBtn.classList.toggle('active', mode === 'list');
+
+                // 更新容器类名
+                container.classList.toggle('list-view', mode === 'list');
+            }
+
+            function updateLastRefreshTime() {
+                const lastUpdateElement = document.getElementById('lastUpdateTime');
+                if (lastUpdateElement) {
+                    const now = new Date();
+                    const timeString = now.toLocaleTimeString('zh-CN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                    lastUpdateElement.textContent = `最后更新: ${timeString}`;
+                }
+            }
+
+            function showErrorMessage(message) {
+                // 可以扩展为更复杂的错误提示系统
+                console.error(message);
+
+                // 简单的错误提示
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.textContent = message;
+                errorDiv.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #fee2e2;
+                    color: #dc2626;
+                    padding: 1rem;
+                    border-radius: 6px;
+                    border: 1px solid #fecaca;
+                    z-index: 1000;
+                `;
+
+                document.body.appendChild(errorDiv);
+
+                // 3秒后自动移除
+                setTimeout(() => {
+                    if (errorDiv.parentNode) {
+                        errorDiv.parentNode.removeChild(errorDiv);
+                    }
+                }, 3000);
+            }
+
+            // 全局函数，供HTML中使用
+            window.viewServerDetail = function(serverId) {
+                // 导航到服务器详情页面
+                console.log('查看服务器详情:', serverId);
+                emit('spa:navigate', { route: 'servers' });
+            };
+
+            window.connectToServer = function(serverId) {
+                // 打开SSH连接
+                console.log('连接到服务器:', serverId);
+                window.open(`/terminal/connect/${serverId}`, '_blank');
+            };
+
+            // 🎯 [Chart.js图表] 相关功能
+            let resourcePieChart = null;
+            let healthTrendChart = null;
+            let healthTrendData = [];
+
+            function toggleResourceView(viewType, barBtn, chartBtn) {
+                const metricsContainer = document.getElementById('resourceMetrics');
+                const chartContainer = document.getElementById('resourceChart');
+
+                if (viewType === 'chart') {
+                    // 切换到图表视图
+                    metricsContainer.style.display = 'none';
+                    chartContainer.style.display = 'block';
+
+                    barBtn.classList.remove('active');
+                    chartBtn.classList.add('active');
+
+                    // 初始化或更新图表
+                    setTimeout(() => {
+                        initResourceChart();
+                    }, 100);
+                } else {
+                    // 切换到条形图视图
+                    metricsContainer.style.display = 'flex';
+                    chartContainer.style.display = 'none';
+
+                    barBtn.classList.add('active');
+                    chartBtn.classList.remove('active');
+                }
+            }
+
+            function initResourceChart() {
+                const ctx = document.getElementById('resourcePieChart');
+                if (!ctx) return;
+
+                // 销毁现有图表
+                if (resourcePieChart) {
+                    resourcePieChart.destroy();
+                }
+
+                const data = window.resourceData || { cpu: 0, memory: 0, disk: 0 };
+
+                resourcePieChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['CPU使用率', '内存使用率', '磁盘使用率'],
+                        datasets: [{
+                            data: [data.cpu, data.memory, data.disk],
+                            backgroundColor: [
+                                'rgba(59, 198, 184, 0.8)',  // Teal
+                                'rgba(47, 155, 255, 0.8)',  // Blue
+                                'rgba(245, 158, 11, 0.8)'   // Orange
+                            ],
+                            borderColor: [
+                                'rgba(59, 198, 184, 1)',
+                                'rgba(47, 155, 255, 1)',
+                                'rgba(245, 158, 11, 1)'
+                            ],
+                            borderWidth: 2,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    usePointStyle: true,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = Math.round(context.parsed);
+                                        return `${label}: ${value}%`;
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '60%',
+                        animation: {
+                            animateScale: true,
+                            duration: 800
+                        }
+                    }
+                });
+            }
+
+            function updateResourceChart() {
+                if (!resourcePieChart || !window.resourceData) return;
+
+                const data = window.resourceData;
+                resourcePieChart.data.datasets[0].data = [data.cpu, data.memory, data.disk];
+                resourcePieChart.update('none'); // 无动画更新
+            }
+
+            // 健康度趋势图相关函数
+            function initHealthTrendChart() {
+                const ctx = document.getElementById('healthTrendCanvas');
+                if (!ctx) return;
+
+                // 销毁现有图表
+                if (healthTrendChart) {
+                    healthTrendChart.destroy();
+                }
+
+                // 初始化趋势数据（最近12个数据点）
+                if (healthTrendData.length === 0) {
+                    // 生成初始模拟数据
+                    const now = new Date();
+                    for (let i = 11; i >= 0; i--) {
+                        const time = new Date(now.getTime() - i * 5 * 60000); // 每5分钟一个点
+                        healthTrendData.push({
+                            time: time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+                            value: Math.random() * 20 + 80 // 80-100之间的随机值
+                        });
+                    }
+                }
+
+                healthTrendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: healthTrendData.map(d => d.time),
+                        datasets: [{
+                            label: '系统健康度',
+                            data: healthTrendData.map(d => d.value),
+                            borderColor: 'rgba(16, 185, 129, 1)',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 2,
+                            pointHoverRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                display: false
+                            },
+                            y: {
+                                display: false,
+                                min: 50,
+                                max: 100
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `健康度: ${Math.round(context.parsed.y)}分`;
+                                    }
+                                }
+                            }
+                        },
+                        elements: {
+                            point: {
+                                hoverBackgroundColor: 'rgba(16, 185, 129, 1)'
+                            }
+                        },
+                        animation: {
+                            duration: 400
+                        }
+                    }
+                });
+            }
+
+            function updateHealthTrend(newScore) {
+                if (!newScore || typeof newScore !== 'number') return;
+
+                // 添加新数据点
+                const now = new Date();
+                healthTrendData.push({
+                    time: now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+                    value: newScore
+                });
+
+                // 保持最多12个数据点
+                if (healthTrendData.length > 12) {
+                    healthTrendData.shift();
+                }
+
+                // 更新图表
+                if (healthTrendChart) {
+                    healthTrendChart.data.labels = healthTrendData.map(d => d.time);
+                    healthTrendChart.data.datasets[0].data = healthTrendData.map(d => d.value);
+                    healthTrendChart.update('none');
+                } else {
+                    // 如果图表还没初始化，初始化它
+                    initHealthTrendChart();
+                }
+            }
+
+            // 🎯 [仪表板键盘快捷键] 功能
+            function initDashboardKeyboardShortcuts() {
+                // 仪表板键盘快捷键处理器
+                function handleDashboardKeyboard(event) {
+                    // 只在仪表板页面生效
+                    if (!document.querySelector('.admin-dashboard')) {
+                        return;
+                    }
+
+                    // 避免在输入框中触发快捷键
+                    const activeElement = document.activeElement;
+                    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+                        return;
+                    }
+
+                    // Ctrl/Cmd + 组合键
+                    if (event.ctrlKey || event.metaKey) {
+                        switch (event.key.toLowerCase()) {
+                            case 'r':
+                                // Ctrl+R: 刷新概览数据
+                                event.preventDefault();
+                                loadDashboardOverview();
+                                showShortcutTip('刷新概览数据');
+                                break;
+
+                            case 's':
+                                // Ctrl+S: 刷新服务器数据
+                                event.preventDefault();
+                                loadServerMonitoring();
+                                showShortcutTip('刷新服务器数据');
+                                break;
+
+                            case 'n':
+                                // Ctrl+N: 新建服务器
+                                event.preventDefault();
+                                emit('spa:navigate', { route: 'servers' });
+                                showShortcutTip('跳转到服务器管理');
+                                break;
+                        }
+                    }
+
+                    // 单键快捷键
+                    switch (event.key.toLowerCase()) {
+                        case 'g':
+                            // G: 切换到网格视图
+                            const gridBtn = document.getElementById('gridViewBtn');
+                            const listBtn = document.getElementById('listViewBtn');
+                            const container = document.getElementById('serverGrid');
+                            if (gridBtn && listBtn && container) {
+                                setViewMode('grid', gridBtn, listBtn, container);
+                                showShortcutTip('切换到网格视图');
+                            }
+                            break;
+
+                        case 'l':
+                            // L: 切换到列表视图
+                            const gridBtn2 = document.getElementById('gridViewBtn');
+                            const listBtn2 = document.getElementById('listViewBtn');
+                            const container2 = document.getElementById('serverGrid');
+                            if (gridBtn2 && listBtn2 && container2) {
+                                setViewMode('list', gridBtn2, listBtn2, container2);
+                                showShortcutTip('切换到列表视图');
+                            }
+                            break;
+
+                        case 'c':
+                            // C: 切换资源图表视图
+                            const barBtn = document.getElementById('resourceBarView');
+                            const chartBtn = document.getElementById('resourceChartView');
+                            if (barBtn && chartBtn) {
+                                // 判断当前状态并切换
+                                if (barBtn.classList.contains('active')) {
+                                    toggleResourceView('chart', barBtn, chartBtn);
+                                    showShortcutTip('切换到饼图视图');
+                                } else {
+                                    toggleResourceView('bar', barBtn, chartBtn);
+                                    showShortcutTip('切换到条形图视图');
+                                }
+                            }
+                            break;
+
+                        case '?':
+                        case 'h':
+                            // ?: 显示快捷键帮助
+                            showKeyboardShortcutsHelp();
+                            break;
+                    }
+                }
+
+                // 添加键盘事件监听
+                document.addEventListener('keydown', handleDashboardKeyboard);
+
+                // 清理函数，当离开仪表板时移除监听器
+                const originalRemove = document.removeEventListener;
+                window.cleanupDashboardKeyboard = () => {
+                    document.removeEventListener('keydown', handleDashboardKeyboard);
+                };
+            }
+
+            function showShortcutTip(message) {
+                // 显示快捷键操作提示
+                const tip = document.createElement('div');
+                tip.className = 'shortcut-tip';
+                tip.textContent = message;
+                tip.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(0, 0, 0, 0.8);
+                    color: white;
+                    padding: 0.5rem 1rem;
+                    border-radius: 4px;
+                    font-size: 0.875rem;
+                    z-index: 1000;
+                    animation: fadeInOut 2s ease-in-out forwards;
+                `;
+
+                // 添加CSS动画
+                if (!document.getElementById('shortcut-tip-style')) {
+                    const style = document.createElement('style');
+                    style.id = 'shortcut-tip-style';
+                    style.textContent = `
+                        @keyframes fadeInOut {
+                            0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+                            20% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                            80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                            100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+
+                document.body.appendChild(tip);
+
+                // 2秒后移除
+                setTimeout(() => {
+                    if (tip.parentNode) {
+                        tip.parentNode.removeChild(tip);
+                    }
+                }, 2000);
+            }
+
+            function showKeyboardShortcutsHelp() {
+                // 显示快捷键帮助弹窗
+                const helpModal = document.createElement('div');
+                helpModal.className = 'keyboard-shortcuts-modal';
+                helpModal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 2000;
+                `;
+
+                const helpContent = document.createElement('div');
+                helpContent.style.cssText = `
+                    background: var(--shell-surface, white);
+                    border-radius: 8px;
+                    padding: 2rem;
+                    max-width: 500px;
+                    width: 90%;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+                `;
+
+                helpContent.innerHTML = `
+                    <h2 style="margin: 0 0 1.5rem 0; color: var(--shell-text-primary, #333);">
+                        <i class="fas fa-keyboard"></i> 键盘快捷键
+                    </h2>
+                    <div style="display: grid; gap: 1rem;">
+                        <div>
+                            <h3 style="margin: 0 0 0.5rem 0; color: var(--shell-text-primary, #333); font-size: 1rem;">数据操作</h3>
+                            <div style="color: var(--shell-text-secondary, #666); font-size: 0.875rem;">
+                                <div style="margin-bottom: 0.25rem;"><kbd>Ctrl+R</kbd> - 刷新概览数据</div>
+                                <div style="margin-bottom: 0.25rem;"><kbd>Ctrl+S</kbd> - 刷新服务器数据</div>
+                                <div><kbd>Ctrl+N</kbd> - 跳转到服务器管理</div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0 0 0.5rem 0; color: var(--shell-text-primary, #333); font-size: 1rem;">视图切换</h3>
+                            <div style="color: var(--shell-text-secondary, #666); font-size: 0.875rem;">
+                                <div style="margin-bottom: 0.25rem;"><kbd>G</kbd> - 切换到网格视图</div>
+                                <div style="margin-bottom: 0.25rem;"><kbd>L</kbd> - 切换到列表视图</div>
+                                <div><kbd>C</kbd> - 切换图表显示方式</div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0 0 0.5rem 0; color: var(--shell-text-primary, #333); font-size: 1rem;">帮助</h3>
+                            <div style="color: var(--shell-text-secondary, #666); font-size: 0.875rem;">
+                                <div><kbd>?</kbd> 或 <kbd>H</kbd> - 显示快捷键帮助</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: right; margin-top: 1.5rem;">
+                        <button id="closeShortcutsHelp" style="
+                            background: var(--accent-color, #2F9BFF);
+                            color: white;
+                            border: none;
+                            padding: 0.5rem 1rem;
+                            border-radius: 4px;
+                            cursor: pointer;
+                        ">关闭</button>
+                    </div>
+                `;
+
+                helpModal.appendChild(helpContent);
+                document.body.appendChild(helpModal);
+
+                // 关闭按钮事件
+                document.getElementById('closeShortcutsHelp').addEventListener('click', () => {
+                    if (helpModal.parentNode) {
+                        helpModal.parentNode.removeChild(helpModal);
+                    }
+                });
+
+                // 点击背景关闭
+                helpModal.addEventListener('click', (e) => {
+                    if (e.target === helpModal) {
+                        if (helpModal.parentNode) {
+                            helpModal.parentNode.removeChild(helpModal);
+                        }
+                    }
+                });
+
+                // ESC键关闭
+                const handleEsc = (e) => {
+                    if (e.key === 'Escape') {
+                        if (helpModal.parentNode) {
+                            helpModal.parentNode.removeChild(helpModal);
+                        }
+                        document.removeEventListener('keydown', handleEsc);
+                    }
+                };
+                document.addEventListener('keydown', handleEsc);
+
+                // 添加kbd样式
+                if (!document.getElementById('kbd-style')) {
+                    const style = document.createElement('style');
+                    style.id = 'kbd-style';
+                    style.textContent = `
+                        kbd {
+                            background: #f1f3f4;
+                            border: 1px solid #dadce0;
+                            border-radius: 3px;
+                            color: #3c4043;
+                            display: inline-block;
+                            font-family: monospace;
+                            font-size: 0.8em;
+                            margin: 0 2px;
+                            padding: 2px 6px;
+                            text-shadow: 0 1px 0 white;
+                            white-space: nowrap;
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
             }
 
             loadPreferences();
