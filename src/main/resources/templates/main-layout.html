@@ -18,8 +18,8 @@
     <link rel="stylesheet" href="/css/fontawesome-local.css">
     <link rel="stylesheet" href="/css/icon-components.css">
     <link rel="stylesheet" href="/css/responsive.css">
-    <link rel="stylesheet" href="/css/admin-dashboard.css">
     <link rel="stylesheet" href="/css/content-framework.css">
+    <link rel="stylesheet" th:href="@{/admin-dashboard/stat-cards.css}">
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <style>
@@ -583,11 +583,13 @@
                 max-width: 300px;
             }
 
-            /* 移动端内容区域样式 */
+            /* 移动端内容区域样式 - 与content-framework完全一致 */
             .content {
-                padding: 16px;
-                gap: 16px;
+                --content-padding: 16px;
+                --section-gap: 16px;
             }
+
+            /* 移动端直接使用content的样式变量 */
         }
 
         /* 暗色主题侧边栏 */
@@ -651,17 +653,120 @@
 
 
 
+        /* ================================================
+           内容区域 - 与content-framework完全一致
+           ================================================ */
         .content {
             grid-column: 2 / -1;
             grid-row: 2 / -1;
-            padding: 24px 32px;
+            padding: var(--content-padding, 24px 32px);
+            background: var(--content-bg, rgba(248, 250, 255, 0.72));
+            min-height: 100%;
             display: flex;
             flex-direction: column;
-            gap: 18px;
-            background: rgba(248, 250, 255, 0.72);
+            gap: var(--section-gap, 24px);
             overflow-y: auto;
             overflow-x: hidden;
-            min-height: 0;
+            transition: padding var(--transition-slow, 0.3s ease);
+        }
+
+        /* content-framework样式直接应用到content */
+
+        /* 根据用户角色定义全局主题变量 */
+        .layout-shell[data-variant="admin"] {
+            --primary-gradient: linear-gradient(135deg, #2F9BFF, #3BC6B8);
+            /* admin-dashboard.css 兼容变量 */
+            --shell-background: rgba(248, 250, 255, 0.72);
+            --shell-surface: rgba(255, 255, 255, 0.92);
+            --shell-border: rgba(226, 232, 240, 0.8);
+            --shell-text-primary: #0F172A;
+            --shell-text-secondary: #64748B;
+            --accent-color: #2F9BFF;
+            --secondary-color: #3BC6B8;
+        }
+        .layout-shell[data-variant="developer"] {
+            --primary-gradient: linear-gradient(135deg, #6C63FF, #3D8BFF);
+            /* admin-dashboard.css 兼容变量 */
+            --shell-background: rgba(240, 242, 255, 0.75);
+            --shell-surface: rgba(255, 255, 255, 0.94);
+            --shell-border: rgba(199, 210, 254, 0.7);
+            --shell-text-primary: #1E1B4B;
+            --shell-text-secondary: #6366F1;
+            --accent-color: #6C63FF;
+            --secondary-color: #3D8BFF;
+        }
+
+        /* 管理员主题 - 与content-framework完全一致 */
+        .layout-shell .content.admin-theme {
+            --primary-gradient: linear-gradient(135deg, #2F9BFF, #3BC6B8);
+            --primary-color: #2F9BFF;
+            --primary-hover: #1E88E5;
+            --secondary-color: #3BC6B8;
+            --success-color: #22C55E;
+            --warning-color: #F59E0B;
+            --error-color: #EF4444;
+            --info-color: #3B82F6;
+
+            --content-bg: rgba(248, 250, 255, 0.72);
+            --card-bg: rgba(255, 255, 255, 0.92);
+            --toolbar-bg: rgba(255, 255, 255, 0.8);
+            --border-color: rgba(226, 232, 240, 0.8);
+
+            --text-primary: #0F172A;
+            --text-secondary: #64748B;
+            --text-muted: #94A3B8;
+            --text-inverse: #FFFFFF;
+
+            /* 内容区域间距 */
+            --content-padding: 24px 32px;
+            --section-gap: 24px;
+            --card-gap: 16px;
+            --component-gap: 12px;
+
+            /* 边框圆角规范 */
+            --border-radius-sm: 8px;
+            --border-radius: 12px;
+            --border-radius-lg: 16px;
+            --border-radius-xl: 20px;
+
+            /* 阴影规范 */
+            --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+            --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.1), 0 1px 2px rgba(15, 23, 42, 0.06);
+            --shadow: 0 1px 3px rgba(15, 23, 42, 0.1), 0 1px 2px rgba(15, 23, 42, 0.06);
+            --shadow-md: 0 4px 6px rgba(15, 23, 42, 0.07), 0 2px 4px rgba(15, 23, 42, 0.06);
+            --shadow-lg: 0 10px 15px rgba(15, 23, 42, 0.1), 0 4px 6px rgba(15, 23, 42, 0.05);
+            --shadow-hover: 0 8px 20px rgba(15, 23, 42, 0.12), 0 3px 8px rgba(15, 23, 42, 0.08);
+
+            /* 过渡动画 */
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.2s ease;
+            --transition-slow: 0.3s ease;
+
+            background: var(--content-bg);
+        }
+
+        /* 开发者主题 - 与content-framework完全一致 */
+        .layout-shell .content.developer-theme {
+            --primary-gradient: linear-gradient(135deg, #6C63FF, #3D8BFF);
+            --primary-color: #6C63FF;
+            --primary-hover: #5B54D8;
+            --secondary-color: #3D8BFF;
+            --success-color: #10B981;
+            --warning-color: #F59E0B;
+            --error-color: #EF4444;
+            --info-color: #8B5CF6;
+
+            --content-bg: rgba(240, 242, 255, 0.75);
+            --card-bg: rgba(255, 255, 255, 0.94);
+            --toolbar-bg: rgba(248, 250, 255, 0.85);
+            --border-color: rgba(199, 210, 254, 0.7);
+
+            --text-primary: #1E1B4B;
+            --text-secondary: #6366F1;
+            --text-muted: #A5B4FC;
+            --text-inverse: #FFFFFF;
+
+            background: var(--content-bg);
         }
 
         /* Demo页面中的内容元素样式 */
@@ -674,16 +779,6 @@
             height: 180px;
             border-radius: 18px;
             background: repeating-linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.12) 12px, rgba(59,130,246,0.04) 12px, rgba(59,130,246,0.04) 24px);
-        }
-
-        /* 开发者主题的内容区域背景 */
-        .content.developer-theme {
-            background: rgba(240, 242, 255, 0.75);
-        }
-
-        /* 管理员主题的内容区域背景 */
-        .content.admin-theme {
-            background: rgba(248, 250, 255, 0.72);
         }
 
 
@@ -1455,7 +1550,7 @@
 
             // 🎯 [管理员仪表板] 相关功能
             function initAdminDashboard() {
-                if (!document.querySelector('.admin-dashboard')) {
+                if (!document.querySelector('.content-framework.admin-theme')) {
                     return; // 如果页面中没有仪表板元素，直接返回
                 }
 
@@ -1560,7 +1655,7 @@
             function initDashboardRealTimeUpdates() {
                 // 每30秒刷新一次数据
                 const updateInterval = setInterval(() => {
-                    if (document.querySelector('.admin-dashboard')) {
+                    if (document.querySelector('.content-framework.admin-theme')) {
                         loadDashboardOverview();
                         loadServerMonitoring();
                         updateLastRefreshTime();
@@ -1617,30 +1712,95 @@
                 }
             }
 
-            function renderDashboardOverview(data) {
-                // 渲染服务器统计
-                updateElement('totalServers', data.totalServers || 0);
-                updateElement('onlineServers', data.onlineServers || 0);
-                updateElement('offlineServers', data.offlineServers || 0);
+                        function renderDashboardOverview(data) {
+                if (!data) {
+                    return;
+                }
 
-                // 渲染用户统计
-                updateElement('todayActiveUsers', data.todayActiveUsers || 0);
-                updateElement('yesterdayActiveUsers', data.yesterdayActiveUsers || 0);
-                updateElement('threeDaysAgoActiveUsers', data.threeDaysAgoActiveUsers || 0);
+                const coalesce = (...values) => {
+                    for (const value of values) {
+                        if (value !== undefined && value !== null) {
+                            return value;
+                        }
+                    }
+                    return undefined;
+                };
 
-                // 渲染应用统计
-                updateElement('totalApplications', data.totalApplications || 0);
-                updateElement('runningApplications', data.runningApplications || 0);
-                updateElement('stoppedApplications', data.stoppedApplications || 0);
+                // 服务器统计
+                const serverStats = data.serverStats || {};
+                const serversOnline = coalesce(serverStats.online, serverStats.active, data.activeServers, data.onlineServers);
+                const serversTotal = coalesce(serverStats.total, data.totalServers);
+                const serversMaintaining = coalesce(serverStats.maintaining, serverStats.warning, data.monitoringServers);
+                const serversOffline = coalesce(serverStats.offline, data.inactiveServers, data.offlineServers);
+                const serversUpdatedAt = coalesce(serverStats.updatedAt, data.serverUpdatedAt, data.updatedAt);
 
-                // 渲染告警统计
-                updateElement('totalAlerts', data.totalAlerts || 0);
-                updateElement('criticalAlerts', data.criticalAlerts || 0);
-                updateElement('warningAlerts', data.warningAlerts || 0);
+                updateElement('dashboardServersOnline', serversOnline ?? 0);
+                updateElement('dashboardServersTotal', serversTotal ?? 0);
+                updateElement('dashboardServersMaintaining', serversMaintaining ?? 0);
+                updateElement('dashboardServersOffline', serversOffline ?? 0);
 
-                // 渲染系统健康度
-                updateElement('systemHealthScore', data.systemHealthScore || 0);
-                updateSystemHealthStatus(data.systemHealthStatus, data.systemHealthScore);
+                const serverRate = serversTotal ? ((serversOnline || 0) / serversTotal) * 100 : 0;
+                updateElement('dashboardServersRate', `${serverRate.toFixed(1)}%`);
+                updateTimestamp('dashboardServersUpdatedAt', serversUpdatedAt);
+
+                // 用户统计
+                const userStats = data.userStats || {};
+                const activeToday = coalesce(userStats.activeToday, data.todayActiveUsers, data.activeUsers);
+                const activeYesterday = coalesce(userStats.activeYesterday, data.yesterdayActiveUsers);
+                const activeThreeDays = coalesce(userStats.activeThreeDaysAgo, data.threeDaysAgoActiveUsers);
+                const usersTotal = coalesce(userStats.total, data.totalUsers);
+                const usersDelta = coalesce(userStats.delta, data.userDelta);
+                const usersConversion = coalesce(userStats.conversionRate, data.conversionRate);
+                const usersUpdatedAt = coalesce(userStats.updatedAt, data.usersUpdatedAt, data.updatedAt);
+
+                updateElement('dashboardUsersActiveToday', activeToday ?? 0);
+                updateElement('dashboardUsersYesterday', activeYesterday ?? 0);
+                updateElement('dashboardUsersThreeDays', activeThreeDays ?? 0);
+                updateElement('dashboardUsersTotal', usersTotal ?? 0);
+                updateDelta('dashboardUsersDelta', usersDelta);
+                if (usersConversion !== undefined && usersConversion !== null) {
+                    updateStatusText('dashboardUsersConversion', `转化率 ${formatPercent(usersConversion)}`);
+                } else {
+                    updateStatusText('dashboardUsersConversion', '转化率 --');
+                }
+                updateTimestamp('dashboardUsersUpdatedAt', usersUpdatedAt);
+
+                // 告警统计
+                const alertStats = data.alertStats || {};
+                const unresolved = coalesce(alertStats.unresolved, data.totalAlerts);
+                const critical = coalesce(alertStats.critical, data.criticalAlerts);
+                const warning = coalesce(alertStats.warning, data.warningAlerts);
+                const rules = coalesce(alertStats.rules, data.activeThresholds);
+                const alertDelta = coalesce(alertStats.delta, data.alertDelta);
+                const alertSla = coalesce(alertStats.slaStatus, data.alertSlaStatus);
+                const alertsUpdatedAt = coalesce(alertStats.updatedAt, data.alertsUpdatedAt, data.updatedAt);
+
+                updateElement('dashboardAlertsUnresolved', unresolved ?? 0);
+                updateElement('dashboardAlertsCritical', critical ?? 0);
+                updateElement('dashboardAlertsWarning', warning ?? 0);
+                updateElement('dashboardAlertsRules', rules ?? 0);
+                updateDelta('dashboardAlertsDelta', alertDelta);
+                updateStatusText('dashboardAlertsSla', alertSla, 'SLA 正常');
+                updateTimestamp('dashboardAlertsUpdatedAt', alertsUpdatedAt);
+
+                // 系统健康度
+                const healthStats = data.health || {};
+                const healthScoreRaw = coalesce(healthStats.score, data.systemHealthScore);
+                const healthScore = Number(healthScoreRaw);
+                const healthStatus = coalesce(healthStats.status, data.systemHealthStatus);
+                const healthSummary = coalesce(healthStats.summary, data.systemHealthSummary);
+                const healthUpdatedAt = coalesce(healthStats.updatedAt, data.healthUpdatedAt, data.updatedAt);
+
+                if (!Number.isNaN(healthScore)) {
+                    updateElement('dashboardHealthScore', healthScore.toFixed(1));
+                } else {
+                    updateElement('dashboardHealthScore', healthScoreRaw ?? 0);
+                }
+
+                const healthConfig = getHealthStatusConfig(healthStatus, healthScore);
+                updateStatusText('dashboardHealthSummary', healthSummary || healthConfig.text, '运行正常');
+                updateTimestamp('dashboardHealthUpdatedAt', healthUpdatedAt);
+                updateSystemHealthStatus(healthStatus, Number.isNaN(healthScore) ? 0 : healthScore);
             }
 
             function renderServerMonitoring(servers) {
@@ -1752,6 +1912,80 @@
                     element.textContent = value;
                 }
             }
+            function updateStatusText(id, value, fallback = "--") {
+                const element = document.getElementById(id);
+                if (!element) {
+                    return;
+                }
+                element.textContent = (value !== undefined && value !== null && value !== '') ? value : fallback;
+            }
+
+            function updateDelta(id, delta) {
+                const element = document.getElementById(id);
+                if (!element) {
+                    return;
+                }
+
+                const suffix = element.dataset.suffix || '%';
+                const precisionAttr = element.dataset.precision;
+                const precision = precisionAttr ? parseInt(precisionAttr, 10) : 1;
+
+                if (delta === undefined || delta === null || delta === '') {
+                    element.textContent = '--';
+                    element.dataset.trend = 'neutral';
+                    return;
+                }
+
+                const numeric = typeof delta === 'number' ? delta : Number(delta);
+                if (!Number.isNaN(numeric)) {
+                    const formatted = `${numeric > 0 ? '+' : ''}${numeric.toFixed(precision)}${suffix}`;
+                    element.textContent = formatted;
+                    if (numeric > 0) {
+                        element.dataset.trend = 'up';
+                    } else if (numeric < 0) {
+                        element.dataset.trend = 'down';
+                    } else {
+                        element.dataset.trend = 'neutral';
+                    }
+                } else {
+                    element.textContent = delta;
+                    element.dataset.trend = 'neutral';
+                }
+            }
+
+            function updateTimestamp(id, timestamp) {
+                const element = document.getElementById(id);
+                if (!element) {
+                    return;
+                }
+
+                if (!timestamp) {
+                    element.textContent = '更新于 --';
+                    return;
+                }
+
+                const date = new Date(timestamp);
+                if (Number.isNaN(date.getTime())) {
+                    element.textContent = `更新于 ${timestamp}`;
+                    return;
+                }
+
+                const formatted = date.toLocaleString('zh-CN', { hour12: false });
+                element.textContent = `更新于 ${formatted}`;
+            }
+
+            function formatPercent(value, fractionDigits = 1) {
+                if (value === undefined || value === null || value === '') {
+                    return '--%';
+                }
+                const numeric = typeof value === 'number' ? value : Number(value);
+                if (Number.isNaN(numeric)) {
+                    return `${value}`;
+                }
+                const percent = Math.abs(numeric) <= 1 ? numeric * 100 : numeric;
+                return `${percent.toFixed(fractionDigits)}%`;
+            }
+            }
 
             function updateProgressBar(id, percentage) {
                 const progressBar = document.getElementById(id);
@@ -1761,7 +1995,7 @@
             }
 
             function updateSystemHealthStatus(status, score) {
-                const statusElement = document.getElementById('systemHealthStatus');
+                const statusElement = document.getElementById('dashboardHealthStatus');
                 if (!statusElement) return;
 
                 const indicator = statusElement.querySelector('.health-indicator');
@@ -1977,7 +2211,7 @@
 
             // 健康度趋势图相关函数
             function initHealthTrendChart() {
-                const ctx = document.getElementById('healthTrendCanvas');
+                const ctx = document.getElementById('dashboardHealthTrendCanvas');
                 if (!ctx) return;
 
                 // 销毁现有图表
@@ -2084,7 +2318,7 @@
                 // 仪表板键盘快捷键处理器
                 function handleDashboardKeyboard(event) {
                     // 只在仪表板页面生效
-                    if (!document.querySelector('.admin-dashboard')) {
+                    if (!document.querySelector('.content-framework.admin-theme')) {
                         return;
                     }
 
@@ -2366,3 +2600,7 @@
     </script>
 </body>
 </html>
+
+
+
+

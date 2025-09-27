@@ -1,0 +1,607 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>管理员仪表盘统计卡片 Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg-app: #F4F5FB;
+      --bg-primary: rgba(255, 255, 255, 0.9);
+      --bg-elevated-dark: rgba(24, 32, 55, 0.82);
+      --surface-muted: rgba(15, 23, 42, 0.04);
+      --border-primary: rgba(15, 23, 42, 0.08);
+      --border-strong: rgba(15, 23, 42, 0.18);
+      --radius-2xl: 16px;
+      --shadow-sm: 0 12px 32px rgba(15, 23, 42, 0.12);
+      --shadow-lg: 0 24px 48px rgba(15, 23, 42, 0.18);
+      --shadow-xs: 0 6px 16px rgba(15, 23, 42, 0.12);
+      --transition-normal: 180ms;
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --focus-ring: #2563EB;
+      --text-primary: #0F172A;
+      --text-secondary: rgba(15, 23, 42, 0.65);
+      --text-muted: rgba(15, 23, 42, 0.35);
+      --font-size-4xl: 42px;
+      --font-size-3xl: 34px;
+      --font-size-base: 16px;
+      --font-size-sm: 14px;
+      --font-size-xs: 12px;
+      --font-weight-extrabold: 800;
+      --font-weight-semibold: 600;
+      --font-weight-medium: 500;
+      --spacing-4: 12px;
+      --spacing-5: 16px;
+      --spacing-6: 20px;
+      --spacing-7: 24px;
+      --color-primary: #3D8BFF;
+      --color-primary-bg: rgba(61, 139, 255, 0.12);
+      --color-success: #10B981;
+      --color-success-bg: rgba(16, 185, 129, 0.12);
+      --color-warning: #F59E0B;
+      --color-warning-bg: rgba(245, 158, 11, 0.12);
+      --color-error: #EF4444;
+      --color-error-bg: rgba(239, 68, 68, 0.12);
+      --gradient-admin: linear-gradient(135deg, #2F9BFF, #3BC6B8);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-app: #151A2B;
+        --bg-primary: rgba(21, 26, 43, 0.85);
+        --border-primary: rgba(148, 163, 184, 0.16);
+        --text-primary: rgba(226, 232, 240, 0.96);
+        --text-secondary: rgba(226, 232, 240, 0.72);
+        --text-muted: rgba(226, 232, 240, 0.45);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: clamp(32px, 6vw, 64px);
+      background: var(--bg-app);
+      color: var(--text-primary);
+      font-family: "Poppins", "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+      backdrop-filter: blur(20px);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    header p {
+      margin: 4px 0 0;
+      color: var(--text-secondary);
+      font-size: var(--font-size-base);
+    }
+
+    .description {
+      max-width: 640px;
+    }
+
+    .badge {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      background: var(--gradient-admin);
+      color: #fff;
+      letter-spacing: 0.04em;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(220px, 1fr));
+      gap: clamp(16px, 2vw, 24px);
+    }
+
+    @media (max-width: 1279px) {
+      .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+    }
+
+    @media (max-width: 680px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .stats-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: var(--spacing-6);
+      background: var(--bg-primary);
+      border: 1px solid var(--border-primary);
+      border-radius: var(--radius-2xl);
+      box-shadow: var(--shadow-sm);
+      min-height: 160px;
+      transition: transform var(--transition-normal) var(--ease-out),
+                  box-shadow var(--transition-normal) var(--ease-out);
+    }
+
+    .stats-card--actionable {
+      cursor: pointer;
+    }
+
+    .stats-card--actionable:focus-visible,
+    .stats-card--actionable .stats-card__action:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .stats-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .stats-card:active {
+      transform: translateY(0);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .stats-card__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--spacing-5);
+    }
+
+    .stats-card__identity {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-4);
+      flex: 1;
+      min-width: 0;
+    }
+
+    .stats-card__icon {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      font-size: 20px;
+      color: var(--color-primary);
+      background: var(--color-primary-bg);
+    }
+
+    .stats-card__label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .stats-card__title {
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
+      margin: 0;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stats-card__subtitle {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stats-card__value-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: var(--spacing-5);
+      margin: clamp(12px, 2vw, 20px) 0 var(--spacing-6);
+    }
+
+    .stats-card__value {
+      font-size: var(--font-size-4xl);
+      font-weight: var(--font-weight-extrabold);
+      line-height: 1;
+      color: var(--text-primary);
+    }
+
+    .stats-card__value small {
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-medium);
+      margin-left: 4px;
+      color: var(--text-secondary);
+    }
+
+    .stats-card__delta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      background: rgba(15, 23, 42, 0.04);
+      color: var(--text-secondary);
+    }
+
+    .stats-card__delta::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-primary);
+    }
+
+    .stats-card__footer {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--spacing-4);
+    }
+
+    .stats-card__meta {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stats-card__meta strong {
+      color: var(--text-primary);
+      font-weight: var(--font-weight-medium);
+    }
+
+    .stats-card__actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stats-card__action {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: rgba(15, 23, 42, 0.04);
+      color: var(--text-secondary);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: background var(--transition-normal) var(--ease-out),
+                  color var(--transition-normal) var(--ease-out);
+    }
+
+    .stats-card__action:hover {
+      background: rgba(15, 23, 42, 0.08);
+      color: var(--text-primary);
+    }
+
+    .stats-card__action:active {
+      background: rgba(15, 23, 42, 0.14);
+    }
+
+    /* 状态外观 */
+    .stats-card--warning {
+      border-left: 3px solid var(--color-warning);
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.08), transparent);
+    }
+
+    .stats-card--warning .stats-card__icon {
+      color: var(--color-warning);
+      background: var(--color-warning-bg);
+    }
+
+    .stats-card--warning .stats-card__delta,
+    .stats-card--warning .stats-card__delta::before {
+      background: rgba(245, 158, 11, 0.12);
+      color: var(--color-warning);
+    }
+
+    .stats-card--warning .stats-card__delta::before {
+      background: var(--color-warning);
+    }
+
+    .stats-card--success {
+      border-left: 3px solid var(--color-success);
+    }
+
+    .stats-card--success .stats-card__icon {
+      color: var(--color-success);
+      background: var(--color-success-bg);
+    }
+
+    .stats-card--success .stats-card__delta,
+    .stats-card--success .stats-card__delta::before {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--color-success);
+    }
+
+    .stats-card--success .stats-card__delta::before {
+      background: var(--color-success);
+    }
+
+    .stats-card--critical {
+      border-left: 3px solid var(--color-error);
+      background: linear-gradient(180deg, rgba(239, 68, 68, 0.08), transparent);
+    }
+
+    .stats-card--critical .stats-card__icon {
+      color: var(--color-error);
+      background: var(--color-error-bg);
+    }
+
+    .stats-card--critical .stats-card__value {
+      color: var(--color-error);
+    }
+
+    .stats-card--critical .stats-card__delta,
+    .stats-card--critical .stats-card__delta::before {
+      background: rgba(239, 68, 68, 0.12);
+      color: var(--color-error);
+    }
+
+    .stats-card--critical .stats-card__delta::before {
+      background: var(--color-error);
+    }
+
+    .stats-card--offline {
+      border-style: dashed;
+      border-color: var(--border-strong);
+      background: rgba(148, 163, 184, 0.12);
+    }
+
+    .stats-card--offline .stats-card__icon,
+    .stats-card--offline .stats-card__value,
+    .stats-card--offline .stats-card__meta,
+    .stats-card--offline .stats-card__title,
+    .stats-card--offline .stats-card__delta {
+      color: var(--text-muted);
+    }
+
+    .stats-card--offline .stats-card__delta {
+      background: transparent;
+    }
+
+    .stats-card--offline .stats-card__actions {
+      display: none;
+    }
+
+    /* 趋势指示器 */
+    .stats-card__delta[data-trend="up"]::before {
+      mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l7 8h-4v8h-6v-8H5l7-8z"/></svg>') center / 12px 12px no-repeat;
+      background: var(--color-success);
+    }
+
+    .stats-card__delta[data-trend="down"]::before {
+      mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l-7-8h4V4h6v8h4l-7 8z"/></svg>') center / 12px 12px no-repeat;
+      background: var(--color-error);
+    }
+
+    .stats-card__delta[data-trend="down"] {
+      color: var(--color-error);
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .stats-card,
+      .stats-card__action {
+        transition-duration: 0.001ms;
+      }
+    }
+
+    .status-legend {
+      margin-top: 48px;
+      padding: 24px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(15, 23, 42, 0.06);
+      backdrop-filter: blur(12px);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      font-size: var(--font-size-sm);
+    }
+
+    .status-legend h2 {
+      grid-column: 1 / -1;
+      margin: 0 0 8px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .status-item span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+    }
+
+    .status-item strong {
+      display: block;
+      font-weight: var(--font-weight-semibold);
+      color: var(--text-primary);
+    }
+
+    footer {
+      margin-top: 64px;
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div class="badge">ADMIN DASHBOARD</div>
+      <h1>关键指标统计卡片 · 视觉与交互 Demo</h1>
+      <p class="description">页面展示在线服务器、活跃用户、未处理告警、系统健康度四张统计卡片的视觉规范、交互反馈与状态表现，覆盖 Warning、Success、Critical、Offline 等场景。</p>
+    </div>
+  </header>
+
+  <section class="stats-grid" aria-label="统计卡片示例">
+    <article class="stats-card stats-card--warning stats-card--actionable" role="group" aria-labelledby="metric-servers" aria-describedby="meta-servers">
+      <div class="stats-card__header">
+        <div class="stats-card__identity">
+          <div class="stats-card__icon" aria-hidden="true">🖥️</div>
+          <div class="stats-card__label">
+            <h3 class="stats-card__title" id="metric-servers">在线服务器</h3>
+            <p class="stats-card__subtitle">当前 86 / 100 台</p>
+          </div>
+        </div>
+        <span class="stats-card__delta" data-trend="down">-4 台</span>
+      </div>
+      <div class="stats-card__value-row">
+        <div class="stats-card__value">86<small>/100</small></div>
+      </div>
+      <div class="stats-card__footer">
+        <div class="stats-card__meta" id="meta-servers">
+          <span>在线率 <strong>86%</strong></span>
+          <span>更新于 5 分钟前</span>
+        </div>
+        <div class="stats-card__actions">
+          <button class="stats-card__action" type="button" aria-label="刷新服务器数据">⟳</button>
+          <button class="stats-card__action" type="button" aria-label="打开服务器列表">➡</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="stats-card stats-card--success stats-card--actionable" role="group" aria-labelledby="metric-users" aria-describedby="meta-users">
+      <div class="stats-card__header">
+        <div class="stats-card__identity">
+          <div class="stats-card__icon" aria-hidden="true">👥</div>
+          <div class="stats-card__label">
+            <h3 class="stats-card__title" id="metric-users">活跃用户</h3>
+            <p class="stats-card__subtitle">今日目标 1,500 人</p>
+          </div>
+        </div>
+        <span class="stats-card__delta" data-trend="up">+18.4%</span>
+      </div>
+      <div class="stats-card__value-row">
+        <div class="stats-card__value">1,784<small>人</small></div>
+      </div>
+      <div class="stats-card__footer">
+        <div class="stats-card__meta" id="meta-users">
+          <span>环比提升 12% · 转化率 36%</span>
+        </div>
+        <div class="stats-card__actions">
+          <button class="stats-card__action" type="button" aria-label="查看用户分析">📊</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="stats-card stats-card--critical stats-card--actionable" role="group" aria-labelledby="metric-alerts" aria-describedby="meta-alerts">
+      <div class="stats-card__header">
+        <div class="stats-card__identity">
+          <div class="stats-card__icon" aria-hidden="true">🚨</div>
+          <div class="stats-card__label">
+            <h3 class="stats-card__title" id="metric-alerts">未处理告警</h3>
+            <p class="stats-card__subtitle">含 3 条 P1</p>
+          </div>
+        </div>
+        <span class="stats-card__delta">+5 条</span>
+      </div>
+      <div class="stats-card__value-row">
+        <div class="stats-card__value">18<small>条</small></div>
+      </div>
+      <div class="stats-card__footer">
+        <div class="stats-card__meta" id="meta-alerts">
+          <span>需立即处理高优告警</span>
+        </div>
+        <div class="stats-card__actions">
+          <button class="stats-card__action" type="button" aria-label="打开告警中心">⏱</button>
+        </div>
+      </div>
+    </article>
+
+    <article class="stats-card stats-card--offline" role="group" aria-labelledby="metric-health" aria-describedby="meta-health">
+      <div class="stats-card__header">
+        <div class="stats-card__identity">
+          <div class="stats-card__icon" aria-hidden="true">📡</div>
+          <div class="stats-card__label">
+            <h3 class="stats-card__title" id="metric-health">系统健康度</h3>
+            <p class="stats-card__subtitle">暂时无法获取数据</p>
+          </div>
+        </div>
+        <span class="stats-card__delta">--</span>
+      </div>
+      <div class="stats-card__value-row">
+        <div class="stats-card__value">--</div>
+      </div>
+      <div class="stats-card__footer">
+        <div class="stats-card__meta" id="meta-health">
+          <span>原因：健康评分服务离线</span>
+          <span>自动重连中，请稍后重试</span>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <aside class="status-legend">
+    <h2>状态与阈值参考</h2>
+    <div class="status-item">
+      <span style="background: var(--color-warning);"></span>
+      <div>
+        <strong>Warning</strong>
+        在线服务器或健康指标接近阈值，建议安排扩容或排查。
+      </div>
+    </div>
+    <div class="status-item">
+      <span style="background: var(--color-success);"></span>
+      <div>
+        <strong>Success</strong>
+        活跃用户表现优于目标，数据呈持续上升态势。
+      </div>
+    </div>
+    <div class="status-item">
+      <span style="background: var(--color-error);"></span>
+      <div>
+        <strong>Critical</strong>
+        告警积压超过 SLA 上限，需要立即响应处理。
+      </div>
+    </div>
+    <div class="status-item">
+      <span style="background: var(--text-muted);"></span>
+      <div>
+        <strong>Offline</strong>
+        数据源不可用或连接失败，操作按钮自动隐藏。
+      </div>
+    </div>
+  </aside>
+
+  <footer>
+    * 数据、图标均为演示占位符。集成后请替换为实时指标与矢量资源。
+  </footer>
+</body>
+</html>

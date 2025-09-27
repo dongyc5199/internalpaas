@@ -166,4 +166,13 @@ public interface UserActivityRepository extends JpaRepository<UserActivity, Long
            "ORDER BY HOUR(ua.createdAt)")
     List<Object[]> countActivitiesByHour(@Param("startTime") LocalDateTime startTime,
                                         @Param("endTime") LocalDateTime endTime);
+
+    /**
+     * 统计指定时间范围内的活跃用户数量
+     */
+    @Query("SELECT COUNT(DISTINCT ua.username) FROM UserActivity ua WHERE ua.createdAt BETWEEN :startTime AND :endTime")
+    long countDistinctUsersByCreatedAtBetween(@Param("startTime") LocalDateTime startTime,
+                                             @Param("endTime") LocalDateTime endTime);
 }
+
+

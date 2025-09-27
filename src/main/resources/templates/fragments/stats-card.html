@@ -1,0 +1,22 @@
+﻿<div xmlns:th="http://www.thymeleaf.org"
+     th:fragment="statsCard(iconClass, title, actionLabel, actionHandler, extraClass, cardId)"
+     class="stats-card"
+     th:classappend="${extraClass}"
+     th:id="${cardId}">
+    <div class="card-header">
+        <div class="card-icon">
+            <i th:class="${iconClass}" aria-hidden="true"></i>
+        </div>
+        <div class="card-title" th:text="${title}">统计标题</div>
+        <button class="btn btn-link" type="button"
+                th:if="${actionLabel != null and !#strings.isEmpty(actionLabel)}"
+                th:text="${actionLabel}"
+                th:attr="onclick=${actionHandler}">
+            操作
+        </button>
+    </div>
+    <div class="card-content">
+        <th:block th:insert="~{::body}"></th:block>
+    </div>
+</div>
+

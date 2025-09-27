@@ -39,6 +39,27 @@ public class AdminDashboardDto {
     // 最近活动记录
     private List<ActivityRecord> recentActivities;
     
+    private ServerStats serverStats = new ServerStats();
+    private UserStats userStats = new UserStats();
+    private AlertStats alertStats = new AlertStats();
+    private HealthStats health = new HealthStats();
+
+    private long todayActiveUsers;
+    private long yesterdayActiveUsers;
+    private long threeDaysAgoActiveUsers;
+    private Double userDelta;
+    private Double conversionRate;
+    private String usersUpdatedAt;
+
+    private long unresolvedAlerts;
+    private String alertSlaStatus;
+    private String alertsUpdatedAt;
+
+    private String serverUpdatedAt;
+    private String healthUpdatedAt;
+    private String systemHealthSummary;
+
+
     // Getters and Setters
     public long getTotalServers() {
         return totalServers;
@@ -219,6 +240,363 @@ public class AdminDashboardDto {
         this.systemHealthStatus = systemHealthStatus;
     }
     
+    public ServerStats getServerStats() {
+        return serverStats;
+    }
+
+    public void setServerStats(ServerStats serverStats) {
+        this.serverStats = serverStats;
+    }
+
+    public UserStats getUserStats() {
+        return userStats;
+    }
+
+    public void setUserStats(UserStats userStats) {
+        this.userStats = userStats;
+    }
+
+    public AlertStats getAlertStats() {
+        return alertStats;
+    }
+
+    public void setAlertStats(AlertStats alertStats) {
+        this.alertStats = alertStats;
+    }
+
+    public HealthStats getHealth() {
+        return health;
+    }
+
+    public void setHealth(HealthStats health) {
+        this.health = health;
+    }
+
+    public long getTodayActiveUsers() {
+        return todayActiveUsers;
+    }
+
+    public void setTodayActiveUsers(long todayActiveUsers) {
+        this.todayActiveUsers = todayActiveUsers;
+    }
+
+    public long getYesterdayActiveUsers() {
+        return yesterdayActiveUsers;
+    }
+
+    public void setYesterdayActiveUsers(long yesterdayActiveUsers) {
+        this.yesterdayActiveUsers = yesterdayActiveUsers;
+    }
+
+    public long getThreeDaysAgoActiveUsers() {
+        return threeDaysAgoActiveUsers;
+    }
+
+    public void setThreeDaysAgoActiveUsers(long threeDaysAgoActiveUsers) {
+        this.threeDaysAgoActiveUsers = threeDaysAgoActiveUsers;
+    }
+
+    public Double getUserDelta() {
+        return userDelta;
+    }
+
+    public void setUserDelta(Double userDelta) {
+        this.userDelta = userDelta;
+    }
+
+    public Double getConversionRate() {
+        return conversionRate;
+    }
+
+    public void setConversionRate(Double conversionRate) {
+        this.conversionRate = conversionRate;
+    }
+
+    public String getUsersUpdatedAt() {
+        return usersUpdatedAt;
+    }
+
+    public void setUsersUpdatedAt(String usersUpdatedAt) {
+        this.usersUpdatedAt = usersUpdatedAt;
+    }
+
+    public long getUnresolvedAlerts() {
+        return unresolvedAlerts;
+    }
+
+    public void setUnresolvedAlerts(long unresolvedAlerts) {
+        this.unresolvedAlerts = unresolvedAlerts;
+    }
+
+    public String getAlertSlaStatus() {
+        return alertSlaStatus;
+    }
+
+    public void setAlertSlaStatus(String alertSlaStatus) {
+        this.alertSlaStatus = alertSlaStatus;
+    }
+
+    public String getAlertsUpdatedAt() {
+        return alertsUpdatedAt;
+    }
+
+    public void setAlertsUpdatedAt(String alertsUpdatedAt) {
+        this.alertsUpdatedAt = alertsUpdatedAt;
+    }
+
+    public String getServerUpdatedAt() {
+        return serverUpdatedAt;
+    }
+
+    public void setServerUpdatedAt(String serverUpdatedAt) {
+        this.serverUpdatedAt = serverUpdatedAt;
+    }
+
+    public String getHealthUpdatedAt() {
+        return healthUpdatedAt;
+    }
+
+    public void setHealthUpdatedAt(String healthUpdatedAt) {
+        this.healthUpdatedAt = healthUpdatedAt;
+    }
+
+    public String getSystemHealthSummary() {
+        return systemHealthSummary;
+    }
+
+    public void setSystemHealthSummary(String systemHealthSummary) {
+        this.systemHealthSummary = systemHealthSummary;
+    }
+
+    public static class ServerStats {
+        private long total;
+        private long online;
+        private long offline;
+        private long maintaining;
+        private double onlineRate;
+        private String updatedAt;
+
+        public long getTotal() {
+            return total;
+        }
+
+        public void setTotal(long total) {
+            this.total = total;
+        }
+
+        public long getOnline() {
+            return online;
+        }
+
+        public void setOnline(long online) {
+            this.online = online;
+        }
+
+        public long getOffline() {
+            return offline;
+        }
+
+        public void setOffline(long offline) {
+            this.offline = offline;
+        }
+
+        public long getMaintaining() {
+            return maintaining;
+        }
+
+        public void setMaintaining(long maintaining) {
+            this.maintaining = maintaining;
+        }
+
+        public double getOnlineRate() {
+            return onlineRate;
+        }
+
+        public void setOnlineRate(double onlineRate) {
+            this.onlineRate = onlineRate;
+        }
+
+        public String getUpdatedAt() {
+            return updatedAt;
+        }
+
+        public void setUpdatedAt(String updatedAt) {
+            this.updatedAt = updatedAt;
+        }
+    }
+
+    public static class UserStats {
+        private long activeToday;
+        private long activeYesterday;
+        private long activeThreeDaysAgo;
+        private long total;
+        private Double delta;
+        private Double conversionRate;
+        private String updatedAt;
+
+        public long getActiveToday() {
+            return activeToday;
+        }
+
+        public void setActiveToday(long activeToday) {
+            this.activeToday = activeToday;
+        }
+
+        public long getActiveYesterday() {
+            return activeYesterday;
+        }
+
+        public void setActiveYesterday(long activeYesterday) {
+            this.activeYesterday = activeYesterday;
+        }
+
+        public long getActiveThreeDaysAgo() {
+            return activeThreeDaysAgo;
+        }
+
+        public void setActiveThreeDaysAgo(long activeThreeDaysAgo) {
+            this.activeThreeDaysAgo = activeThreeDaysAgo;
+        }
+
+        public long getTotal() {
+            return total;
+        }
+
+        public void setTotal(long total) {
+            this.total = total;
+        }
+
+        public Double getDelta() {
+            return delta;
+        }
+
+        public void setDelta(Double delta) {
+            this.delta = delta;
+        }
+
+        public Double getConversionRate() {
+            return conversionRate;
+        }
+
+        public void setConversionRate(Double conversionRate) {
+            this.conversionRate = conversionRate;
+        }
+
+        public String getUpdatedAt() {
+            return updatedAt;
+        }
+
+        public void setUpdatedAt(String updatedAt) {
+            this.updatedAt = updatedAt;
+        }
+    }
+
+    public static class AlertStats {
+        private long unresolved;
+        private long critical;
+        private long warning;
+        private long rules;
+        private Double delta;
+        private String slaStatus;
+        private String updatedAt;
+
+        public long getUnresolved() {
+            return unresolved;
+        }
+
+        public void setUnresolved(long unresolved) {
+            this.unresolved = unresolved;
+        }
+
+        public long getCritical() {
+            return critical;
+        }
+
+        public void setCritical(long critical) {
+            this.critical = critical;
+        }
+
+        public long getWarning() {
+            return warning;
+        }
+
+        public void setWarning(long warning) {
+            this.warning = warning;
+        }
+
+        public long getRules() {
+            return rules;
+        }
+
+        public void setRules(long rules) {
+            this.rules = rules;
+        }
+
+        public Double getDelta() {
+            return delta;
+        }
+
+        public void setDelta(Double delta) {
+            this.delta = delta;
+        }
+
+        public String getSlaStatus() {
+            return slaStatus;
+        }
+
+        public void setSlaStatus(String slaStatus) {
+            this.slaStatus = slaStatus;
+        }
+
+        public String getUpdatedAt() {
+            return updatedAt;
+        }
+
+        public void setUpdatedAt(String updatedAt) {
+            this.updatedAt = updatedAt;
+        }
+    }
+
+    public static class HealthStats {
+        private double score;
+        private String status;
+        private String summary;
+        private String updatedAt;
+
+        public double getScore() {
+            return score;
+        }
+
+        public void setScore(double score) {
+            this.score = score;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public String getSummary() {
+            return summary;
+        }
+
+        public void setSummary(String summary) {
+            this.summary = summary;
+        }
+
+        public String getUpdatedAt() {
+            return updatedAt;
+        }
+
+        public void setUpdatedAt(String updatedAt) {
+            this.updatedAt = updatedAt;
+        }
+    }
+
+
     // 内部类：活动记录
     public static class ActivityRecord {
         private String type;

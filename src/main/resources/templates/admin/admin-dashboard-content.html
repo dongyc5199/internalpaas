@@ -5,10 +5,8 @@
 </head>
 <body>
     <!-- ✨ 增强版管理员工作台 - 基于内容页框架 -->
-    <div th:fragment="admin-dashboard-content" class="content-framework admin-theme">
-        <div class="content-scrollable">
-
-            <!-- 面包屑导航 -->
+    <div th:fragment="admin-dashboard-content" class="content-framework admin-theme admin-enhanced">
+        <!-- 面包屑导航 -->
         <nav class="breadcrumb">
             <div class="breadcrumb-item">
                 <i class="fas fa-home"></i>
@@ -46,196 +44,100 @@
         </div>
 
         <!-- 系统概览统计区域 -->
-        <section class="stats-overview" id="statsOverview">
-            <!-- 服务器状态统计 -->
-            <div class="stats-card server-stats">
-                <div class="card-header">
-                    <div class="card-icon">
-                        <i class="fas fa-server"></i>
-                    </div>
-                    <div class="card-title">服务器集群</div>
-                    <button class="btn btn-link" onclick="navigateToServers()">查看详情</button>
+                <section class="stats-overview" id="statsOverview">
+            <div th:replace="fragments/stats-card :: statsCard(''fas fa-server'', ''在线服务器'', ''查看服务器'', ''navigateToServers()'', ''server-stats'', ''dashboardServerCard'')">
+                <div class="main-stat">
+                    <span class="stat-number" id="dashboardServersOnline">0</span>
+                    <span class="stat-label">在线</span>
+                    <span class="stat-annotation">/ <span id="dashboardServersTotal">0</span> 台</span>
                 </div>
-                <div class="card-content">
-                    <div class="main-stat">
-                        <span class="stat-number" id="totalServers">0</span>
-                        <span class="stat-label">总计</span>
+                <div class="sub-stats">
+                    <div class="sub-stat warning">
+                        <span class="indicator"></span>
+                        <span class="label">维护</span>
+                        <span class="value" id="dashboardServersMaintaining">0</span>
                     </div>
-                    <div class="sub-stats">
-                        <div class="sub-stat online">
-                            <span class="indicator"></span>
-                            <span class="label">在线</span>
-                            <span class="value" id="onlineServers">0</span>
-                        </div>
-                        <div class="sub-stat warning">
-                            <span class="indicator"></span>
-                            <span class="label">警告</span>
-                            <span class="value" id="warningServers">0</span>
-                        </div>
-                        <div class="sub-stat offline">
-                            <span class="indicator"></span>
-                            <span class="label">离线</span>
-                            <span class="value" id="offlineServers">0</span>
-                        </div>
+                    <div class="sub-stat offline">
+                        <span class="indicator"></span>
+                        <span class="label">离线</span>
+                        <span class="value" id="dashboardServersOffline">0</span>
                     </div>
+                </div>
+                <div class="stat-meta" aria-live="polite">
+                    <span>在线率 <strong id="dashboardServersRate">0%</strong></span>
+                    <span id="dashboardServersUpdatedAt">更新于 --</span>
                 </div>
             </div>
 
-            <!-- 用户活跃度统计 -->
-            <div class="stats-card user-stats">
-                <div class="card-header">
-                    <div class="card-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="card-title">用户活跃度</div>
-                    <button class="btn btn-link" onclick="navigateToUsers()">管理用户</button>
+            <div th:replace="fragments/stats-card :: statsCard(''fas fa-users'', ''活跃用户'', ''查看用户'', ''navigateToUsers()'', ''user-stats'', ''dashboardUserCard'')">
+                <div class="main-stat">
+                    <span class="stat-number" id="dashboardUsersActiveToday">0</span>
+                    <span class="stat-label">今日活跃</span>
                 </div>
-                <div class="card-content">
-                    <div class="main-stat">
-                        <span class="stat-number" id="todayActiveUsers">0</span>
-                        <span class="stat-label">今日活跃</span>
+                <div class="stats-delta" data-trend="neutral" data-suffix="%" id="dashboardUsersDelta">--</div>
+                <div class="sub-stats">
+                    <div class="sub-stat">
+                        <span class="label">昨日</span>
+                        <span class="value" id="dashboardUsersYesterday">0</span>
                     </div>
-                    <div class="sub-stats">
-                        <div class="sub-stat">
-                            <span class="label">昨日</span>
-                            <span class="value" id="yesterdayActiveUsers">0</span>
-                        </div>
-                        <div class="sub-stat">
-                            <span class="label">前日</span>
-                            <span class="value" id="threeDaysAgoActiveUsers">0</span>
-                        </div>
-                        <div class="sub-stat">
-                            <span class="label">总用户</span>
-                            <span class="value" id="totalUsers">0</span>
-                        </div>
+                    <div class="sub-stat">
+                        <span class="label">三日前</span>
+                        <span class="value" id="dashboardUsersThreeDays">0</span>
                     </div>
+                    <div class="sub-stat">
+                        <span class="label">总用户</span>
+                        <span class="value" id="dashboardUsersTotal">0</span>
+                    </div>
+                </div>
+                <div class="stat-meta" aria-live="polite">
+                    <span id="dashboardUsersConversion">转化率 --</span>
+                    <span id="dashboardUsersUpdatedAt">更新于 --</span>
                 </div>
             </div>
 
-            <!-- 应用运行状态 -->
-            <div class="stats-card app-stats">
-                <div class="card-header">
-                    <div class="card-icon">
-                        <i class="fas fa-cube"></i>
-                    </div>
-                    <div class="card-title">应用状态</div>
-                    <button class="btn btn-link" onclick="navigateToApplications()">查看应用</button>
+            <div th:replace="fragments/stats-card :: statsCard(''fas fa-exclamation-triangle'', ''未处理告警'', ''告警中心'', ''navigateToAlerts()'', ''alert-stats'', ''dashboardAlertCard'')">
+                <div class="main-stat">
+                    <span class="stat-number" id="dashboardAlertsUnresolved">0</span>
+                    <span class="stat-label">未处理</span>
                 </div>
-                <div class="card-content">
-                    <div class="main-stat">
-                        <span class="stat-number" id="totalApplications">0</span>
-                        <span class="stat-label">总应用数</span>
+                <div class="stats-delta" data-trend="neutral" data-suffix="条" id="dashboardAlertsDelta">--</div>
+                <div class="sub-stats">
+                    <div class="sub-stat critical">
+                        <span class="indicator"></span>
+                        <span class="label">严重</span>
+                        <span class="value" id="dashboardAlertsCritical">0</span>
                     </div>
-                    <div class="sub-stats">
-                        <div class="sub-stat running">
-                            <span class="indicator"></span>
-                            <span class="label">运行中</span>
-                            <span class="value" id="runningApplications">0</span>
-                        </div>
-                        <div class="sub-stat stopped">
-                            <span class="indicator"></span>
-                            <span class="label">已停止</span>
-                            <span class="value" id="stoppedApplications">0</span>
-                        </div>
-                        <div class="sub-stat critical">
-                            <span class="indicator"></span>
-                            <span class="label">异常</span>
-                            <span class="value" id="errorApplications">0</span>
-                        </div>
+                    <div class="sub-stat warning">
+                        <span class="indicator"></span>
+                        <span class="label">警告</span>
+                        <span class="value" id="dashboardAlertsWarning">0</span>
                     </div>
+                    <div class="sub-stat">
+                        <span class="label">生效规则</span>
+                        <span class="value" id="dashboardAlertsRules">0</span>
+                    </div>
+                </div>
+                <div class="stat-meta" aria-live="polite">
+                    <span id="dashboardAlertsSla">SLA 正常</span>
+                    <span id="dashboardAlertsUpdatedAt">更新于 --</span>
                 </div>
             </div>
 
-            <!-- 告警统计 -->
-            <div class="stats-card alert-stats">
-                <div class="card-header">
-                    <div class="card-icon">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="card-title">告警监控</div>
-                    <button class="btn btn-link" onclick="navigateToAlerts()">告警配置</button>
+            <div th:replace="fragments/stats-card :: statsCard(''fas fa-heartbeat'', ''系统健康度'', ''健康详情'', ''viewHealthDetails()'', ''health-stats'', ''dashboardHealthCard'')">
+                <div class="main-stat">
+                    <span class="stat-number health-score" id="dashboardHealthScore">0</span>
+                    <span class="stat-label">评分</span>
                 </div>
-                <div class="card-content">
-                    <div class="main-stat">
-                        <span class="stat-number" id="totalAlerts">0</span>
-                        <span class="stat-label">活跃告警</span>
-                    </div>
-                    <div class="sub-stats">
-                        <div class="sub-stat critical">
-                            <span class="indicator"></span>
-                            <span class="label">严重</span>
-                            <span class="value" id="criticalAlerts">0</span>
-                        </div>
-                        <div class="sub-stat warning">
-                            <span class="indicator"></span>
-                            <span class="label">警告</span>
-                            <span class="value" id="warningAlerts">0</span>
-                        </div>
-                        <div class="sub-stat">
-                            <span class="label">阈值</span>
-                            <span class="value" id="activeThresholds">0</span>
-                        </div>
-                    </div>
+                <div class="health-status" id="dashboardHealthStatus">
+                    <span class="health-indicator"></span>
+                    <span class="health-text">评估中...</span>
                 </div>
-            </div>
-
-            <!-- 系统健康度 -->
-            <div class="stats-card health-stats">
-                <div class="card-header">
-                    <div class="card-icon">
-                        <i class="fas fa-heartbeat"></i>
-                    </div>
-                    <div class="card-title">系统健康度</div>
-                    <button class="btn btn-link" onclick="viewHealthDetails()">详细分析</button>
+                <div class="stat-meta" aria-live="polite">
+                    <span id="dashboardHealthSummary">运行正常</span>
+                    <span id="dashboardHealthUpdatedAt">更新于 --</span>
                 </div>
-                <div class="card-content">
-                    <div class="main-stat">
-                        <span class="stat-number health-score" id="systemHealthScore">0</span>
-                        <span class="stat-label">综合评分</span>
-                    </div>
-                    <div class="health-status" id="systemHealthStatus">
-                        <span class="health-indicator"></span>
-                        <span class="health-text">评估中...</span>
-                    </div>
-                    <div class="health-trend" id="healthTrendChart" style="height: 60px; margin-top: 12px;">
-                        <canvas id="healthTrendCanvas" width="200" height="60"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 资源使用统计 -->
-            <div class="stats-card resource-stats">
-                <div class="card-header">
-                    <div class="card-icon">
-                        <i class="fas fa-chart-pie"></i>
-                    </div>
-                    <div class="card-title">资源使用率</div>
-                    <button class="btn btn-link" onclick="viewResourceDetails()">详细统计</button>
-                </div>
-                <div class="card-content">
-                    <div class="resource-metrics-mini">
-                        <div class="metric-row">
-                            <span class="metric-label">CPU</span>
-                            <span class="metric-value" id="avgCpuUsage">0%</span>
-                            <div class="metric-bar-mini">
-                                <div class="metric-progress" id="cpuProgressMini"></div>
-                            </div>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">内存</span>
-                            <span class="metric-value" id="avgMemoryUsage">0%</span>
-                            <div class="metric-bar-mini">
-                                <div class="metric-progress" id="memoryProgressMini"></div>
-                            </div>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">磁盘</span>
-                            <span class="metric-value" id="avgDiskUsage">0%</span>
-                            <div class="metric-bar-mini">
-                                <div class="metric-progress" id="diskProgressMini"></div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="health-trend" id="dashboardHealthTrend">
+                    <canvas id="dashboardHealthTrendCanvas" width="220" height="60"></canvas>
                 </div>
             </div>
         </section>
@@ -489,32 +391,73 @@
             </div>
         </section>
 
-        </div> <!-- 结束 content-scrollable -->
     </div> <!-- 结束 content-framework admin-theme -->
 
     <!-- 自定义样式增强 -->
     <style>
-        /* 资源指标迷你版样式 */
-        .resource-metrics-mini {
+        /* 增强版管理员仪表板专用样式 */
+
+        /* 字体大小微调 - 保持一致性 */
+        .admin-enhanced .card-title {
+            font-size: 14px !important;
+            font-weight: 600 !important;
+        }
+
+        .admin-enhanced .page-title {
+            font-size: 28px !important;
+            font-weight: 700 !important;
+        }
+
+        .admin-enhanced .section-title {
+            font-size: 18px !important;
+            font-weight: 600 !important;
+        }
+
+        /* 边框圆角统一 */
+        .admin-enhanced .stats-card,
+        .admin-enhanced .analysis-card,
+        .admin-enhanced .quick-action-btn {
+            border-radius: var(--border-radius) !important;
+        }
+
+        .admin-enhanced .btn {
+            border-radius: var(--border-radius-sm) !important;
+        }
+
+        .admin-enhanced .form-select {
+            border-radius: var(--border-radius-sm) !important;
+        }
+
+        /* 阴影效果统一 */
+        .admin-enhanced .analysis-card:hover,
+        .admin-enhanced .stats-card:hover {
+            box-shadow: var(--shadow-hover) !important;
+        }
+
+        /* ===============================================
+           🎨 专门的Stats-Card现代化设计系统
+           =============================================== */
+
+        .admin-enhanced .resource-metrics-mini {
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
 
-        .metric-row {
+        .admin-enhanced .metric-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 8px;
         }
 
-        .metric-label {
+        .admin-enhanced .metric-label {
             font-size: 12px;
             color: var(--text-secondary);
             min-width: 32px;
         }
 
-        .metric-value {
+        .admin-enhanced .metric-value {
             font-size: 12px;
             font-weight: 600;
             color: var(--text-primary);
@@ -522,7 +465,7 @@
             text-align: right;
         }
 
-        .metric-bar-mini {
+        .admin-enhanced .metric-bar-mini {
             flex: 1;
             height: 4px;
             background: rgba(0, 0, 0, 0.1);
@@ -530,7 +473,7 @@
             overflow: hidden;
         }
 
-        .metric-progress {
+        .admin-enhanced .metric-progress {
             height: 100%;
             background: var(--primary-gradient);
             border-radius: 2px;
@@ -538,17 +481,17 @@
         }
 
         /* 分析面板网格 */
-        .analysis-section {
+        .admin-enhanced .analysis-section {
             margin-top: var(--section-gap);
         }
 
-        .analysis-grid {
+        .admin-enhanced .analysis-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: var(--card-gap);
         }
 
-        .analysis-card {
+        .admin-enhanced .analysis-card {
             background: var(--card-bg);
             border-radius: var(--border-radius-lg);
             border: 1px solid var(--border-color);
@@ -556,7 +499,7 @@
             overflow: hidden;
         }
 
-        .analysis-card .card-header {
+        .admin-enhanced .analysis-card .card-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -565,11 +508,11 @@
             background: rgba(255, 255, 255, 0.5);
         }
 
-        .analysis-card .card-content {
+        .admin-enhanced .analysis-card .card-content {
             padding: 20px;
         }
 
-        .analysis-card .card-title {
+        .admin-enhanced .analysis-card .card-title {
             font-size: 16px;
             font-weight: 600;
             color: var(--text-primary);
@@ -578,19 +521,19 @@
             gap: 8px;
         }
 
-        .card-actions {
+        .admin-enhanced .card-actions {
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
         /* 活动流样式 */
-        .activity-stream {
+        .admin-enhanced .activity-stream {
             max-height: 300px;
             overflow-y: auto;
         }
 
-        .activity-item {
+        .admin-enhanced .activity-item {
             display: flex;
             align-items: flex-start;
             gap: 12px;
@@ -598,11 +541,11 @@
             border-bottom: 1px solid var(--border-color);
         }
 
-        .activity-item:last-child {
+        .admin-enhanced .activity-item:last-child {
             border-bottom: none;
         }
 
-        .activity-icon {
+        .admin-enhanced .activity-icon {
             width: 32px;
             height: 32px;
             border-radius: 50%;
@@ -615,42 +558,42 @@
             flex-shrink: 0;
         }
 
-        .activity-content {
+        .admin-enhanced .activity-content {
             flex: 1;
         }
 
-        .activity-title {
+        .admin-enhanced .activity-title {
             font-size: 14px;
             font-weight: 500;
             color: var(--text-primary);
             margin-bottom: 2px;
         }
 
-        .activity-description {
+        .admin-enhanced .activity-description {
             font-size: 12px;
             color: var(--text-secondary);
             margin-bottom: 4px;
         }
 
-        .activity-time {
+        .admin-enhanced .activity-time {
             font-size: 11px;
             color: var(--text-muted);
         }
 
         /* 状态网格样式 */
-        .status-grid {
+        .admin-enhanced .status-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 16px;
         }
 
-        .status-item {
+        .admin-enhanced .status-item {
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
-        .status-icon {
+        .admin-enhanced .status-icon {
             width: 36px;
             height: 36px;
             border-radius: 50%;
@@ -662,34 +605,34 @@
             font-size: 14px;
         }
 
-        .status-icon.warning { background: var(--warning-color); }
-        .status-icon.error { background: var(--error-color); }
-        .status-icon.info { background: var(--info-color); }
+        .admin-enhanced .status-icon.warning { background: var(--warning-color); }
+        .admin-enhanced .status-icon.error { background: var(--error-color); }
+        .admin-enhanced .status-icon.info { background: var(--info-color); }
 
-        .status-content {
+        .admin-enhanced .status-content {
             flex: 1;
         }
 
-        .status-label {
+        .admin-enhanced .status-label {
             font-size: 12px;
             color: var(--text-secondary);
             margin-bottom: 2px;
         }
 
-        .status-value {
+        .admin-enhanced .status-value {
             font-size: 14px;
             font-weight: 600;
             color: var(--text-primary);
         }
 
         /* 快速操作样式 */
-        .quick-actions-grid {
+        .admin-enhanced .quick-actions-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 12px;
         }
 
-        .quick-action-btn {
+        .admin-enhanced .quick-action-btn {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -704,25 +647,25 @@
             color: var(--text-primary);
         }
 
-        .quick-action-btn:hover {
+        .admin-enhanced .quick-action-btn:hover {
             border-color: var(--primary-color);
             background: rgba(var(--primary-color), 0.05);
             transform: translateY(-1px);
         }
 
-        .quick-action-btn i {
+        .admin-enhanced .quick-action-btn i {
             font-size: 20px;
             color: var(--primary-color);
         }
 
-        .quick-action-btn span {
+        .admin-enhanced .quick-action-btn span {
             font-size: 12px;
             font-weight: 500;
             text-align: center;
         }
 
         /* 表单选择器样式 */
-        .form-select {
+        .admin-enhanced .form-select {
             padding: 8px 12px;
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius-sm);
@@ -732,14 +675,14 @@
             cursor: pointer;
         }
 
-        .form-select:focus {
+        .admin-enhanced .form-select:focus {
             outline: none;
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(var(--primary-color), 0.1);
         }
 
         /* 区域标题样式 */
-        .section-header {
+        .admin-enhanced .section-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -748,7 +691,7 @@
             background: rgba(255, 255, 255, 0.5);
         }
 
-        .section-title {
+        .admin-enhanced .section-title {
             font-size: 18px;
             font-weight: 600;
             color: var(--text-primary);
@@ -758,43 +701,43 @@
             gap: 8px;
         }
 
-        .section-actions {
+        .admin-enhanced .section-actions {
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
         /* 图表控制按钮 */
-        .chart-controls {
+        .admin-enhanced .chart-controls {
             display: flex;
             gap: 4px;
         }
 
-        .chart-controls .btn {
+        .admin-enhanced .chart-controls .btn {
             padding: 4px 8px;
             font-size: 12px;
         }
 
         /* 资源图表容器 */
-        .resource-chart-container {
+        .admin-enhanced .resource-chart-container {
             margin-bottom: 16px;
         }
 
-        .resource-legend {
+        .admin-enhanced .resource-legend {
             display: flex;
             flex-wrap: wrap;
             gap: 12px;
             justify-content: center;
         }
 
-        .legend-item {
+        .admin-enhanced .legend-item {
             display: flex;
             align-items: center;
             gap: 6px;
             font-size: 12px;
         }
 
-        .legend-color {
+        .admin-enhanced .legend-color {
             width: 12px;
             height: 12px;
             border-radius: 2px;
@@ -802,42 +745,43 @@
 
         /* 响应式调整 */
         @media (max-width: 1200px) {
-            .analysis-grid {
+            .admin-enhanced .analysis-grid {
                 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             }
 
-            .quick-actions-grid {
+            .admin-enhanced .quick-actions-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
 
         @media (max-width: 768px) {
-            .stats-overview {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .analysis-grid {
+            .admin-enhanced .analysis-grid {
                 grid-template-columns: 1fr;
             }
 
-            .quick-actions-grid {
+            .admin-enhanced .quick-actions-grid {
                 grid-template-columns: repeat(3, 1fr);
             }
 
-            .status-grid {
+            .admin-enhanced .status-grid {
                 grid-template-columns: 1fr;
             }
         }
 
         @media (max-width: 480px) {
-            .stats-overview {
-                grid-template-columns: 1fr;
-            }
-
-            .quick-actions-grid {
+            .admin-enhanced .quick-actions-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
-        }
-    </style>
+        }    </style>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+

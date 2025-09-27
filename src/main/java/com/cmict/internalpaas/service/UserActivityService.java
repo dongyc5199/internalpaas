@@ -368,4 +368,12 @@ public class UserActivityService {
             return "低";
         }
     }
+
+    public long countDistinctUsersInRange(LocalDateTime startTime, LocalDateTime endTime) {
+        if (startTime == null || endTime == null) {
+            return 0L;
+        }
+        return userActivityRepository.countDistinctUsersByCreatedAtBetween(startTime, endTime);
+    }
+
 }
