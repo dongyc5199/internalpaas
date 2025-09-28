@@ -126,43 +126,43 @@ public class MainLayoutController {
 
             StringBuilder htmlBuilder = new StringBuilder();
 
-        htmlBuilder.append("<section class='dashboard-summary'>");
-        htmlBuilder.append("  <h2>平台概览</h2>");
-        htmlBuilder.append("  <ul class='summary-cards'>");
-        htmlBuilder.append("    <li><strong>")
-        .append(adminData.getTotalServers())
-        .append("</strong><span>服务器总数</span></li>");
-        htmlBuilder.append("    <li><strong>")
-        .append(adminData.getActiveServers())
-        .append("</strong><span>活跃服务器</span></li>");
-        htmlBuilder.append("    <li><strong>")
-        .append(adminData.getMonitoringServers())
-        .append("</strong><span>监控覆盖</span></li>");
-        htmlBuilder.append("    <li><strong>")
-        .append(adminData.getTotalUsers())
-        .append("</strong><span>用户总数</span></li>");
-        htmlBuilder.append("  </ul>");
-        htmlBuilder.append("</section>");
-
-        htmlBuilder.append("<section class='server-status-section'>");
-        htmlBuilder.append("  <h2>服务器清单</h2>");
-        htmlBuilder.append("  <ul class='server-simple-list'>");
-        for (Server server : servers) {
+            htmlBuilder.append("<section class='dashboard-summary'>");
+            htmlBuilder.append("  <h2>平台概览</h2>");
+            htmlBuilder.append("  <ul class='summary-cards'>");
             htmlBuilder.append("    <li><strong>")
-                .append(server.getName())
-                .append("</strong><span>")
-                .append(server.getHostname())
-                .append(":")
-                .append(server.getPort())
-                .append("</span></li>");
-        }
-        if (servers.isEmpty()) {
-            htmlBuilder.append("    <li class='empty'>暂无服务器数据</li>");
-        }
-        htmlBuilder.append("  </ul>");
-        htmlBuilder.append("</section>");
+                .append(adminData.getTotalServers())
+                .append("</strong><span>服务器总数</span></li>");
+            htmlBuilder.append("    <li><strong>")
+                .append(adminData.getActiveServers())
+                .append("</strong><span>活跃服务器</span></li>");
+            htmlBuilder.append("    <li><strong>")
+                .append(adminData.getMonitoringServers())
+                .append("</strong><span>监控覆盖</span></li>");
+            htmlBuilder.append("    <li><strong>")
+                .append(adminData.getTotalUsers())
+                .append("</strong><span>用户总数</span></li>");
+            htmlBuilder.append("  </ul>");
+            htmlBuilder.append("</section>");
 
-        return ResponseEntity.ok(htmlBuilder.toString());
+            htmlBuilder.append("<section class='server-status-section'>");
+            htmlBuilder.append("  <h2>服务器清单</h2>");
+            htmlBuilder.append("  <ul class='server-simple-list'>");
+            for (Server server : servers) {
+                htmlBuilder.append("    <li><strong>")
+                    .append(server.getName())
+                    .append("</strong><span>")
+                    .append(server.getHostname())
+                    .append(":")
+                    .append(server.getPort())
+                    .append("</span></li>");
+            }
+            if (servers.isEmpty()) {
+                htmlBuilder.append("    <li class='empty'>暂无服务器数据</li>");
+            }
+            htmlBuilder.append("  </ul>");
+            htmlBuilder.append("</section>");
+
+            return ResponseEntity.ok(htmlBuilder.toString());
         } catch (Exception e) {
             return ResponseEntity.status(500).body("<div class=\"alert alert-danger\">加载工作台内容失败: " + e.getMessage() + "</div>");
         }

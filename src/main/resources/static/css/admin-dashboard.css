@@ -21,6 +21,164 @@
     color: var(--accent-color, #2F9BFF);
 }
 
+/* 面包屑与操作区域 */
+.admin-dashboard .workspace-breadcrumb {
+    margin-bottom: 1rem;
+}
+
+.admin-dashboard .workspace-breadcrumb ol {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 0.875rem;
+    color: var(--shell-text-secondary);
+}
+
+.admin-dashboard .workspace-breadcrumb li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-dashboard .workspace-breadcrumb li + li::before {
+    content: '/';
+    color: rgba(148, 163, 184, 0.8);
+}
+
+.admin-dashboard .workspace-breadcrumb .breadcrumb-link {
+    border: none;
+    background: transparent;
+    color: var(--accent-color, #2F9BFF);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 2px 0;
+}
+
+.admin-dashboard .workspace-breadcrumb li[aria-current="page"] {
+    font-weight: 600;
+    color: var(--shell-text-primary);
+}
+
+.admin-dashboard .content-scrollable {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.admin-dashboard .page-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.admin-dashboard .last-update {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* 区块标题与工具条 */
+.admin-dashboard .stats-card-header,
+.admin-dashboard .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.admin-dashboard .stats-card-meta,
+.admin-dashboard .section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-dashboard .btn-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-dashboard .btn-toggle .toggle-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+/* 快速操作与列表 */
+.admin-dashboard .quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1.5rem;
+}
+
+.admin-dashboard .quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-dashboard .split-panels {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.admin-dashboard .panel-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.admin-dashboard .panel-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.admin-dashboard .item-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.admin-dashboard .content-footer {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    .admin-dashboard .workspace-breadcrumb ol {
+        flex-wrap: wrap;
+    }
+
+    .admin-dashboard .page-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .admin-dashboard .page-actions .btn {
+        justify-content: center;
+    }
+
+    .admin-dashboard .split-panels {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-dashboard .quick-actions-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+    }
+}
+
 /* ============ 系统概览统计区域 ============ */
 .dashboard-overview {
     margin-bottom: 2.5rem;

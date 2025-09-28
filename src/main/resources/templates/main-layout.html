@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="/css/icon-components.css">
     <link rel="stylesheet" href="/css/responsive.css">
     <link rel="stylesheet" href="/css/content-framework.css">
+    <link rel="stylesheet" href="/css/admin-dashboard.css">
     <link rel="stylesheet" th:href="@{/admin-dashboard/stat-cards.css}">
     <link rel="icon" type="image/png" href="/favicon.png">
 
@@ -1154,7 +1155,7 @@
     </div>
 
     <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="/vendor/chartjs/chart.min.js"></script>
 
     <script>
         (function () {
@@ -1165,6 +1166,7 @@
             const backdrop = document.querySelector('[data-role="sidebar-backdrop"]');
             const THEME_KEY = 'app-shell-theme';
             const SIDEBAR_KEY = 'app-shell-sidebar-state';
+            const LANGUAGE_KEY = 'app-shell-language';
             const eventBus = new EventTarget();
 
             if (!shellRoot) {
@@ -1173,6 +1175,7 @@
             }
 
             let currentTheme = 'light';
+            let currentLanguage = 'zh';
             let sidebarState = shellRoot.dataset.sidebarState || 'expanded';
 
             function persist(key, value) {
@@ -1222,6 +1225,51 @@
                 }
 
                 emit('theme:changed', { theme: currentTheme });
+            }
+
+            function applyLanguage(lang, persistPref = true) {
+                const normalized = (typeof lang === 'string' && lang.toLowerCase() === 'en') ? 'en' : 'zh';
+                currentLanguage = normalized;
+
+                document.documentElement.setAttribute('lang', currentLanguage === 'en' ? 'en' : 'zh-CN');
+
+                const languageToggleButton = document.querySelector('[data-action="toggle-language"]');
+                if (languageToggleButton) {
+                    const label = languageToggleButton.querySelector('span');
+                    if (label) {
+                        label.textContent = currentLanguage === 'en' ? 'EN' : 'ZH';
+                    }
+                    languageToggleButton.setAttribute('aria-pressed', String(currentLanguage === 'en'));
+                }
+
+                const translatable = document.querySelectorAll('[data-i18n-zh]');
+                translatable.forEach((element) => {
+                    const zh = element.getAttribute('data-i18n-zh');
+                    const en = element.getAttribute('data-i18n-en');
+                    const value = currentLanguage === 'en'
+                        ? (en !== null && en !== undefined ? en : zh)
+                        : (zh !== null && zh !== undefined ? zh : en);
+
+                    if (value === null || value === undefined) {
+                        return;
+                    }
+
+                    if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                        if (element.hasAttribute('placeholder')) {
+                            element.setAttribute('placeholder', value);
+                        } else {
+                            element.value = value;
+                        }
+                    } else {
+                        element.textContent = value;
+                    }
+                });
+
+                emit('language:changed', { language: currentLanguage });
+
+                if (persistPref) {
+                    persist(LANGUAGE_KEY, currentLanguage);
+                }
             }
 
             function applySidebarState(state, persistPref = true) {
@@ -1285,6 +1333,11 @@
                 if (savedSidebar === 'collapsed' || savedSidebar === 'expanded') {
                     applySidebarState(savedSidebar, false);
                 }
+
+                const savedLanguage = load(LANGUAGE_KEY);
+                const toggleLanguageLabel = document.querySelector('[data-action="toggle-language"] span');
+                const fallbackLanguage = toggleLanguageLabel ? toggleLanguageLabel.textContent.trim().toLowerCase() : 'zh';
+                applyLanguage(savedLanguage || fallbackLanguage, false);
             }
 
             function initHeader() {
@@ -1317,6 +1370,13 @@
                 if (toggleThemeBtn) {
                     toggleThemeBtn.addEventListener('click', () => {
                         applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+                    });
+                }
+
+                const languageToggleBtn = header.querySelector('[data-action="toggle-language"]');
+                if (languageToggleBtn) {
+                    languageToggleBtn.addEventListener('click', () => {
+                        applyLanguage(currentLanguage === 'en' ? 'zh' : 'en');
                     });
                 }
 
@@ -1471,7 +1531,7 @@
                         return;
                     }
 
-                    outlet.innerHTML = '<div class="spa-placeholder">正在加载...</div>';
+                    outlet.innerHTML = '<div class="spa-placeholder" data-i18n-zh="正在加载..." data-i18n-en="Loading...">正在加载...</div>';
 
                     try {
                         let apiUrl = '';
@@ -1487,10 +1547,10 @@
                                 apiUrl = '/admin/api/users-content';
                                 break;
                             case 'settings':
-                                outlet.innerHTML = '<div class="spa-placeholder">系统设置功能开发中...</div>';
+                                outlet.innerHTML = '<div class="spa-placeholder" data-i18n-zh="系统设置功能开发中..." data-i18n-en="System settings coming soon...">系统设置功能开发中...</div>';
                                 return;
                             default:
-                                outlet.innerHTML = '<div class="spa-placeholder">页面不存在</div>';
+                                outlet.innerHTML = '<div class="spa-placeholder" data-i18n-zh="页面不存在" data-i18n-en="Page not found">页面不存在</div>';
                                 return;
                         }
 
@@ -1498,12 +1558,15 @@
                         if (response.ok) {
                             const content = await response.text();
                             outlet.innerHTML = content;
+                            applyLanguage(currentLanguage, false);
                         } else {
-                            outlet.innerHTML = '<div class="spa-placeholder">加载失败，请重试</div>';
+                            outlet.innerHTML = '<div class="spa-placeholder" data-i18n-zh="加载失败，请重试" data-i18n-en="Failed to load, please retry">加载失败，请重试</div>';
+                            applyLanguage(currentLanguage, false);
                         }
                     } catch (error) {
                         console.error('加载内容失败:', error);
-                        outlet.innerHTML = '<div class="spa-placeholder">网络错误，请重试</div>';
+                        outlet.innerHTML = '<div class="spa-placeholder" data-i18n-zh="网络错误，请重试" data-i18n-en="Network error, please retry">网络错误，请重试</div>';
+                        applyLanguage(currentLanguage, false);
                     }
                 };
 
@@ -1520,7 +1583,7 @@
 
                 // 初始加载默认内容
                 const initialRoute = outlet.dataset.route || 'overview';
-                loadContent(initialRoute);
+                emit('spa:navigate', { route: initialRoute });
             }
 
             function initResponsiveHandling() {
@@ -1712,7 +1775,7 @@
                 }
             }
 
-                        function renderDashboardOverview(data) {
+            function renderDashboardOverview(data) {
                 if (!data) {
                     return;
                 }
@@ -1811,73 +1874,77 @@
                     serverGrid.innerHTML = `
                         <div class="no-servers">
                             <i class="fas fa-server"></i>
-                            <p>暂无服务器数据</p>
-                            <button class="btn btn-primary" id="addFirstServer">
+                            <p data-i18n-zh="暂无服务器数据" data-i18n-en="No server data available">暂无服务器数据</p>
+                            <button class="btn btn-primary" id="addFirstServer" type="button">
                                 <i class="fas fa-plus"></i>
-                                添加第一台服务器
+                                <span data-i18n-zh="添加第一台服务器" data-i18n-en="Add first server">添加第一台服务器</span>
                             </button>
                         </div>
                     `;
 
-                    // 绑定添加服务器事件
                     const addFirstServerBtn = document.getElementById('addFirstServer');
                     if (addFirstServerBtn) {
                         addFirstServerBtn.addEventListener('click', () => {
                             emit('spa:navigate', { route: 'servers' });
                         });
                     }
+                    applyLanguage(currentLanguage, false);
                     return;
                 }
 
-                const serverCards = servers.map(server => `
-                    <div class="server-status-card ${server.status || 'offline'}">
-                        <div class="server-header">
-                            <div class="server-info">
-                                <div class="server-name">${server.name || 'Unknown'}</div>
-                                <div class="server-address">${server.host || 'N/A'}:${server.port || 22}</div>
-                            </div>
-                            <div class="server-status">
-                                <span class="status-indicator ${server.status || 'offline'}"></span>
-                                <span class="status-text">${getStatusText(server.status)}</span>
-                            </div>
-                        </div>
-                        <div class="server-metrics">
-                            <div class="metric">
-                                <div class="metric-label">CPU</div>
-                                <div class="metric-value">${server.cpuUsage || 0}%</div>
-                                <div class="metric-bar">
-                                    <div class="metric-progress" style="width: ${server.cpuUsage || 0}%"></div>
+                const serverCards = servers.map((server) => {
+                    const statusZh = getStatusText(server.status, 'zh');
+                    const statusEn = getStatusText(server.status, 'en');
+                    return `
+                        <div class="server-status-card ${server.status || 'offline'}">
+                            <div class="server-header">
+                                <div class="server-info">
+                                    <div class="server-name">${server.name || 'Unknown'}</div>
+                                    <div class="server-address">${server.host || 'N/A'}:${server.port || 22}</div>
+                                </div>
+                                <div class="server-status">
+                                    <span class="status-indicator ${server.status || 'offline'}"></span>
+                                    <span class="status-text" data-i18n-zh="${statusZh}" data-i18n-en="${statusEn}">${getStatusText(server.status)}</span>
                                 </div>
                             </div>
-                            <div class="metric">
-                                <div class="metric-label">内存</div>
-                                <div class="metric-value">${server.memoryUsage || 0}%</div>
-                                <div class="metric-bar">
-                                    <div class="metric-progress" style="width: ${server.memoryUsage || 0}%"></div>
+                            <div class="server-metrics">
+                                <div class="metric">
+                                    <div class="metric-label" data-i18n-zh="CPU" data-i18n-en="CPU">CPU</div>
+                                    <div class="metric-value">${server.cpuUsage || 0}%</div>
+                                    <div class="metric-bar">
+                                        <div class="metric-progress" style="width: ${server.cpuUsage || 0}%"></div>
+                                    </div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label" data-i18n-zh="内存" data-i18n-en="Memory">内存</div>
+                                    <div class="metric-value">${server.memoryUsage || 0}%</div>
+                                    <div class="metric-bar">
+                                        <div class="metric-progress" style="width: ${server.memoryUsage || 0}%"></div>
+                                    </div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-label" data-i18n-zh="磁盘" data-i18n-en="Disk">磁盘</div>
+                                    <div class="metric-value">${server.diskUsage || 0}%</div>
+                                    <div class="metric-bar">
+                                        <div class="metric-progress" style="width: ${server.diskUsage || 0}%"></div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="metric">
-                                <div class="metric-label">磁盘</div>
-                                <div class="metric-value">${server.diskUsage || 0}%</div>
-                                <div class="metric-bar">
-                                    <div class="metric-progress" style="width: ${server.diskUsage || 0}%"></div>
-                                </div>
+                            <div class="server-actions">
+                                <button class="btn btn-link" type="button" onclick="viewServerDetail(${server.id})">
+                                    <i class="fas fa-eye"></i>
+                                    <span data-i18n-zh="查看详情" data-i18n-en="View details">查看详情</span>
+                                </button>
+                                <button class="btn btn-link" type="button" onclick="connectToServer(${server.id})">
+                                    <i class="fas fa-terminal"></i>
+                                    <span data-i18n-zh="SSH 连接" data-i18n-en="SSH Connect">SSH 连接</span>
+                                </button>
                             </div>
-                        </div>
-                        <div class="server-actions">
-                            <button class="btn btn-link" onclick="viewServerDetail(${server.id})">
-                                <i class="fas fa-eye"></i>
-                                查看详情
-                            </button>
-                            <button class="btn btn-link" onclick="connectToServer(${server.id})">
-                                <i class="fas fa-terminal"></i>
-                                SSH连接
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
+                        </div>`;
+                }).join('');
 
                 serverGrid.innerHTML = serverCards;
+                applyLanguage(currentLanguage, false);
             }
 
             function renderResourceAnalysis(data) {
@@ -1959,19 +2026,22 @@
                     return;
                 }
 
+                const label = currentLanguage === 'en' ? 'Last updated' : '更新于';
+                const locale = currentLanguage === 'en' ? 'en-US' : 'zh-CN';
+
                 if (!timestamp) {
-                    element.textContent = '更新于 --';
+                    element.textContent = `${label} --`;
                     return;
                 }
 
                 const date = new Date(timestamp);
                 if (Number.isNaN(date.getTime())) {
-                    element.textContent = `更新于 ${timestamp}`;
+                    element.textContent = `${label} ${timestamp}`;
                     return;
                 }
 
-                const formatted = date.toLocaleString('zh-CN', { hour12: false });
-                element.textContent = `更新于 ${formatted}`;
+                const formatted = date.toLocaleString(locale, { hour12: false });
+                element.textContent = `${label} ${formatted}`;
             }
 
             function formatPercent(value, fractionDigits = 1) {
@@ -1984,7 +2054,6 @@
                 }
                 const percent = Math.abs(numeric) <= 1 ? numeric * 100 : numeric;
                 return `${percent.toFixed(fractionDigits)}%`;
-            }
             }
 
             function updateProgressBar(id, percentage) {
@@ -2026,18 +2095,19 @@
                 }
             }
 
-            function getStatusText(status) {
+            function getStatusText(status, lang = currentLanguage) {
+                const language = (typeof lang === 'string' && lang.toLowerCase() === 'en') ? 'en' : 'zh';
                 switch (status) {
                     case 'online':
-                        return '在线';
+                        return language === 'en' ? 'Online' : '在线';
                     case 'offline':
-                        return '离线';
+                        return language === 'en' ? 'Offline' : '离线';
                     case 'warning':
-                        return '警告';
+                        return language === 'en' ? 'Warning' : '警告';
                     case 'error':
-                        return '错误';
+                        return language === 'en' ? 'Error' : '错误';
                     default:
-                        return '未知';
+                        return language === 'en' ? 'Unknown' : '未知';
                 }
             }
 
@@ -2054,12 +2124,13 @@
                 const lastUpdateElement = document.getElementById('lastUpdateTime');
                 if (lastUpdateElement) {
                     const now = new Date();
-                    const timeString = now.toLocaleTimeString('zh-CN', {
+                    const timeString = now.toLocaleTimeString(currentLanguage === 'en' ? 'en-US' : 'zh-CN', {
                         hour: '2-digit',
                         minute: '2-digit',
                         second: '2-digit'
                     });
-                    lastUpdateElement.textContent = `最后更新: ${timeString}`;
+                    const label = currentLanguage === 'en' ? 'Last updated' : '最后更新';
+                    lastUpdateElement.textContent = `${label}: ${timeString}`;
                 }
             }
 
@@ -2589,11 +2660,15 @@
                 on,
                 emit,
                 applyTheme,
+                applyLanguage,
                 setSidebar(state) {
                     applySidebarState(state);
                 },
+                setLanguage(lang) {
+                    applyLanguage(lang);
+                },
                 getState() {
-                    return { theme: currentTheme, sidebar: sidebarState };
+                    return { theme: currentTheme, sidebar: sidebarState, language: currentLanguage };
                 }
             };
         })();
