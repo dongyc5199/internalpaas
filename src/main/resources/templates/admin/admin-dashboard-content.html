@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
  <head>
   <meta charset="utf-8"/>
@@ -73,7 +73,7 @@
      </div>
     </div>
     <!-- 统计概览 -->
-    <section aria-label="Key metrics" class="stats-overview" id="statsOverview">
+    <section aria-label="Key metrics" class="stats-overview" id="dashboardOverviewCards">
      <article aria-labelledby="statsServersTitle" class="stats-card stats-card--servers">
       <header class="card-header">
        <div aria-hidden="true" class="card-icon">
@@ -326,460 +326,138 @@
       </div>
      </article>
     </section>
-    <!-- 内容工具栏 -->
+    <!-- 工作区主面板 -->
     <section class="main-content-section">
-     <div aria-label="Dashboard tools" class="content-toolbar">
-      <div class="toolbar-left">
-       <div class="search-box">
-        <i aria-hidden="true" class="search-icon">
-         🔍
-        </i>
-        <input class="search-input" data-i18n-en="Search servers, users, or apps..." data-i18n-zh="搜索服务器、用户或应用..." id="dashboardSearchInput" placeholder="搜索服务器、用户或应用..." type="search"/>
-       </div>
-       <select aria-label="Time range filter" class="form-select" id="timeRangeSelect">
-        <option data-i18n-en="Today" data-i18n-zh="今日" value="today">
-         今日
-        </option>
-        <option data-i18n-en="Last 7 Days" data-i18n-zh="最近 7 天" value="7d">
-         最近 7 天
-        </option>
-        <option data-i18n-en="Last 30 Days" data-i18n-zh="最近 30 天" value="30d">
-         最近 30 天
-        </option>
-       </select>
-      </div>
-      <div class="toolbar-right">
-       <button class="btn btn-secondary" id="manageServersBtn" type="button">
-        <i aria-hidden="true">
-         ➕
-        </i>
-        <span data-i18n-en="Manage Servers" data-i18n-zh="管理服务器">
-         管理服务器
-        </span>
-       </button>
-       <button class="btn btn-secondary" id="refreshServers" type="button">
-        <i aria-hidden="true">
-         🖥️
-        </i>
-        <span data-i18n-en="Refresh List" data-i18n-zh="刷新列表">
-         刷新列表
-        </span>
-       </button>
-       <button class="btn btn-primary" id="quickActionTrigger" type="button">
-        <i aria-hidden="true">
-         ⚙️
-        </i>
-        <span data-i18n-en="Quick Action" data-i18n-zh="快速操作">
-         快速操作
-        </span>
-       </button>
-      </div>
-     </div>
-     <div class="main-content-area">
-      <div class="section-header">
-       <h3 class="section-title">
-        <i aria-hidden="true">
-         🖥️
-        </i>
-        <span data-i18n-en="Server Monitoring" data-i18n-zh="🖥️服务器监控面板">
-         🖥️服务器监控面板
-        </span>
-       </h3>
-       <div class="section-actions">
-        <button class="btn btn-secondary" data-view="bar" id="resourceBarView" type="button">
-         <span data-i18n-en="Overview" data-i18n-zh="概览">
-          概览
-         </span>
-        </button>
-        <button class="btn btn-secondary" data-view="chart" id="resourceChartView" type="button">
-         <span data-i18n-en="Chart" data-i18n-zh="图表">
-          图表
-         </span>
+     <div class="main-content-area main-content-area--two-columns">
+      <section aria-label="Server monitoring" class="content-panel server-panel">
+       <header class="section-header">
+        <div>
+         <h2 class="section-title">
+          <i aria-hidden="true">🖥️</i>
+          <span data-i18n-en="Server Monitoring" data-i18n-zh="服务器监控面板">服务器监控面板</span>
+         </h2>
+         <p class="section-subtitle" data-i18n-en="Track infrastructure health and resource usage" data-i18n-zh="实时掌握基础设施健康度与资源使用率">实时掌握基础设施健康度与资源使用率</p>
+        </div>
+        <div class="section-actions">
+         <div class="layout-toggle-group" id="serverViewToggle">
+          <button class="btn btn-toggle active" data-i18n-en="Grid" data-i18n-zh="网格" data-view="grid" id="serverGridView" type="button">网格</button>
+          <button class="btn btn-toggle" data-i18n-en="List" data-i18n-zh="列表" data-view="list" id="serverListView" type="button">列表</button>
+         </div>
+         <button class="btn btn-secondary" id="refreshServers" type="button">
+          <i aria-hidden="true">🔄</i>
+          <span data-i18n-en="Refresh" data-i18n-zh="刷新">刷新</span>
+         </button>
+        </div>
+       </header>
+       <div class="panel-toolbar">
+        <div class="search-box">
+         <i aria-hidden="true" class="search-icon">🔍</i>
+         <input class="search-input" data-i18n-en="Search servers" data-i18n-zh="搜索服务器" id="serverSearchInput" placeholder="搜索服务器" type="search"/>
+        </div>
+        <select aria-label="Server time range" class="form-select" data-i18n-en="Time range" data-i18n-zh="时间范围" id="serverRangeSelect">
+         <option data-i18n-en="Last 24 Hours" data-i18n-zh="过去24小时" value="1d">过去24小时</option>
+         <option data-i18n-en="Last 7 Days" data-i18n-zh="过去7天" value="7d">过去7天</option>
+         <option data-i18n-en="Last 30 Days" data-i18n-zh="过去30天" value="30d">过去30天</option>
+        </select>
+        <button class="btn btn-secondary" id="manageServersBtn" type="button">
+         <i aria-hidden="true">⚙️</i>
+         <span data-i18n-en="Manage" data-i18n-zh="管理">管理</span>
         </button>
        </div>
-      </div>
-      <div class="content-area">
-       <div class="content-grid content-grid--two-columns">
-        <section aria-labelledby="resourcePanelTitle" class="content-panel">
-         <header class="section-header">
-          <div>
-           <h2 class="section-title" id="resourcePanelTitle">
-            <i aria-hidden="true">
-             📊
-            </i>
-            <span data-i18n-en="Resource Utilization" data-i18n-zh="📊分析面板演示">
-             📊分析面板演示
-            </span>
-           </h2>
-           <p class="section-subtitle" data-i18n-en="Aggregated CPU, memory, and disk consumption" data-i18n-zh="聚合监控 CPU、内存与磁盘使用率">
-            聚合监控 CPU、内存与磁盘使用率
-           </p>
-          </div>
-         </header>
-         <div class="resource-metrics" id="resourceMetrics">
-          <div class="metric">
-           <div class="metric-label" data-i18n-en="Avg CPU" data-i18n-zh="平均 CPU">
-            平均 CPU
-           </div>
-           <div class="metric-value">
-            <span id="avgCpuUsage">
-             0
-            </span>
-            %
-           </div>
-           <div class="metric-progress">
-            <div class="metric-progress-bar" id="cpuProgressBar">
-            </div>
-           </div>
-          </div>
-          <div class="metric">
-           <div class="metric-label" data-i18n-en="Avg Memory" data-i18n-zh="平均内存">
-            平均内存
-           </div>
-           <div class="metric-value">
-            <span id="avgMemoryUsage">
-             0
-            </span>
-            %
-           </div>
-           <div class="metric-progress">
-            <div class="metric-progress-bar" id="memoryProgressBar">
-            </div>
-           </div>
-          </div>
-          <div class="metric">
-           <div class="metric-label" data-i18n-en="Avg Disk" data-i18n-zh="平均磁盘">
-            平均磁盘
-           </div>
-           <div class="metric-value">
-            <span id="avgDiskUsage">
-             0
-            </span>
-            %
-           </div>
-           <div class="metric-progress">
-            <div class="metric-progress-bar" id="diskProgressBar">
-            </div>
-           </div>
-          </div>
-         </div>
-         <div class="chart-container" hidden="" id="resourceChart">
-          <canvas aria-label="Resource usage chart" height="220" id="resourcePieChart" width="320">
-          </canvas>
-          <div class="chart-legend" id="resourceLegend">
-          </div>
-         </div>
-        </section>
-        <section aria-labelledby="serverPanelTitle" class="content-panel">
-         <header class="section-header">
-          <div>
-           <h2 class="section-title" id="serverPanelTitle">
-            <i aria-hidden="true">
-             🔧
-            </i>
-            <span data-i18n-en="Server Monitoring" data-i18n-zh="🔧系统工具">
-             🔧系统工具
-            </span>
-           </h2>
-           <p class="section-subtitle" data-i18n-en="Real-time status of each node" data-i18n-zh="实时了解各节点运行状态">
-            实时了解各节点运行状态
-           </p>
-          </div>
-          <div class="chart-toggle-group">
-           <button class="btn btn-toggle active" data-view="grid" id="serverGridView" type="button">
-            <span data-i18n-en="Grid" data-i18n-zh="网格">
-             网格
-            </span>
-           </button>
-           <button class="btn btn-toggle" data-view="list" id="serverListView" type="button">
-            <span data-i18n-en="List" data-i18n-zh="列表">
-             列表
-            </span>
-           </button>
-          </div>
-         </header>
-         <div class="server-status" id="serverStatusContainer">
-         </div>
-        </section>
-        <section aria-labelledby="healthPanelTitle" class="content-panel">
-         <header class="section-header">
-          <div>
-           <h2 class="section-title" id="healthPanelTitle">
-            <i aria-hidden="true">
-             💡
-            </i>
-            <span data-i18n-en="Health Trend" data-i18n-zh="健康度趋势">
-             健康度趋势
-            </span>
-           </h2>
-           <p class="section-subtitle" data-i18n-en="Recent score and stability" data-i18n-zh="最近得分与稳定性走势">
-            最近得分与稳定性走势
-           </p>
-          </div>
-         </header>
-         <div class="chart-container">
-          <canvas aria-label="Health trend chart" height="240" id="dashboardHealthTrendCanvas">
-          </canvas>
-         </div>
-        </section>
-        <section aria-labelledby="activityPanelTitle" class="content-panel">
-         <header class="section-header">
-          <div>
-           <h2 class="section-title" id="activityPanelTitle">
-            <i aria-hidden="true">
-             📣
-            </i>
-            <span data-i18n-en="Activities &amp; Alerts" data-i18n-zh="活动与告警">
-             活动与告警
-            </span>
-           </h2>
-           <p class="section-subtitle" data-i18n-en="Operations feed and incidents" data-i18n-zh="查看运维动态与告警事件">
-            查看运维动态与告警事件
-           </p>
-          </div>
-          <div class="section-actions">
-           <button class="btn btn-secondary" id="pauseNotificationsBtn" type="button">
-            <span data-i18n-en="Pause feed" data-i18n-zh="暂停推送">
-             暂停推送
-            </span>
-           </button>
-          </div>
-         </header>
-         <div class="split-panels">
-          <div class="panel-block">
-           <div class="panel-block-header">
-            <h3>
-             <i aria-hidden="true">
-              🚨
-             </i>
-             <span data-i18n-en="Alerts" data-i18n-zh="告警动态">
-              告警动态
-             </span>
-            </h3>
-            <button class="btn btn-link" id="viewAllAlertsBtn" type="button">
-             <span data-i18n-en="View all" data-i18n-zh="查看全部">
-              查看全部
-             </span>
-            </button>
-           </div>
-           <ul aria-live="polite" class="item-list" id="recentAlerts">
-            <li class="empty-state" data-i18n-en="No active alerts." data-i18n-zh="暂无告警事件">
-             暂无告警事件
-            </li>
-           </ul>
-          </div>
-          <div class="panel-block">
-           <div class="panel-block-header">
-            <h3>
-             <i aria-hidden="true">
-              👥
-             </i>
-             <span data-i18n-en="User activity" data-i18n-zh="用户活动">
-              用户活动
-             </span>
-            </h3>
-            <button class="btn btn-link" id="viewAllActivitiesBtn" type="button">
-             <span data-i18n-en="View all" data-i18n-zh="查看全部">
-              查看全部
-             </span>
-            </button>
-           </div>
-           <ul aria-live="polite" class="item-list" id="activityStream">
-            <li class="empty-state" data-i18n-en="No recent activity." data-i18n-zh="暂无用户活动">
-             暂无用户活动
-            </li>
-           </ul>
-          </div>
-         </div>
-        </section>
-       </div>
-      </div>
-     </div>
-    </section>
-    <!-- 分析面板 -->
-    <section class="main-content-section">
-     <div class="main-content-area">
-      <div class="section-header">
-       <h3 class="section-title">
-        <i aria-hidden="true">
-         📊
-        </i>
-        <span data-i18n-en="Analysis Boards" data-i18n-zh="分析面板">
-         分析面板
-        </span>
-       </h3>
-      </div>
-      <div class="content-area">
-       <div class="analysis-grid">
-        <article class="analysis-card analysis-card--monitor">
-         <h4>
-          <span aria-hidden="true">
-           📈
-          </span>
-          <span data-i18n-en="Real-time Monitoring" data-i18n-zh="实时监控">
-           实时监控
-          </span>
-         </h4>
-         <p data-i18n-en="Live CPU, memory, and disk charts" data-i18n-zh="CPU、内存、磁盘使用率实时图表">
-          CPU、内存、磁盘使用率实时图表
-         </p>
+       <div class="server-summary" id="serverSummary">
+        <article class="summary-item">
+         <span class="summary-label" data-i18n-en="Total" data-i18n-zh="总服务器">总服务器</span>
+         <strong class="summary-value" id="serverSummaryTotal">0</strong>
         </article>
-        <article class="analysis-card analysis-card--activity">
-         <h4>
-          <span aria-hidden="true">
-           📋
-          </span>
-          <span data-i18n-en="Activity Log" data-i18n-zh="活动日志">
-           活动日志
-          </span>
-         </h4>
-         <p data-i18n-en="User operations and system events" data-i18n-zh="用户操作和系统事件记录">
-          用户操作和系统事件记录
-         </p>
+        <article class="summary-item">
+         <span class="summary-label" data-i18n-en="Online" data-i18n-zh="在线">在线</span>
+         <strong class="summary-value" id="serverSummaryOnline">0</strong>
         </article>
-        <article class="analysis-card analysis-card--alerts">
-         <h4>
-          <span aria-hidden="true">
-           🚨
-          </span>
-          <span data-i18n-en="Alert Center" data-i18n-zh="告警中心">
-           告警中心
-          </span>
-         </h4>
-         <p data-i18n-en="Alert and incident management" data-i18n-zh="系统告警和异常事件管理">
-          系统告警和异常事件管理
-         </p>
+        <article class="summary-item">
+         <span class="summary-label" data-i18n-en="Warnings" data-i18n-zh="告警">告警</span>
+         <strong class="summary-value" id="serverSummaryWarning">0</strong>
         </article>
-        <article class="analysis-card analysis-card--actions">
-         <h4>
-          <span aria-hidden="true">
-           🚀
-          </span>
-          <span data-i18n-en="Quick Actions" data-i18n-zh="快速操作">
-           快速操作
-          </span>
-         </h4>
-         <p data-i18n-en="Shortcuts to common admin tasks" data-i18n-zh="常用管理操作快捷入口">
-          常用管理操作快捷入口
-         </p>
+        <article class="summary-item">
+         <span class="summary-label" data-i18n-en="Offline" data-i18n-zh="离线">离线</span>
+         <strong class="summary-value" id="serverSummaryOffline">0</strong>
         </article>
        </div>
-      </div>
-     </div>
-    </section>
-    <!-- 系统工具与快速操作 -->
-    <section class="main-content-section">
-     <div class="main-content-area">
-      <div class="section-header">
-       <h3 class="section-title">
-        <i aria-hidden="true">
-         🔧
-        </i>
-        <span data-i18n-en="System Toolkit" data-i18n-zh="系统工具">
-         系统工具
-        </span>
-       </h3>
-      </div>
-      <div class="content-area system-tools">
-       <div class="tool-list">
-        <div class="tool-card">
-         <h5>
-          <span aria-hidden="true">
-           📊
-          </span>
-          <span data-i18n-en="Performance Analytics" data-i18n-zh="性能分析">
-           性能分析
-          </span>
-         </h5>
-         <p data-i18n-en="View job efficiency and bottlenecks" data-i18n-zh="查看关键任务执行效率与瓶颈">
-          查看关键任务执行效率与瓶颈
-         </p>
+       <div class="server-metrics">
+        <div class="metric">
+         <div class="metric-label" data-i18n-en="Avg CPU" data-i18n-zh="平均 CPU">平均 CPU</div>
+         <div class="metric-value"><span id="avgCpuUsage">0</span>%</div>
+         <div class="metric-progress"><div class="metric-progress-bar" id="cpuProgressBar"></div></div>
         </div>
-        <div class="tool-card">
-         <h5>
-          <span aria-hidden="true">
-           🔒
-          </span>
-          <span data-i18n-en="Security Audit" data-i18n-zh="安全检查">
-           安全检查
-          </span>
-         </h5>
-         <p data-i18n-en="Identify security risks and policy gaps" data-i18n-zh="快速识别安全风险与策略缺口">
-          快速识别安全风险与策略缺口
-         </p>
+        <div class="metric">
+         <div class="metric-label" data-i18n-en="Avg Memory" data-i18n-zh="平均内存">平均内存</div>
+         <div class="metric-value"><span id="avgMemoryUsage">0</span>%</div>
+         <div class="metric-progress"><div class="metric-progress-bar" id="memoryProgressBar"></div></div>
         </div>
-        <div class="tool-card">
-         <h5>
-          <span aria-hidden="true">
-           📦
-          </span>
-          <span data-i18n-en="Backup Management" data-i18n-zh="备份管理">
-           备份管理
-          </span>
-         </h5>
-         <p data-i18n-en="Manage backup jobs and restore points" data-i18n-zh="管理备份任务与恢复点">
-          管理备份任务与恢复点
-         </p>
-        </div>
-        <div class="tool-card">
-         <h5>
-          <span aria-hidden="true">
-           ⚙️
-          </span>
-          <span data-i18n-en="System Configuration" data-i18n-zh="系统配置">
-           系统配置
-          </span>
-         </h5>
-         <p data-i18n-en="Adjust platform parameters and settings" data-i18n-zh="调整平台参数与环境设置">
-          调整平台参数与环境设置
-         </p>
+        <div class="metric">
+         <div class="metric-label" data-i18n-en="Avg Disk" data-i18n-zh="平均磁盘">平均磁盘</div>
+         <div class="metric-value"><span id="avgDiskUsage">0</span>%</div>
+         <div class="metric-progress"><div class="metric-progress-bar" id="diskProgressBar"></div></div>
         </div>
        </div>
-       <div class="quick-actions">
-        <h4>
-         <span aria-hidden="true">
-          🚀
-         </span>
-         <span data-i18n-en="Quick Actions" data-i18n-zh="快速操作">
-          快速操作
-         </span>
-        </h4>
-        <div class="quick-actions-grid">
-         <button class="quick-action-btn" data-action="deploy" id="quickActionDeploy" type="button">
-          <span aria-hidden="true">
-           ☁️
-          </span>
-          <span data-i18n-en="Deploy Application" data-i18n-zh="发布应用">
-           发布应用
-          </span>
-         </button>
-         <button class="quick-action-btn" data-action="terminal" id="quickActionTerminal" type="button">
-          <span aria-hidden="true">
-           💻
-          </span>
-          <span data-i18n-en="Open Terminal" data-i18n-zh="打开终端">
-           打开终端
-          </span>
-         </button>
-         <button class="quick-action-btn" data-action="policy" id="quickActionPolicy" type="button">
-          <span aria-hidden="true">
-           🛡️
-          </span>
-          <span data-i18n-en="Security Policy" data-i18n-zh="安全策略">
-           安全策略
-          </span>
-         </button>
-         <button class="quick-action-btn" data-action="report" id="quickActionReport" type="button">
-          <span aria-hidden="true">
-           📈
-          </span>
-          <span data-i18n-en="Generate Report" data-i18n-zh="生成报表">
-           生成报表
-          </span>
+       <div aria-live="polite" class="server-status" id="serverStatusContainer">
+        <div class="empty-state" data-i18n-en="No server data" data-i18n-zh="暂无服务器数据">暂无服务器数据</div>
+       </div>
+      </section>
+      <section aria-label="User monitoring" class="content-panel user-panel">
+       <header class="section-header">
+        <div>
+         <h2 class="section-title">
+          <i aria-hidden="true">👥</i>
+          <span data-i18n-en="User Monitoring" data-i18n-zh="用户监控面板">用户监控面板</span>
+         </h2>
+         <p class="section-subtitle" data-i18n-en="Understand engagement and key activities" data-i18n-zh="洞察活跃趋势与关键用户行为">洞察活跃趋势与关键用户行为</p>
+        </div>
+        <div class="section-actions">
+         <select aria-label="User time range" class="form-select" data-i18n-en="Time range" data-i18n-zh="时间范围" id="userRangeSelect">
+          <option data-i18n-en="Last 24 Hours" data-i18n-zh="过去24小时" value="1d">过去24小时</option>
+          <option data-i18n-en="Last 7 Days" data-i18n-zh="过去7天" value="7d">过去7天</option>
+          <option data-i18n-en="Last 30 Days" data-i18n-zh="过去30天" value="30d">过去30天</option>
+         </select>
+         <button class="btn btn-secondary" id="refreshUsers" type="button">
+          <i aria-hidden="true">🔁</i>
+          <span data-i18n-en="Refresh" data-i18n-zh="刷新">刷新</span>
          </button>
         </div>
+       </header>
+       <div class="user-summary">
+        <article class="summary-item">
+         <span class="summary-label" data-i18n-en="Active today" data-i18n-zh="今日活跃">今日活跃</span>
+         <strong class="summary-value" id="userActiveToday">0</strong>
+        </article>
+        <article class="summary-item">
+         <span class="summary-label" data-i18n-en="Yesterday" data-i18n-zh="昨日">昨日</span>
+         <strong class="summary-value" id="userActiveYesterday">0</strong>
+        </article>
+        <article class="summary-item">
+         <span class="summary-label" data-i18n-en="Conversion" data-i18n-zh="转化率">转化率</span>
+         <strong class="summary-value" id="userConversionRate">--</strong>
+        </article>
+        <article class="summary-item">
+         <span class="summary-label" data-i18n-en="Last update" data-i18n-zh="更新时间">更新时间</span>
+         <strong class="summary-value" id="userSummaryUpdatedAt">--</strong>
+        </article>
        </div>
-      </div>
+       <div class="user-trend">
+        <h3 class="trend-title" data-i18n-en="Active users trend" data-i18n-zh="活跃趋势">活跃趋势</h3>
+        <canvas aria-label="Active user trend" height="220" id="userTrendChart"></canvas>
+       </div>
+       <div class="user-events">
+        <div class="user-events-header">
+         <h3 data-i18n-en="Key events" data-i18n-zh="关键事件">关键事件</h3>
+         <button class="btn btn-link" id="viewAllActivitiesBtn" type="button">
+          <span data-i18n-en="View all" data-i18n-zh="查看全部">查看全部</span>
+         </button>
+        </div>
+        <ul aria-live="polite" class="item-list" id="userEventStream">
+         <li class="empty-state" data-i18n-en="No recent activity" data-i18n-zh="暂无用户活动">暂无用户活动</li>
+        </ul>
+       </div>
+      </section>
      </div>
     </section>
    </div>

@@ -1638,12 +1638,11 @@
             function initDashboardData() {
                 // 加载仪表板数据
                 loadDashboardOverview();
-                loadServerMonitoring();
-                loadAnalysisPanels();
+                loadServerPanel();
+                loadUserPanel();
             }
 
-            function initDashboardEvents() {
-                // 刷新按钮事件
+                        function initDashboardEvents() {
                 const refreshOverviewBtn = document.getElementById('refreshOverview');
                 if (refreshOverviewBtn) {
                     refreshOverviewBtn.addEventListener('click', loadDashboardOverview);
@@ -1651,71 +1650,51 @@
 
                 const refreshServersBtn = document.getElementById('refreshServers');
                 if (refreshServersBtn) {
-                    refreshServersBtn.addEventListener('click', loadServerMonitoring);
+                    refreshServersBtn.addEventListener('click', () => loadServerPanel({ force: true }));
                 }
 
-                // 初始的添加服务器按钮事件
-                const addFirstServerBtn = document.getElementById('addFirstServer');
-                if (addFirstServerBtn) {
-                    addFirstServerBtn.addEventListener('click', () => {
+                const refreshUsersBtn = document.getElementById('refreshUsers');
+                if (refreshUsersBtn) {
+                    refreshUsersBtn.addEventListener('click', () => loadUserPanel({ force: true }));
+                }
+
+                const manageServersBtn = document.getElementById('manageServersBtn');
+                if (manageServersBtn) {
+                    manageServersBtn.addEventListener('click', () => {
                         emit('spa:navigate', { route: 'servers' });
                     });
                 }
 
-                // 资源视图切换事件
-                const resourceBarViewBtn = document.getElementById('resourceBarView');
-                const resourceChartViewBtn = document.getElementById('resourceChartView');
-                if (resourceBarViewBtn && resourceChartViewBtn) {
-                    resourceBarViewBtn.addEventListener('click', () => {
-                        toggleResourceView('bar', resourceBarViewBtn, resourceChartViewBtn);
-                    });
-
-                    resourceChartViewBtn.addEventListener('click', () => {
-                        toggleResourceView('chart', resourceBarViewBtn, resourceChartViewBtn);
-                    });
+                const serverRangeSelect = document.getElementById('serverRangeSelect');
+                if (serverRangeSelect) {
+                    serverRangeSelect.addEventListener('change', () => loadServerPanel());
                 }
 
-                // 视图切换事件
-                const gridViewBtn = document.getElementById('gridViewBtn');
-                const listViewBtn = document.getElementById('listViewBtn');
-                const serverGrid = document.getElementById('serverGrid');
-
-                if (gridViewBtn && listViewBtn && serverGrid) {
-                    gridViewBtn.addEventListener('click', () => {
-                        setViewMode('grid', gridViewBtn, listViewBtn, serverGrid);
-                    });
-
-                    listViewBtn.addEventListener('click', () => {
-                        setViewMode('list', gridViewBtn, listViewBtn, serverGrid);
-                    });
+                const serverSearchInput = document.getElementById('serverSearchInput');
+                if (serverSearchInput) {
+                    serverSearchInput.addEventListener('input', () => filterServerCards(serverSearchInput.value));
                 }
 
-                // 快速操作按钮事件
-                const addServerBtn = document.getElementById('addServerBtn');
-                if (addServerBtn) {
-                    addServerBtn.addEventListener('click', () => {
-                        emit('spa:navigate', { route: 'servers' });
-                    });
+                const userRangeSelect = document.getElementById('userRangeSelect');
+                if (userRangeSelect) {
+                    userRangeSelect.addEventListener('change', () => loadUserPanel());
                 }
 
-                const viewAllAlertsBtn = document.getElementById('viewAllAlertsBtn');
-                if (viewAllAlertsBtn) {
-                    viewAllAlertsBtn.addEventListener('click', () => {
-                        // 导航到告警页面
-                        console.log('导航到告警页面');
-                    });
+                const serverGridViewBtn = document.getElementById('serverGridView');
+                const serverListViewBtn = document.getElementById('serverListView');
+                if (serverGridViewBtn && serverListViewBtn) {
+                    serverGridViewBtn.addEventListener('click', () => setServerViewMode('grid'));
+                    serverListViewBtn.addEventListener('click', () => setServerViewMode('list'));
                 }
 
                 const viewAllActivitiesBtn = document.getElementById('viewAllActivitiesBtn');
                 if (viewAllActivitiesBtn) {
                     viewAllActivitiesBtn.addEventListener('click', () => {
-                        // 导航到用户活动页面
-                        console.log('导航到用户活动页面');
+                        emit('spa:navigate', { route: 'user-activities' });
                     });
                 }
             }
-
-            function initDashboardRealTimeUpdates() {
+function initDashboardRealTimeUpdates() {
                 // 每30秒刷新一次数据
                 const updateInterval = setInterval(() => {
                     if (document.querySelector('.content-framework.admin-theme')) {
@@ -2675,6 +2654,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 
