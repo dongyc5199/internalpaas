@@ -1,143 +1,142 @@
-/* 管理员仪表板样式 */
+/* 管理员工作台内容页覆写 */
 .admin-dashboard {
-    padding: 2rem;
-    max-width: 1400px;
+    max-width: 1440px;
     margin: 0 auto;
-    background: var(--shell-background);
+    padding: 24px 0 48px;
 }
 
-/* 通用区块样式 */
-.section-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--shell-text-primary);
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.section-title i {
-    color: var(--accent-color, #2F9BFF);
-}
-
-/* 面包屑与操作区域 */
-.admin-dashboard .workspace-breadcrumb {
-    margin-bottom: 1rem;
-}
-
-.admin-dashboard .workspace-breadcrumb ol {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    font-size: 0.875rem;
-    color: var(--shell-text-secondary);
-}
-
-.admin-dashboard .workspace-breadcrumb li {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.admin-dashboard .workspace-breadcrumb li + li::before {
-    content: '/';
-    color: rgba(148, 163, 184, 0.8);
-}
-
-.admin-dashboard .workspace-breadcrumb .breadcrumb-link {
+.admin-dashboard .breadcrumb .breadcrumb-link {
     border: none;
     background: transparent;
-    color: var(--accent-color, #2F9BFF);
-    font-weight: 600;
     cursor: pointer;
-    padding: 2px 0;
 }
 
-.admin-dashboard .workspace-breadcrumb li[aria-current="page"] {
-    font-weight: 600;
-    color: var(--shell-text-primary);
+.admin-dashboard .page-header {
+    gap: var(--component-gap);
+    flex-wrap: wrap;
 }
 
-.admin-dashboard .content-scrollable {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+.admin-dashboard .page-actions {
+    gap: var(--component-gap);
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .admin-dashboard .page-actions .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.375rem;
+    min-height: 40px;
 }
 
-.admin-dashboard .last-update {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
+.admin-dashboard .stats-overview {
+    margin-top: 0;
 }
 
-/* 区块标题与工具条 */
-.admin-dashboard .stats-card-header,
-.admin-dashboard .section-header {
+.admin-dashboard .stats-card .stats-meta {
+    margin-top: 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    font-size: 13px;
+    color: var(--text-secondary);
 }
 
-.admin-dashboard .stats-card-meta,
-.admin-dashboard .section-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.admin-dashboard .btn-toggle {
+.admin-dashboard .card-icon {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
+    font-size: 18px;
 }
 
-.admin-dashboard .btn-toggle .toggle-label {
-    font-size: 0.8125rem;
-    font-weight: 600;
+.admin-dashboard .content-toolbar {
+    gap: var(--component-gap);
+    flex-wrap: wrap;
 }
 
-/* 快速操作与列表 */
-.admin-dashboard .quick-actions-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 1.5rem;
+.admin-dashboard .toolbar-left,
+.admin-dashboard .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: var(--component-gap);
+    flex-wrap: wrap;
 }
 
-.admin-dashboard .quick-action-btn {
+.admin-dashboard .search-box {
+    position: relative;
+    min-width: 260px;
+}
+
+.admin-dashboard .search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+}
+
+.admin-dashboard .search-input {
+    width: 100%;
+    padding: 10px 16px 10px 44px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--card-bg);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.admin-dashboard .search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(47, 155, 255, 0.15);
+}
+
+.admin-dashboard .toolbar-right .btn {
+    min-width: 130px;
+}
+
+.admin-dashboard .content-grid {
+    gap: 24px;
+}
+
+.admin-dashboard .content-panel {
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-sm);
+    padding: 24px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
+    gap: 16px;
+}
+
+.admin-dashboard .section-subtitle {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.admin-dashboard .chart-toggle-group .btn {
+    min-width: 88px;
+}
+
+.admin-dashboard .server-status {
+    min-height: 160px;
 }
 
 .admin-dashboard .split-panels {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
 }
 
 .admin-dashboard .panel-block {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 12px;
 }
 
 .admin-dashboard .panel-block-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: 12px;
 }
 
 .admin-dashboard .item-list {
@@ -146,716 +145,171 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 12px;
 }
 
-.admin-dashboard .content-footer {
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-}
-
-@media (max-width: 768px) {
-    .admin-dashboard .workspace-breadcrumb ol {
-        flex-wrap: wrap;
-    }
-
-    .admin-dashboard .page-actions {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.75rem;
-    }
-
-    .admin-dashboard .page-actions .btn {
-        justify-content: center;
-    }
-
-    .admin-dashboard .split-panels {
-        grid-template-columns: 1fr;
-    }
-
-    .admin-dashboard .quick-actions-grid {
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 1rem;
-    }
-}
-
-/* ============ 系统概览统计区域 ============ */
-.dashboard-overview {
-    margin-bottom: 2.5rem;
-}
-
-.overview-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-}
-
-.overview-actions {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.last-update {
-    font-size: 0.875rem;
-    color: var(--shell-text-secondary);
-}
-
-.overview-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 1rem;
-}
-
-/* 统计卡片样式 */
-.stats-card {
-    background: var(--shell-surface);
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-    border: 1px solid var(--shell-border);
-    transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.stats-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
-}
-
-.stats-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--accent-color, #2F9BFF), var(--secondary-color, #3BC6B8));
-}
-
-.card-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-}
-
-.card-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--accent-color, #2F9BFF), var(--secondary-color, #3BC6B8));
-    color: white;
-    font-size: 1.125rem;
-}
-
-.card-title {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--shell-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.card-content {
-    padding-top: 0.5rem;
-}
-
-.main-stat {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-}
-
-.stat-number {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--shell-text-primary);
-    line-height: 1;
-}
-
-.stat-label {
-    font-size: 0.875rem;
-    color: var(--shell-text-secondary);
-}
-
-.sub-stats {
-    display: flex;
-    gap: 1rem;
-}
-
-.sub-stat {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-}
-
-.sub-stat .indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--indicator-color, #94a3b8);
-}
-
-.sub-stat.online .indicator { background: #10b981; }
-.sub-stat.offline .indicator { background: #ef4444; }
-.sub-stat.running .indicator { background: #10b981; }
-.sub-stat.stopped .indicator { background: #6b7280; }
-.sub-stat.critical .indicator { background: #ef4444; }
-.sub-stat.warning .indicator { background: #f59e0b; }
-
-.sub-stat .label {
-    color: var(--shell-text-secondary);
-}
-
-.sub-stat .value {
-    font-weight: 600;
-    color: var(--shell-text-primary);
-}
-
-/* 健康度特殊样式 */
-.health-score {
-    background: linear-gradient(135deg, #10b981, #059669);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.health-status {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.health-indicator {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #10b981;
-}
-
-.health-text {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--shell-text-primary);
-}
-
-/* ============ 服务器监控面板 ============ */
-.server-monitoring {
-    margin-bottom: 2.5rem;
-}
-
-.monitoring-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.monitoring-controls {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-.view-toggle {
-    display: flex;
-    background: var(--shell-surface);
-    border-radius: 8px;
-    padding: 4px;
-    border: 1px solid var(--shell-border);
-}
-
-.btn-view-toggle {
-    padding: 0.5rem 1rem;
-    border: none;
-    background: transparent;
-    color: var(--shell-text-secondary);
-    font-size: 0.875rem;
-    font-weight: 500;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.btn-view-toggle:hover {
-    background: var(--shell-border);
-    color: var(--shell-text-primary);
-}
-
-.btn-view-toggle.active {
-    background: var(--accent-color, #2F9BFF);
-    color: white;
-}
-
-.monitoring-actions {
-    display: flex;
-    gap: 0.75rem;
-}
-
-.server-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 1.5rem;
-    min-height: 200px;
-}
-
-.server-grid.list-view {
-    grid-template-columns: 1fr;
-}
-
-/* 服务器状态卡片样式 */
-.server-status-card {
-    background: var(--shell-surface);
-    border-radius: 12px;
-    padding: 1.5rem;
-    border: 1px solid var(--shell-border);
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-    transition: all 0.2s ease;
-    position: relative;
-}
-
-.server-status-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
-}
-
-.server-status-card.online::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: #10b981;
-}
-
-.server-status-card.offline::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: #ef4444;
-}
-
-.server-status-card.warning::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: #f59e0b;
-}
-
-.server-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-}
-
-.server-info .server-name {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--shell-text-primary);
-    margin-bottom: 0.25rem;
-}
-
-.server-info .server-address {
-    font-size: 0.875rem;
-    color: var(--shell-text-secondary);
-    font-family: var(--font-mono, monospace);
-}
-
-.server-status {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0.75rem;
-    background: var(--shell-background);
-    border-radius: 6px;
-    border: 1px solid var(--shell-border);
-}
-
-.status-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-}
-
-.status-indicator.online { background: #10b981; }
-.status-indicator.offline { background: #ef4444; }
-.status-indicator.warning { background: #f59e0b; }
-
-.status-text {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--shell-text-secondary);
-}
-
-.server-metrics {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-}
-
-.server-metrics .metric {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.server-metrics .metric-label {
-    font-size: 0.75rem;
-    color: var(--shell-text-secondary);
-    min-width: 2.5rem;
-}
-
-.server-metrics .metric-value {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--shell-text-primary);
-    min-width: 3rem;
-}
-
-.server-metrics .metric-bar {
-    flex: 1;
-    height: 4px;
-    background: var(--shell-border);
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.server-metrics .metric-progress {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent-color, #2F9BFF), var(--secondary-color, #3BC6B8));
-    border-radius: 2px;
-    transition: width 0.3s ease;
-}
-
-.server-actions {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: center;
-    padding-top: 1rem;
-    border-top: 1px solid var(--shell-border);
-}
-
-/* 列表视图样式 */
-.server-grid.list-view .server-status-card {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    padding: 1rem 1.5rem;
-}
-
-.server-grid.list-view .server-header {
-    flex: 0 0 200px;
-    margin-bottom: 0;
-}
-
-.server-grid.list-view .server-metrics {
-    flex: 1;
-    flex-direction: row;
-    gap: 1.5rem;
-    margin-bottom: 0;
-}
-
-.server-grid.list-view .server-metrics .metric {
-    flex-direction: column;
+.admin-dashboard .item-list .empty-state {
+    padding: 20px;
     text-align: center;
-    gap: 0.25rem;
-}
-
-.server-grid.list-view .server-metrics .metric-bar {
-    width: 60px;
-    margin: 0 auto;
-}
-
-.server-grid.list-view .server-actions {
-    flex: 0 0 auto;
-    flex-direction: column;
-    padding-top: 0;
-    border-top: none;
-    gap: 0.5rem;
-}
-
-/* 无服务器状态 */
-.no-servers {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 3rem;
-    color: var(--shell-text-secondary);
-    background: var(--shell-surface);
-    border-radius: 12px;
-    border: 2px dashed var(--shell-border);
-}
-
-.no-servers i {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    color: var(--shell-text-secondary);
-}
-
-.no-servers p {
-    font-size: 1.125rem;
-    margin-bottom: 1.5rem;
-}
-
-/* ============ 底部分析面板 ============ */
-.analysis-panels {
-    margin-top: 2rem;
+    color: var(--text-secondary);
+    background: rgba(148, 163, 184, 0.1);
+    border-radius: var(--border-radius);
 }
 
 .analysis-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
 }
 
 .analysis-card {
-    background: var(--shell-surface);
-    border-radius: 12px;
-    border: 1px solid var(--shell-border);
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-    overflow: hidden;
-}
-
-.analysis-card .card-header {
-    padding: 1.5rem 1.5rem 1rem 1.5rem;
-    border-bottom: 1px solid var(--shell-border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0;
-}
-
-.analysis-card .card-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--shell-text-primary);
-    text-transform: none;
-    letter-spacing: normal;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.analysis-card .card-content {
-    padding: 1.5rem;
-}
-
-/* 资源统计样式 */
-.resource-view-toggle {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-    justify-content: center;
-}
-
-.btn-small {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.75rem;
-    border-radius: 4px;
-}
-
-.resource-metrics {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 8px;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.resource-chart {
-    width: 100%;
-    max-width: 300px;
-    margin: 0 auto;
+.analysis-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
 }
 
-.resource-chart canvas {
-    max-height: 250px !important;
+.analysis-card h4 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    color: var(--text-primary);
 }
 
-.metric-item {
+.analysis-card p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.system-tools {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+}
+
+.tool-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.tool-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
-.metric-label {
-    font-size: 0.875rem;
-    color: var(--shell-text-secondary);
-    font-weight: 500;
-}
-
-.metric-value {
+.tool-card h5 {
+    margin: 0;
     display: flex;
-    align-items: baseline;
-    gap: 0.25rem;
-    margin-bottom: 0.5rem;
-}
-
-.metric-number {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--shell-text-primary);
-}
-
-.metric-bar {
-    width: 100%;
-    height: 6px;
-    background: var(--shell-border);
-    border-radius: 3px;
-    overflow: hidden;
-}
-
-.metric-progress {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent-color, #2F9BFF), var(--secondary-color, #3BC6B8));
-    border-radius: 3px;
-    transition: width 0.3s ease;
-    width: 0%;
-}
-
-/* 告警和活动列表样式 */
-.alerts-list,
-.activities-list {
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.no-alerts {
-    text-align: center;
-    padding: 2rem;
-    color: var(--shell-text-secondary);
-}
-
-.no-alerts i {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    color: #10b981;
-}
-
-/* 通用按钮样式 */
-.btn {
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    text-decoration: none;
+    gap: 8px;
+    font-size: 15px;
+    color: var(--text-primary);
 }
 
-.btn-primary {
-    background: var(--accent-color, #2F9BFF);
-    color: white;
+.tool-card p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
 }
 
-.btn-primary:hover {
-    background: var(--accent-hover, #2563eb);
-    transform: translateY(-1px);
+.quick-actions {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
-.btn-refresh {
-    background: var(--shell-surface);
-    color: var(--shell-text-secondary);
-    border: 1px solid var(--shell-border);
+.quick-actions h4 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
 }
 
-.btn-refresh:hover {
-    background: var(--shell-border);
-    color: var(--shell-text-primary);
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
 }
 
-.btn-link {
-    background: transparent;
-    color: var(--accent-color, #2F9BFF);
-    padding: 0.25rem 0.5rem;
-}
-
-.btn-link:hover {
-    background: rgba(47, 155, 255, 0.1);
-}
-
-/* 加载状态 */
-.loading-placeholder {
+.quick-action-btn {
+    background: var(--toolbar-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    font-size: 14px;
+    color: var(--text-primary);
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    color: var(--shell-text-secondary);
+    gap: 8px;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.loading-spinner {
-    width: 32px;
-    height: 32px;
-    border: 3px solid var(--shell-border);
-    border-top: 3px solid var(--accent-color, #2F9BFF);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
+.quick-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+.quick-action-btn span:first-child {
+    font-size: 20px;
 }
 
-/* ============ 响应式设计 ============ */
+@media (max-width: 1200px) {
+    .system-tools {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 768px) {
     .admin-dashboard {
-        padding: 1rem;
+        padding: 16px 0 32px;
     }
 
-    .overview-cards {
-        grid-template-columns: 1fr;
+    .admin-dashboard .page-actions {
+        justify-content: flex-start;
     }
 
-    .server-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .analysis-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .monitoring-header {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .monitoring-controls {
+    .admin-dashboard .toolbar-left,
+    .admin-dashboard .toolbar-right {
+        width: 100%;
         justify-content: space-between;
     }
 
-    .overview-header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
+    .admin-dashboard .search-box {
+        width: 100%;
+    }
+
+    .system-tools {
+        gap: 16px;
+    }
+
+    .quick-actions {
+        padding: 16px;
     }
 }

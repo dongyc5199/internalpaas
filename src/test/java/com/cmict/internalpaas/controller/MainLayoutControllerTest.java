@@ -24,7 +24,7 @@ class MainLayoutControllerTest {
     void adminWorkspace_shouldRenderNavigationSection() throws Exception {
         mockMvc.perform(get("/admin/workspace"))
             .andExpect(status().isOk())
-            .andExpect(content().string(containsString("class=\"nav-section\"")))
+            .andExpect(content().string(containsString("data-role=\"shell-sidebar\"")))
             .andExpect(content().string(containsString("data-route=\"overview\"")));
     }
 }
