@@ -2182,22 +2182,32 @@ function initDashboardRealTimeUpdates() {
 
             function updateUserTrendChart(points) {
                 const canvas = document.getElementById('userTrendChart');
+                const placeholder = document.getElementById('userTrendPlaceholder');
+                const hasData = Array.isArray(points) && points.length > 0;
                 if (!canvas) {
+                    if (placeholder) {
+                        placeholder.hidden = hasData;
+                    }
                     return;
                 }
-
                 const targetHeight = 220;
                 canvas.setAttribute('height', String(targetHeight));
                 canvas.style.height = `${targetHeight}px`;
-
-                if (!Array.isArray(points) || points.length === 0) {
+                if (!hasData) {
                     if (userTrendChart) {
                         userTrendChart.destroy();
                         userTrendChart = null;
                     }
+                    canvas.classList.add('is-hidden');
+                    if (placeholder) {
+                        placeholder.hidden = false;
+                    }
                     return;
                 }
-
+                canvas.classList.remove('is-hidden');
+                if (placeholder) {
+                    placeholder.hidden = true;
+                }
                 const labels = points.map((point) => {
                     return currentLanguage === 'en' ? point.labelEn : point.labelZh;
                 });
@@ -2205,7 +2215,6 @@ function initDashboardRealTimeUpdates() {
                     const numeric = Number(point.value);
                     return Number.isFinite(numeric) ? numeric : 0;
                 });
-
                 if (!userTrendChart) {
                     userTrendChart = new Chart(canvas, {
                         type: 'line',
@@ -2262,7 +2271,6 @@ function initDashboardRealTimeUpdates() {
                     userTrendChart.resize(undefined, targetHeight);
                 }
             }
-
             function renderUserEvents(events) {
                 const eventStream = document.getElementById('userEventStream');
                 if (!eventStream) {
@@ -3042,10 +3050,4 @@ function initDashboardRealTimeUpdates() {
     </script>
 </body>
 </html>
-
-
-
-
-
-
 

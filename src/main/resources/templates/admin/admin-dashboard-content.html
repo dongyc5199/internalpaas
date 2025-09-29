@@ -414,7 +414,8 @@
        </div>
        <div class="user-trend">
         <h3 class="trend-title" data-i18n-en="Active users trend" data-i18n-zh="活跃趋势">活跃趋势</h3>
-        <canvas aria-label="Active user trend" height="220" id="userTrendChart"></canvas>
+        <div class="chart-placeholder empty-state" id="userTrendPlaceholder" aria-live="polite" data-i18n-en="Active user trends will appear here when data is available." data-i18n-zh="暂无活跃趋势数据，这里将展示活跃用户变化曲线">暂无活跃趋势数据，这里将展示活跃用户变化曲线</div>
+        <canvas aria-label="Active user trend" class="trend-canvas is-hidden" height="220" id="userTrendChart"></canvas>
        </div>
        <div class="user-events">
         <div class="user-events-header">
