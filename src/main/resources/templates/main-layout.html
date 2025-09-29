@@ -1168,6 +1168,7 @@
             const SIDEBAR_KEY = 'app-shell-sidebar-state';
             const LANGUAGE_KEY = 'app-shell-language';
             const eventBus = new EventTarget();
+            const SERVER_VIEW_MODE_KEY = 'admin-dashboard-server-view-mode';
 
             if (!shellRoot) {
                 console.warn('[AppShell] 未找到布局根节点，停止初始化。');
@@ -1177,6 +1178,8 @@
             let currentTheme = 'light';
             let currentLanguage = 'zh';
             let sidebarState = shellRoot.dataset.sidebarState || 'expanded';
+            let serverPanelCache = [];
+            let userTrendPoints = [];
 
             function persist(key, value) {
                 try {
@@ -1317,6 +1320,10 @@
                 eventBus.addEventListener(name, listener);
                 return () => eventBus.removeEventListener(name, listener);
             }
+
+            on('language:changed', () => {
+                updateUserTrendChart(userTrendPoints);
+            });
 
             function loadPreferences() {
                 const savedTheme = load(THEME_KEY);
@@ -1619,6 +1626,8 @@
 
                 console.log('初始化管理员仪表板...');
 
+                restoreServerViewMode();
+
                 // 初始化所有仪表板功能
                 initDashboardData();
                 initDashboardEvents();
@@ -1635,11 +1644,71 @@
                 console.log('管理员仪表板初始化完成');
             }
 
+            function restoreServerViewMode() {
+                const container = document.getElementById('serverStatusContainer');
+                if (!container) {
+                    return;
+                }
+
+                const savedMode = load(SERVER_VIEW_MODE_KEY);
+                if (savedMode === 'list' || savedMode === 'grid') {
+                    setServerViewMode(savedMode, { persist: false });
+                } else {
+                    setServerViewMode('grid', { persist: false });
+                }
+            }
+
             function initDashboardData() {
                 // 加载仪表板数据
                 loadDashboardOverview();
                 loadServerPanel();
                 loadUserPanel();
+            }
+
+            async function loadServerPanel(options = {}) {
+                return loadServerMonitoring(options);
+            }
+
+            async function loadUserPanel(options = {}) {
+                const userPanel = document.querySelector('.user-panel');
+                if (!userPanel) {
+                    return;
+                }
+
+                const { force = false, silent = false } = options;
+                const rangeSelect = document.getElementById('userRangeSelect');
+                const params = new URLSearchParams();
+
+                if (rangeSelect && rangeSelect.value) {
+                    params.set('range', rangeSelect.value);
+                }
+                if (force) {
+                    params.set('_', Date.now().toString());
+                }
+
+                const url = params.toString()
+                    ? `/admin/dashboard/overview?${params.toString()}`
+                    : '/admin/dashboard/overview';
+
+                const eventStream = document.getElementById('userEventStream');
+                if (eventStream && !silent) {
+                    eventStream.innerHTML = '<li class="empty-state" data-i18n-zh="正在加载用户数据..." data-i18n-en="Loading user data...">正在加载用户数据...</li>';
+                    applyLanguage(currentLanguage, false);
+                }
+
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error('Failed to load user panel');
+                    }
+
+                    const data = await response.json();
+                    renderUserPanel(data);
+                } catch (error) {
+                    console.error('加载用户面板失败:', error);
+                    showErrorMessage('加载用户数据失败，请稍后重试');
+                    showUserPanelError();
+                }
             }
 
                         function initDashboardEvents() {
@@ -1699,7 +1768,7 @@ function initDashboardRealTimeUpdates() {
                 const updateInterval = setInterval(() => {
                     if (document.querySelector('.content-framework.admin-theme')) {
                         loadDashboardOverview();
-                        loadServerMonitoring();
+                        loadServerPanel({ silent: true, showLoading: false });
                         updateLastRefreshTime();
                     } else {
                         // 如果页面不存在仪表板，清除定时器
@@ -1726,18 +1795,50 @@ function initDashboardRealTimeUpdates() {
                 }
             }
 
-            async function loadServerMonitoring() {
+            async function loadServerMonitoring(options = {}) {
+                const container = document.getElementById('serverStatusContainer');
+                if (!container) {
+                    return;
+                }
+
+                const { force = false, silent = false, showLoading } = options;
+                const rangeSelect = document.getElementById('serverRangeSelect');
+                const params = new URLSearchParams();
+
+                if (rangeSelect && rangeSelect.value) {
+                    params.set('range', rangeSelect.value);
+                }
+                if (force) {
+                    params.set('_', Date.now().toString());
+                }
+
+                const url = params.toString()
+                    ? `/admin/dashboard/servers/summary?${params.toString()}`
+                    : '/admin/dashboard/servers/summary';
+
+                const shouldShowLoading = showLoading !== undefined
+                    ? showLoading
+                    : (!silent && serverPanelCache.length === 0);
+
+                if (shouldShowLoading) {
+                    container.innerHTML = '<div class="empty-state" data-i18n-zh="正在加载服务器数据..." data-i18n-en="Loading server data...">正在加载服务器数据...</div>';
+                    applyLanguage(currentLanguage, false);
+                }
+
                 try {
-                    const response = await fetch('/admin/dashboard/servers/summary');
+                    const response = await fetch(url);
                     if (!response.ok) {
                         throw new Error('Failed to load server monitoring');
                     }
 
                     const servers = await response.json();
-                    renderServerMonitoring(servers);
+                    serverPanelCache = Array.isArray(servers) ? servers : [];
+                    renderServerMonitoring(serverPanelCache);
+                    updateLastRefreshTime();
                 } catch (error) {
                     console.error('加载服务器监控失败:', error);
                     showErrorMessage('加载服务器数据失败，请稍后重试');
+                    showServerPanelError();
                 }
             }
 
@@ -1846,84 +1947,484 @@ function initDashboardRealTimeUpdates() {
             }
 
             function renderServerMonitoring(servers) {
-                const serverGrid = document.getElementById('serverGrid');
-                if (!serverGrid || !servers) return;
+                const container = document.getElementById('serverStatusContainer');
+                if (!container) {
+                    return;
+                }
 
-                if (servers.length === 0) {
-                    serverGrid.innerHTML = `
-                        <div class="no-servers">
-                            <i class="fas fa-server"></i>
-                            <p data-i18n-zh="暂无服务器数据" data-i18n-en="No server data available">暂无服务器数据</p>
-                            <button class="btn btn-primary" id="addFirstServer" type="button">
-                                <i class="fas fa-plus"></i>
-                                <span data-i18n-zh="添加第一台服务器" data-i18n-en="Add first server">添加第一台服务器</span>
-                            </button>
-                        </div>
-                    `;
+                const list = Array.isArray(servers) ? servers : [];
 
-                    const addFirstServerBtn = document.getElementById('addFirstServer');
-                    if (addFirstServerBtn) {
-                        addFirstServerBtn.addEventListener('click', () => {
-                            emit('spa:navigate', { route: 'servers' });
-                        });
-                    }
+                updateServerSummary(list);
+                updateServerAggregatedMetrics(list);
+
+                if (list.length === 0) {
+                    container.innerHTML = '<div class="empty-state" data-i18n-zh="暂无服务器数据" data-i18n-en="No server data">暂无服务器数据</div>';
                     applyLanguage(currentLanguage, false);
                     return;
                 }
 
-                const serverCards = servers.map((server) => {
-                    const statusZh = getStatusText(server.status, 'zh');
-                    const statusEn = getStatusText(server.status, 'en');
+                let mode = container.dataset.viewMode;
+                if (mode !== 'list' && mode !== 'grid') {
+                    const savedMode = load(SERVER_VIEW_MODE_KEY);
+                    mode = savedMode === 'list' ? 'list' : 'grid';
+                }
+
+                container.dataset.viewMode = mode;
+                container.classList.toggle('list-view', mode === 'list');
+                container.classList.toggle('grid-view', mode === 'grid');
+
+                const cardsHtml = list.map((server) => buildServerCard(server)).join('');
+                container.innerHTML = cardsHtml;
+
+                const searchInput = document.getElementById('serverSearchInput');
+                if (searchInput && searchInput.value) {
+                    filterServerCards(searchInput.value);
+                }
+
+                setServerViewMode(mode, { persist: false });
+                applyLanguage(currentLanguage, false);
+            }
+
+            function updateServerSummary(servers) {
+                const total = servers.length;
+                let online = 0;
+                let warning = 0;
+                let offline = 0;
+
+                servers.forEach((server) => {
+                    const status = normalizeServerStatus(server && server.status);
+                    if (status === 'online') {
+                        online += 1;
+                    } else if (status === 'warning') {
+                        warning += 1;
+                    } else {
+                        offline += 1;
+                    }
+                });
+
+                updateElement('serverSummaryTotal', total);
+                updateElement('serverSummaryOnline', online);
+                updateElement('serverSummaryWarning', warning);
+                updateElement('serverSummaryOffline', offline);
+            }
+
+            function updateServerAggregatedMetrics(servers) {
+                const avgCpu = calculateAverageMetric(servers, 'cpuUsage');
+                const avgMemory = calculateAverageMetric(servers, 'memoryUsage');
+                const avgDisk = calculateAverageMetric(servers, 'diskUsage');
+
+                updateElement('avgCpuUsage', avgCpu !== null ? Math.round(avgCpu) : '--');
+                updateElement('avgMemoryUsage', avgMemory !== null ? Math.round(avgMemory) : '--');
+                updateElement('avgDiskUsage', avgDisk !== null ? Math.round(avgDisk) : '--');
+
+                updateProgressBar('cpuProgressBar', avgCpu ?? 0);
+                updateProgressBar('memoryProgressBar', avgMemory ?? 0);
+                updateProgressBar('diskProgressBar', avgDisk ?? 0);
+            }
+
+            function calculateAverageMetric(servers, key) {
+                const values = servers
+                    .map((server) => {
+                        if (!server || server[key] === undefined || server[key] === null) {
+                            return null;
+                        }
+                        const value = Number(server[key]);
+                        return Number.isFinite(value) ? value : null;
+                    })
+                    .filter((value) => value !== null);
+
+                if (values.length === 0) {
+                    return null;
+                }
+
+                const total = values.reduce((sum, value) => sum + value, 0);
+                return total / values.length;
+            }
+
+            function buildServerCard(server) {
+                const status = normalizeServerStatus(server && server.status);
+                const statusZh = getStatusText(status, 'zh');
+                const statusEn = getStatusText(status, 'en');
+
+                const name = server && server.name ? server.name : 'Unknown';
+                const host = server && (server.host || server.hostname) ? (server.host || server.hostname) : 'N/A';
+                const portValue = server && server.port !== undefined && server.port !== null ? server.port : '';
+                const cpu = formatUsage(server ? server.cpuUsage : null);
+                const memory = formatUsage(server ? server.memoryUsage : null);
+                const disk = formatUsage(server ? server.diskUsage : null);
+                const searchTokens = [name, host, portValue, status].filter(Boolean).join(' ').toLowerCase();
+                const serverId = server && server.id !== undefined ? server.id : 'null';
+
+                return `
+                    <article class="server-card" data-role="server-card" data-status="${escapeHtml(status)}" data-search="${escapeHtml(searchTokens)}">
+                        <div class="server-card__header">
+                            <div class="server-card__identity">
+                                <div class="server-card__name">${escapeHtml(name)}</div>
+                                <div class="server-card__meta">${escapeHtml(host)}${portValue !== '' ? `:${escapeHtml(portValue)}` : ''}</div>
+                            </div>
+                            <span class="server-card__status server-card__status--${escapeHtml(status)}" data-i18n-zh="${escapeHtml(statusZh)}" data-i18n-en="${escapeHtml(statusEn)}">
+                                <span class="server-card__status-dot server-card__status-dot--${escapeHtml(status)}"></span>
+                                ${escapeHtml(getStatusText(status))}
+                            </span>
+                        </div>
+                        <dl class="server-card__metrics">
+                            <div class="server-card__metric">
+                                <dt data-i18n-zh="CPU" data-i18n-en="CPU">CPU</dt>
+                                <dd>${escapeHtml(cpu)}</dd>
+                            </div>
+                            <div class="server-card__metric">
+                                <dt data-i18n-zh="内存" data-i18n-en="Memory">内存</dt>
+                                <dd>${escapeHtml(memory)}</dd>
+                            </div>
+                            <div class="server-card__metric">
+                                <dt data-i18n-zh="磁盘" data-i18n-en="Disk">磁盘</dt>
+                                <dd>${escapeHtml(disk)}</dd>
+                            </div>
+                        </dl>
+                        <div class="server-card__actions">
+                            <button class="btn btn-link" type="button" onclick="viewServerDetail(${serverId})">
+                                <span data-i18n-zh="查看详情" data-i18n-en="View details">查看详情</span>
+                            </button>
+                            <button class="btn btn-link" type="button" onclick="connectToServer(${serverId})">
+                                <span data-i18n-zh="SSH 连接" data-i18n-en="SSH Connect">SSH 连接</span>
+                            </button>
+                        </div>
+                    </article>`;
+            }
+
+            function normalizeServerStatus(status) {
+                const normalized = (status || '').toString().toLowerCase();
+                if (normalized === 'online') {
+                    return 'online';
+                }
+                if (normalized === 'warning' || normalized === 'maintaining') {
+                    return 'warning';
+                }
+                if (normalized === 'error') {
+                    return 'error';
+                }
+                if (normalized === 'offline') {
+                    return 'offline';
+                }
+                return 'offline';
+            }
+
+            function formatUsage(value) {
+                const numeric = Number(value);
+                if (!Number.isFinite(numeric)) {
+                    return '--%';
+                }
+                return `${Math.round(numeric)}%`;
+            }
+
+            function setServerViewMode(mode, options = {}) {
+                const persistPref = options.persist !== false;
+                const container = document.getElementById('serverStatusContainer');
+                const gridBtn = document.getElementById('serverGridView');
+                const listBtn = document.getElementById('serverListView');
+
+                const normalized = mode === 'list' ? 'list' : 'grid';
+
+                if (container) {
+                    container.dataset.viewMode = normalized;
+                    container.classList.toggle('list-view', normalized === 'list');
+                    container.classList.toggle('grid-view', normalized === 'grid');
+                }
+
+                if (gridBtn) {
+                    gridBtn.classList.toggle('active', normalized === 'grid');
+                }
+
+                if (listBtn) {
+                    listBtn.classList.toggle('active', normalized === 'list');
+                }
+
+                if (persistPref) {
+                    persist(SERVER_VIEW_MODE_KEY, normalized);
+                }
+            }
+
+            function filterServerCards(keyword) {
+                const container = document.getElementById('serverStatusContainer');
+                if (!container) {
+                    return;
+                }
+
+                const cards = container.querySelectorAll('[data-role="server-card"]');
+                if (cards.length === 0) {
+                    return;
+                }
+
+                const normalized = (keyword || '').trim().toLowerCase();
+                let visibleCount = 0;
+
+                cards.forEach((card) => {
+                    const searchField = (card.getAttribute('data-search') || '').toLowerCase();
+                    const match = normalized === '' || searchField.includes(normalized);
+                    card.style.display = match ? '' : 'none';
+                    if (match) {
+                        visibleCount += 1;
+                    }
+                });
+
+                let emptyState = container.querySelector('[data-role="server-empty-search"]');
+                if (!emptyState && normalized !== '' && visibleCount === 0) {
+                    emptyState = document.createElement('div');
+                    emptyState.setAttribute('data-role', 'server-empty-search');
+                    emptyState.className = 'empty-state';
+                    emptyState.setAttribute('data-i18n-zh', '未找到匹配的服务器');
+                    emptyState.setAttribute('data-i18n-en', 'No servers match the search');
+                    emptyState.textContent = currentLanguage === 'en' ? 'No servers match the search' : '未找到匹配的服务器';
+                    container.appendChild(emptyState);
+                }
+
+                if (emptyState && (visibleCount > 0 || normalized === '')) {
+                    emptyState.remove();
+                }
+
+                if (normalized === '') {
+                    cards.forEach((card) => {
+                        card.style.display = '';
+                    });
+                }
+
+                applyLanguage(currentLanguage, false);
+            }
+
+            function showServerPanelError() {
+                const container = document.getElementById('serverStatusContainer');
+                if (!container) {
+                    return;
+                }
+
+                container.innerHTML = '<div class="empty-state" data-i18n-zh="无法加载服务器数据，请稍后重试" data-i18n-en="Unable to load server data. Please try again later.">无法加载服务器数据，请稍后重试</div>';
+                applyLanguage(currentLanguage, false);
+            }
+
+            function escapeHtml(value) {
+                if (value === null || value === undefined) {
+                    return '';
+                }
+
+                return String(value).replace(/[&<>"']/g, (char) => {
+                    switch (char) {
+                        case '&':
+                            return '&amp;';
+                        case '<':
+                            return '&lt;';
+                        case '>':
+                            return '&gt;';
+                        case '"':
+                            return '&quot;';
+                        case '\'':
+                            return '&#39;';
+                        default:
+                            return char;
+                    }
+                });
+            }
+
+            function renderUserPanel(data) {
+                if (!data) {
+                    showUserPanelError();
+                    return;
+                }
+
+                const userStats = data.userStats || {};
+
+                const activeToday = userStats.activeToday ?? data.todayActiveUsers ?? 0;
+                const activeYesterday = userStats.activeYesterday ?? data.yesterdayActiveUsers ?? 0;
+                const conversionRate = userStats.conversionRate ?? data.conversionRate ?? null;
+                const updatedAt = userStats.updatedAt ?? data.usersUpdatedAt ?? data.updatedAt ?? null;
+
+                updateElement('userActiveToday', activeToday ?? 0);
+                updateElement('userActiveYesterday', activeYesterday ?? 0);
+                updateElement('userConversionRate', conversionRate !== null && conversionRate !== undefined ? formatPercent(conversionRate) : '--');
+                updateElement('userSummaryUpdatedAt', updatedAt ? formatUserSummaryTimestamp(updatedAt) : '--');
+
+                const trendPoints = buildUserTrendPoints(data);
+                userTrendPoints = trendPoints;
+                updateUserTrendChart(userTrendPoints);
+
+                const activities = Array.isArray(data.recentActivities) ? data.recentActivities : [];
+                renderUserEvents(activities);
+
+                applyLanguage(currentLanguage, false);
+            }
+
+            function buildUserTrendPoints(data) {
+                const stats = data && data.userStats ? data.userStats : {};
+
+                return [
+                    {
+                        labelZh: '前日',
+                        labelEn: '2 Days Ago',
+                        value: stats.activeThreeDaysAgo ?? data.threeDaysAgoActiveUsers ?? 0
+                    },
+                    {
+                        labelZh: '昨日',
+                        labelEn: 'Yesterday',
+                        value: stats.activeYesterday ?? data.yesterdayActiveUsers ?? 0
+                    },
+                    {
+                        labelZh: '今日',
+                        labelEn: 'Today',
+                        value: stats.activeToday ?? data.todayActiveUsers ?? 0
+                    }
+                ];
+            }
+
+            function updateUserTrendChart(points) {
+                const canvas = document.getElementById('userTrendChart');
+                if (!canvas) {
+                    return;
+                }
+
+                const targetHeight = 220;
+                canvas.setAttribute('height', String(targetHeight));
+                canvas.style.height = `${targetHeight}px`;
+
+                if (!Array.isArray(points) || points.length === 0) {
+                    if (userTrendChart) {
+                        userTrendChart.destroy();
+                        userTrendChart = null;
+                    }
+                    return;
+                }
+
+                const labels = points.map((point) => {
+                    return currentLanguage === 'en' ? point.labelEn : point.labelZh;
+                });
+                const values = points.map((point) => {
+                    const numeric = Number(point.value);
+                    return Number.isFinite(numeric) ? numeric : 0;
+                });
+
+                if (!userTrendChart) {
+                    userTrendChart = new Chart(canvas, {
+                        type: 'line',
+                        data: {
+                            labels,
+                            datasets: [{
+                                label: currentLanguage === 'en' ? 'Active users' : '活跃用户',
+                                data: values,
+                                borderColor: 'rgba(47, 155, 255, 1)',
+                                backgroundColor: 'rgba(47, 155, 255, 0.12)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true,
+                                pointRadius: 3,
+                                pointHoverRadius: 5
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: {
+                                        display: false
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        precision: 0
+                                    }
+                                }
+                            },
+                            animation: {
+                                duration: 400
+                            }
+                        }
+                    });
+                    userTrendChart.resize(undefined, targetHeight);
+                } else {
+                    userTrendChart.data.labels = labels;
+                    userTrendChart.data.datasets[0].label = currentLanguage === 'en' ? 'Active users' : '活跃用户';
+                    userTrendChart.data.datasets[0].data = values;
+                    userTrendChart.update('none');
+                    userTrendChart.resize(undefined, targetHeight);
+                }
+            }
+
+            function renderUserEvents(events) {
+                const eventStream = document.getElementById('userEventStream');
+                if (!eventStream) {
+                    return;
+                }
+
+                if (!Array.isArray(events) || events.length === 0) {
+                    eventStream.innerHTML = '<li class="empty-state" data-i18n-zh="暂无用户活动" data-i18n-en="No recent activity">暂无用户活动</li>';
+                    applyLanguage(currentLanguage, false);
+                    return;
+                }
+
+                const items = events.slice(0, 10).map((event) => {
+                    const type = event && event.type ? event.type : '';
+                    const description = event && event.description ? event.description : '';
+                    const timestamp = event && event.timestamp ? event.timestamp : '--';
+
+                    const hasUser = event && event.user;
+                    const fallbackUserZh = '未知用户';
+                    const fallbackUserEn = 'Unknown user';
+                    const userDisplay = hasUser ? event.user : (currentLanguage === 'en' ? fallbackUserEn : fallbackUserZh);
+                    const userI18nAttr = hasUser ? '' : ` data-i18n-zh="${escapeHtml(fallbackUserZh)}" data-i18n-en="${escapeHtml(fallbackUserEn)}"`;
+
                     return `
-                        <div class="server-status-card ${server.status || 'offline'}">
-                            <div class="server-header">
-                                <div class="server-info">
-                                    <div class="server-name">${server.name || 'Unknown'}</div>
-                                    <div class="server-address">${server.host || 'N/A'}:${server.port || 22}</div>
-                                </div>
-                                <div class="server-status">
-                                    <span class="status-indicator ${server.status || 'offline'}"></span>
-                                    <span class="status-text" data-i18n-zh="${statusZh}" data-i18n-en="${statusEn}">${getStatusText(server.status)}</span>
-                                </div>
+                        <li class="user-event" data-role="user-event">
+                            <div class="user-event__header">
+                                <span class="user-event__type">${escapeHtml(type)}</span>
+                                <span class="user-event__time">${escapeHtml(timestamp)}</span>
                             </div>
-                            <div class="server-metrics">
-                                <div class="metric">
-                                    <div class="metric-label" data-i18n-zh="CPU" data-i18n-en="CPU">CPU</div>
-                                    <div class="metric-value">${server.cpuUsage || 0}%</div>
-                                    <div class="metric-bar">
-                                        <div class="metric-progress" style="width: ${server.cpuUsage || 0}%"></div>
-                                    </div>
-                                </div>
-                                <div class="metric">
-                                    <div class="metric-label" data-i18n-zh="内存" data-i18n-en="Memory">内存</div>
-                                    <div class="metric-value">${server.memoryUsage || 0}%</div>
-                                    <div class="metric-bar">
-                                        <div class="metric-progress" style="width: ${server.memoryUsage || 0}%"></div>
-                                    </div>
-                                </div>
-                                <div class="metric">
-                                    <div class="metric-label" data-i18n-zh="磁盘" data-i18n-en="Disk">磁盘</div>
-                                    <div class="metric-value">${server.diskUsage || 0}%</div>
-                                    <div class="metric-bar">
-                                        <div class="metric-progress" style="width: ${server.diskUsage || 0}%"></div>
-                                    </div>
-                                </div>
+                            <div class="user-event__body">
+                                <span class="user-event__user"${userI18nAttr}>${escapeHtml(userDisplay)}</span>
+                                <span class="user-event__description">${escapeHtml(description)}</span>
                             </div>
-                            <div class="server-actions">
-                                <button class="btn btn-link" type="button" onclick="viewServerDetail(${server.id})">
-                                    <i class="fas fa-eye"></i>
-                                    <span data-i18n-zh="查看详情" data-i18n-en="View details">查看详情</span>
-                                </button>
-                                <button class="btn btn-link" type="button" onclick="connectToServer(${server.id})">
-                                    <i class="fas fa-terminal"></i>
-                                    <span data-i18n-zh="SSH 连接" data-i18n-en="SSH Connect">SSH 连接</span>
-                                </button>
-                            </div>
-                        </div>`;
+                        </li>`;
                 }).join('');
 
-                serverGrid.innerHTML = serverCards;
+                eventStream.innerHTML = items;
                 applyLanguage(currentLanguage, false);
+            }
+
+            function showUserPanelError() {
+                updateElement('userActiveToday', '--');
+                updateElement('userActiveYesterday', '--');
+                updateElement('userConversionRate', '--');
+                updateElement('userSummaryUpdatedAt', '--');
+
+                const eventStream = document.getElementById('userEventStream');
+                if (eventStream) {
+                    eventStream.innerHTML = '<li class="empty-state" data-i18n-zh="无法加载用户活动" data-i18n-en="Unable to load user activity">无法加载用户活动</li>';
+                    applyLanguage(currentLanguage, false);
+                }
+
+                userTrendPoints = [];
+                updateUserTrendChart([]);
+            }
+
+            function formatUserSummaryTimestamp(timestamp) {
+                if (!timestamp) {
+                    return '--';
+                }
+
+                const date = new Date(timestamp);
+                if (Number.isNaN(date.getTime())) {
+                    return timestamp;
+                }
+
+                const locale = currentLanguage === 'en' ? 'en-US' : 'zh-CN';
+                return date.toLocaleString(locale, { hour12: false });
             }
 
             function renderResourceAnalysis(data) {
@@ -2090,13 +2591,8 @@ function initDashboardRealTimeUpdates() {
                 }
             }
 
-            function setViewMode(mode, gridBtn, listBtn, container) {
-                // 更新按钮状态
-                gridBtn.classList.toggle('active', mode === 'grid');
-                listBtn.classList.toggle('active', mode === 'list');
-
-                // 更新容器类名
-                container.classList.toggle('list-view', mode === 'list');
+            function setViewMode(mode) {
+                setServerViewMode(mode);
             }
 
             function updateLastRefreshTime() {
@@ -2160,6 +2656,7 @@ function initDashboardRealTimeUpdates() {
             let resourcePieChart = null;
             let healthTrendChart = null;
             let healthTrendData = [];
+            let userTrendChart = null;
 
             function toggleResourceView(viewType, barBtn, chartBtn) {
                 const metricsContainer = document.getElementById('resourceMetrics');
@@ -2406,27 +2903,27 @@ function initDashboardRealTimeUpdates() {
 
                     // 单键快捷键
                     switch (event.key.toLowerCase()) {
-                        case 'g':
+                        case 'g': {
                             // G: 切换到网格视图
-                            const gridBtn = document.getElementById('gridViewBtn');
-                            const listBtn = document.getElementById('listViewBtn');
-                            const container = document.getElementById('serverGrid');
-                            if (gridBtn && listBtn && container) {
-                                setViewMode('grid', gridBtn, listBtn, container);
+                            const gridBtn = document.getElementById('serverGridView');
+                            const listBtn = document.getElementById('serverListView');
+                            if (gridBtn && listBtn) {
+                                setServerViewMode('grid');
                                 showShortcutTip('切换到网格视图');
                             }
                             break;
+                        }
 
-                        case 'l':
+                        case 'l': {
                             // L: 切换到列表视图
-                            const gridBtn2 = document.getElementById('gridViewBtn');
-                            const listBtn2 = document.getElementById('listViewBtn');
-                            const container2 = document.getElementById('serverGrid');
-                            if (gridBtn2 && listBtn2 && container2) {
-                                setViewMode('list', gridBtn2, listBtn2, container2);
+                            const gridBtn = document.getElementById('serverGridView');
+                            const listBtn = document.getElementById('serverListView');
+                            if (gridBtn && listBtn) {
+                                setServerViewMode('list');
                                 showShortcutTip('切换到列表视图');
                             }
                             break;
+                        }
 
                         case 'c':
                             // C: 切换资源图表视图
