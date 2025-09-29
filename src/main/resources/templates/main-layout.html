@@ -24,17 +24,23 @@
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <style>
-        /* 统一去掉所有按钮和链接的焦点蓝框 */
-        *:focus,
         *:focus-visible {
-            outline: none !important;
+            outline: 2px solid var(--focus-outline-color, var(--primary-color, #2F9BFF));
+            outline-offset: 2px;
+            border-radius: 4px;
         }
 
-        button:focus,
+        *:focus:not(:focus-visible) {
+            outline: none;
+        }
+
         button:focus-visible,
-        a:focus,
-        a:focus-visible {
-            box-shadow: none !important;
+        a:focus-visible,
+        .btn:focus-visible {
+            outline: 2px solid var(--focus-outline-color, var(--primary-color, #2F9BFF));
+            outline-offset: 2px;
+            box-shadow: 0 0 0 4px rgba(47, 155, 255, 0.15);
+            border-radius: 6px;
         }
 
         :root {
@@ -2114,22 +2120,15 @@ function initDashboardRealTimeUpdates() {
                     return '';
                 }
 
-                return String(value).replace(/[&<>"']/g, (char) => {
-                    switch (char) {
-                        case '&':
-                            return '&amp;';
-                        case '<':
-                            return '&lt;';
-                        case '>':
-                            return '&gt;';
-                        case '"':
-                            return '&quot;';
-                        case '\'':
-                            return '&#39;';
-                        default:
-                            return char;
-                    }
-                });
+                return String(value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#x27;')
+                    .replace(/\//g, '&#x2F;')
+                    .replace(/\\/g, '&#x5C;')
+                    .replace(/`/g, '&#96;');
             }
 
             function renderUserPanel(data) {
