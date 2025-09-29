@@ -2190,9 +2190,11 @@ function initDashboardRealTimeUpdates() {
                     }
                     return;
                 }
+
                 const targetHeight = 220;
                 canvas.setAttribute('height', String(targetHeight));
                 canvas.style.height = `${targetHeight}px`;
+
                 if (!hasData) {
                     if (userTrendChart) {
                         userTrendChart.destroy();
@@ -2204,10 +2206,20 @@ function initDashboardRealTimeUpdates() {
                     }
                     return;
                 }
+
+                if (typeof Chart === 'undefined') {
+                    canvas.classList.add('is-hidden');
+                    if (placeholder) {
+                        placeholder.hidden = false;
+                    }
+                    return;
+                }
+
                 canvas.classList.remove('is-hidden');
                 if (placeholder) {
                     placeholder.hidden = true;
                 }
+
                 const labels = points.map((point) => {
                     return currentLanguage === 'en' ? point.labelEn : point.labelZh;
                 });
@@ -2215,62 +2227,76 @@ function initDashboardRealTimeUpdates() {
                     const numeric = Number(point.value);
                     return Number.isFinite(numeric) ? numeric : 0;
                 });
-                if (!userTrendChart) {
-                    userTrendChart = new Chart(canvas, {
-                        type: 'line',
-                        data: {
-                            labels,
-                            datasets: [{
-                                label: currentLanguage === 'en' ? 'Active users' : '活跃用户',
-                                data: values,
-                                borderColor: 'rgba(47, 155, 255, 1)',
-                                backgroundColor: 'rgba(47, 155, 255, 0.12)',
-                                borderWidth: 2,
-                                tension: 0.4,
-                                fill: true,
-                                pointRadius: 3,
-                                pointHoverRadius: 5
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    display: false
-                                },
-                                tooltip: {
-                                    mode: 'index',
-                                    intersect: false
-                                }
+
+                try {
+                    if (!userTrendChart) {
+                        userTrendChart = new Chart(canvas, {
+                            type: 'line',
+                            data: {
+                                labels,
+                                datasets: [{
+                                    label: currentLanguage === 'en' ? 'Active users' : '活跃用户',
+                                    data: values,
+                                    borderColor: 'rgba(47, 155, 255, 1)',
+                                    backgroundColor: 'rgba(47, 155, 255, 0.12)',
+                                    borderWidth: 2,
+                                    tension: 0.4,
+                                    fill: true,
+                                    pointRadius: 3,
+                                    pointHoverRadius: 5
+                                }]
                             },
-                            scales: {
-                                x: {
-                                    grid: {
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
                                         display: false
+                                    },
+                                    tooltip: {
+                                        mode: 'index',
+                                        intersect: false
                                     }
                                 },
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: {
-                                        precision: 0
+                                scales: {
+                                    x: {
+                                        grid: {
+                                            display: false
+                                        }
+                                    },
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            precision: 0
+                                        }
                                     }
+                                },
+                                animation: {
+                                    duration: 400
                                 }
-                            },
-                            animation: {
-                                duration: 400
                             }
-                        }
-                    });
-                    userTrendChart.resize(undefined, targetHeight);
-                } else {
-                    userTrendChart.data.labels = labels;
-                    userTrendChart.data.datasets[0].label = currentLanguage === 'en' ? 'Active users' : '活跃用户';
-                    userTrendChart.data.datasets[0].data = values;
-                    userTrendChart.update('none');
-                    userTrendChart.resize(undefined, targetHeight);
+                        });
+                        userTrendChart.resize(undefined, targetHeight);
+                    } else {
+                        userTrendChart.data.labels = labels;
+                        userTrendChart.data.datasets[0].label = currentLanguage === 'en' ? 'Active users' : '活跃用户';
+                        userTrendChart.data.datasets[0].data = values;
+                        userTrendChart.update('none');
+                        userTrendChart.resize(undefined, targetHeight);
+                    }
+                } catch (error) {
+                    console.error('Failed to render user trend chart', error);
+                    if (userTrendChart) {
+                        userTrendChart.destroy();
+                        userTrendChart = null;
+                    }
+                    canvas.classList.add('is-hidden');
+                    if (placeholder) {
+                        placeholder.hidden = false;
+                    }
                 }
             }
+
             function renderUserEvents(events) {
                 const eventStream = document.getElementById('userEventStream');
                 if (!eventStream) {
