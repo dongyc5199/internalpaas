@@ -74,214 +74,319 @@
     </div>
     <!-- 统计概览 -->
     <section aria-label="Key metrics" class="stats-overview" id="dashboardOverviewCards">
-     <article aria-labelledby="statsServersTitle" class="stats-card stats-card--servers">
-      <header class="card-header">
-       <div aria-hidden="true" class="card-icon">
-        🖥️
-       </div>
-       <div class="card-title" id="statsServersTitle">
-        <span data-i18n-en="Server Cluster" data-i18n-zh="服务器集群">
-         服务器集群
-        </span>
-       </div>
-       <button class="btn btn-link" id="refreshOverview" type="button">
-        <span data-i18n-en="Refresh" data-i18n-zh="刷新">
-         刷新
-        </span>
-       </button>
-      </header>
-      <div class="card-content">
-       <div class="main-stat">
-        <span class="stat-number" id="dashboardServersTotal">
-         0
-        </span>
-        <span class="stat-label" data-i18n-en="Total" data-i18n-zh="总计">
-         总计
-        </span>
-       </div>
-       <div class="sub-stats">
-        <div class="sub-stat">
-         <span class="indicator">
+     <article aria-describedby="statsServersMeta" aria-labelledby="statsServersTitle" class="stats-card stats-card--servers" role="group">
+      <header class="stats-card__header">
+       <div class="stats-card__heading">
+        <div aria-hidden="true" class="stats-card__icon">
+         🖥️
+        </div>
+        <div class="stats-card__label">
+         <span class="stats-card__title" data-i18n-en="Server Cluster" data-i18n-zh="服务器集群" id="statsServersTitle">
+          服务器集群
          </span>
-         <span class="label" data-i18n-en="Online" data-i18n-zh="在线">
+         <span class="stats-card__subtitle" data-i18n-en="Infrastructure snapshot" data-i18n-zh="基础设施快照">
+          基础设施快照
+         </span>
+        </div>
+       </div>
+       <div class="stats-card__actions">
+        <button class="btn btn-link" id="refreshOverview" type="button">
+         <span data-i18n-en="Refresh" data-i18n-zh="刷新">
+          刷新
+         </span>
+        </button>
+       </div>
+      </header>
+      <div class="stats-card__body">
+       <div class="stats-card__value-block">
+        <div class="stats-card__value-row">
+         <span class="stats-card__value" id="dashboardServersTotal">
+          0
+         </span>
+         <span class="stats-card__unit" data-i18n-en="servers" data-i18n-zh="台">
+          台
+         </span>
+        </div>
+        <span class="stats-card__value-label" data-i18n-en="Managed total" data-i18n-zh="受管总数">
+         受管总数
+        </span>
+       </div>
+       <ul class="stats-card__list" role="list">
+        <li class="stats-card__list-item stats-card__list-item--online">
+         <span class="stats-card__indicator">
+         </span>
+         <span class="stats-card__list-label" data-i18n-en="Online" data-i18n-zh="在线">
           在线
          </span>
-         <span class="value" id="dashboardServersOnline">
+         <span class="stats-card__list-value" id="dashboardServersOnline">
           0
          </span>
-        </div>
-        <div class="sub-stat warning">
-         <span class="indicator">
+        </li>
+        <li class="stats-card__list-item stats-card__list-item--warning">
+         <span class="stats-card__indicator">
          </span>
-         <span class="label" data-i18n-en="Maintenance" data-i18n-zh="警告">
+         <span class="stats-card__list-label" data-i18n-en="Maintenance" data-i18n-zh="警告">
           警告
          </span>
-         <span class="value" id="dashboardServersMaintaining">
+         <span class="stats-card__list-value" id="dashboardServersMaintaining">
           0
          </span>
-        </div>
-        <div class="sub-stat offline">
-         <span class="indicator">
+        </li>
+        <li class="stats-card__list-item stats-card__list-item--offline">
+         <span class="stats-card__indicator">
          </span>
-         <span class="label" data-i18n-en="Offline" data-i18n-zh="离线">
+         <span class="stats-card__list-label" data-i18n-en="Offline" data-i18n-zh="离线">
           离线
          </span>
-         <span class="value" id="dashboardServersOffline">
+         <span class="stats-card__list-value" id="dashboardServersOffline">
           0
+         </span>
+        </li>
+       </ul>
+      </div>
+      <footer class="stats-card__footer">
+       <div class="stats-card__meta" id="statsServersMeta">
+        <span class="stats-card__meta-item">
+         <span class="stats-card__meta-label" data-i18n-en="Online rate" data-i18n-zh="在线率">
+          在线率
+         </span>
+         <span class="stats-card__meta-value" id="dashboardServersRate">
+          --%
+         </span>
+        </span>
+        <span class="stats-card__meta-item" id="dashboardServersUpdatedAt">
+         更新于 --
+        </span>
+       </div>
+      </footer>
+     </article>
+     <article aria-describedby="statsUsersMeta" aria-labelledby="statsUsersTitle" class="stats-card stats-card--users" role="group">
+      <header class="stats-card__header">
+       <div class="stats-card__heading">
+        <div aria-hidden="true" class="stats-card__icon">
+         👥
+        </div>
+        <div class="stats-card__label">
+         <span class="stats-card__title" data-i18n-en="User Activity" data-i18n-zh="用户活跃度" id="statsUsersTitle">
+          用户活跃度
+         </span>
+         <span class="stats-card__subtitle" data-i18n-en="Engagement insight" data-i18n-zh="活跃趋势洞察">
+          活跃趋势洞察
          </span>
         </div>
        </div>
-      </div>
-     </article>
-     <article aria-labelledby="statsUsersTitle" class="stats-card stats-card--users">
-      <header class="card-header">
-       <div aria-hidden="true" class="card-icon">
-        👥
-       </div>
-       <div class="card-title" id="statsUsersTitle">
-        <span data-i18n-en="User Activity" data-i18n-zh="用户活跃度">
-         用户活跃度
-        </span>
-       </div>
       </header>
-      <div class="card-content">
-       <div class="main-stat">
-        <span class="stat-number" id="dashboardUsersActiveToday">
-         0
-        </span>
-        <span class="stat-label" data-i18n-en="Active Today" data-i18n-zh="今日活跃">
+      <div class="stats-card__body">
+       <div class="stats-card__value-block">
+        <div class="stats-card__value-row">
+         <span class="stats-card__value" id="dashboardUsersActiveToday">
+          0
+         </span>
+         <span class="stats-card__delta stats-delta" data-precision="1" data-suffix="%" id="dashboardUsersDelta">
+          --
+         </span>
+        </div>
+        <span class="stats-card__value-label" data-i18n-en="Active today" data-i18n-zh="今日活跃">
          今日活跃
         </span>
        </div>
-       <div class="sub-stats">
-        <div class="sub-stat">
-         <span class="label" data-i18n-en="Yesterday" data-i18n-zh="昨日">
+       <ul class="stats-card__list" role="list">
+        <li class="stats-card__list-item">
+         <span class="stats-card__indicator">
+         </span>
+         <span class="stats-card__list-label" data-i18n-en="Yesterday" data-i18n-zh="昨日">
           昨日
          </span>
-         <span class="value" id="dashboardUsersYesterday">
+         <span class="stats-card__list-value" id="dashboardUsersYesterday">
           0
          </span>
-        </div>
-        <div class="sub-stat">
-         <span class="label" data-i18n-en="Last 3 Days" data-i18n-zh="前日">
+        </li>
+        <li class="stats-card__list-item">
+         <span class="stats-card__indicator">
+         </span>
+         <span class="stats-card__list-label" data-i18n-en="2 days ago" data-i18n-zh="前日">
           前日
          </span>
-         <span class="value" id="dashboardUsersThreeDays">
+         <span class="stats-card__list-value" id="dashboardUsersThreeDays">
           0
          </span>
-        </div>
-        <div class="sub-stat">
-         <span class="label" data-i18n-en="Total Users" data-i18n-zh="总用户">
+        </li>
+        <li class="stats-card__list-item">
+         <span class="stats-card__indicator">
+         </span>
+         <span class="stats-card__list-label" data-i18n-en="Total users" data-i18n-zh="总用户">
           总用户
          </span>
-         <span class="value" id="dashboardUsersTotal">
+         <span class="stats-card__list-value" id="dashboardUsersTotal">
           0
+         </span>
+        </li>
+       </ul>
+      </div>
+      <footer class="stats-card__footer">
+       <div class="stats-card__meta" id="statsUsersMeta">
+        <span class="stats-card__meta-item">
+         <span class="stats-card__meta-label" data-i18n-en="Conversion" data-i18n-zh="转化率">
+          转化率
+         </span>
+         <span class="stats-card__meta-value" id="dashboardUsersConversion">
+          --
+         </span>
+        </span>
+        <span class="stats-card__meta-item" id="dashboardUsersUpdatedAt">
+         更新于 --
+        </span>
+       </div>
+      </footer>
+     </article>
+     <article aria-describedby="statsAlertsMeta" aria-labelledby="statsAlertsTitle" class="stats-card stats-card--alerts" role="group">
+      <header class="stats-card__header">
+       <div class="stats-card__heading">
+        <div aria-hidden="true" class="stats-card__icon">
+         📦
+        </div>
+        <div class="stats-card__label">
+         <span class="stats-card__title" data-i18n-en="Alerts Overview" data-i18n-zh="应用状态" id="statsAlertsTitle">
+          应用状态
+         </span>
+         <span class="stats-card__subtitle" data-i18n-en="Deployment health" data-i18n-zh="部署健康概览">
+          部署健康概览
          </span>
         </div>
        </div>
-      </div>
-     </article>
-     <article aria-labelledby="statsAlertsTitle" class="stats-card stats-card--alerts">
-      <header class="card-header">
-       <div aria-hidden="true" class="card-icon">
-        📦
-       </div>
-       <div class="card-title" id="statsAlertsTitle">
-        <span data-i18n-en="Alerts Overview" data-i18n-zh="应用状态">
-         应用状态
-        </span>
-       </div>
       </header>
-      <div class="card-content">
-       <div class="main-stat">
-        <span class="stat-number" id="dashboardAlertsUnresolved">
-         0
-        </span>
-        <span class="stat-label" data-i18n-en="Unresolved" data-i18n-zh="总应用数">
+      <div class="stats-card__body">
+       <div class="stats-card__value-block">
+        <div class="stats-card__value-row">
+         <span class="stats-card__value" id="dashboardAlertsUnresolved">
+          0
+         </span>
+         <span class="stats-card__delta stats-delta" data-precision="1" data-suffix="%" id="dashboardAlertsDelta">
+          --
+         </span>
+        </div>
+        <span class="stats-card__value-label" data-i18n-en="Applications" data-i18n-zh="总应用数">
          总应用数
         </span>
        </div>
-       <div class="sub-stats">
-        <div class="sub-stat critical">
-         <span class="indicator">
+       <ul class="stats-card__list" role="list">
+        <li class="stats-card__list-item stats-card__list-item--critical">
+         <span class="stats-card__indicator">
          </span>
-         <span class="label" data-i18n-en="Critical" data-i18n-zh="运行中">
+         <span class="stats-card__list-label" data-i18n-en="Critical" data-i18n-zh="运行中">
           运行中
          </span>
-         <span class="value" id="dashboardAlertsCritical">
+         <span class="stats-card__list-value" id="dashboardAlertsCritical">
           0
          </span>
-        </div>
-        <div class="sub-stat warning">
-         <span class="indicator">
+        </li>
+        <li class="stats-card__list-item stats-card__list-item--warning">
+         <span class="stats-card__indicator">
          </span>
-         <span class="label" data-i18n-en="Warning" data-i18n-zh="已停止">
+         <span class="stats-card__list-label" data-i18n-en="Warning" data-i18n-zh="已停止">
           已停止
          </span>
-         <span class="value" id="dashboardAlertsWarning">
+         <span class="stats-card__list-value" id="dashboardAlertsWarning">
           0
          </span>
-        </div>
-        <div class="sub-stat">
-         <span class="indicator">
+        </li>
+        <li class="stats-card__list-item">
+         <span class="stats-card__indicator">
          </span>
-         <span class="label" data-i18n-en="Rules" data-i18n-zh="异常">
+         <span class="stats-card__list-label" data-i18n-en="Triggered rules" data-i18n-zh="异常">
           异常
          </span>
-         <span class="value" id="dashboardAlertsRules">
+         <span class="stats-card__list-value" id="dashboardAlertsRules">
           0
          </span>
-        </div>
-       </div>
+        </li>
+       </ul>
       </div>
+      <footer class="stats-card__footer">
+       <div class="stats-card__meta" id="statsAlertsMeta">
+        <span class="stats-card__meta-item">
+         <span class="stats-card__meta-label" data-i18n-en="SLA" data-i18n-zh="SLA 状态">
+          SLA 状态
+         </span>
+         <span class="stats-card__meta-value" id="dashboardAlertsSla">
+          SLA 正常
+         </span>
+        </span>
+        <span class="stats-card__meta-item" id="dashboardAlertsUpdatedAt">
+         更新于 --
+        </span>
+       </div>
+      </footer>
      </article>
-     <article aria-labelledby="statsHealthTitle" class="stats-card stats-card--health">
-      <header class="card-header">
-       <div aria-hidden="true" class="card-icon">
-        💚
+     <article aria-labelledby="statsUnresolvedTitle" class="stats-card stats-card--alerts stats-card--unresolved" role="group">
+      <header class="stats-card__header">
+       <div class="stats-card__heading">
+        <div aria-hidden="true" class="stats-card__icon">
+         🚨
+        </div>
+        <div class="stats-card__label">
+         <span class="stats-card__title" data-i18n-en="Unresolved Alerts" data-i18n-zh="未处理告警" id="statsUnresolvedTitle">
+          未处理告警
+         </span>
+         <span class="stats-card__subtitle" data-i18n-en="Pending incidents" data-i18n-zh="待处理事件">
+          待处理事件
+         </span>
+        </div>
        </div>
-       <div class="card-title" id="statsHealthTitle">
-        <span data-i18n-en="System Health" data-i18n-zh="系统健康度">
-         系统健康度
-        </span>
+       <div class="stats-card__actions">
+        <button class="btn btn-link" id="viewAlertsDetail" type="button">
+         <span data-i18n-en="View alerts" data-i18n-zh="查看告警">
+          查看告警
+         </span>
+        </button>
        </div>
-       <button class="btn btn-link" id="viewHealthDetail" type="button">
-        <span data-i18n-en="View Detail" data-i18n-zh="详细分析">
-         详细分析
-        </span>
-       </button>
       </header>
-      <div class="card-content">
-       <div class="main-stat">
-        <span class="stat-number" id="dashboardHealthScore">
-         0
-        </span>
-        <span class="stat-label" data-i18n-en="Score" data-i18n-zh="综合评分">
-         综合评分
-        </span>
-       </div>
-       <div class="sub-stats">
-        <div class="sub-stat">
-         <span aria-hidden="true" class="indicator">
+      <div class="stats-card__body">
+       <div class="stats-card__value-block">
+        <div class="stats-card__value-row">
+         <span class="stats-card__value" id="dashboardUnresolvedTotal">
+          0
          </span>
-         <span class="label" data-i18n-en="Status" data-i18n-zh="状态">
-          状态
-         </span>
-         <span class="value" data-i18n-en="Evaluating" data-i18n-zh="评估中" id="dashboardHealthStatusText">
-          评估中
+         <span class="stats-card__delta stats-delta" data-precision="1" data-suffix="%" id="dashboardUnresolvedDelta">
+          --
          </span>
         </div>
-        <div class="sub-stat">
-         <span aria-hidden="true" class="indicator">
-         </span>
-         <span class="label" data-i18n-en="Summary" data-i18n-zh="摘要">
-          摘要
-         </span>
-         <span class="value" data-i18n-en="Awaiting status evaluation." data-i18n-zh="运行状态待评估" id="dashboardHealthSummary">
-          运行状态待评估
-         </span>
-        </div>
+        <span class="stats-card__value-label" data-i18n-en="Unresolved" data-i18n-zh="未处理">
+         未处理
+        </span>
        </div>
+       <ul class="stats-card__list" role="list">
+        <li class="stats-card__list-item stats-card__list-item--critical">
+         <span class="stats-card__indicator">
+         </span>
+         <span class="stats-card__list-label" data-i18n-en="Critical" data-i18n-zh="严重">
+          严重
+         </span>
+         <span class="stats-card__list-value" id="dashboardUnresolvedCritical">
+          0
+         </span>
+        </li>
+        <li class="stats-card__list-item stats-card__list-item--warning">
+         <span class="stats-card__indicator">
+         </span>
+         <span class="stats-card__list-label" data-i18n-en="Warning" data-i18n-zh="预警">
+          预警
+         </span>
+         <span class="stats-card__list-value" id="dashboardUnresolvedWarning">
+          0
+         </span>
+        </li>
+        <li class="stats-card__list-item">
+         <span class="stats-card__indicator">
+         </span>
+         <span class="stats-card__list-label" data-i18n-en="Triggered rules" data-i18n-zh="规则触发">
+          规则触发
+         </span>
+         <span class="stats-card__list-value" id="dashboardUnresolvedRules">
+          0
+         </span>
+        </li>
+       </ul>
       </div>
      </article>
     </section>

@@ -1639,11 +1639,6 @@
                 initDashboardEvents();
                 initDashboardRealTimeUpdates();
 
-                // 初始化图表
-                setTimeout(() => {
-                    initHealthTrendChart();
-                }, 500);
-
                 // 初始化键盘快捷键
                 initDashboardKeyboardShortcuts();
 
@@ -1887,10 +1882,13 @@ function initDashboardRealTimeUpdates() {
                 updateElement('dashboardUsersThreeDays', activeThreeDays ?? 0);
                 updateElement('dashboardUsersTotal', usersTotal ?? 0);
                 updateDelta('dashboardUsersDelta', usersDelta);
-                if (usersConversion !== undefined && usersConversion !== null) {
-                    updateStatusText('dashboardUsersConversion', `转化率 ${formatPercent(usersConversion)}`);
-                } else {
-                    updateStatusText('dashboardUsersConversion', '转化率 --');
+                const usersConversionElement = document.getElementById('dashboardUsersConversion');
+                if (usersConversionElement) {
+                    if (usersConversion !== undefined && usersConversion !== null) {
+                        usersConversionElement.textContent = formatPercent(usersConversion);
+                    } else {
+                        usersConversionElement.textContent = '--';
+                    }
                 }
                 updateTimestamp('dashboardUsersUpdatedAt', usersUpdatedAt);
 
@@ -1909,27 +1907,19 @@ function initDashboardRealTimeUpdates() {
                 updateElement('dashboardAlertsWarning', warning ?? 0);
                 updateElement('dashboardAlertsRules', rules ?? 0);
                 updateDelta('dashboardAlertsDelta', alertDelta);
-                updateStatusText('dashboardAlertsSla', alertSla, 'SLA 正常');
+                const alertsSlaElement = document.getElementById('dashboardAlertsSla');
+                if (alertsSlaElement) {
+                    alertsSlaElement.textContent = alertSla || 'SLA 正常';
+                }
                 updateTimestamp('dashboardAlertsUpdatedAt', alertsUpdatedAt);
 
-                // 系统健康度
-                const healthStats = data.health || {};
-                const healthScoreRaw = coalesce(healthStats.score, data.systemHealthScore);
-                const healthScore = Number(healthScoreRaw);
-                const healthStatus = coalesce(healthStats.status, data.systemHealthStatus);
-                const healthSummary = coalesce(healthStats.summary, data.systemHealthSummary);
-                const healthUpdatedAt = coalesce(healthStats.updatedAt, data.healthUpdatedAt, data.updatedAt);
-
-                if (!Number.isNaN(healthScore)) {
-                    updateElement('dashboardHealthScore', healthScore.toFixed(1));
-                } else {
-                    updateElement('dashboardHealthScore', healthScoreRaw ?? 0);
-                }
-
-                const healthConfig = getHealthStatusConfig(healthStatus, healthScore);
-                updateStatusText('dashboardHealthSummary', healthSummary || healthConfig.text, '运行正常');
-                updateTimestamp('dashboardHealthUpdatedAt', healthUpdatedAt);
-                updateSystemHealthStatus(healthStatus, Number.isNaN(healthScore) ? 0 : healthScore);
+                updateElement('dashboardUnresolvedTotal', unresolved ?? 0);
+                updateElement('dashboardUnresolvedCritical', critical ?? 0);
+                updateElement('dashboardUnresolvedWarning', warning ?? 0);
+                updateElement('dashboardUnresolvedRules', rules ?? 0);
+                updateDelta('dashboardUnresolvedDelta', alertDelta);
+                updateStatusText('dashboardUnresolvedSla', alertSla, 'SLA 正常');
+                updateTimestamp('dashboardUnresolvedUpdatedAt', alertsUpdatedAt);
             }
 
             function renderServerMonitoring(servers) {
@@ -2182,7 +2172,13 @@ function initDashboardRealTimeUpdates() {
             function updateUserTrendChart(points) {
                 const canvas = document.getElementById('userTrendChart');
                 const placeholder = document.getElementById('userTrendPlaceholder');
-                const hasData = Array.isArray(points) && points.length > 0;
+                const hasData = Array.isArray(points) && points.some((point) => {
+                    if (!point) {
+                        return false;
+                    }
+                    const value = Number(point.value);
+                    return Number.isFinite(value) && value > 0;
+                });
                 if (!canvas) {
                     if (placeholder) {
                         placeholder.hidden = hasData;
@@ -2467,38 +2463,6 @@ function initDashboardRealTimeUpdates() {
                 }
             }
 
-            function updateSystemHealthStatus(status, score) {
-                const statusElement = document.getElementById('dashboardHealthStatus');
-                if (!statusElement) return;
-
-                const indicator = statusElement.querySelector('.health-indicator');
-                const text = statusElement.querySelector('.health-text');
-
-                if (indicator && text) {
-                    const statusConfig = getHealthStatusConfig(status, score);
-                    indicator.style.background = statusConfig.color;
-                    text.textContent = statusConfig.text;
-                }
-
-                // 更新健康度趋势图
-                updateHealthTrend(score);
-            }
-
-            function getHealthStatusConfig(status, score) {
-                switch (status) {
-                    case 'excellent':
-                        return { color: '#10b981', text: '优秀' };
-                    case 'good':
-                        return { color: '#3b82f6', text: '良好' };
-                    case 'warning':
-                        return { color: '#f59e0b', text: '警告' };
-                    case 'critical':
-                        return { color: '#ef4444', text: '严重' };
-                    default:
-                        return { color: '#6b7280', text: '评估中...' };
-                }
-            }
-
             function getStatusText(status, lang = currentLanguage) {
                 const language = (typeof lang === 'string' && lang.toLowerCase() === 'en') ? 'en' : 'zh';
                 switch (status) {
@@ -2578,8 +2542,6 @@ function initDashboardRealTimeUpdates() {
 
             // 🎯 [Chart.js图表] 相关功能
             let resourcePieChart = null;
-            let healthTrendChart = null;
-            let healthTrendData = [];
             let userTrendChart = null;
 
             function toggleResourceView(viewType, barBtn, chartBtn) {
@@ -2678,110 +2640,6 @@ function initDashboardRealTimeUpdates() {
                 const data = window.resourceData;
                 resourcePieChart.data.datasets[0].data = [data.cpu, data.memory, data.disk];
                 resourcePieChart.update('none'); // 无动画更新
-            }
-
-            // 健康度趋势图相关函数
-            function initHealthTrendChart() {
-                const ctx = document.getElementById('dashboardHealthTrendCanvas');
-                if (!ctx) return;
-
-                // 销毁现有图表
-                if (healthTrendChart) {
-                    healthTrendChart.destroy();
-                }
-
-                // 初始化趋势数据（最近12个数据点）
-                if (healthTrendData.length === 0) {
-                    // 生成初始模拟数据
-                    const now = new Date();
-                    for (let i = 11; i >= 0; i--) {
-                        const time = new Date(now.getTime() - i * 5 * 60000); // 每5分钟一个点
-                        healthTrendData.push({
-                            time: time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-                            value: Math.random() * 20 + 80 // 80-100之间的随机值
-                        });
-                    }
-                }
-
-                healthTrendChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: healthTrendData.map(d => d.time),
-                        datasets: [{
-                            label: '系统健康度',
-                            data: healthTrendData.map(d => d.value),
-                            borderColor: 'rgba(16, 185, 129, 1)',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 2,
-                            pointHoverRadius: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            x: {
-                                display: false
-                            },
-                            y: {
-                                display: false,
-                                min: 50,
-                                max: 100
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: {
-                                mode: 'index',
-                                intersect: false,
-                                callbacks: {
-                                    label: function(context) {
-                                        return `健康度: ${Math.round(context.parsed.y)}分`;
-                                    }
-                                }
-                            }
-                        },
-                        elements: {
-                            point: {
-                                hoverBackgroundColor: 'rgba(16, 185, 129, 1)'
-                            }
-                        },
-                        animation: {
-                            duration: 400
-                        }
-                    }
-                });
-            }
-
-            function updateHealthTrend(newScore) {
-                if (!newScore || typeof newScore !== 'number') return;
-
-                // 添加新数据点
-                const now = new Date();
-                healthTrendData.push({
-                    time: now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-                    value: newScore
-                });
-
-                // 保持最多12个数据点
-                if (healthTrendData.length > 12) {
-                    healthTrendData.shift();
-                }
-
-                // 更新图表
-                if (healthTrendChart) {
-                    healthTrendChart.data.labels = healthTrendData.map(d => d.time);
-                    healthTrendChart.data.datasets[0].data = healthTrendData.map(d => d.value);
-                    healthTrendChart.update('none');
-                } else {
-                    // 如果图表还没初始化，初始化它
-                    initHealthTrendChart();
-                }
             }
 
             // 🎯 [仪表板键盘快捷键] 功能
