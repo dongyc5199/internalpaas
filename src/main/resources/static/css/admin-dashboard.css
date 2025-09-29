@@ -1,7 +1,8 @@
 /* 管理员工作台内容页覆写 */
 .admin-dashboard {
-    max-width: 1440px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: none;
+    margin: 0;
     padding: 24px 0 48px;
 }
 
