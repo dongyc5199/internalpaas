@@ -6,6 +6,27 @@
     padding: 24px 0 48px;
 }
 
+.admin-dashboard .content-scrollable {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.admin-dashboard .breadcrumb {
+    margin: 0;
+}
+
+.admin-dashboard .page-header {
+    margin-bottom: 0;
+    padding: 0;
+    border-bottom: none;
+}
+
+.admin-dashboard .stats-overview {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
 .admin-dashboard .breadcrumb .breadcrumb-link {
     border: none;
     background: transparent;
@@ -111,26 +132,77 @@
     margin: 4px 0 0;
     font-size: 14px;
     color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.admin-dashboard .hint-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-left: 6px;
+    border-radius: 999px;
+    background: rgba(47, 155, 255, 0.12);
+    color: var(--primary-color, #2F9BFF);
+    font-size: 12px;
+    cursor: help;
+    position: relative;
+    text-decoration: none;
+}
+
+.admin-dashboard .hint-icon::after {
+    content: attr(data-tooltip-zh);
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 8px);
+    transform: translate(-50%, -4px);
+    background: rgba(30, 41, 59, 0.95);
+    color: #fff;
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    box-shadow: var(--shadow-sm);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+    z-index: 12;
+}
+
+html[lang="en" i] .admin-dashboard .hint-icon::after {
+    content: attr(data-tooltip-en);
+}
+
+.admin-dashboard .hint-icon:hover::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
 }
 
 .admin-dashboard .chart-toggle-group .btn {
     min-width: 88px;
 }
 
+.admin-dashboard .server-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 100%;
+}
+
 .admin-dashboard .server-status {
-    min-height: 160px;
+    flex: 1;
+    min-height: 260px;
     display: grid;
     gap: 16px;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-}
-
-.admin-dashboard .server-status.grid-view {
-    display: grid;
+    align-content: flex-start;
 }
 
 .admin-dashboard .server-status.list-view {
-    display: flex;
-    flex-direction: column;
+    grid-template-columns: 1fr;
 }
 
 .admin-dashboard .server-card {
@@ -277,6 +349,26 @@
     height: 220px !important;
 }
 
+.admin-dashboard .main-content-section {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.admin-dashboard .main-content-area--two-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 24px;
+}
+
+.admin-dashboard .main-content-area {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    overflow: visible;
+}
+
 .admin-dashboard .server-panel .section-header,
 .admin-dashboard .user-panel .section-header {
     display: flex;
@@ -289,13 +381,6 @@
 .admin-dashboard .server-panel .section-actions,
 .admin-dashboard .user-panel .section-actions {
     display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.admin-dashboard .panel-toolbar {
-    display: flex;
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
@@ -325,19 +410,60 @@
     color: #fff;
 }
 
-.admin-dashboard .panel-toolbar .form-select,
-.admin-dashboard .user-panel .section-actions .form-select,
-.admin-dashboard .server-panel .section-actions .form-select {
-    min-width: 160px;
+.admin-dashboard .server-view-toggle {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 8px 0 4px;
+    flex-wrap: wrap;
+    width: 100%;
 }
 
-.admin-dashboard .panel-toolbar .btn.btn-secondary,
+.admin-dashboard .server-view-toggle .btn-toggle {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+}
+
+.admin-dashboard .server-panel .status-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0;
+    margin-left: auto;
+}
+
+.admin-dashboard .status-hint__icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.admin-dashboard .server-status.server-empty {
+    min-height: 120px;
+}
+
+.admin-dashboard .server-alert-placeholder {
+    padding: 20px;
+    background: rgba(59, 198, 184, 0.08);
+    border: 1px dashed rgba(59, 198, 184, 0.4);
+    border-radius: var(--border-radius);
+    color: var(--text-secondary);
+}
+
+.admin-dashboard .user-panel .section-actions .form-select,
 .admin-dashboard .server-panel .section-actions .btn,
 .admin-dashboard .user-panel .section-actions .btn {
     min-height: 36px;
 }
 
-.admin-dashboard .server-summary,
 .admin-dashboard .user-summary {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -405,6 +531,33 @@
     background: var(--primary-color, #2F9BFF);
     border-radius: inherit;
     transition: width 0.3s ease;
+}
+
+.admin-dashboard .server-panel .server-range {
+    min-width: 200px;
+    max-width: 240px;
+    align-self: flex-start;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 8px 36px 8px 12px;
+    color: var(--text-primary);
+    line-height: 1.4;
+    cursor: pointer;
+    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8"%3E%3Cpath fill="%2364748B" d="M1.41.59 6 5.17 10.59.59 12 2l-6 6-6-6z"/%3E%3C/svg%3E');
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px 8px;
+}
+
+.admin-dashboard .server-panel .server-range:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(47, 155, 255, 0.15);
+    outline: none;
+}
+
+.admin-dashboard .server-panel .server-range::-ms-expand {
+    display: none;
 }
 
 .admin-dashboard .user-events {

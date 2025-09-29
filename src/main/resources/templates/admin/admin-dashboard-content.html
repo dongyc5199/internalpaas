@@ -334,54 +334,20 @@
         <div>
          <h2 class="section-title">
           <i aria-hidden="true">🖥️</i>
-          <span data-i18n-en="Server Monitoring" data-i18n-zh="服务器监控面板">服务器监控面板</span>
+          <span data-i18n-en="Server Monitoring" data-i18n-zh="服务器监控">服务器监控</span>
          </h2>
-         <p class="section-subtitle" data-i18n-en="Track infrastructure health and resource usage" data-i18n-zh="实时掌握基础设施健康度与资源使用率">实时掌握基础设施健康度与资源使用率</p>
+         <p class="section-subtitle">
+          <span class="subtitle-text" data-i18n-en="Track infrastructure health and resource usage" data-i18n-zh="实时掌握基础设施健康度与资源使用率">实时掌握基础设施健康度与资源使用率</span>
+          <span class="hint-icon" data-tooltip-zh="过去8小时数据" data-tooltip-en="Last 8 hours data" aria-label="指标说明" role="img">ℹ️</span>
+         </p>
         </div>
         <div class="section-actions">
-         <div class="layout-toggle-group" id="serverViewToggle">
-          <button class="btn btn-toggle active" data-i18n-en="Grid" data-i18n-zh="网格" data-view="grid" id="serverGridView" type="button">网格</button>
-          <button class="btn btn-toggle" data-i18n-en="List" data-i18n-zh="列表" data-view="list" id="serverListView" type="button">列表</button>
-         </div>
          <button class="btn btn-secondary" id="refreshServers" type="button">
           <i aria-hidden="true">🔄</i>
           <span data-i18n-en="Refresh" data-i18n-zh="刷新">刷新</span>
          </button>
         </div>
        </header>
-       <div class="panel-toolbar">
-        <div class="search-box">
-         <i aria-hidden="true" class="search-icon">🔍</i>
-         <input class="search-input" data-i18n-en="Search servers" data-i18n-zh="搜索服务器" id="serverSearchInput" placeholder="搜索服务器" type="search"/>
-        </div>
-        <select aria-label="Server time range" class="form-select" data-i18n-en="Time range" data-i18n-zh="时间范围" id="serverRangeSelect">
-         <option data-i18n-en="Last 24 Hours" data-i18n-zh="过去24小时" value="1d">过去24小时</option>
-         <option data-i18n-en="Last 7 Days" data-i18n-zh="过去7天" value="7d">过去7天</option>
-         <option data-i18n-en="Last 30 Days" data-i18n-zh="过去30天" value="30d">过去30天</option>
-        </select>
-        <button class="btn btn-secondary" id="manageServersBtn" type="button">
-         <i aria-hidden="true">⚙️</i>
-         <span data-i18n-en="Manage" data-i18n-zh="管理">管理</span>
-        </button>
-       </div>
-       <div class="server-summary" id="serverSummary">
-        <article class="summary-item">
-         <span class="summary-label" data-i18n-en="Total" data-i18n-zh="总服务器">总服务器</span>
-         <strong class="summary-value" id="serverSummaryTotal">0</strong>
-        </article>
-        <article class="summary-item">
-         <span class="summary-label" data-i18n-en="Online" data-i18n-zh="在线">在线</span>
-         <strong class="summary-value" id="serverSummaryOnline">0</strong>
-        </article>
-        <article class="summary-item">
-         <span class="summary-label" data-i18n-en="Warnings" data-i18n-zh="告警">告警</span>
-         <strong class="summary-value" id="serverSummaryWarning">0</strong>
-        </article>
-        <article class="summary-item">
-         <span class="summary-label" data-i18n-en="Offline" data-i18n-zh="离线">离线</span>
-         <strong class="summary-value" id="serverSummaryOffline">0</strong>
-        </article>
-       </div>
        <div class="server-metrics">
         <div class="metric">
          <div class="metric-label" data-i18n-en="Avg CPU" data-i18n-zh="平均 CPU">平均 CPU</div>
@@ -399,8 +365,16 @@
          <div class="metric-progress"><div class="metric-progress-bar" id="diskProgressBar"></div></div>
         </div>
        </div>
+       <div class="server-view-toggle" id="serverViewToggle">
+        <button class="btn btn-toggle active" data-i18n-en="Grid" data-i18n-zh="网格" data-view="grid" id="serverGridView" type="button">网格</button>
+        <button class="btn btn-toggle" data-i18n-en="List" data-i18n-zh="列表" data-view="list" id="serverListView" type="button">列表</button>
+        <span class="status-hint" aria-live="polite">
+         <span aria-hidden="true" class="status-hint__icon">❗</span>
+         <span data-i18n-zh="仅显示负载偏高或健康度偏低的服务器。" data-i18n-en="Showing servers with elevated load or degraded health only.">仅显示负载偏高或健康度偏低的服务器。</span>
+        </span>
+       </div>
        <div aria-live="polite" class="server-status" id="serverStatusContainer">
-        <div class="empty-state" data-i18n-en="No server data" data-i18n-zh="暂无服务器数据">暂无服务器数据</div>
+        <div class="empty-state server-alert-placeholder" data-i18n-en="All monitored servers look healthy right now." data-i18n-zh="当前所有监控服务器运行正常。">当前所有监控服务器运行正常。</div>
        </div>
       </section>
       <section aria-label="User monitoring" class="content-panel user-panel">
@@ -408,7 +382,7 @@
         <div>
          <h2 class="section-title">
           <i aria-hidden="true">👥</i>
-          <span data-i18n-en="User Monitoring" data-i18n-zh="用户监控面板">用户监控面板</span>
+          <span data-i18n-en="User Monitoring" data-i18n-zh="用户监控">用户监控</span>
          </h2>
          <p class="section-subtitle" data-i18n-en="Understand engagement and key activities" data-i18n-zh="洞察活跃趋势与关键用户行为">洞察活跃趋势与关键用户行为</p>
         </div>

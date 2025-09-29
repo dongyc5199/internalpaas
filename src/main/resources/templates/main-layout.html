@@ -1734,16 +1734,6 @@
                     });
                 }
 
-                const serverRangeSelect = document.getElementById('serverRangeSelect');
-                if (serverRangeSelect) {
-                    serverRangeSelect.addEventListener('change', () => loadServerPanel());
-                }
-
-                const serverSearchInput = document.getElementById('serverSearchInput');
-                if (serverSearchInput) {
-                    serverSearchInput.addEventListener('input', () => filterServerCards(serverSearchInput.value));
-                }
-
                 const userRangeSelect = document.getElementById('userRangeSelect');
                 if (userRangeSelect) {
                     userRangeSelect.addEventListener('change', () => loadUserPanel());
@@ -1802,18 +1792,8 @@ function initDashboardRealTimeUpdates() {
                 }
 
                 const { force = false, silent = false, showLoading } = options;
-                const rangeSelect = document.getElementById('serverRangeSelect');
-                const params = new URLSearchParams();
-
-                if (rangeSelect && rangeSelect.value) {
-                    params.set('range', rangeSelect.value);
-                }
-                if (force) {
-                    params.set('_', Date.now().toString());
-                }
-
-                const url = params.toString()
-                    ? `/admin/dashboard/servers/summary?${params.toString()}`
+                const url = force
+                    ? `/admin/dashboard/servers/summary?_=${Date.now()}`
                     : '/admin/dashboard/servers/summary';
 
                 const shouldShowLoading = showLoading !== undefined
@@ -1954,14 +1934,16 @@ function initDashboardRealTimeUpdates() {
 
                 const list = Array.isArray(servers) ? servers : [];
 
-                updateServerSummary(list);
                 updateServerAggregatedMetrics(list);
 
                 if (list.length === 0) {
-                    container.innerHTML = '<div class="empty-state" data-i18n-zh="暂无服务器数据" data-i18n-en="No server data">暂无服务器数据</div>';
+                    container.innerHTML = '<div class="empty-state server-alert-placeholder" data-i18n-zh="当前所有监控服务器运行正常。" data-i18n-en="All monitored servers look healthy right now.">当前所有监控服务器运行正常。</div>';
+                    container.classList.add('server-empty');
                     applyLanguage(currentLanguage, false);
                     return;
                 }
+
+                container.classList.remove('server-empty');
 
                 let mode = container.dataset.viewMode;
                 if (mode !== 'list' && mode !== 'grid') {
@@ -1976,36 +1958,8 @@ function initDashboardRealTimeUpdates() {
                 const cardsHtml = list.map((server) => buildServerCard(server)).join('');
                 container.innerHTML = cardsHtml;
 
-                const searchInput = document.getElementById('serverSearchInput');
-                if (searchInput && searchInput.value) {
-                    filterServerCards(searchInput.value);
-                }
-
                 setServerViewMode(mode, { persist: false });
                 applyLanguage(currentLanguage, false);
-            }
-
-            function updateServerSummary(servers) {
-                const total = servers.length;
-                let online = 0;
-                let warning = 0;
-                let offline = 0;
-
-                servers.forEach((server) => {
-                    const status = normalizeServerStatus(server && server.status);
-                    if (status === 'online') {
-                        online += 1;
-                    } else if (status === 'warning') {
-                        warning += 1;
-                    } else {
-                        offline += 1;
-                    }
-                });
-
-                updateElement('serverSummaryTotal', total);
-                updateElement('serverSummaryOnline', online);
-                updateElement('serverSummaryWarning', warning);
-                updateElement('serverSummaryOffline', offline);
             }
 
             function updateServerAggregatedMetrics(servers) {
@@ -2144,60 +2098,14 @@ function initDashboardRealTimeUpdates() {
                 }
             }
 
-            function filterServerCards(keyword) {
-                const container = document.getElementById('serverStatusContainer');
-                if (!container) {
-                    return;
-                }
-
-                const cards = container.querySelectorAll('[data-role="server-card"]');
-                if (cards.length === 0) {
-                    return;
-                }
-
-                const normalized = (keyword || '').trim().toLowerCase();
-                let visibleCount = 0;
-
-                cards.forEach((card) => {
-                    const searchField = (card.getAttribute('data-search') || '').toLowerCase();
-                    const match = normalized === '' || searchField.includes(normalized);
-                    card.style.display = match ? '' : 'none';
-                    if (match) {
-                        visibleCount += 1;
-                    }
-                });
-
-                let emptyState = container.querySelector('[data-role="server-empty-search"]');
-                if (!emptyState && normalized !== '' && visibleCount === 0) {
-                    emptyState = document.createElement('div');
-                    emptyState.setAttribute('data-role', 'server-empty-search');
-                    emptyState.className = 'empty-state';
-                    emptyState.setAttribute('data-i18n-zh', '未找到匹配的服务器');
-                    emptyState.setAttribute('data-i18n-en', 'No servers match the search');
-                    emptyState.textContent = currentLanguage === 'en' ? 'No servers match the search' : '未找到匹配的服务器';
-                    container.appendChild(emptyState);
-                }
-
-                if (emptyState && (visibleCount > 0 || normalized === '')) {
-                    emptyState.remove();
-                }
-
-                if (normalized === '') {
-                    cards.forEach((card) => {
-                        card.style.display = '';
-                    });
-                }
-
-                applyLanguage(currentLanguage, false);
-            }
-
             function showServerPanelError() {
                 const container = document.getElementById('serverStatusContainer');
                 if (!container) {
                     return;
                 }
 
-                container.innerHTML = '<div class="empty-state" data-i18n-zh="无法加载服务器数据，请稍后重试" data-i18n-en="Unable to load server data. Please try again later.">无法加载服务器数据，请稍后重试</div>';
+                container.innerHTML = '<div class="empty-state server-alert-placeholder" data-i18n-zh="暂时无法加载服务器告警信息，请稍后重试。" data-i18n-en="Server alert information is unavailable at the moment. Please retry later.">暂时无法加载服务器告警信息，请稍后重试。</div>';
+                container.classList.add('server-empty');
                 applyLanguage(currentLanguage, false);
             }
 
