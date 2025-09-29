@@ -219,9 +219,16 @@
                 return;
             }
             const root = document.documentElement;
+            const modeClass = theme === 'dark' ? 'theme-dark' : 'theme-light';
+            const shellClass = theme === 'dark' ? 'shell-theme-dark' : 'shell-theme-light';
+
             root.setAttribute('data-theme', theme);
-            root.classList.remove('theme-light', 'theme-dark');
-            root.classList.add(theme === 'dark' ? 'theme-dark' : 'theme-light');
+            root.classList.remove('theme-light', 'theme-dark', 'shell-theme-light', 'shell-theme-dark');
+            root.classList.add(modeClass, shellClass);
+
+            if (document.body) {
+                document.body.classList.toggle('dark-mode', theme === 'dark');
+            }
         }
 
         setUserMenuState(open) {
