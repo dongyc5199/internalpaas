@@ -276,6 +276,149 @@
     height: 220px !important;
 }
 
+.admin-dashboard .server-panel .section-header,
+.admin-dashboard .user-panel .section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.admin-dashboard .server-panel .section-actions,
+.admin-dashboard .user-panel .section-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.admin-dashboard .panel-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.admin-dashboard .layout-toggle-group {
+    display: inline-flex;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    background: var(--toolbar-bg, rgba(148, 163, 184, 0.08));
+}
+
+.admin-dashboard .btn-toggle {
+    border: none;
+    background: transparent;
+    padding: 8px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.admin-dashboard .btn-toggle.active {
+    background: var(--primary-color, #2F9BFF);
+    color: #fff;
+}
+
+.admin-dashboard .panel-toolbar .form-select,
+.admin-dashboard .user-panel .section-actions .form-select,
+.admin-dashboard .server-panel .section-actions .form-select {
+    min-width: 160px;
+}
+
+.admin-dashboard .panel-toolbar .btn.btn-secondary,
+.admin-dashboard .server-panel .section-actions .btn,
+.admin-dashboard .user-panel .section-actions .btn {
+    min-height: 36px;
+}
+
+.admin-dashboard .server-summary,
+.admin-dashboard .user-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.admin-dashboard .summary-item {
+    background: var(--toolbar-bg, rgba(148, 163, 184, 0.08));
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 92px;
+}
+
+.admin-dashboard .summary-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.admin-dashboard .summary-value {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.admin-dashboard .server-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.admin-dashboard .server-metrics .metric {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.admin-dashboard .metric-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.admin-dashboard .metric-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.admin-dashboard .metric-progress {
+    height: 8px;
+    background: rgba(148, 163, 184, 0.16);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.admin-dashboard .metric-progress-bar {
+    height: 100%;
+    background: var(--primary-color, #2F9BFF);
+    border-radius: inherit;
+    transition: width 0.3s ease;
+}
+
+.admin-dashboard .user-events {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.admin-dashboard .user-events-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
 .admin-dashboard .split-panels {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
