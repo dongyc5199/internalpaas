@@ -2143,12 +2143,10 @@ function initDashboardRealTimeUpdates() {
                 const activeToday = userStats.activeToday ?? data.todayActiveUsers ?? 0;
                 const activeYesterday = userStats.activeYesterday ?? data.yesterdayActiveUsers ?? 0;
                 const conversionRate = userStats.conversionRate ?? data.conversionRate ?? null;
-                const updatedAt = userStats.updatedAt ?? data.usersUpdatedAt ?? data.updatedAt ?? null;
 
                 updateElement('userActiveToday', activeToday ?? 0);
                 updateElement('userActiveYesterday', activeYesterday ?? 0);
                 updateElement('userConversionRate', conversionRate !== null && conversionRate !== undefined ? formatPercent(conversionRate) : '--');
-                updateElement('userSummaryUpdatedAt', updatedAt ? formatUserSummaryTimestamp(updatedAt) : '--');
 
                 const trendPoints = buildUserTrendPoints(data);
                 userTrendPoints = trendPoints;
@@ -2309,7 +2307,6 @@ function initDashboardRealTimeUpdates() {
                 updateElement('userActiveToday', '--');
                 updateElement('userActiveYesterday', '--');
                 updateElement('userConversionRate', '--');
-                updateElement('userSummaryUpdatedAt', '--');
 
                 const eventStream = document.getElementById('userEventStream');
                 if (eventStream) {
@@ -2319,20 +2316,6 @@ function initDashboardRealTimeUpdates() {
 
                 userTrendPoints = [];
                 updateUserTrendChart([]);
-            }
-
-            function formatUserSummaryTimestamp(timestamp) {
-                if (!timestamp) {
-                    return '--';
-                }
-
-                const date = new Date(timestamp);
-                if (Number.isNaN(date.getTime())) {
-                    return timestamp;
-                }
-
-                const locale = currentLanguage === 'en' ? 'en-US' : 'zh-CN';
-                return date.toLocaleString(locale, { hour12: false });
             }
 
             function renderResourceAnalysis(data) {
