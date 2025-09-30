@@ -17,10 +17,14 @@
     <link rel="stylesheet" href="/css/components/cards.css">
     <link rel="stylesheet" href="/css/fontawesome-local.css">
     <link rel="stylesheet" href="/css/icon-components.css">
+    <link rel="stylesheet" href="/css/brand-icons.css">
     <link rel="stylesheet" href="/css/responsive.css">
     <link rel="stylesheet" href="/css/content-framework.css">
     <link rel="stylesheet" href="/css/admin-dashboard.css">
     <link rel="stylesheet" th:href="@{/admin-dashboard/stat-cards.css}">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/svg+xml" sizes="16x16" href="/favicon-16x16.svg">
+    <link rel="icon" type="image/svg+xml" sizes="32x32" href="/favicon-32x32.svg">
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <style>
@@ -721,10 +725,9 @@
                          workspaceRole=${rawRole != null and #strings.equalsIgnoreCase(rawRole, 'ADMIN') ? 'admin' : 'developer'}"
                 th:attr="data-variant=${workspaceRole}">
             <div class="brand-area" role="button" tabindex="0" data-action="navigate-home">
-                <span class="brand-logo" aria-hidden="true"
-                      th:text="${workspaceBadge ?: (workspaceRole == 'admin' ? 'AW' : 'DW')}">DW</span>
+                <div class="brand-icon-container brand-icon-lg" aria-hidden="true">DD</div>
                 <span class="brand-meta">
-                    <span class="brand-title" th:text="${appName ?: 'Dev Debug Platform'}">Dev Debug Platform</span>
+                    <span class="brand-title brand-text" th:text="${appName ?: 'Dev Debug Platform'}">Dev Debug Platform</span>
                     <span class="brand-subtitle"
                           th:text="${workspaceRole == 'admin' ? 'Admin Workspace' : 'Developer Workspace'}">Admin Workspace</span>
                 </span>

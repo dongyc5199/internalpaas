@@ -1,0 +1,250 @@
+/* Dev Debug Platform 品牌图标样式 */
+/* Version: 1.0 */
+
+:root {
+    --brand-primary: #0f172a;
+    --brand-accent: #3b82f6;
+    --brand-gradient: linear-gradient(135deg, var(--brand-accent), #1d4ed8);
+    --brand-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.3), 0 10px 10px -5px rgba(59, 130, 246, 0.1);
+    --brand-shadow-hover: 0 25px 50px -12px rgba(59, 130, 246, 0.4), 0 20px 25px -5px rgba(59, 130, 246, 0.2);
+}
+
+/* 品牌图标容器 */
+.brand-icon-container {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 16px !important;
+    background: var(--brand-gradient) !important;
+    box-shadow: var(--brand-shadow) !important;
+    transition: all 0.3s ease !important;
+    color: white !important;
+    font-family: 'JetBrains Mono', 'Courier New', monospace !important;
+    font-weight: 700 !important;
+    user-select: none !important;
+}
+
+.brand-icon-container:hover {
+    transform: translateY(-4px) scale(1.05) !important;
+    box-shadow: var(--brand-shadow-hover) !important;
+}
+
+/* 图标尺寸规范 */
+.brand-icon-xs {
+    width: 16px !important;
+    height: 16px !important;
+    font-size: 8px !important;
+    border-radius: 4px !important;
+}
+
+.brand-icon-sm {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 12px !important;
+    border-radius: 6px !important;
+}
+
+.brand-icon-md {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 16px !important;
+    border-radius: 8px !important;
+}
+
+.brand-icon-lg {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 20px !important;
+    border-radius: 12px !important;
+}
+
+.brand-icon-xl {
+    width: 64px !important;
+    height: 64px !important;
+    font-size: 28px !important;
+    border-radius: 16px !important;
+}
+
+.brand-icon-xxl {
+    width: 80px !important;
+    height: 80px !important;
+    font-size: 36px !important;
+    border-radius: 20px !important;
+}
+
+/* 品牌文字样式 */
+.brand-text {
+    font-family: 'Space Grotesk', 'Inter', sans-serif !important;
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent)) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    font-weight: 600 !important;
+}
+
+.brand-text-main {
+    font-size: 2rem !important;
+    font-weight: 800 !important;
+    line-height: 0.9 !important;
+    letter-spacing: -0.02em !important;
+}
+
+.brand-text-sub {
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    line-height: 0.9 !important;
+    letter-spacing: -0.01em !important;
+}
+
+.brand-text-desc {
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    color: #64748b !important;
+    letter-spacing: 0.05em !important;
+}
+
+/* 导航栏品牌样式 */
+.navbar-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    text-decoration: none !important;
+}
+
+.navbar-brand:hover {
+    text-decoration: none !important;
+}
+
+.navbar-brand .brand-icon-container {
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3) !important;
+}
+
+.navbar-brand .brand-text {
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+}
+
+/* 登录页面品牌样式 */
+.login-brand {
+    text-align: center !important;
+    margin-bottom: 2rem !important;
+}
+
+.login-brand .brand-icon-container {
+    margin: 0 auto 1rem !important;
+}
+
+.login-brand .brand-text-main {
+    font-size: 2.5rem !important;
+    /* 在蓝色背景上使用白色文字以确保对比度 */
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+    background: none !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+.login-brand .brand-text-sub {
+    font-size: 1.75rem !important;
+    margin-top: 0.5rem !important;
+}
+
+.login-brand .brand-text-desc {
+    margin-top: 1rem !important;
+    /* 在蓝色背景上使用浅色文字 */
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* 页面标题品牌样式 */
+.page-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.page-brand .brand-text-main {
+    font-size: 1.75rem !important;
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+    .brand-text-main {
+        font-size: 1.5rem !important;
+    }
+
+    .brand-text-sub {
+        font-size: 1.25rem !important;
+    }
+
+    .brand-text-desc {
+        font-size: 0.875rem !important;
+    }
+
+    .login-brand .brand-text-main {
+        font-size: 2rem !important;
+    }
+
+    .login-brand .brand-text-sub {
+        font-size: 1.5rem !important;
+    }
+
+    .page-brand {
+        gap: 12px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .brand-text-main {
+        font-size: 1.25rem !important;
+    }
+
+    .brand-text-sub {
+        font-size: 1rem !important;
+    }
+
+    .login-brand .brand-text-main {
+        font-size: 1.75rem !important;
+    }
+
+    .login-brand .brand-text-sub {
+        font-size: 1.25rem !important;
+    }
+}
+
+/* 禁用动画选项（用户偏好） */
+@media (prefers-reduced-motion: reduce) {
+    .brand-icon-container {
+        transition: none !important;
+    }
+
+    .brand-icon-container:hover {
+        transform: none !important;
+    }
+}
+
+/* 高对比度模式适配 */
+@media (prefers-contrast: high) {
+    .brand-icon-container {
+        border: 2px solid var(--brand-primary) !important;
+    }
+
+    .brand-text {
+        -webkit-text-fill-color: var(--brand-primary) !important;
+        background: none !important;
+        color: var(--brand-primary) !important;
+    }
+}
+
+/* 暗色主题适配 */
+[data-theme="dark"] .brand-icon-container {
+    box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.5), 0 10px 10px -5px rgba(59, 130, 246, 0.2) !important;
+}
+
+[data-theme="dark"] .brand-icon-container:hover {
+    box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.6), 0 20px 25px -5px rgba(59, 130, 246, 0.3) !important;
+}
+
+[data-theme="dark"] .brand-text-desc {
+    color: #94a3b8 !important;
+}

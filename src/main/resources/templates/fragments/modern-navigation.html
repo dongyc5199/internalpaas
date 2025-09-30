@@ -9,12 +9,10 @@
             <span class="toggle-icon" aria-hidden="true"></span>
         </button>
         <div class="workspace-nav__brand">
-            <div class="brand-logo" aria-hidden="true">
-                <span class="brand-logo__mark">DDP</span>
-            </div>
+            <div class="brand-icon-container brand-icon-lg" aria-hidden="true">DD</div>
             <div class="brand-text">
-                <span class="brand-title">Dev Debug Platform</span>
-                <span class="brand-role"
+                <span class="brand-title brand-text-main">Dev Debug Platform</span>
+                <span class="brand-role brand-text-desc"
                       th:text="${workspaceRole == 'admin'} ? 'Admin Workspace' : 'Developer Workspace'">Admin Workspace</span>
             </div>
         </div>
