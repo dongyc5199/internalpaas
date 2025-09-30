@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="/css/content-framework.css">
     <link rel="stylesheet" href="/css/admin-dashboard.css">
     <link rel="stylesheet" th:href="@{/admin-dashboard/stat-cards.css}">
+    <link rel="stylesheet" href="/css/server-group-management.css">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="icon" type="image/svg+xml" sizes="16x16" href="/favicon-16x16.svg">
     <link rel="icon" type="image/svg+xml" sizes="32x32" href="/favicon-32x32.svg">
@@ -1609,6 +1610,9 @@
                             case 'users':
                                 apiUrl = '/admin/api/users-content';
                                 break;
+                            case 'server-groups':
+                                apiUrl = '/admin/server-groups/content';
+                                break;
                             case 'settings':
                                 outlet.innerHTML = '<div class="spa-placeholder" data-i18n-zh="系统设置功能开发中..." data-i18n-en="System settings coming soon...">系统设置功能开发中...</div>';
                                 return;
@@ -1640,6 +1644,8 @@
                         // 路由加载完成后，初始化对应页面的逻辑
                         if (route === 'admin-dashboard' || route === 'overview') {
                             initAdminDashboard();
+                        } else if (route === 'server-groups') {
+                            initServerGroupManagement();
                         }
                     });
                 });
@@ -2420,6 +2426,716 @@ function initDashboardRealTimeUpdates() {
                 if (chartContainer && chartContainer.style.display !== 'none') {
                     updateResourceChart();
                 }
+            }
+
+            // Server Group Management Functions
+            function initServerGroupManagement() {
+                if (!document.querySelector('.server-group-management')) {
+                    return;
+                }
+
+                console.log('Initializing server group management...');
+
+                initServerGroupData();
+                initServerGroupEvents();
+
+                console.log('Server group management initialized');
+            }
+
+            function initServerGroupData() {
+                loadHealthTrendChart();
+                loadLoadDistributionChart();
+                loadAppDistributionChart();
+                loadServerGroupList();
+                updateServerGroupLastUpdateTime();
+            }
+
+            function initServerGroupEvents() {
+                const refreshBtn = document.getElementById('refreshServerGroupBtn');
+                if (refreshBtn) {
+                    refreshBtn.addEventListener('click', () => {
+                        refreshAllServerGroupData();
+                    });
+                }
+
+                const exportBtn = document.getElementById('exportServerGroupBtn');
+                if (exportBtn) {
+                    exportBtn.addEventListener('click', () => {
+                        exportServerGroupReport();
+                    });
+                }
+
+                const healthTrendRange = document.getElementById('healthTrendRange');
+                if (healthTrendRange) {
+                    healthTrendRange.addEventListener('change', (e) => {
+                        loadHealthTrendChart(parseInt(e.target.value));
+                    });
+                }
+
+                const searchInput = document.getElementById('serverSearchInput');
+                if (searchInput) {
+                    let searchTimeout;
+                    searchInput.addEventListener('input', (e) => {
+                        clearTimeout(searchTimeout);
+                        searchTimeout = setTimeout(() => {
+                            filterServerList();
+                        }, 300);
+                    });
+                }
+
+                const statusFilter = document.getElementById('serverStatusFilter');
+                if (statusFilter) {
+                    statusFilter.addEventListener('change', filterServerList);
+                }
+
+                const healthFilter = document.getElementById('serverHealthFilter');
+                if (healthFilter) {
+                    healthFilter.addEventListener('change', filterServerList);
+                }
+
+                const tableViewBtn = document.getElementById('serverTableViewBtn');
+                if (tableViewBtn) {
+                    tableViewBtn.addEventListener('click', () => {
+                        switchServerView('table');
+                    });
+                }
+
+                const cardViewBtn = document.getElementById('serverCardViewBtn');
+                if (cardViewBtn) {
+                    cardViewBtn.addEventListener('click', () => {
+                        switchServerView('card');
+                    });
+                }
+
+                const selectAllCheckbox = document.getElementById('selectAllServers');
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.addEventListener('change', (e) => {
+                        toggleSelectAllServers(e.target.checked);
+                    });
+                }
+
+                const batchRefreshBtn = document.getElementById('batchRefreshBtn');
+                if (batchRefreshBtn) {
+                    batchRefreshBtn.addEventListener('click', () => {
+                        batchRefreshServers();
+                    });
+                }
+
+                const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+                if (clearSelectionBtn) {
+                    clearSelectionBtn.addEventListener('click', () => {
+                        clearServerSelection();
+                    });
+                }
+
+                // Listen for language change events and reload charts
+                on('language:changed', () => {
+                    if (document.querySelector('.server-group-management')) {
+                        const healthTrendRange = document.getElementById('healthTrendRange');
+                        const hours = healthTrendRange ? parseInt(healthTrendRange.value) : 24;
+                        loadHealthTrendChart(hours);
+                        loadLoadDistributionChart();
+                        loadAppDistributionChart();
+                        renderServerGroupList(serverGroupListCache);
+                        updateServerGroupLastUpdateTime();
+                    }
+                });
+            }
+
+            let serverGroupListCache = [];
+            let healthTrendChart = null;
+            let loadDistributionChart = null;
+            let appDistributionChart = null;
+
+            async function loadHealthTrendChart(hours = 24) {
+                const container = document.getElementById('healthTrendChartContainer');
+                const placeholder = document.getElementById('healthTrendPlaceholder');
+                const canvas = document.getElementById('healthTrendChart');
+
+                if (!container || !canvas) return;
+
+                try {
+                    const response = await fetch(`/admin/server-groups/api/health-trend?hours=${hours}`);
+                    if (!response.ok) throw new Error('Failed to load health trend');
+
+                    const data = await response.json();
+
+                    if (placeholder) placeholder.classList.add('hidden');
+                    container.classList.add('active');
+
+                    if (healthTrendChart) {
+                        healthTrendChart.destroy();
+                    }
+
+                    const ctx = canvas.getContext('2d');
+                    healthTrendChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.timePoints || [],
+                            datasets: (data.servers || []).map((server, index) => ({
+                                label: server.serverName,
+                                data: server.healthScores,
+                                borderColor: getChartColor(index),
+                                backgroundColor: getChartColor(index, 0.1),
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true
+                            }))
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'bottom'
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    title: {
+                                        display: true,
+                                        text: currentLanguage === 'en' ? 'Health Score' : '健康分数'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: currentLanguage === 'en' ? 'Time' : '时间'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Failed to load health trend chart:', error);
+                    if (placeholder) {
+                        placeholder.textContent = currentLanguage === 'en' ? 'Failed to load chart data' : '加载图表数据失败';
+                        placeholder.classList.remove('hidden');
+                    }
+                }
+            }
+
+            async function loadLoadDistributionChart() {
+                const container = document.getElementById('loadDistributionChartContainer');
+                const placeholder = document.getElementById('loadDistributionPlaceholder');
+                const canvas = document.getElementById('loadDistributionChart');
+
+                if (!container || !canvas) return;
+
+                try {
+                    const response = await fetch('/admin/server-groups/api/load-distribution');
+                    if (!response.ok) throw new Error('Failed to load distribution');
+
+                    const data = await response.json();
+
+                    updateLoadStatistics(data.statistics);
+
+                    if (placeholder) placeholder.classList.add('hidden');
+                    container.classList.add('active');
+
+                    if (loadDistributionChart) {
+                        loadDistributionChart.destroy();
+                    }
+
+                    const ctx = canvas.getContext('2d');
+                    const datasets = (data.metrics || []).map((metric, index) => ({
+                        label: metric.label,
+                        data: metric.servers.map(s => s.value),
+                        backgroundColor: getChartColor(index, 0.8),
+                        borderColor: getChartColor(index),
+                        borderWidth: 1
+                    }));
+
+                    const labels = (data.metrics && data.metrics[0]?.servers || []).map((_, i) =>
+                        currentLanguage === 'en' ? `Server ${i + 1}` : `服务器 ${i + 1}`
+                    );
+
+                    loadDistributionChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'bottom'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    title: {
+                                        display: true,
+                                        text: currentLanguage === 'en' ? 'Usage (%)' : '使用率 (%)'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Failed to load load distribution chart:', error);
+                    if (placeholder) {
+                        placeholder.textContent = currentLanguage === 'en' ? 'Failed to load chart data' : '加载图表数据失败';
+                        placeholder.classList.remove('hidden');
+                    }
+                }
+            }
+
+            async function loadAppDistributionChart() {
+                const container = document.getElementById('appDistributionChartContainer');
+                const placeholder = document.getElementById('appDistributionPlaceholder');
+                const canvas = document.getElementById('appDistributionChart');
+
+                if (!container || !canvas) return;
+
+                try {
+                    const response = await fetch('/admin/server-groups/api/app-distribution');
+                    if (!response.ok) throw new Error('Failed to load app distribution');
+
+                    const data = await response.json();
+
+                    if (placeholder) placeholder.classList.add('hidden');
+                    container.classList.add('active');
+
+                    if (appDistributionChart) {
+                        appDistributionChart.destroy();
+                    }
+
+                    const ctx = canvas.getContext('2d');
+                    const datasets = (data.appTypes || []).map((appType) => ({
+                        label: appType.label,
+                        data: appType.data,
+                        backgroundColor: appType.color || '#6366f1',
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }));
+
+                    appDistributionChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.servers || [],
+                            datasets: datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'bottom'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: currentLanguage === 'en' ? 'Application Count' : '应用数量'
+                                    },
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Failed to load app distribution chart:', error);
+                    if (placeholder) {
+                        placeholder.textContent = currentLanguage === 'en' ? 'Failed to load chart data' : '加载图表数据失败';
+                        placeholder.classList.remove('hidden');
+                    }
+                }
+            }
+
+            async function loadServerGroupList() {
+                const tableBody = document.getElementById('serverTableBody');
+
+                if (!tableBody) return;
+
+                const loadingText = currentLanguage === 'en' ? 'Loading servers...' : '正在加载服务器...';
+                tableBody.innerHTML = `<tr><td colspan="11" class="empty-state">${loadingText}</td></tr>`;
+
+                try {
+                    const response = await fetch('/admin/server-groups/api/list');
+                    if (!response.ok) throw new Error('Failed to load server list');
+
+                    const servers = await response.json();
+                    serverGroupListCache = servers;
+                    renderServerGroupList(servers);
+                } catch (error) {
+                    console.error('Failed to load server list:', error);
+                    const errorText = currentLanguage === 'en' ? 'Failed to load servers' : '加载服务器失败';
+                    tableBody.innerHTML = `<tr><td colspan="11" class="empty-state">${errorText}</td></tr>`;
+                }
+            }
+
+            function renderServerGroupList(servers) {
+                const tableBody = document.getElementById('serverTableBody');
+                const cardGrid = document.getElementById('serverCardGrid');
+
+                if (!tableBody) return;
+
+                if (!servers || servers.length === 0) {
+                    const emptyText = currentLanguage === 'en' ? 'No servers found' : '未找到服务器';
+                    tableBody.innerHTML = `<tr><td colspan="11" class="empty-state">${emptyText}</td></tr>`;
+                    if (cardGrid) {
+                        cardGrid.innerHTML = `<div class="empty-state">${emptyText}</div>`;
+                    }
+                    return;
+                }
+
+                const tableRows = servers.map(server => {
+                    const statusClass = server.status === 'online' ? 'status-badge--online' :
+                                       server.status === 'warning' ? 'status-badge--warning' :
+                                       'status-badge--offline';
+
+                    const healthClass = server.healthScore >= 90 ? 'health-score--excellent' :
+                                       server.healthScore >= 75 ? 'health-score--good' :
+                                       server.healthScore >= 60 ? 'health-score--fair' :
+                                       'health-score--poor';
+
+                    const statusText = getStatusText(server.status);
+                    const viewDetailsTitle = currentLanguage === 'en' ? 'View Details' : '查看详情';
+                    const refreshTitle = currentLanguage === 'en' ? 'Refresh' : '刷新';
+
+                    return `
+                        <tr data-server-id="${server.id}">
+                            <td><input type="checkbox" class="server-checkbox" value="${server.id}"></td>
+                            <td>
+                                <div><strong>${server.name}</strong></div>
+                                <div style="font-size: 0.75rem; color: var(--text-tertiary);">${server.address}:${server.port}</div>
+                            </td>
+                            <td>
+                                <span class="status-badge ${statusClass}">
+                                    <span class="status-indicator"></span>
+                                    ${statusText}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="health-score ${healthClass}">
+                                    <span class="health-score-value">${server.healthScore}</span>
+                                    <div class="health-score-bar">
+                                        <div class="health-score-fill" style="width: ${server.healthScore}%; background: currentColor;"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="usage-metric">
+                                    <span class="usage-value">${(server.cpuUsage || 0).toFixed(1)}%</span>
+                                    <div class="usage-bar">
+                                        <div class="usage-fill ${getUsageClass(server.cpuUsage)}" style="width: ${server.cpuUsage || 0}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="usage-metric">
+                                    <span class="usage-value">${(server.memoryUsage || 0).toFixed(1)}%</span>
+                                    <div class="usage-bar">
+                                        <div class="usage-fill ${getUsageClass(server.memoryUsage)}" style="width: ${server.memoryUsage || 0}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="usage-metric">
+                                    <span class="usage-value">${(server.diskUsage || 0).toFixed(1)}%</span>
+                                    <div class="usage-bar">
+                                        <div class="usage-fill ${getUsageClass(server.diskUsage)}" style="width: ${server.diskUsage || 0}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>${server.apps || 0}</td>
+                            <td>${server.users || 0}</td>
+                            <td>${server.uptime || '--'}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon" onclick="viewServerDetails(${server.id})" title="${viewDetailsTitle}">👁️</button>
+                                    <button class="btn-icon" onclick="refreshServer(${server.id})" title="${refreshTitle}">🔄</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                tableBody.innerHTML = tableRows;
+
+                if (cardGrid) {
+                    const cardHtml = servers.map(server => {
+                        const statusClass = server.status === 'online' ? 'status-badge--online' :
+                                           server.status === 'warning' ? 'status-badge--warning' :
+                                           'status-badge--offline';
+
+                        const statusText = getStatusText(server.status);
+                        const memoryLabel = currentLanguage === 'en' ? 'Memory' : '内存';
+                        const healthLabel = currentLanguage === 'en' ? 'Health' : '健康度';
+                        const appsLabel = currentLanguage === 'en' ? 'Apps' : '应用';
+                        const usersLabel = currentLanguage === 'en' ? 'Users' : '用户';
+
+                        return `
+                            <div class="server-card" data-server-id="${server.id}">
+                                <div class="server-card__header">
+                                    <div>
+                                        <h3 class="server-card__title">${server.name}</h3>
+                                        <p class="server-card__address">${server.address}:${server.port}</p>
+                                    </div>
+                                    <span class="status-badge ${statusClass}">
+                                        <span class="status-indicator"></span>
+                                        ${statusText}
+                                    </span>
+                                </div>
+                                <div class="server-card__metrics">
+                                    <div class="metric-item">
+                                        <div class="metric-label">CPU</div>
+                                        <div class="metric-value">${(server.cpuUsage || 0).toFixed(1)}%</div>
+                                    </div>
+                                    <div class="metric-item">
+                                        <div class="metric-label">${memoryLabel}</div>
+                                        <div class="metric-value">${(server.memoryUsage || 0).toFixed(1)}%</div>
+                                    </div>
+                                    <div class="metric-item">
+                                        <div class="metric-label">${healthLabel}</div>
+                                        <div class="metric-value">${server.healthScore}</div>
+                                    </div>
+                                </div>
+                                <div class="server-card__footer">
+                                    <div class="server-card__stats">
+                                        <span>📦 ${server.apps || 0} ${appsLabel}</span>
+                                        <span>👥 ${server.users || 0} ${usersLabel}</span>
+                                    </div>
+                                    <div class="action-buttons">
+                                        <button class="btn-icon" onclick="viewServerDetails(${server.id})">👁️</button>
+                                        <button class="btn-icon" onclick="refreshServer(${server.id})">🔄</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    cardGrid.innerHTML = cardHtml;
+                }
+
+                attachServerCheckboxEvents();
+                applyLanguage(currentLanguage, false);
+            }
+
+            function getUsageClass(value) {
+                if (!value) return 'usage-fill--low';
+                if (value < 50) return 'usage-fill--low';
+                if (value < 70) return 'usage-fill--medium';
+                if (value < 85) return 'usage-fill--high';
+                return 'usage-fill--critical';
+            }
+
+            function getChartColor(index, alpha = 1) {
+                const colors = [
+                    [99, 102, 241],
+                    [16, 185, 129],
+                    [245, 158, 11],
+                    [239, 68, 68],
+                    [59, 130, 246],
+                    [139, 92, 246]
+                ];
+                const color = colors[index % colors.length];
+                return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
+            }
+
+            function updateLoadStatistics(stats) {
+                if (!stats) return;
+                updateElement('loadExcellent', stats.excellent || 0);
+                updateElement('loadGood', stats.good || 0);
+                updateElement('loadWarning', stats.warning || 0);
+                updateElement('loadCritical', stats.critical || 0);
+            }
+
+            function filterServerList() {
+                const searchValue = document.getElementById('serverSearchInput')?.value.toLowerCase() || '';
+                const statusValue = document.getElementById('serverStatusFilter')?.value || 'all';
+                const healthValue = document.getElementById('serverHealthFilter')?.value || 'all';
+
+                const filtered = serverGroupListCache.filter(server => {
+                    const matchSearch = !searchValue ||
+                        server.name.toLowerCase().includes(searchValue) ||
+                        server.address.toLowerCase().includes(searchValue);
+
+                    const matchStatus = statusValue === 'all' || server.status === statusValue;
+
+                    let matchHealth = true;
+                    if (healthValue !== 'all') {
+                        const score = server.healthScore;
+                        matchHealth =
+                            (healthValue === 'excellent' && score >= 90) ||
+                            (healthValue === 'good' && score >= 75 && score < 90) ||
+                            (healthValue === 'fair' && score >= 60 && score < 75) ||
+                            (healthValue === 'poor' && score < 60);
+                    }
+
+                    return matchSearch && matchStatus && matchHealth;
+                });
+
+                renderServerGroupList(filtered);
+            }
+
+            function switchServerView(viewMode) {
+                const tableView = document.getElementById('serverTableView');
+                const cardView = document.getElementById('serverCardView');
+                const tableBtn = document.getElementById('serverTableViewBtn');
+                const cardBtn = document.getElementById('serverCardViewBtn');
+
+                if (viewMode === 'table') {
+                    tableView?.style.setProperty('display', 'block');
+                    cardView?.style.setProperty('display', 'none');
+                    tableBtn?.classList.add('active');
+                    cardBtn?.classList.remove('active');
+                } else {
+                    tableView?.style.setProperty('display', 'none');
+                    cardView?.style.setProperty('display', 'block');
+                    tableBtn?.classList.remove('active');
+                    cardBtn?.classList.add('active');
+                }
+            }
+
+            function attachServerCheckboxEvents() {
+                const checkboxes = document.querySelectorAll('.server-checkbox');
+                checkboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', () => {
+                        updateBatchActionBar();
+                    });
+                });
+            }
+
+            function toggleSelectAllServers(checked) {
+                const checkboxes = document.querySelectorAll('.server-checkbox');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = checked;
+                });
+                updateBatchActionBar();
+            }
+
+            function updateBatchActionBar() {
+                const checkboxes = document.querySelectorAll('.server-checkbox:checked');
+                const count = checkboxes.length;
+                const batchBar = document.getElementById('batchActionBar');
+                const countElement = document.getElementById('selectedCount');
+
+                if (batchBar) {
+                    batchBar.style.display = count > 0 ? 'flex' : 'none';
+                }
+                if (countElement) {
+                    countElement.textContent = count;
+                }
+
+                const selectAll = document.getElementById('selectAllServers');
+                if (selectAll) {
+                    const allCheckboxes = document.querySelectorAll('.server-checkbox');
+                    selectAll.checked = count > 0 && count === allCheckboxes.length;
+                }
+            }
+
+            async function batchRefreshServers() {
+                const checkboxes = document.querySelectorAll('.server-checkbox:checked');
+                const serverIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+                if (serverIds.length === 0) return;
+
+                try {
+                    const response = await fetch('/admin/server-groups/api/batch-refresh', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ serverIds })
+                    });
+
+                    if (response.ok) {
+                        showSuccessMessage(`Refreshed ${serverIds.length} servers successfully`);
+                        await loadServerGroupList();
+                        clearServerSelection();
+                    } else {
+                        throw new Error('Batch refresh failed');
+                    }
+                } catch (error) {
+                    console.error('Batch refresh failed:', error);
+                    showErrorMessage('Batch refresh failed. Please try again.');
+                }
+            }
+
+            function clearServerSelection() {
+                const checkboxes = document.querySelectorAll('.server-checkbox');
+                checkboxes.forEach(cb => cb.checked = false);
+                const selectAll = document.getElementById('selectAllServers');
+                if (selectAll) selectAll.checked = false;
+                updateBatchActionBar();
+            }
+
+            async function refreshAllServerGroupData() {
+                updateServerGroupLastUpdateTime();
+                await Promise.all([
+                    loadHealthTrendChart(),
+                    loadLoadDistributionChart(),
+                    loadAppDistributionChart(),
+                    loadServerGroupList()
+                ]);
+                showSuccessMessage('Data refreshed successfully');
+            }
+
+            function updateServerGroupLastUpdateTime() {
+                const timeElement = document.getElementById('serverGroupUpdateTime');
+                if (timeElement) {
+                    const now = new Date();
+                    const timeString = now.toLocaleTimeString(currentLanguage === 'en' ? 'en-US' : 'zh-CN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                    const label = currentLanguage === 'en' ? 'Last updated' : '最后更新';
+                    timeElement.textContent = `${label}: ${timeString}`;
+                }
+            }
+
+            function exportServerGroupReport() {
+                console.log('Exporting server group report...');
+                showSuccessMessage('Export feature coming soon');
+            }
+
+            function viewServerDetails(serverId) {
+                console.log('Viewing server details:', serverId);
+            }
+
+            async function refreshServer(serverId) {
+                try {
+                    const response = await fetch(`/admin/server-groups/api/batch-refresh`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ serverIds: [serverId] })
+                    });
+
+                    if (response.ok) {
+                        showSuccessMessage('Server refreshed successfully');
+                        await loadServerGroupList();
+                    } else {
+                        throw new Error('Refresh failed');
+                    }
+                } catch (error) {
+                    console.error('Server refresh failed:', error);
+                    showErrorMessage('Refresh failed. Please try again.');
+                }
+            }
+
+            function showSuccessMessage(message) {
+                console.log('Success:', message);
+            }
+
+            function showErrorMessage(message) {
+                console.error('Error:', message);
             }
 
             // 工具函数

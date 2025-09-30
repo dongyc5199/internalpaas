@@ -8,6 +8,7 @@
 - 👤 **用户与权限管理**: 独立用户系统，个性化工作区
 - 🚀 **应用生命周期管理**: 一键上传、启动、停止、重启JAR应用
 - 📊 **状态与日志监控**: 实时状态面板，WebSocket实时日志流
+- 🖥️ **服务器群组管理**: 集群健康趋势、负载分布、应用部署可视化分析
 - 🛠️ **调试友好**: 自动远程调试端口分配，SSH隧道支持
 - 🔒 **安全管理**: Spring Security认证授权，访问控制
 
@@ -67,6 +68,7 @@ src/main/java/com/cmict/internalpaas/
 │   ├── MonitoringHistoryController.java # 监控历史控制器
 │   ├── PageController.java              # 页面控制器
 │   ├── RemoteCommandController.java     # 远程命令控制器
+│   ├── ServerGroupController.java       # 服务器群组管理控制器
 │   ├── SSHTerminalController.java       # SSH终端
 │   ├── SSHTerminalWebSocketHandler.java # SSH WebSocket处理
 │   ├── SSHTestController.java           # SSH测试控制器
@@ -76,8 +78,13 @@ src/main/java/com/cmict/internalpaas/
 ├── dto/                                  # 数据传输对象
 │   ├── AdminDashboardDto.java           # 管理员仪表板DTO
 │   ├── AggregatedServerMetrics.java     # 聚合服务器指标DTO
+│   ├── AppDistributionDto.java          # 应用分布DTO
+│   ├── BatchActionRequest.java          # 批量操作请求DTO
 │   ├── DeveloperDashboardDto.java       # 开发者仪表板DTO
+│   ├── HealthTrendDto.java              # 健康趋势DTO
+│   ├── LoadDistributionDto.java         # 负载分布DTO
 │   ├── PasswordChangeDto.java           # 密码修改DTO
+│   ├── ServerGroupViewDto.java          # 服务器群组视图DTO
 │   ├── UserPreferencesDto.java          # 用户偏好DTO
 │   ├── UserProfileDto.java              # 用户档案DTO
 │   └── UserRegistrationDto.java         # 用户注册DTO
@@ -118,6 +125,7 @@ src/main/java/com/cmict/internalpaas/
 │   ├── PerformanceMonitoringService.java # 性能监控服务
 │   ├── PortManagerService.java          # 端口管理服务
 │   ├── RemoteCommandService.java        # 远程命令服务
+│   ├── ServerGroupService.java          # 服务器群组管理服务
 │   ├── ServerService.java               # 服务器服务
 │   ├── SshConnectionService.java        # SSH连接服务
 │   ├── SSHTerminalService.java          # SSH终端服务
@@ -144,6 +152,7 @@ src/main/java/com/cmict/internalpaas/
 │   │   ├── login.css                 # 登录页面样式
 │   │   ├── monitoring-history.css    # 监控历史样式
 │   │   ├── profile.css               # 用户档案样式
+│   │   ├── server-group-management.css # 服务器群组管理样式
 │   │   ├── servers.css               # 服务器管理样式
 │   │   ├── style.css                 # 通用样式
 │   │   └── ux-enhancement.css        # UX增强样式
@@ -164,6 +173,7 @@ src/main/java/com/cmict/internalpaas/
     │   ├── config-editor.html        # 配置编辑器
     │   ├── server-detail.html        # 服务器详情
     │   ├── server-form.html          # 服务器表单
+    │   ├── server-group-content.html # 服务器群组管理内容
     │   ├── servers.html              # 服务器列表
     │   ├── user-form.html            # 用户表单
     │   ├── users.html                # 用户列表
