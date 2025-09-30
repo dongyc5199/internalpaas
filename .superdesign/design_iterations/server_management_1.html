@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务器管理与监控 - Dev Debug Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="server_management_theme.css">
+    <style>
+        /* 布局样式 */
+        .server-layout {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .server-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* 视图切换动画 */
+        .view-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .view-switching {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        /* 监控视图网格 */
+        .monitor-view .server-grid {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .monitor-view .monitor-card {
+            min-height: 160px;
+        }
+
+        /* 列表视图样式 */
+        .list-view .server-container {
+            display: block;
+        }
+
+        /* 新建服务器弹窗 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-card);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header class="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <!-- 面包屑导航 -->
+                <div class="flex items-center gap-2">
+                    <a href="#" class="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+                        <i data-lucide="home" class="w-4 h-4"></i>
+                        首页
+                    </a>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-muted-foreground"></i>
+                    <span class="font-medium text-foreground">服务器管理</span>
+                </div>
+
+                <!-- 操作区域 -->
+                <div class="flex items-center gap-4">
+                    <!-- 搜索框 -->
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground"></i>
+                        <input type="text" class="search-input pl-10" placeholder="搜索服务器..." id="searchInput">
+                    </div>
+
+                    <!-- 筛选器 -->
+                    <select class="search-input" id="filterSelect">
+                        <option value="all">全部状态</option>
+                        <option value="online">在线服务器</option>
+                        <option value="warning">告警服务器</option>
+                        <option value="offline">离线服务器</option>
+                        <option value="maintenance">维护中</option>
+                    </select>
+
+                    <!-- 新建服务器 -->
+                    <button class="add-server-btn" onclick="openAddServerModal()">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        新建服务器
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        <!-- 服务器概览统计 -->
+        <section class="stats-grid fade-in">
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2 bg-primary/10 rounded-lg">
+                        <i data-lucide="server" class="w-5 h-5 text-primary"></i>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <div class="status-dot" style="background: var(--server-online)"></div>
+                        <div class="status-dot" style="background: var(--server-warning)"></div>
+                        <div class="status-dot" style="background: var(--server-offline)"></div>
+                    </div>
+                </div>
+                <h3 class="text-2xl font-bold text-foreground">8台</h3>
+                <p class="text-sm text-muted-foreground">服务器总数</p>
+                <p class="text-xs text-muted-foreground mt-1">🟢6 🟡1 🔴1</p>
+            </div>
+
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2 bg-chart-cpu/10 rounded-lg">
+                        <i data-lucide="cpu" class="w-5 h-5" style="color: var(--chart-cpu)"></i>
+                    </div>
+                    <span class="text-xs text-muted-foreground">平均值</span>
+                </div>
+                <h3 class="text-2xl font-bold text-foreground">52%</h3>
+                <p class="text-sm text-muted-foreground">CPU使用率</p>
+                <div class="perf-bar mt-2">
+                    <div class="perf-bar-fill perf-cpu-good" style="width: 52%"></div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2 bg-chart-memory/10 rounded-lg">
+                        <i data-lucide="hard-drive" class="w-5 h-5" style="color: var(--chart-memory)"></i>
+                    </div>
+                    <span class="text-xs text-muted-foreground">平均值</span>
+                </div>
+                <h3 class="text-2xl font-bold text-foreground">48%</h3>
+                <p class="text-sm text-muted-foreground">内存使用率</p>
+                <div class="perf-bar mt-2">
+                    <div class="perf-bar-fill perf-memory-excellent" style="width: 48%"></div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2 bg-chart-network/10 rounded-lg">
+                        <i data-lucide="wifi" class="w-5 h-5" style="color: var(--chart-network)"></i>
+                    </div>
+                    <div class="realtime-indicator">
+                        <div class="realtime-dot"></div>
+                        实时
+                    </div>
+                </div>
+                <h3 class="text-2xl font-bold text-foreground">7台</h3>
+                <p class="text-sm text-muted-foreground">网络连接正常</p>
+                <p class="text-xs text-muted-foreground mt-1">SSH活跃: 12个</p>
+            </div>
+        </section>
+
+        <!-- 视图切换器 -->
+        <section class="flex items-center justify-between">
+            <div class="view-switcher">
+                <button class="active" onclick="switchView('card')" data-view="card">
+                    <i data-lucide="grid-3x3" class="w-4 h-4"></i>
+                    卡片视图
+                </button>
+                <button onclick="switchView('list')" data-view="list">
+                    <i data-lucide="list" class="w-4 h-4"></i>
+                    列表视图
+                </button>
+                <button onclick="switchView('monitor')" data-view="monitor">
+                    <i data-lucide="activity" class="w-4 h-4"></i>
+                    监控视图
+                </button>
+            </div>
+
+            <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                <span>最后更新: 刚刚</span>
+            </div>
+        </section>
+
+        <!-- 服务器管理区域 -->
+        <section class="server-layout" id="serverLayout">
+            <!-- 服务器列表区域 -->
+            <div class="server-container" id="serverContainer">
+                <div class="server-grid stagger-animation" id="serverGrid">
+                    <!-- Server-01 -->
+                    <div class="server-card" onclick="selectServer(this, 'server-01')" data-server="server-01" data-status="online">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-primary/10 rounded-lg">
+                                    <i data-lucide="server" class="w-5 h-5 text-primary"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-foreground">Server-01</h3>
+                                    <p class="text-sm text-muted-foreground">192.168.1.101</p>
+                                </div>
+                            </div>
+                            <div class="server-status online">
+                                <div class="status-dot" style="background: var(--server-online)"></div>
+                                运行正常
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 mb-4">
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm text-muted-foreground">CPU使用率</span>
+                                    <span class="text-sm font-medium">45%</span>
+                                </div>
+                                <div class="perf-bar">
+                                    <div class="perf-bar-fill perf-cpu-excellent" style="width: 45%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm text-muted-foreground">内存使用率</span>
+                                    <span class="text-sm font-medium">62%</span>
+                                </div>
+                                <div class="perf-bar">
+                                    <div class="perf-bar-fill perf-memory-good" style="width: 62%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm text-muted-foreground">磁盘使用率</span>
+                                    <span class="text-sm font-medium">23%</span>
+                                </div>
+                                <div class="perf-bar">
+                                    <div class="perf-bar-fill perf-disk-excellent" style="width: 23%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center mb-4 text-sm">
+                            <div class="text-center">
+                                <div class="font-semibold text-foreground">3个</div>
+                                <div class="text-muted-foreground">应用数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="font-semibold text-foreground">5人</div>
+                                <div class="text-muted-foreground">用户数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="font-semibold text-server-online">15天</div>
+                                <div class="text-muted-foreground">运行时间</div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button class="server-action-btn">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                详情
+                            </button>
+                            <button class="server-action-btn">
+                                <i data-lucide="terminal" class="w-4 h-4"></i>
+                                SSH
+                            </button>
+                            <button class="server-action-btn">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                重启
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Server-02 -->
+                    <div class="server-card" onclick="selectServer(this, 'server-02')" data-server="server-02" data-status="warning">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-server-warning/10 rounded-lg">
+                                    <i data-lucide="server" class="w-5 h-5 text-server-warning"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-foreground">Server-02</h3>
+                                    <p class="text-sm text-muted-foreground">192.168.1.102</p>
+                                </div>
+                            </div>
+                            <div class="server-status warning">
+                                <div class="status-dot" style="background: var(--server-warning)"></div>
+                                负载较高
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 mb-4">
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm text-muted-foreground">CPU使用率</span>
+                                    <span class="text-sm font-medium text-server-warning">89%</span>
+                                </div>
+                                <div class="perf-bar">
+                                    <div class="perf-bar-fill perf-cpu-critical" style="width: 89%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm text-muted-foreground">内存使用率</span>
+                                    <span class="text-sm font-medium text-server-warning">78%</span>
+                                </div>
+                                <div class="perf-bar">
+                                    <div class="perf-bar-fill perf-memory-warning" style="width: 78%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm text-muted-foreground">磁盘使用率</span>
+                                    <span class="text-sm font-medium">67%</span>
+                                </div>
+                                <div class="perf-bar">
+                                    <div class="perf-bar-fill perf-disk-good" style="width: 67%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center mb-4 text-sm">
+                            <div class="text-center">
+                                <div class="font-semibold text-foreground">8个</div>
+                                <div class="text-muted-foreground">应用数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="font-semibold text-foreground">12人</div>
+                                <div class="text-muted-foreground">用户数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="font-semibold text-server-online">8天</div>
+                                <div class="text-muted-foreground">运行时间</div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button class="server-action-btn">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                详情
+                            </button>
+                            <button class="server-action-btn">
+                                <i data-lucide="terminal" class="w-4 h-4"></i>
+                                SSH
+                            </button>
+                            <button class="server-action-btn">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                重启
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Server-03 -->
+                    <div class="server-card" onclick="selectServer(this, 'server-03')" data-server="server-03" data-status="online">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-primary/10 rounded-lg">
+                                    <i data-lucide="server" class="w-5 h-5 text-primary"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-foreground">Server-03</h3>
+                                    <p class="text-sm text-muted-foreground">192.168.1.103</p>
+                                </div>
+                            </div>
+                            <div class="server-status online">
+                                <div class="status-dot" style="background: var(--server-online)"></div>
+                                运行正常
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 mb-4">
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm text-muted-foreground">CPU使用率</span>
+                                    <span class="text-sm font-medium">32%</span>
+                                </div>
+                                <div class="perf-bar">
+                                    <div class="perf-bar-fill perf-cpu-excellent" style="width: 32%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm text-muted-foreground">内存使用率</span>
+                                    <span class="text-sm font-medium">41%</span>
+                                </div>
+                                <div class="perf-bar">
+                                    <div class="perf-bar-fill perf-memory-excellent" style="width: 41%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm text-muted-foreground">磁盘使用率</span>
+                                    <span class="text-sm font-medium">18%</span>
+                                </div>
+                                <div class="perf-bar">
+                                    <div class="perf-bar-fill perf-disk-excellent" style="width: 18%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center mb-4 text-sm">
+                            <div class="text-center">
+                                <div class="font-semibold text-foreground">2个</div>
+                                <div class="text-muted-foreground">应用数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="font-semibold text-foreground">3人</div>
+                                <div class="text-muted-foreground">用户数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="font-semibold text-server-online">25天</div>
+                                <div class="text-muted-foreground">运行时间</div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button class="server-action-btn">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                详情
+                            </button>
+                            <button class="server-action-btn">
+                                <i data-lucide="terminal" class="w-4 h-4"></i>
+                                SSH
+                            </button>
+                            <button class="server-action-btn">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                重启
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Server-04 -->
+                    <div class="server-card" onclick="selectServer(this, 'server-04')" data-server="server-04" data-status="offline">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-server-offline/10 rounded-lg">
+                                    <i data-lucide="server" class="w-5 h-5 text-server-offline"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-foreground">Server-04</h3>
+                                    <p class="text-sm text-muted-foreground">192.168.1.104</p>
+                                </div>
+                            </div>
+                            <div class="server-status offline">
+                                <div class="status-dot" style="background: var(--server-offline)"></div>
+                                连接异常
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 mb-4">
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm text-muted-foreground">CPU使用率</span>
+                                    <span class="text-sm font-medium text-muted-foreground">--</span>
+                                </div>
+                                <div class="perf-bar">
+                                    <div class="perf-bar-fill" style="background: var(--muted); width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm text-muted-foreground">内存使用率</span>
+                                    <span class="text-sm font-medium text-muted-foreground">--</span>
+                                </div>
+                                <div class="perf-bar">
+                                    <div class="perf-bar-fill" style="background: var(--muted); width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm text-muted-foreground">磁盘使用率</span>
+                                    <span class="text-sm font-medium text-muted-foreground">--</span>
+                                </div>
+                                <div class="perf-bar">
+                                    <div class="perf-bar-fill" style="background: var(--muted); width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center mb-4 text-sm">
+                            <div class="text-center">
+                                <div class="font-semibold text-muted-foreground">0个</div>
+                                <div class="text-muted-foreground">应用数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="font-semibold text-muted-foreground">0人</div>
+                                <div class="text-muted-foreground">用户数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="font-semibold text-server-offline">离线</div>
+                                <div class="text-muted-foreground">2小时</div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button class="server-action-btn">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                详情
+                            </button>
+                            <button class="server-action-btn">
+                                <i data-lucide="wifi" class="w-4 h-4"></i>
+                                重连
+                            </button>
+                            <button class="server-action-btn danger">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                删除
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 详情监控面板 -->
+            <div class="detail-panel empty" id="detailPanel">
+                <div>
+                    <i data-lucide="monitor" class="w-12 h-12 text-muted-foreground mx-auto mb-4"></i>
+                    <h3 class="text-lg font-semibold text-foreground mb-2">选择服务器</h3>
+                    <p class="text-sm text-muted-foreground">点击左侧任一服务器查看详细监控信息</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 新建服务器弹窗 -->
+    <div class="modal" id="addServerModal">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-semibold text-foreground">添加内网服务器</h2>
+                <button onclick="closeAddServerModal()" class="p-2 hover:bg-secondary rounded-lg transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form class="space-y-6" id="addServerForm">
+                <!-- 基本信息 -->
+                <div>
+                    <h3 class="text-sm font-medium text-foreground mb-3">基本信息</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-muted-foreground mb-1">服务器名称</label>
+                            <input type="text" class="search-input w-full" placeholder="Server-06" required>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-muted-foreground mb-1">内网IP地址</label>
+                                <input type="text" class="search-input w-full" placeholder="192.168.1.106" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-muted-foreground mb-1">SSH端口</label>
+                                <input type="number" class="search-input w-full" value="22" required>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-muted-foreground mb-1">用户名</label>
+                                <input type="text" class="search-input w-full" value="root" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-muted-foreground mb-1">SSH密码</label>
+                                <input type="password" class="search-input w-full" placeholder="请输入SSH密码" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 服务器配置 -->
+                <div>
+                    <h3 class="text-sm font-medium text-foreground mb-3">服务器配置</h3>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-muted-foreground mb-1">操作系统</label>
+                                <select class="search-input w-full">
+                                    <option>Ubuntu 22.04</option>
+                                    <option>CentOS 8.4</option>
+                                    <option>Debian 11</option>
+                                    <option>Red Hat 8</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-muted-foreground mb-1">服务器角色</label>
+                                <select class="search-input w-full">
+                                    <option>Web服务器</option>
+                                    <option>数据库服务器</option>
+                                    <option>应用服务器</option>
+                                    <option>负载均衡器</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-muted-foreground mb-1">机房位置</label>
+                                <input type="text" class="search-input w-full" placeholder="A机柜-第3层">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-muted-foreground mb-1">负责人员</label>
+                                <input type="text" class="search-input w-full" placeholder="张三">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 监控设置 -->
+                <div>
+                    <h3 class="text-sm font-medium text-foreground mb-3">监控设置</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="perfMonitor" checked class="rounded">
+                            <label for="perfMonitor" class="text-sm text-muted-foreground">启用性能监控</label>
+                            <select class="search-input text-sm ml-auto w-24">
+                                <option>30秒</option>
+                                <option>1分钟</option>
+                                <option>5分钟</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="serviceMonitor" checked class="rounded">
+                            <label for="serviceMonitor" class="text-sm text-muted-foreground">启用服务监控</label>
+                            <input type="text" class="search-input text-sm ml-auto" placeholder="22,80,443" style="width: 120px;">
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="logCollection" checked class="rounded">
+                            <label for="logCollection" class="text-sm text-muted-foreground">启用日志采集</label>
+                            <input type="text" class="search-input text-sm ml-auto" placeholder="/var/log" style="width: 120px;">
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="alertNotification" checked class="rounded">
+                            <label for="alertNotification" class="text-sm text-muted-foreground">启用告警通知</label>
+                            <input type="text" class="search-input text-sm ml-auto" placeholder="CPU>80%" style="width: 120px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="flex justify-end gap-3 pt-6 border-t border-border">
+                    <button type="button" class="server-action-btn" onclick="testConnection()">
+                        <i data-lucide="wifi" class="w-4 h-4"></i>
+                        测试连接
+                    </button>
+                    <button type="button" class="server-action-btn" onclick="closeAddServerModal()">
+                        取消
+                    </button>
+                    <button type="submit" class="add-server-btn">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        保存
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 初始化Lucide图标
+        lucide.createIcons();
+
+        let currentView = 'card';
+        let selectedServer = null;
+
+        // 视图切换功能
+        function switchView(view) {
+            if (view === currentView) return;
+
+            // 更新按钮状态
+            document.querySelectorAll('.view-switcher button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.view === view) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // 添加切换动画
+            const serverContainer = document.getElementById('serverContainer');
+            serverContainer.classList.add('view-switching');
+
+            setTimeout(() => {
+                // 更新视图
+                const serverLayout = document.getElementById('serverLayout');
+                const serverGrid = document.getElementById('serverGrid');
+
+                if (view === 'list') {
+                    serverGrid.innerHTML = createListView();
+                    serverLayout.classList.add('list-view');
+                } else if (view === 'monitor') {
+                    serverGrid.innerHTML = createMonitorView();
+                    serverLayout.classList.add('monitor-view');
+                    serverGrid.className = 'monitor-grid stagger-animation';
+                } else {
+                    // 卡片视图
+                    serverLayout.classList.remove('list-view', 'monitor-view');
+                    serverGrid.className = 'server-grid stagger-animation';
+                    // 保持原有卡片内容
+                }
+
+                currentView = view;
+                serverContainer.classList.remove('view-switching');
+
+                // 重新初始化图标
+                lucide.createIcons();
+            }, 150);
+        }
+
+        // 创建列表视图
+        function createListView() {
+            return `
+                <div class="w-full">
+                    <table class="server-table">
+                        <thead>
+                            <tr>
+                                <th>服务器名称</th>
+                                <th>状态</th>
+                                <th>CPU</th>
+                                <th>内存</th>
+                                <th>磁盘</th>
+                                <th>应用数</th>
+                                <th>用户数</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr onclick="selectServer(this, 'server-01')" data-server="server-01">
+                                <td>
+                                    <div>
+                                        <div class="font-medium">Server-01</div>
+                                        <div class="text-sm text-muted-foreground">192.168.1.101</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="server-status online">
+                                        <div class="status-dot" style="background: var(--server-online)"></div>
+                                        运行正常
+                                    </div>
+                                </td>
+                                <td>45%</td>
+                                <td>62%</td>
+                                <td>23%</td>
+                                <td>3个</td>
+                                <td>5人</td>
+                                <td>
+                                    <div class="flex gap-1">
+                                        <button class="server-action-btn text-xs px-2 py-1">
+                                            <i data-lucide="eye" class="w-3 h-3"></i>
+                                        </button>
+                                        <button class="server-action-btn text-xs px-2 py-1">
+                                            <i data-lucide="terminal" class="w-3 h-3"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr onclick="selectServer(this, 'server-02')" data-server="server-02">
+                                <td>
+                                    <div>
+                                        <div class="font-medium">Server-02</div>
+                                        <div class="text-sm text-muted-foreground">192.168.1.102</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="server-status warning">
+                                        <div class="status-dot" style="background: var(--server-warning)"></div>
+                                        负载较高
+                                    </div>
+                                </td>
+                                <td class="text-server-warning">89%</td>
+                                <td class="text-server-warning">78%</td>
+                                <td>67%</td>
+                                <td>8个</td>
+                                <td>12人</td>
+                                <td>
+                                    <div class="flex gap-1">
+                                        <button class="server-action-btn text-xs px-2 py-1">
+                                            <i data-lucide="eye" class="w-3 h-3"></i>
+                                        </button>
+                                        <button class="server-action-btn text-xs px-2 py-1">
+                                            <i data-lucide="terminal" class="w-3 h-3"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr onclick="selectServer(this, 'server-03')" data-server="server-03">
+                                <td>
+                                    <div>
+                                        <div class="font-medium">Server-03</div>
+                                        <div class="text-sm text-muted-foreground">192.168.1.103</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="server-status online">
+                                        <div class="status-dot" style="background: var(--server-online)"></div>
+                                        运行正常
+                                    </div>
+                                </td>
+                                <td>32%</td>
+                                <td>41%</td>
+                                <td>18%</td>
+                                <td>2个</td>
+                                <td>3人</td>
+                                <td>
+                                    <div class="flex gap-1">
+                                        <button class="server-action-btn text-xs px-2 py-1">
+                                            <i data-lucide="eye" class="w-3 h-3"></i>
+                                        </button>
+                                        <button class="server-action-btn text-xs px-2 py-1">
+                                            <i data-lucide="terminal" class="w-3 h-3"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr onclick="selectServer(this, 'server-04')" data-server="server-04">
+                                <td>
+                                    <div>
+                                        <div class="font-medium">Server-04</div>
+                                        <div class="text-sm text-muted-foreground">192.168.1.104</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="server-status offline">
+                                        <div class="status-dot" style="background: var(--server-offline)"></div>
+                                        连接异常
+                                    </div>
+                                </td>
+                                <td class="text-muted-foreground">--</td>
+                                <td class="text-muted-foreground">--</td>
+                                <td class="text-muted-foreground">--</td>
+                                <td>0个</td>
+                                <td>0人</td>
+                                <td>
+                                    <div class="flex gap-1">
+                                        <button class="server-action-btn text-xs px-2 py-1">
+                                            <i data-lucide="wifi" class="w-3 h-3"></i>
+                                        </button>
+                                        <button class="server-action-btn danger text-xs px-2 py-1">
+                                            <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // 创建监控视图
+        function createMonitorView() {
+            return `
+                <div class="monitor-card" onclick="selectServer(this, 'server-01')" data-server="server-01">
+                    <h3 class="font-semibold mb-2">Server-01</h3>
+                    <div class="server-status online mb-3">
+                        <div class="status-dot" style="background: var(--server-online)"></div>
+                        正常
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div>CPU: 45%</div>
+                        <div class="perf-bar"><div class="perf-bar-fill perf-cpu-excellent" style="width: 45%"></div></div>
+                        <div>内存: 62%</div>
+                        <div class="perf-bar"><div class="perf-bar-fill perf-memory-good" style="width: 62%"></div></div>
+                        <div>磁盘: 23%</div>
+                        <div class="perf-bar"><div class="perf-bar-fill perf-disk-excellent" style="width: 23%"></div></div>
+                    </div>
+                </div>
+                <div class="monitor-card alert" onclick="selectServer(this, 'server-02')" data-server="server-02">
+                    <h3 class="font-semibold mb-2">Server-02</h3>
+                    <div class="server-status warning mb-3">
+                        <div class="status-dot" style="background: var(--server-warning)"></div>
+                        告警
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="text-server-warning">CPU: 89%</div>
+                        <div class="perf-bar"><div class="perf-bar-fill perf-cpu-critical" style="width: 89%"></div></div>
+                        <div class="text-server-warning">内存: 78%</div>
+                        <div class="perf-bar"><div class="perf-bar-fill perf-memory-warning" style="width: 78%"></div></div>
+                        <div>磁盘: 67%</div>
+                        <div class="perf-bar"><div class="perf-bar-fill perf-disk-good" style="width: 67%"></div></div>
+                    </div>
+                </div>
+                <div class="monitor-card" onclick="selectServer(this, 'server-03')" data-server="server-03">
+                    <h3 class="font-semibold mb-2">Server-03</h3>
+                    <div class="server-status online mb-3">
+                        <div class="status-dot" style="background: var(--server-online)"></div>
+                        正常
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div>CPU: 32%</div>
+                        <div class="perf-bar"><div class="perf-bar-fill perf-cpu-excellent" style="width: 32%"></div></div>
+                        <div>内存: 41%</div>
+                        <div class="perf-bar"><div class="perf-bar-fill perf-memory-excellent" style="width: 41%"></div></div>
+                        <div>磁盘: 18%</div>
+                        <div class="perf-bar"><div class="perf-bar-fill perf-disk-excellent" style="width: 18%"></div></div>
+                    </div>
+                </div>
+                <div class="monitor-card" onclick="selectServer(this, 'server-04')" data-server="server-04">
+                    <h3 class="font-semibold mb-2">Server-04</h3>
+                    <div class="server-status offline mb-3">
+                        <div class="status-dot" style="background: var(--server-offline)"></div>
+                        离线
+                    </div>
+                    <div class="space-y-2 text-sm text-muted-foreground">
+                        <div>连接失败</div>
+                        <div class="perf-bar"><div class="perf-bar-fill" style="background: var(--muted); width: 0%"></div></div>
+                        <div>检查网络配置</div>
+                        <div class="mt-3">
+                            <button class="server-action-btn text-xs">重连</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 选择服务器
+        function selectServer(element, serverId) {
+            // 移除之前的选中状态
+            document.querySelectorAll('.server-card, .server-table tr, .monitor-card').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // 添加选中状态
+            element.classList.add('selected');
+            selectedServer = serverId;
+
+            // 更新详情面板
+            updateDetailPanel(serverId);
+        }
+
+        // 更新详情面板
+        function updateDetailPanel(serverId) {
+            const detailPanel = document.getElementById('detailPanel');
+
+            // 示例数据，实际应该从API获取
+            const serverData = {
+                'server-01': {
+                    name: 'Server-01',
+                    ip: '192.168.1.101',
+                    status: 'online',
+                    cpu: 45, memory: 62, disk: 23,
+                    uptime: '15天 3小时',
+                    os: 'Ubuntu 22.04 LTS',
+                    kernel: '5.15.0-67-generic',
+                    mac: '00:1B:44:11:3A:B7',
+                    hardware: {
+                        cpu: 'Intel i7-9700 (8核)',
+                        memory: '8GB DDR4 2666MHz',
+                        storage: '500GB SSD',
+                        network: 'Gigabit Ethernet'
+                    },
+                    apps: [
+                        {name: 'WebApp-Main', port: 8080, status: 'online'},
+                        {name: 'MySQL-DB', port: 3306, status: 'online'},
+                        {name: 'Redis-Cache', port: 6379, status: 'warning'}
+                    ]
+                }
+            };
+
+            const server = serverData[serverId] || serverData['server-01'];
+
+            detailPanel.classList.remove('empty');
+            detailPanel.innerHTML = `
+                <div class="space-y-6">
+                    <!-- 服务器标题 -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-semibold text-foreground">${server.name} 实时监控</h2>
+                            <p class="text-sm text-muted-foreground">${server.ip}</p>
+                        </div>
+                        <div class="server-status ${server.status}">
+                            <div class="status-dot" style="background: var(--server-${server.status})"></div>
+                            ${server.status === 'online' ? '运行正常' : '状态异常'}
+                        </div>
+                    </div>
+
+                    <!-- 性能图表 -->
+                    <div class="chart-container">
+                        <div class="chart-placeholder">
+                            <i data-lucide="activity" class="w-8 h-8 text-muted-foreground mx-auto mb-2"></i>
+                            <div class="text-sm text-muted-foreground">实时性能监控图表</div>
+                            <div class="text-xs text-muted-foreground">CPU • 内存 • 磁盘 • 网络</div>
+                        </div>
+                    </div>
+
+                    <!-- 基本信息 -->
+                    <div>
+                        <h3 class="font-medium text-foreground mb-3">服务器信息</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">内网IP:</span>
+                                <span class="font-medium">${server.ip}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">MAC地址:</span>
+                                <span class="font-medium">${server.mac}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">系统版本:</span>
+                                <span class="font-medium">${server.os}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">内核版本:</span>
+                                <span class="font-medium">${server.kernel}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">运行时间:</span>
+                                <span class="font-medium text-server-online">${server.uptime}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 硬件配置 -->
+                    <div>
+                        <h3 class="font-medium text-foreground mb-3">硬件配置</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">CPU:</span>
+                                <span class="font-medium">${server.hardware.cpu}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">内存:</span>
+                                <span class="font-medium">${server.hardware.memory}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">存储:</span>
+                                <span class="font-medium">${server.hardware.storage}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">网卡:</span>
+                                <span class="font-medium">${server.hardware.network}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 运行应用 -->
+                    <div>
+                        <h3 class="font-medium text-foreground mb-3">运行的应用</h3>
+                        <div class="space-y-2">
+                            ${server.apps.map(app => `
+                                <div class="flex items-center justify-between p-2 bg-secondary rounded-lg">
+                                    <div>
+                                        <div class="font-medium text-sm">${app.name}</div>
+                                        <div class="text-xs text-muted-foreground">端口: ${app.port}</div>
+                                    </div>
+                                    <div class="server-status ${app.status}">
+                                        <div class="status-dot" style="background: var(--server-${app.status})"></div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- 最近操作 -->
+                    <div>
+                        <h3 class="font-medium text-foreground mb-3">操作历史</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">10:35</span>
+                                <span>CPU使用率告警恢复</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">10:30</span>
+                                <span>用户Alice SSH连接</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">10:15</span>
+                                <span>MySQL服务重启成功</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">09:45</span>
+                                <span>系统监控脚本执行</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 网络连接 -->
+                    <div>
+                        <h3 class="font-medium text-foreground mb-3">网络连接</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">内网延迟:</span>
+                                <span class="font-medium text-server-online">&lt;1ms</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">带宽使用:</span>
+                                <span class="font-medium">15.2 MB/s</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">连接数:</span>
+                                <span class="font-medium">125 (SSH:2, HTTP:98)</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">防火墙:</span>
+                                <span class="font-medium text-server-online">活跃 (15条规则)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 重新初始化图标
+            lucide.createIcons();
+        }
+
+        // 新建服务器弹窗
+        function openAddServerModal() {
+            document.getElementById('addServerModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAddServerModal() {
+            document.getElementById('addServerModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function testConnection() {
+            // 模拟连接测试
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> 测试中...';
+            button.disabled = true;
+
+            setTimeout(() => {
+                button.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> 连接成功';
+                button.style.background = 'var(--server-online)';
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    button.style.background = '';
+                }, 2000);
+            }, 2000);
+
+            lucide.createIcons();
+        }
+
+        // 搜索和筛选功能
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            filterServers(searchTerm, document.getElementById('filterSelect').value);
+        });
+
+        document.getElementById('filterSelect').addEventListener('change', function(e) {
+            const filterValue = e.target.value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            filterServers(searchTerm, filterValue);
+        });
+
+        function filterServers(searchTerm, filterValue) {
+            const serverCards = document.querySelectorAll('[data-server]');
+
+            serverCards.forEach(card => {
+                const serverName = card.querySelector('h3')?.textContent.toLowerCase() || '';
+                const serverIP = card.querySelector('.text-muted-foreground')?.textContent || '';
+                const serverStatus = card.dataset.status;
+
+                const matchesSearch = serverName.includes(searchTerm) || serverIP.includes(searchTerm);
+                const matchesFilter = filterValue === 'all' || serverStatus === filterValue;
+
+                card.style.display = (matchesSearch && matchesFilter) ? 'block' : 'none';
+            });
+        }
+
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 添加页面加载动画
+            setTimeout(() => {
+                document.body.classList.add('fade-in');
+            }, 100);
+
+            // 模拟实时数据更新
+            setInterval(() => {
+                // 这里可以添加实时数据更新逻辑
+            }, 30000);
+        });
+
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'f':
+                        e.preventDefault();
+                        document.getElementById('searchInput').focus();
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        openAddServerModal();
+                        break;
+                }
+            }
+            if (e.key === 'Escape') {
+                closeAddServerModal();
+            }
+        });
+
+        // 点击模态框背景关闭
+        document.getElementById('addServerModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAddServerModal();
+            }
+        });
+    </script>
+</body>
+</html>

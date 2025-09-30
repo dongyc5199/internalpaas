@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>侧边栏背景图设计 - 矩阵终端风格</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            background: #0a0a0f;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .demo-container {
+            display: flex;
+            width: 100%;
+        }
+
+        .sidebar-preview {
+            width: 280px;
+            height: 100vh;
+            position: relative;
+            background: linear-gradient(180deg, #1f2937 0%, #374151 100%);
+            overflow: hidden;
+        }
+
+        /* 矩阵雨背景 */
+        .matrix-bg {
+            position: absolute;
+            inset: 0;
+            opacity: 0.12;
+            overflow: hidden;
+        }
+
+        .matrix-column {
+            position: absolute;
+            top: -100%;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #00ff41;
+            white-space: pre;
+            line-height: 1.2;
+            animation: matrixFall linear infinite;
+        }
+
+        .matrix-column:nth-child(1) {
+            left: 5%;
+            animation-duration: 8s;
+            animation-delay: 0s;
+        }
+
+        .matrix-column:nth-child(2) {
+            left: 20%;
+            animation-duration: 12s;
+            animation-delay: 2s;
+        }
+
+        .matrix-column:nth-child(3) {
+            left: 35%;
+            animation-duration: 10s;
+            animation-delay: 4s;
+        }
+
+        .matrix-column:nth-child(4) {
+            left: 50%;
+            animation-duration: 15s;
+            animation-delay: 1s;
+        }
+
+        .matrix-column:nth-child(5) {
+            left: 65%;
+            animation-duration: 9s;
+            animation-delay: 3s;
+        }
+
+        .matrix-column:nth-child(6) {
+            left: 80%;
+            animation-duration: 11s;
+            animation-delay: 5s;
+        }
+
+        .matrix-column:nth-child(7) {
+            left: 95%;
+            animation-duration: 13s;
+            animation-delay: 0.5s;
+        }
+
+        @keyframes matrixFall {
+            0% {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(calc(100vh + 100%));
+                opacity: 0;
+            }
+        }
+
+        /* 终端命令提示符 */
+        .terminal-prompts {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .terminal-prompt {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #22c55e;
+            opacity: 0;
+            animation: promptFade 6s ease-in-out infinite;
+        }
+
+        .terminal-prompt:nth-child(1) {
+            top: 8%;
+            left: 8%;
+            animation-delay: 0s;
+        }
+
+        .terminal-prompt:nth-child(2) {
+            top: 25%;
+            left: 12%;
+            animation-delay: 2s;
+        }
+
+        .terminal-prompt:nth-child(3) {
+            top: 45%;
+            left: 6%;
+            animation-delay: 4s;
+        }
+
+        .terminal-prompt:nth-child(4) {
+            top: 65%;
+            left: 10%;
+            animation-delay: 1s;
+        }
+
+        .terminal-prompt:nth-child(5) {
+            top: 82%;
+            left: 8%;
+            animation-delay: 3s;
+        }
+
+        @keyframes promptFade {
+            0%, 70% {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            15%, 55% {
+                opacity: 0.6;
+                transform: translateX(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+        }
+
+        /* 系统状态指示器 */
+        .system-status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            opacity: 0.15;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: #22c55e;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .status-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            animation: statusBlink 3s ease-in-out infinite;
+        }
+
+        .status-indicator.cpu {
+            background: #22c55e;
+            animation-delay: 0s;
+        }
+
+        .status-indicator.mem {
+            background: #fbbf24;
+            animation-delay: 1s;
+        }
+
+        .status-indicator.net {
+            background: #06b6d4;
+            animation-delay: 2s;
+        }
+
+        @keyframes statusBlink {
+            0%, 70% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            35% {
+                opacity: 1;
+                transform: scale(1.2);
+                box-shadow: 0 0 10px currentColor;
+            }
+        }
+
+        /* 调试器断点 */
+        .debug-breakpoints {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .breakpoint {
+            position: absolute;
+            width: 3px;
+            height: 12px;
+            background: #ef4444;
+            border-radius: 2px;
+            opacity: 0.4;
+            animation: breakpointGlow 4s ease-in-out infinite;
+        }
+
+        .breakpoint:nth-child(1) {
+            top: 20%;
+            left: 3px;
+            animation-delay: 0s;
+        }
+
+        .breakpoint:nth-child(2) {
+            top: 40%;
+            left: 3px;
+            animation-delay: 1.5s;
+        }
+
+        .breakpoint:nth-child(3) {
+            top: 60%;
+            left: 3px;
+            animation-delay: 3s;
+        }
+
+        .breakpoint:nth-child(4) {
+            top: 75%;
+            left: 3px;
+            animation-delay: 0.8s;
+        }
+
+        @keyframes breakpointGlow {
+            0%, 80% {
+                opacity: 0.2;
+                box-shadow: 0 0 0 rgba(239, 68, 68, 0);
+            }
+            40% {
+                opacity: 0.8;
+                box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+            }
+        }
+
+        /* 网络活动指示器 */
+        .network-activity {
+            position: absolute;
+            bottom: 20px;
+            left: 8px;
+            right: 8px;
+            height: 2px;
+            background: rgba(34, 197, 94, 0.1);
+            border-radius: 1px;
+            overflow: hidden;
+        }
+
+        .network-pulse {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 30%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, #22c55e, transparent);
+            animation: networkPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes networkPulse {
+            0% {
+                left: -100%;
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                left: 100%;
+                opacity: 0;
+            }
+        }
+
+        /* 侧边栏内容区域 */
+        .sidebar-content {
+            position: relative;
+            z-index: 10;
+            padding: 20px 16px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .brand-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+            position: relative;
+        }
+
+        .brand-icon::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 14px;
+            padding: 2px;
+            background: linear-gradient(45deg, #22c55e, transparent, #22c55e);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            animation: brandGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes brandGlow {
+            0%, 100% {
+                opacity: 0.3;
+            }
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 6px;
+            color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0;
+            background: linear-gradient(90deg, #22c55e, transparent);
+            transition: width 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+        }
+
+        .nav-item:hover::before {
+            width: 4px;
+        }
+
+        .nav-item.active {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.4);
+            color: #22c55e;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+        }
+
+        .nav-item.active::before {
+            width: 4px;
+        }
+
+        /* 右侧说明 */
+        .description {
+            flex: 1;
+            padding: 40px;
+            background: #111827;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .description h1 {
+            color: #22c55e;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .description h2 {
+            color: #00ff41;
+            margin-bottom: 15px;
+            margin-top: 30px;
+        }
+
+        .description p {
+            line-height: 1.6;
+            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .features {
+            margin-top: 20px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 8px 0;
+        }
+
+        .feature-icon {
+            color: #00ff41;
+            font-weight: bold;
+        }
+
+        .title-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #22c55e, #00ff41);
+            color: black;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="title-badge">方案4: 矩阵终端风格</div>
+
+    <div class="demo-container">
+        <div class="sidebar-preview">
+            <!-- 矩阵雨背景 -->
+            <div class="matrix-bg">
+                <div class="matrix-column">DEBUG
+LOG
+ERROR
+WARN
+INFO
+TRACE
+FATAL
+SYNC
+ASYNC
+CALLBACK
+PROMISE
+AWAIT</div>
+                <div class="matrix-column">var
+const
+let
+function
+class
+import
+export
+return
+throw
+catch
+try
+finally</div>
+                <div class="matrix-column">CPU
+80%
+MEM
+67%
+DISK
+45%
+NET
+OK
+STATUS
+ACTIVE
+RUNNING
+IDLE</div>
+                <div class="matrix-column">server
+client
+request
+response
+timeout
+connection
+session
+cache
+database
+query</div>
+                <div class="matrix-column">true
+false
+null
+undefined
+NaN
+Infinity
+Object
+Array
+String
+Number</div>
+                <div class="matrix-column">GET
+POST
+PUT
+DELETE
+PATCH
+HEAD
+OPTIONS
+200
+404
+500</div>
+                <div class="matrix-column">start
+stop
+restart
+deploy
+build
+test
+lint
+format
+debug
+monitor</div>
+            </div>
+
+            <!-- 终端命令提示符 -->
+            <div class="terminal-prompts">
+                <div class="terminal-prompt">root@debug:~$</div>
+                <div class="terminal-prompt">user@dev:~$</div>
+                <div class="terminal-prompt">admin@server:~$</div>
+                <div class="terminal-prompt">debug@local:~$</div>
+                <div class="terminal-prompt">system@host:~$</div>
+            </div>
+
+            <!-- 系统状态 -->
+            <div class="system-status">
+                <div class="status-bar">
+                    <div class="status-indicator cpu"></div>
+                    <span>CPU</span>
+                </div>
+                <div class="status-bar">
+                    <div class="status-indicator mem"></div>
+                    <span>MEM</span>
+                </div>
+                <div class="status-bar">
+                    <div class="status-indicator net"></div>
+                    <span>NET</span>
+                </div>
+            </div>
+
+            <!-- 调试断点 -->
+            <div class="debug-breakpoints">
+                <div class="breakpoint"></div>
+                <div class="breakpoint"></div>
+                <div class="breakpoint"></div>
+                <div class="breakpoint"></div>
+            </div>
+
+            <!-- 网络活动 -->
+            <div class="network-activity">
+                <div class="network-pulse"></div>
+            </div>
+
+            <!-- 侧边栏内容 -->
+            <div class="sidebar-content">
+                <div class="brand-area">
+                    <div class="brand-icon">DD</div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 14px;">DEBUG PLATFORM</div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.7);">v2.1.0</div>
+                    </div>
+                </div>
+
+                <nav>
+                    <div class="nav-item active">
+                        <span>📊</span>
+                        <span>工作区概览</span>
+                    </div>
+                    <div class="nav-item">
+                        <span>🚀</span>
+                        <span>应用管理</span>
+                    </div>
+                    <div class="nav-item">
+                        <span>🖥️</span>
+                        <span>服务器管理</span>
+                    </div>
+                    <div class="nav-item">
+                        <span>📈</span>
+                        <span>监控中心</span>
+                    </div>
+                    <div class="nav-item">
+                        <span>⚡</span>
+                        <span>SSH终端</span>
+                    </div>
+                </nav>
+            </div>
+        </div>
+
+        <div class="description">
+            <h1>矩阵终端背景设计</h1>
+            <p>结合经典的"矩阵雨"效果和现代终端界面，营造科幻感的开发调试环境。</p>
+
+            <h2>设计特点</h2>
+            <div class="features">
+                <div class="feature">
+                    <span class="feature-icon">🌧️</span>
+                    <span>矩阵雨效果 - 技术关键词垂直流动，营造科幻氛围</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">💻</span>
+                    <span>命令提示符 - 随机显示不同用户的终端提示符</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">📊</span>
+                    <span>系统状态栏 - 右上角显示CPU、内存、网络状态</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🔴</span>
+                    <span>调试断点 - 左侧红色断点指示器脉冲动画</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">⚡</span>
+                    <span>网络脉冲 - 底部网络活动指示条</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">✨</span>
+                    <span>品牌发光 - Logo图标边框发光动画效果</span>
+                </div>
+            </div>
+
+            <h2>技术实现</h2>
+            <p>使用多层CSS动画实现矩阵雨效果，每列字符以不同速度下落。系统状态指示器使用交错动画，调试断点使用发光脉冲效果。</p>
+
+            <p><strong>适用场景:</strong> 适合喜欢科幻风格的技术团队，强调平台的现代化和未来感。</p>
+        </div>
+    </div>
+</body>
+</html>

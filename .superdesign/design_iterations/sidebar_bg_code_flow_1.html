@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>侧边栏背景图设计 - 代码流动风格</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            background: #0a0a0f;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .demo-container {
+            display: flex;
+            width: 100%;
+        }
+
+        .sidebar-preview {
+            width: 280px;
+            height: 100vh;
+            position: relative;
+            background: linear-gradient(180deg, #374151 0%, #4b5563 100%);
+            overflow: hidden;
+        }
+
+        /* 代码流动背景 */
+        .code-flow-bg {
+            position: absolute;
+            inset: 0;
+            opacity: 0.15;
+            overflow: hidden;
+        }
+
+        .code-line {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #00ffff;
+            white-space: nowrap;
+            animation: codeFlow 15s linear infinite;
+        }
+
+        .code-line:nth-child(1) {
+            top: 5%;
+            animation-delay: 0s;
+            color: #00ffff;
+        }
+
+        .code-line:nth-child(2) {
+            top: 15%;
+            animation-delay: -3s;
+            color: #ff006e;
+        }
+
+        .code-line:nth-child(3) {
+            top: 25%;
+            animation-delay: -6s;
+            color: #00ff41;
+        }
+
+        .code-line:nth-child(4) {
+            top: 35%;
+            animation-delay: -9s;
+            color: #ffff00;
+        }
+
+        .code-line:nth-child(5) {
+            top: 45%;
+            animation-delay: -12s;
+            color: #7209b7;
+        }
+
+        .code-line:nth-child(6) {
+            top: 55%;
+            animation-delay: -2s;
+            color: #00f5ff;
+        }
+
+        .code-line:nth-child(7) {
+            top: 65%;
+            animation-delay: -5s;
+            color: #ff4757;
+        }
+
+        .code-line:nth-child(8) {
+            top: 75%;
+            animation-delay: -8s;
+            color: #2ed573;
+        }
+
+        .code-line:nth-child(9) {
+            top: 85%;
+            animation-delay: -11s;
+            color: #ffa502;
+        }
+
+        .code-line:nth-child(10) {
+            top: 95%;
+            animation-delay: -14s;
+            color: #5352ed;
+        }
+
+        @keyframes codeFlow {
+            0% {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.6;
+            }
+            90% {
+                opacity: 0.3;
+            }
+            100% {
+                transform: translateX(320px);
+                opacity: 0;
+            }
+        }
+
+        /* 调试符号装饰 */
+        .debug-symbols {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .debug-point {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff006e;
+            box-shadow: 0 0 10px rgba(255, 0, 110, 0.5);
+            animation: debugPulse 3s ease-in-out infinite;
+        }
+
+        .debug-point:nth-child(1) {
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .debug-point:nth-child(2) {
+            top: 40%;
+            left: 85%;
+            animation-delay: 1s;
+        }
+
+        .debug-point:nth-child(3) {
+            top: 60%;
+            left: 15%;
+            animation-delay: 2s;
+        }
+
+        .debug-point:nth-child(4) {
+            top: 80%;
+            left: 75%;
+            animation-delay: 0.5s;
+        }
+
+        @keyframes debugPulse {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.2);
+            }
+        }
+
+        /* 连接线 */
+        .connection-line {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00ffff, transparent);
+            opacity: 0.2;
+            animation: lineGlow 4s ease-in-out infinite;
+        }
+
+        .connection-line:nth-child(1) {
+            top: 30%;
+            left: 5%;
+            width: 90%;
+            animation-delay: 0s;
+        }
+
+        .connection-line:nth-child(2) {
+            top: 50%;
+            left: 10%;
+            width: 80%;
+            animation-delay: 2s;
+        }
+
+        .connection-line:nth-child(3) {
+            top: 70%;
+            left: 8%;
+            width: 85%;
+            animation-delay: 1s;
+        }
+
+        @keyframes lineGlow {
+            0%, 100% {
+                opacity: 0.1;
+                transform: scaleY(1);
+            }
+            50% {
+                opacity: 0.4;
+                transform: scaleY(2);
+            }
+        }
+
+        /* 侧边栏内容区域 */
+        .sidebar-content {
+            position: relative;
+            z-index: 10;
+            padding: 20px 16px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .brand-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #00ffff, #ff006e);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 6px;
+            color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(0, 255, 255, 0.15);
+            color: #00ffff;
+        }
+
+        .nav-item.active {
+            background: rgba(0, 255, 255, 0.2);
+            color: #00ffff;
+        }
+
+        /* 右侧说明 */
+        .description {
+            flex: 1;
+            padding: 40px;
+            background: #111827;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .description h1 {
+            color: #00ffff;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .description h2 {
+            color: #ff006e;
+            margin-bottom: 15px;
+            margin-top: 30px;
+        }
+
+        .description p {
+            line-height: 1.6;
+            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .features {
+            margin-top: 20px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 8px 0;
+        }
+
+        .feature-icon {
+            color: #00ff41;
+            font-weight: bold;
+        }
+
+        .title-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #00ffff, #ff006e);
+            color: black;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="title-badge">方案1: 代码流动风格</div>
+
+    <div class="demo-container">
+        <div class="sidebar-preview">
+            <!-- 代码流动背景 -->
+            <div class="code-flow-bg">
+                <div class="code-line">function debugApp() { console.log('debugging...'); }</div>
+                <div class="code-line">const server = require('express')();</div>
+                <div class="code-line">app.listen(8080, () => console.log('Server running'));</div>
+                <div class="code-line">if (error) { throw new Error('Debug failed'); }</div>
+                <div class="code-line">const result = await processRequest(data);</div>
+                <div class="code-line">try { validateInput(params); } catch(e) {}</div>
+                <div class="code-line">return { status: 'success', data: response };</div>
+                <div class="code-line">logger.info('Process completed successfully');</div>
+                <div class="code-line">await database.connect();</div>
+                <div class="code-line">export default class DebugPlatform {}</div>
+            </div>
+
+            <!-- 调试符号 -->
+            <div class="debug-symbols">
+                <div class="debug-point"></div>
+                <div class="debug-point"></div>
+                <div class="debug-point"></div>
+                <div class="debug-point"></div>
+
+                <div class="connection-line"></div>
+                <div class="connection-line"></div>
+                <div class="connection-line"></div>
+            </div>
+
+            <!-- 侧边栏内容 -->
+            <div class="sidebar-content">
+                <div class="brand-area">
+                    <div class="brand-icon">DD</div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 14px;">DEBUG PLATFORM</div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.7);">v2.1.0</div>
+                    </div>
+                </div>
+
+                <nav>
+                    <div class="nav-item active">
+                        <span>📊</span>
+                        <span>工作区概览</span>
+                    </div>
+                    <div class="nav-item">
+                        <span>🚀</span>
+                        <span>应用管理</span>
+                    </div>
+                    <div class="nav-item">
+                        <span>🖥️</span>
+                        <span>服务器管理</span>
+                    </div>
+                    <div class="nav-item">
+                        <span>📈</span>
+                        <span>监控中心</span>
+                    </div>
+                    <div class="nav-item">
+                        <span>⚡</span>
+                        <span>SSH终端</span>
+                    </div>
+                </nav>
+            </div>
+        </div>
+
+        <div class="description">
+            <h1>代码流动背景设计</h1>
+            <p>这个设计方案将流动的代码片段作为背景，体现开发调试平台的核心特性。</p>
+
+            <h2>设计特点</h2>
+            <div class="features">
+                <div class="feature">
+                    <span class="feature-icon">✨</span>
+                    <span>流动的代码行 - 展示真实的开发代码片段</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🔴</span>
+                    <span>调试断点动画 - 红色脉冲点模拟调试器断点</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">💫</span>
+                    <span>连接线效果 - 蓝色发光线条连接各个元素</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🌈</span>
+                    <span>语法高亮色彩 - 不同颜色代表不同代码元素</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">💎</span>
+                    <span>毛玻璃效果 - 导航项目使用backdrop-filter增强层次</span>
+                </div>
+            </div>
+
+            <h2>技术实现</h2>
+            <p>使用CSS动画创建代码流动效果，调试点使用脉冲动画，连接线使用渐变发光效果。所有动画都经过性能优化，不会影响界面操作流畅度。</p>
+
+            <p><strong>适用场景:</strong> 适合技术导向的开发团队，突出平台的专业性和科技感。</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>侧边栏背景图设计 - 极简终端风格</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            background: #0a0a0f;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .demo-container {
+            display: flex;
+            width: 100%;
+        }
+
+        .sidebar-preview {
+            width: 280px;
+            height: 100vh;
+            position: relative;
+            background: linear-gradient(180deg, #1f2937 0%, #374151 100%);
+            overflow: hidden;
+        }
+
+        /* 极简终端背景 */
+        .minimal-terminal-bg {
+            position: absolute;
+            inset: 0;
+            opacity: 0.06;
+            overflow: hidden;
+        }
+
+        /* 简洁的代码行 */
+        .code-snippet {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #64748b;
+            white-space: nowrap;
+            opacity: 0;
+            animation: codeReveal 8s ease-in-out infinite;
+        }
+
+        .code-snippet:nth-child(1) {
+            top: 12%;
+            left: 8%;
+            animation-delay: 0s;
+            color: #22c55e;
+        }
+
+        .code-snippet:nth-child(2) {
+            top: 28%;
+            left: 12%;
+            animation-delay: 2s;
+            color: #3b82f6;
+        }
+
+        .code-snippet:nth-child(3) {
+            top: 44%;
+            left: 6%;
+            animation-delay: 4s;
+            color: #f59e0b;
+        }
+
+        .code-snippet:nth-child(4) {
+            top: 60%;
+            left: 10%;
+            animation-delay: 6s;
+            color: #8b5cf6;
+        }
+
+        .code-snippet:nth-child(5) {
+            top: 76%;
+            left: 8%;
+            animation-delay: 1s;
+            color: #ef4444;
+        }
+
+        @keyframes codeReveal {
+            0%, 20% {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            25%, 75% {
+                opacity: 0.4;
+                transform: translateX(0);
+            }
+            80%, 100% {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+        }
+
+        /* 简约的连接线 */
+        .connection-lines {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .connect-line {
+            position: absolute;
+            background: linear-gradient(90deg, transparent, #64748b, transparent);
+            height: 1px;
+            opacity: 0;
+            animation: lineAppear 6s ease-in-out infinite;
+        }
+
+        .connect-line:nth-child(1) {
+            top: 20%;
+            left: 5%;
+            width: 40%;
+            animation-delay: 1s;
+        }
+
+        .connect-line:nth-child(2) {
+            top: 50%;
+            left: 15%;
+            width: 50%;
+            animation-delay: 3s;
+        }
+
+        .connect-line:nth-child(3) {
+            top: 75%;
+            left: 8%;
+            width: 35%;
+            animation-delay: 5s;
+        }
+
+        @keyframes lineAppear {
+            0%, 40% {
+                opacity: 0;
+                transform: scaleX(0);
+                transform-origin: left;
+            }
+            50%, 90% {
+                opacity: 0.3;
+                transform: scaleX(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scaleX(0);
+                transform-origin: right;
+            }
+        }
+
+        /* 极简状态点 */
+        .status-dots {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+            opacity: 0.2;
+        }
+
+        .status-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            animation: dotPulse 4s ease-in-out infinite;
+        }
+
+        .status-dot:nth-child(1) {
+            background: #22c55e;
+            animation-delay: 0s;
+        }
+
+        .status-dot:nth-child(2) {
+            background: #f59e0b;
+            animation-delay: 1.3s;
+        }
+
+        .status-dot:nth-child(3) {
+            background: #ef4444;
+            animation-delay: 2.6s;
+        }
+
+        @keyframes dotPulse {
+            0%, 70% {
+                opacity: 0.2;
+                transform: scale(1);
+            }
+            35% {
+                opacity: 0.8;
+                transform: scale(1.5);
+            }
+        }
+
+        /* 极简命令行光标 */
+        .terminal-cursor {
+            position: absolute;
+            bottom: 30px;
+            left: 20px;
+            width: 2px;
+            height: 16px;
+            background: #64748b;
+            opacity: 0.3;
+            animation: cursorBlink 2s ease-in-out infinite;
+        }
+
+        @keyframes cursorBlink {
+            0%, 50% {
+                opacity: 0.3;
+            }
+            25% {
+                opacity: 0.8;
+            }
+        }
+
+        /* 简约版本号 */
+        .version-display {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            color: #64748b;
+            opacity: 0.2;
+            animation: versionFade 5s ease-in-out infinite;
+        }
+
+        @keyframes versionFade {
+            0%, 80% {
+                opacity: 0.1;
+            }
+            40% {
+                opacity: 0.4;
+            }
+        }
+
+        /* 进度条指示器 */
+        .progress-indicators {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            opacity: 0.15;
+        }
+
+        .progress-bar {
+            width: 3px;
+            height: 30px;
+            background: rgba(100, 116, 139, 0.2);
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(0deg, #22c55e, #3b82f6);
+            border-radius: 2px;
+            animation: progressGrow 4s ease-in-out infinite;
+        }
+
+        .progress-bar:nth-child(1) .progress-fill {
+            animation-delay: 0s;
+        }
+
+        .progress-bar:nth-child(2) .progress-fill {
+            animation-delay: 1s;
+        }
+
+        .progress-bar:nth-child(3) .progress-fill {
+            animation-delay: 2s;
+        }
+
+        @keyframes progressGrow {
+            0%, 20% {
+                height: 0%;
+                opacity: 0.3;
+            }
+            60% {
+                height: 80%;
+                opacity: 0.8;
+            }
+            100% {
+                height: 0%;
+                opacity: 0.3;
+            }
+        }
+
+        /* 侧边栏内容区域 */
+        .sidebar-content {
+            position: relative;
+            z-index: 10;
+            padding: 20px 16px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .brand-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            background: rgba(100, 116, 139, 0.08);
+            border: 1px solid rgba(100, 116, 139, 0.15);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .brand-area:hover {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.2);
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #64748b, #475569);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .brand-area:hover .brand-icon {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            transform: scale(1.05);
+        }
+
+        .brand-icon::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 13px;
+            background: linear-gradient(45deg, transparent, rgba(100, 116, 139, 0.3), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .brand-area:hover .brand-icon::after {
+            opacity: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 6px;
+            color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+            position: relative;
+        }
+
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(59, 130, 246, 0.05));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(100, 116, 139, 0.1);
+            border-color: rgba(100, 116, 139, 0.2);
+            color: #e2e8f0;
+            transform: translateX(4px);
+        }
+
+        .nav-item:hover::after {
+            opacity: 1;
+        }
+
+        .nav-item.active {
+            background: rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.25);
+            color: #22c55e;
+            transform: translateX(4px);
+        }
+
+        .nav-item.active::after {
+            opacity: 1;
+        }
+
+        /* 右侧说明 */
+        .description {
+            flex: 1;
+            padding: 40px;
+            background: #111827;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .description h1 {
+            color: #64748b;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .description h2 {
+            color: #22c55e;
+            margin-bottom: 15px;
+            margin-top: 30px;
+        }
+
+        .description p {
+            line-height: 1.6;
+            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .features {
+            margin-top: 20px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 8px 0;
+        }
+
+        .feature-icon {
+            color: #64748b;
+            font-weight: bold;
+        }
+
+        .title-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #64748b, #475569);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(100, 116, 139, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="title-badge">方案5: 极简终端风格</div>
+
+    <div class="demo-container">
+        <div class="sidebar-preview">
+            <!-- 极简终端背景 -->
+            <div class="minimal-terminal-bg">
+                <!-- 代码片段 -->
+                <div class="code-snippet">console.log('debug');</div>
+                <div class="code-snippet">const app = express();</div>
+                <div class="code-snippet">await server.start();</div>
+                <div class="code-snippet">debug.enabled = true;</div>
+                <div class="code-snippet">process.exit(0);</div>
+
+                <!-- 连接线 -->
+                <div class="connection-lines">
+                    <div class="connect-line"></div>
+                    <div class="connect-line"></div>
+                    <div class="connect-line"></div>
+                </div>
+
+                <!-- 状态点 -->
+                <div class="status-dots">
+                    <div class="status-dot"></div>
+                    <div class="status-dot"></div>
+                    <div class="status-dot"></div>
+                </div>
+
+                <!-- 终端光标 -->
+                <div class="terminal-cursor"></div>
+
+                <!-- 版本显示 -->
+                <div class="version-display">v2.1.0-debug</div>
+
+                <!-- 进度指示器 -->
+                <div class="progress-indicators">
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 侧边栏内容 -->
+            <div class="sidebar-content">
+                <div class="brand-area">
+                    <div class="brand-icon">DD</div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 14px;">DEBUG PLATFORM</div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.7);">v2.1.0</div>
+                    </div>
+                </div>
+
+                <nav>
+                    <div class="nav-item active">
+                        <span>📊</span>
+                        <span>工作区概览</span>
+                    </div>
+                    <div class="nav-item">
+                        <span>🚀</span>
+                        <span>应用管理</span>
+                    </div>
+                    <div class="nav-item">
+                        <span>🖥️</span>
+                        <span>服务器管理</span>
+                    </div>
+                    <div class="nav-item">
+                        <span>📈</span>
+                        <span>监控中心</span>
+                    </div>
+                    <div class="nav-item">
+                        <span>⚡</span>
+                        <span>SSH终端</span>
+                    </div>
+                </nav>
+            </div>
+        </div>
+
+        <div class="description">
+            <h1>极简终端背景设计</h1>
+            <p>采用极简主义设计理念，保持终端调试主题的同时提供清爽、专业的视觉体验。</p>
+
+            <h2>设计特点</h2>
+            <div class="features">
+                <div class="feature">
+                    <span class="feature-icon">✨</span>
+                    <span>极简代码片段 - 精简的代码行，低透明度不干扰阅读</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">📏</span>
+                    <span>简约连接线 - 细线条设计，营造简洁的连接感</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🎯</span>
+                    <span>状态指示点 - 三色小点表示系统状态</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">📊</span>
+                    <span>垂直进度条 - 左侧细长进度条模拟系统负载</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">💫</span>
+                    <span>微交互动画 - 悬停时品牌区域颜色渐变</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🎨</span>
+                    <span>灰度色调 - 以灰色为主，绿色为辅的配色方案</span>
+                </div>
+            </div>
+
+            <h2>技术实现</h2>
+            <p>使用低透明度和缓慢的动画效果，所有背景元素都经过精心调校，确保不会干扰用户操作。悬停交互提供恰到好处的反馈。</p>
+
+            <p><strong>适用场景:</strong> 适合注重简洁和专业感的团队，强调功能性和可用性。</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员工作台 - Dev Debug Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="admin_dashboard_theme.css">
+    <style>
+        /* 自定义样式 */
+        .grid-auto-fit {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .server-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, var(--card) 0%, oklch(from var(--card) l c h / 0.95) 100%);
+            backdrop-filter: blur(10px);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .chart-container {
+            height: 200px;
+            background: linear-gradient(135deg, var(--muted) 0%, oklch(from var(--muted) l c h / 0.5) 100%);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .trend-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60%;
+            background: linear-gradient(45deg, transparent 0%, var(--primary) 50%, transparent 100%);
+            opacity: 0.3;
+            clip-path: polygon(0 100%, 10% 80%, 20% 85%, 30% 70%, 40% 75%, 50% 60%, 60% 65%, 70% 50%, 80% 55%, 90% 40%, 100% 45%, 100% 100%);
+        }
+
+        .activity-timeline {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            border-left: 2px solid var(--border);
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .activity-item::before {
+            content: '';
+            position: absolute;
+            left: -5px;
+            top: 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary);
+        }
+
+        .view-toggle {
+            background: var(--secondary);
+            border-radius: var(--radius);
+            padding: 0.25rem;
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .view-toggle button {
+            padding: 0.5rem 1rem;
+            border-radius: calc(var(--radius) - 0.25rem);
+            border: none;
+            background: transparent;
+            color: var(--muted-foreground);
+            cursor: pointer;
+            transition: all var(--duration-fast) ease;
+        }
+
+        .view-toggle button.active {
+            background: var(--primary);
+            color: var(--primary-foreground);
+        }
+
+        /* 响应式网格 */
+        @media (max-width: 1200px) {
+            .server-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .server-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header class="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <!-- 左侧标题 -->
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                            <i data-lucide="shield-check" class="w-5 h-5 text-primary-foreground"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-semibold text-foreground">管理员控制台</h1>
+                            <p class="text-sm text-muted-foreground">Dev Debug Platform</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧操作 -->
+                <div class="flex items-center gap-3">
+                    <!-- 通知 -->
+                    <button class="relative p-2 rounded-lg hover:bg-secondary transition-colors">
+                        <i data-lucide="bell" class="w-5 h-5 text-muted-foreground"></i>
+                        <span class="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full"></span>
+                    </button>
+
+                    <!-- 设置 -->
+                    <button class="p-2 rounded-lg hover:bg-secondary transition-colors">
+                        <i data-lucide="settings" class="w-5 h-5 text-muted-foreground"></i>
+                    </button>
+
+                    <!-- 用户菜单 -->
+                    <div class="flex items-center gap-2 px-3 py-2 bg-secondary rounded-lg">
+                        <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                            <span class="text-sm font-medium text-primary-foreground">A</span>
+                        </div>
+                        <span class="text-sm font-medium">Admin</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted-foreground"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        <!-- 系统概览卡片 -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 stagger-children">
+            <!-- 服务器总览 -->
+            <div class="dashboard-card metric-card">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="p-2 bg-primary/10 rounded-lg">
+                        <i data-lucide="server" class="w-5 h-5 text-primary"></i>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="status-dot bg-success"></span>
+                        <span class="status-dot bg-warning"></span>
+                        <span class="status-dot bg-danger"></span>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <h3 class="text-2xl font-bold text-foreground">8台</h3>
+                    <p class="text-sm text-muted-foreground">服务器总数</p>
+                    <p class="text-xs text-muted-foreground">🟢6 🟡1 🔴1</p>
+                </div>
+            </div>
+
+            <!-- 用户统计 -->
+            <div class="dashboard-card metric-card">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="p-2 bg-info/10 rounded-lg">
+                        <i data-lucide="users" class="w-5 h-5 text-info"></i>
+                    </div>
+                    <span class="text-xs text-success">+12%</span>
+                </div>
+                <div class="space-y-1">
+                    <h3 class="text-2xl font-bold text-foreground">45人</h3>
+                    <p class="text-sm text-muted-foreground">注册用户</p>
+                    <p class="text-xs text-muted-foreground">在线: 12人</p>
+                </div>
+            </div>
+
+            <!-- 应用统计 -->
+            <div class="dashboard-card metric-card">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="p-2 bg-accent/10 rounded-lg">
+                        <i data-lucide="layers" class="w-5 h-5 text-accent"></i>
+                    </div>
+                    <span class="text-xs text-success">+5</span>
+                </div>
+                <div class="space-y-1">
+                    <h3 class="text-2xl font-bold text-foreground">23个</h3>
+                    <p class="text-sm text-muted-foreground">运行应用</p>
+                    <p class="text-xs text-muted-foreground">活跃: 18个</p>
+                </div>
+            </div>
+
+            <!-- 告警统计 -->
+            <div class="dashboard-card metric-card">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="p-2 bg-destructive/10 rounded-lg">
+                        <i data-lucide="alert-triangle" class="w-5 h-5 text-destructive"></i>
+                    </div>
+                    <span class="text-xs text-destructive">需关注</span>
+                </div>
+                <div class="space-y-1">
+                    <h3 class="text-2xl font-bold text-foreground">3个</h3>
+                    <p class="text-sm text-muted-foreground">活跃告警</p>
+                    <p class="text-xs text-muted-foreground">🔴高:1 🟡中:2</p>
+                </div>
+            </div>
+
+            <!-- 系统健康度 -->
+            <div class="dashboard-card metric-card">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="p-2 bg-success/10 rounded-lg">
+                        <i data-lucide="activity" class="w-5 h-5 text-success"></i>
+                    </div>
+                    <span class="text-xs text-success">良好</span>
+                </div>
+                <div class="space-y-2">
+                    <h3 class="text-2xl font-bold text-foreground">85%</h3>
+                    <p class="text-sm text-muted-foreground">系统健康度</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill progress-cpu-low" style="width: 85%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 多服务器监控面板 -->
+        <section class="space-y-6">
+            <!-- 面板标题和控制 -->
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-semibold text-foreground flex items-center gap-2">
+                        <i data-lucide="monitor" class="w-5 h-5"></i>
+                        多服务器监控面板
+                    </h2>
+                    <p class="text-sm text-muted-foreground mt-1">实时监控所有服务器运行状态</p>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <!-- 筛选器 -->
+                    <select class="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
+                        <option>全部服务器</option>
+                        <option>在线服务器</option>
+                        <option>告警服务器</option>
+                        <option>离线服务器</option>
+                    </select>
+
+                    <!-- 视图切换 -->
+                    <div class="view-toggle">
+                        <button class="active" onclick="toggleView('grid')">
+                            <i data-lucide="grid-3x3" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="toggleView('list')">
+                            <i data-lucide="list" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <!-- 刷新按钮 -->
+                    <button class="btn-secondary" onclick="refreshServers()">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        刷新
+                    </button>
+                </div>
+            </div>
+
+            <!-- 服务器网格 -->
+            <div id="serverGrid" class="server-grid">
+                <!-- Server-01 -->
+                <div class="dashboard-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-semibold text-foreground">Server-01</h3>
+                            <span class="status-indicator status-online">
+                                <span class="status-dot bg-success"></span>
+                                运行正常
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button class="p-1 hover:bg-secondary rounded transition-colors" title="详情">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                            <button class="p-1 hover:bg-secondary rounded transition-colors" title="设置">
+                                <i data-lucide="settings" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <!-- CPU使用率 -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm text-muted-foreground">CPU使用率</span>
+                                <span class="text-sm font-medium">45%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-cpu-low" style="width: 45%"></div>
+                            </div>
+                        </div>
+
+                        <!-- 内存使用率 -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm text-muted-foreground">内存使用率</span>
+                                <span class="text-sm font-medium">62%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-memory-medium" style="width: 62%"></div>
+                            </div>
+                        </div>
+
+                        <!-- 磁盘使用率 -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm text-muted-foreground">磁盘使用率</span>
+                                <span class="text-sm font-medium">23%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-disk-low" style="width: 23%"></div>
+                            </div>
+                        </div>
+
+                        <!-- 应用和用户信息 -->
+                        <div class="flex justify-between pt-2 border-t border-border">
+                            <div class="text-center">
+                                <div class="text-lg font-semibold text-foreground">3</div>
+                                <div class="text-xs text-muted-foreground">应用数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-lg font-semibold text-foreground">5</div>
+                                <div class="text-xs text-muted-foreground">用户数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-lg font-semibold text-success">99.9%</div>
+                                <div class="text-xs text-muted-foreground">可用性</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Server-02 -->
+                <div class="dashboard-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-semibold text-foreground">Server-02</h3>
+                            <span class="status-indicator status-warning">
+                                <span class="status-dot bg-warning"></span>
+                                负载较高
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button class="p-1 hover:bg-secondary rounded transition-colors" title="详情">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                            <button class="p-1 hover:bg-secondary rounded transition-colors" title="设置">
+                                <i data-lucide="settings" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm text-muted-foreground">CPU使用率</span>
+                                <span class="text-sm font-medium">89%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-cpu-high" style="width: 89%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm text-muted-foreground">内存使用率</span>
+                                <span class="text-sm font-medium">78%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-memory-high" style="width: 78%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm text-muted-foreground">磁盘使用率</span>
+                                <span class="text-sm font-medium">67%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-disk-medium" style="width: 67%"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between pt-2 border-t border-border">
+                            <div class="text-center">
+                                <div class="text-lg font-semibold text-foreground">8</div>
+                                <div class="text-xs text-muted-foreground">应用数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-lg font-semibold text-foreground">12</div>
+                                <div class="text-xs text-muted-foreground">用户数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-lg font-semibold text-warning">98.5%</div>
+                                <div class="text-xs text-muted-foreground">可用性</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Server-03 -->
+                <div class="dashboard-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-semibold text-foreground">Server-03</h3>
+                            <span class="status-indicator status-online">
+                                <span class="status-dot bg-success"></span>
+                                运行正常
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button class="p-1 hover:bg-secondary rounded transition-colors" title="详情">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                            <button class="p-1 hover:bg-secondary rounded transition-colors" title="设置">
+                                <i data-lucide="settings" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm text-muted-foreground">CPU使用率</span>
+                                <span class="text-sm font-medium">32%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-cpu-low" style="width: 32%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm text-muted-foreground">内存使用率</span>
+                                <span class="text-sm font-medium">41%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-memory-low" style="width: 41%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm text-muted-foreground">磁盘使用率</span>
+                                <span class="text-sm font-medium">18%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill progress-disk-low" style="width: 18%"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between pt-2 border-t border-border">
+                            <div class="text-center">
+                                <div class="text-lg font-semibold text-foreground">2</div>
+                                <div class="text-xs text-muted-foreground">应用数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-lg font-semibold text-foreground">3</div>
+                                <div class="text-xs text-muted-foreground">用户数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-lg font-semibold text-success">99.8%</div>
+                                <div class="text-xs text-muted-foreground">可用性</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Server-04 -->
+                <div class="dashboard-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-semibold text-foreground">Server-04</h3>
+                            <span class="status-indicator status-offline">
+                                <span class="status-dot bg-danger"></span>
+                                连接异常
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button class="p-1 hover:bg-secondary rounded transition-colors" title="详情">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                            <button class="p-1 hover:bg-secondary rounded transition-colors" title="设置">
+                                <i data-lucide="settings" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm text-muted-foreground">CPU使用率</span>
+                                <span class="text-sm font-medium text-muted-foreground">--</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill bg-muted" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm text-muted-foreground">内存使用率</span>
+                                <span class="text-sm font-medium text-muted-foreground">--</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill bg-muted" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm text-muted-foreground">磁盘使用率</span>
+                                <span class="text-sm font-medium text-muted-foreground">--</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill bg-muted" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between pt-2 border-t border-border">
+                            <div class="text-center">
+                                <div class="text-lg font-semibold text-muted-foreground">0</div>
+                                <div class="text-xs text-muted-foreground">应用数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-lg font-semibold text-muted-foreground">0</div>
+                                <div class="text-xs text-muted-foreground">用户数</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-lg font-semibold text-destructive">0%</div>
+                                <div class="text-xs text-muted-foreground">可用性</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 底部统计面板 -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- 跨服务器资源统计 -->
+            <div class="dashboard-card">
+                <h3 class="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-primary"></i>
+                    跨服务器资源统计
+                </h3>
+
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-muted-foreground">总CPU使用率</span>
+                            <span class="text-sm font-semibold text-foreground">52%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill progress-cpu-medium" style="width: 52%"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-muted-foreground">总内存使用率</span>
+                            <span class="text-sm font-semibold text-foreground">48%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill progress-memory-low" style="width: 48%"></div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-border">
+                        <h4 class="text-sm font-medium text-foreground mb-2">应用分布</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">高负载应用:</span>
+                                <span class="text-warning font-medium">3个</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">正常运行:</span>
+                                <span class="text-success font-medium">18个</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">已停止:</span>
+                                <span class="text-muted-foreground font-medium">2个</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 告警与异常 -->
+            <div class="dashboard-card">
+                <h3 class="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <i data-lucide="alert-circle" class="w-5 h-5 text-destructive"></i>
+                    告警与异常
+                </h3>
+
+                <div class="space-y-3">
+                    <div class="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="status-dot bg-destructive"></span>
+                            <span class="text-sm font-medium text-destructive">Server-04离线</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground">连接超时，请检查网络状态</p>
+                        <p class="text-xs text-muted-foreground">2分钟前</p>
+                    </div>
+
+                    <div class="p-3 bg-warning/10 border border-warning/20 rounded-lg">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="status-dot bg-warning"></span>
+                            <span class="text-sm font-medium text-warning">Server-02高负载</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground">CPU使用率持续超过85%</p>
+                        <p class="text-xs text-muted-foreground">5分钟前</p>
+                    </div>
+
+                    <div class="p-3 bg-success/10 border border-success/20 rounded-lg">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="status-dot bg-success"></span>
+                            <span class="text-sm font-medium text-success">备份任务完成</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground">所有服务器数据备份完成</p>
+                        <p class="text-xs text-muted-foreground">10分钟前</p>
+                    </div>
+                </div>
+
+                <!-- 性能趋势图 -->
+                <div class="mt-4">
+                    <h4 class="text-sm font-medium text-foreground mb-2">24小时趋势</h4>
+                    <div class="chart-container">
+                        <div class="trend-line"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="text-center">
+                                <i data-lucide="trending-up" class="w-8 h-8 text-primary mx-auto mb-2"></i>
+                                <p class="text-xs text-muted-foreground">性能趋势图</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户活动监控 -->
+            <div class="dashboard-card">
+                <h3 class="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <i data-lucide="users" class="w-5 h-5 text-info"></i>
+                    用户活动监控
+                </h3>
+
+                <div class="space-y-4">
+                    <!-- 最近3天活跃度 -->
+                    <div>
+                        <h4 class="text-sm font-medium text-foreground mb-3">最近3天活跃度</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-muted-foreground">今天</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-medium text-foreground">45人</span>
+                                    <span class="text-xs text-success">(+12%)</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-muted-foreground">昨天</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-medium text-foreground">38人</span>
+                                    <span class="text-xs text-destructive">(-5%)</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-muted-foreground">前天</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-medium text-foreground">42人</span>
+                                    <span class="text-xs text-success">(+8%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 服务器用户分布 -->
+                    <div class="pt-4 border-t border-border">
+                        <h4 class="text-sm font-medium text-foreground mb-3">服务器用户分布</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">Server-01:</span>
+                                <span class="font-medium">5人</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">Server-02:</span>
+                                <span class="font-medium">12人</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">Server-03:</span>
+                                <span class="font-medium">3人</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">其他服务器:</span>
+                                <span class="font-medium">25人</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 最近活动 -->
+                    <div class="pt-4 border-t border-border">
+                        <h4 class="text-sm font-medium text-foreground mb-3">最近活动</h4>
+                        <div class="activity-timeline">
+                            <div class="activity-item">
+                                <p class="text-xs text-muted-foreground">10:30 用户登录</p>
+                            </div>
+                            <div class="activity-item">
+                                <p class="text-xs text-muted-foreground">10:25 应用启动</p>
+                            </div>
+                            <div class="activity-item">
+                                <p class="text-xs text-muted-foreground">10:20 服务器连接测试</p>
+                            </div>
+                            <div class="activity-item">
+                                <p class="text-xs text-muted-foreground">10:15 配置更新</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 浮动操作按钮 -->
+    <div class="floating-actions">
+        <button class="floating-btn" title="刷新数据" onclick="refreshData()">
+            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+        </button>
+        <button class="floating-btn" title="添加服务器" onclick="addServer()">
+            <i data-lucide="server" class="w-5 h-5"></i>
+        </button>
+        <button class="floating-btn" title="添加用户" onclick="addUser()">
+            <i data-lucide="user-plus" class="w-5 h-5"></i>
+        </button>
+        <button class="floating-btn" title="系统设置" onclick="openSettings()">
+            <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+        <button class="floating-btn" title="导出报告" onclick="exportReport()">
+            <i data-lucide="download" class="w-5 h-5"></i>
+        </button>
+    </div>
+
+    <script>
+        // 初始化Lucide图标
+        lucide.createIcons();
+
+        // 视图切换功能
+        function toggleView(view) {
+            const buttons = document.querySelectorAll('.view-toggle button');
+            const serverGrid = document.getElementById('serverGrid');
+
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.closest('button').classList.add('active');
+
+            if (view === 'list') {
+                serverGrid.className = 'space-y-4';
+                // 这里可以添加列表视图的样式
+            } else {
+                serverGrid.className = 'server-grid';
+            }
+        }
+
+        // 刷新服务器数据
+        function refreshServers() {
+            // 添加加载动画
+            const btn = event.target.closest('button');
+            const icon = btn.querySelector('i');
+            icon.style.animation = 'spin 1s linear infinite';
+
+            setTimeout(() => {
+                icon.style.animation = '';
+                // 这里可以添加实际的数据刷新逻辑
+            }, 1000);
+        }
+
+        // 浮动按钮功能
+        function refreshData() {
+            console.log('刷新数据');
+        }
+
+        function addServer() {
+            console.log('添加服务器');
+        }
+
+        function addUser() {
+            console.log('添加用户');
+        }
+
+        function openSettings() {
+            console.log('打开设置');
+        }
+
+        function exportReport() {
+            console.log('导出报告');
+        }
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            // 添加渐入动画类
+            document.body.classList.add('fade-in-up');
+
+            // 模拟数据加载动画
+            setTimeout(() => {
+                const cards = document.querySelectorAll('.dashboard-card');
+                cards.forEach((card, index) => {
+                    card.style.animationDelay = `${index * 100}ms`;
+                    card.classList.add('fade-in-up');
+                });
+            }, 200);
+        });
+
+        // 键盘快捷键支持
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'r':
+                        e.preventDefault();
+                        refreshData();
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        addServer();
+                        break;
+                }
+            }
+        });
+
+        // 自动刷新功能
+        setInterval(() => {
+            // 这里可以添加定期刷新数据的逻辑
+            // 例如更新服务器状态、用户在线状态等
+        }, 30000); // 每30秒刷新一次
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </script>
+</body>
+</html>

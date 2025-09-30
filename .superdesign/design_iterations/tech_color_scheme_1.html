@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>科技感配色方案 - 赛博朋克</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+            height: 100vh;
+            overflow: hidden;
+            background: #0a0a0f;
+        }
+
+        /* 方案4：赛博朋克风格 - 深空黑 + 霓虹渐变 */
+        .tech-scheme-1 {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            grid-template-rows: 64px 1fr;
+            grid-template-areas: "sidebar header" "sidebar content";
+            height: 100vh;
+        }
+
+        .tech-header-1 {
+            grid-area: header;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #00ffff;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            border-bottom: 2px solid transparent;
+            background-clip: padding-box;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tech-header-1::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #ff006e, #00f5ff, #7209b7, #00ff41);
+            background-size: 300% 100%;
+            animation: techGlow 3s linear infinite;
+        }
+
+        .tech-header-1::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 98px,
+                rgba(0, 255, 255, 0.03) 100px
+            );
+            pointer-events: none;
+        }
+
+        @keyframes techGlow {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 300% 0%; }
+        }
+
+        .tech-sidebar-1 {
+            grid-area: sidebar;
+            background: linear-gradient(180deg, #0f0f23 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            border-right: 1px solid #00ffff;
+            box-shadow:
+                4px 0 16px rgba(0, 255, 255, 0.1),
+                inset -1px 0 0 rgba(0, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 16px;
+            position: relative;
+        }
+
+        .tech-sidebar-1::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00ffff, transparent);
+        }
+
+        .tech-content-1 {
+            grid-area: content;
+            background: radial-gradient(ellipse at top, #0a0a0f 0%, #000000 100%);
+            color: #ffffff;
+            padding: 32px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .tech-content-1::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(0, 255, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 0, 110, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* 品牌区域 */
+        .tech-brand-1 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            background: rgba(0, 255, 255, 0.05);
+            border: 1px solid #00ffff;
+            box-shadow:
+                0 0 20px rgba(0, 255, 255, 0.1),
+                inset 0 1px 0 rgba(0, 255, 255, 0.2);
+        }
+
+        .tech-brand-icon-1 {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #00ffff, #ff006e);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            animation: iconPulse 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes iconPulse {
+            0% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.5); }
+            100% { box-shadow: 0 0 30px rgba(0, 255, 255, 0.8); }
+        }
+
+        /* 导航项目 */
+        .tech-nav-1 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tech-nav-1::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .tech-nav-1:hover {
+            background: rgba(0, 255, 255, 0.1);
+            border-color: #00ffff;
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .tech-nav-1:hover::before {
+            left: 100%;
+        }
+
+        .tech-nav-1.active {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 110, 0.1));
+            border-color: #00ffff;
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            box-shadow:
+                0 0 20px rgba(0, 255, 255, 0.2),
+                inset 0 1px 0 rgba(0, 255, 255, 0.3);
+        }
+
+        /* Header 工具栏 */
+        .tech-toolbar-1 {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-left: auto;
+        }
+
+        .tech-btn-1 {
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid #00ffff;
+            color: #00ffff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tech-btn-1::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.3), transparent);
+            transition: left 0.3s ease;
+        }
+
+        .tech-btn-1:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+        }
+
+        .tech-btn-1:hover::before {
+            left: 100%;
+        }
+
+        /* 内容区域卡片 */
+        .tech-card-1 {
+            background: linear-gradient(135deg, rgba(15, 15, 35, 0.8), rgba(26, 26, 46, 0.6));
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tech-card-1::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00ffff, transparent);
+        }
+
+        .tech-card-1:hover {
+            transform: translateY(-4px);
+            border-color: #00ffff;
+            box-shadow:
+                0 8px 32px rgba(0, 255, 255, 0.2),
+                0 0 0 1px rgba(0, 255, 255, 0.1);
+        }
+
+        .scheme-title {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #ff006e, #00ffff);
+            color: black;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            animation: titleGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes titleGlow {
+            0% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.5); }
+            100% { box-shadow: 0 0 30px rgba(255, 0, 110, 0.8); }
+        }
+
+        /* 扫描线效果 */
+        .scan-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ffff, transparent);
+            animation: scan 4s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+
+        /* 数据流效果 */
+        .data-stream {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #00ffff;
+            font-size: 10px;
+            opacity: 0.3;
+            animation: dataFlow 3s linear infinite;
+        }
+
+        @keyframes dataFlow {
+            0% { opacity: 0; transform: translateY(-50%) translateX(20px); }
+            50% { opacity: 0.6; }
+            100% { opacity: 0; transform: translateY(-50%) translateX(-20px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="scheme-title">科技方案1：赛博朋克</div>
+    <div class="scan-line"></div>
+
+    <div class="tech-scheme-1">
+        <header class="tech-header-1">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 18px;">▣</span>
+                <span style="font-weight: 600; text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);">DEV DEBUG PLATFORM</span>
+            </div>
+            <div class="data-stream">01001101 01000001 01010100</div>
+            <div class="tech-toolbar-1">
+                <button class="tech-btn-1">◉ ALERT</button>
+                <button class="tech-btn-1">◎ USER</button>
+                <button class="tech-btn-1">⚡ SYS</button>
+            </div>
+        </header>
+
+        <aside class="tech-sidebar-1">
+            <div class="tech-brand-1">
+                <div class="tech-brand-icon-1">DD</div>
+                <div>
+                    <div style="font-weight: 600; font-size: 14px; color: #00ffff;">DEBUG PLATFORM</div>
+                    <div style="font-size: 12px; color: #888; font-family: monospace;">v2.1.0-BETA</div>
+                </div>
+            </div>
+
+            <nav>
+                <div class="tech-nav-1 active">
+                    <span>◈</span>
+                    <span>WORKSPACE_OVERVIEW</span>
+                </div>
+                <div class="tech-nav-1">
+                    <span>◢</span>
+                    <span>APP_MANAGEMENT</span>
+                </div>
+                <div class="tech-nav-1">
+                    <span>◣</span>
+                    <span>SERVER_CONTROL</span>
+                </div>
+                <div class="tech-nav-1">
+                    <span>◤</span>
+                    <span>MONITOR_CENTER</span>
+                </div>
+                <div class="tech-nav-1">
+                    <span>◥</span>
+                    <span>SSH_TERMINAL</span>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="tech-content-1">
+            <h1 style="margin-bottom: 24px; color: #00ffff; text-shadow: 0 0 10px rgba(0, 255, 255, 0.5); font-family: monospace;">
+                &gt; WORKSPACE.OVERVIEW
+            </h1>
+
+            <div class="tech-card-1">
+                <h3 style="margin-bottom: 12px; color: #00ffff; display: flex; align-items: center; gap: 8px;">
+                    <span style="color: #00ff41;">●</span>
+                    SYSTEM.STATUS
+                </h3>
+                <p style="color: #b0b0b0; font-family: monospace;">
+                    [√] ALL_SERVICES_ONLINE | LAST_UPDATE: 00:02:15
+                </p>
+            </div>
+
+            <div class="tech-card-1">
+                <h3 style="margin-bottom: 12px; color: #00ffff; display: flex; align-items: center; gap: 8px;">
+                    <span style="color: #ff006e;">●</span>
+                    ACTIVE.APPLICATIONS
+                </h3>
+                <p style="color: #b0b0b0; font-family: monospace;">
+                    [INFO] RUNNING_INSTANCES: 5 | STATUS: OPERATIONAL
+                </p>
+            </div>
+
+            <div class="tech-card-1">
+                <h3 style="margin-bottom: 12px; color: #00ffff; display: flex; align-items: center; gap: 8px;">
+                    <span style="color: #ffff00;">●</span>
+                    RESOURCE.USAGE
+                </h3>
+                <p style="color: #b0b0b0; font-family: monospace;">
+                    CPU: 45% | MEM: 67% | DISK: 32% | NET: OPTIMAL
+                </p>
+                <div style="margin-top: 12px; display: flex; gap: 2px; height: 8px;">
+                    <div style="background: linear-gradient(90deg, #00ffff, #ff006e); width: 45%; border-radius: 1px;"></div>
+                    <div style="background: linear-gradient(90deg, #ff006e, #ffff00); width: 22%; border-radius: 1px;"></div>
+                    <div style="background: rgba(255, 255, 255, 0.1); width: 33%; border-radius: 1px;"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

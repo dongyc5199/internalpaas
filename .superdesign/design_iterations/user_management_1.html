@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - Dev Debug Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="user_management_theme.css">
+    <style>
+        /* 布局样式 */
+        .user-layout {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .user-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* 统计卡片网格 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        /* 用户表格视图 */
+        .list-view .user-container {
+            display: block;
+        }
+
+        /* 权限编辑器 */
+        .permission-editor {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        /* 活动热图容器 */
+        .activity-chart {
+            height: 120px;
+            background: linear-gradient(135deg, var(--muted) 0%, oklch(from var(--muted) l c h / 0.5) 100%);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 角色分布饼图 */
+        .role-distribution {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .role-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--secondary);
+            border-radius: calc(var(--radius) - 0.25rem);
+            font-size: 0.875rem;
+        }
+
+        .role-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* 表单验证状态 */
+        .form-input.error {
+            border-color: var(--destructive);
+            box-shadow: 0 0 0 3px oklch(from var(--destructive) l c h / 0.1);
+        }
+
+        .form-input.success {
+            border-color: var(--status-online);
+            box-shadow: 0 0 0 3px oklch(from var(--status-online) l c h / 0.1);
+        }
+
+        .form-error {
+            color: var(--destructive);
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        /* 密码强度指示器 */
+        .password-strength {
+            display: flex;
+            gap: 2px;
+            margin-top: 0.5rem;
+        }
+
+        .strength-bar {
+            height: 4px;
+            flex: 1;
+            background: var(--muted);
+            border-radius: 2px;
+            transition: background-color 0.3s ease;
+        }
+
+        .strength-bar.active.weak {
+            background: var(--destructive);
+        }
+
+        .strength-bar.active.medium {
+            background: var(--status-pending);
+        }
+
+        .strength-bar.active.strong {
+            background: var(--status-online);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header class="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <!-- 面包屑导航 -->
+                <div class="flex items-center gap-2">
+                    <a href="#" class="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+                        <i data-lucide="home" class="w-4 h-4"></i>
+                        首页
+                    </a>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-muted-foreground"></i>
+                    <span class="font-medium text-foreground">用户管理</span>
+                </div>
+
+                <!-- 操作区域 -->
+                <div class="flex items-center gap-4">
+                    <!-- 搜索框 -->
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground"></i>
+                        <input type="text" class="search-input pl-10" placeholder="搜索用户..." id="searchInput">
+                    </div>
+
+                    <!-- 角色筛选 -->
+                    <select class="search-input" id="roleFilter">
+                        <option value="all">全部角色</option>
+                        <option value="super-admin">超级管理员</option>
+                        <option value="admin">管理员</option>
+                        <option value="developer">开发者</option>
+                    </select>
+
+                    <!-- 状态筛选 -->
+                    <select class="search-input" id="statusFilter">
+                        <option value="all">全部状态</option>
+                        <option value="online">在线用户</option>
+                        <option value="offline">离线用户</option>
+                        <option value="disabled">已禁用</option>
+                    </select>
+
+                    <!-- 新建用户 -->
+                    <button class="add-user-btn" onclick="openAddUserModal()">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                        新建用户
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        <!-- 用户统计概览 -->
+        <section class="stats-grid fade-in">
+            <div class="stats-card">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2 bg-primary/10 rounded-lg">
+                        <i data-lucide="users" class="w-5 h-5 text-primary"></i>
+                    </div>
+                    <div class="stats-trend positive">
+                        <i data-lucide="trending-up" class="w-3 h-3"></i>
+                        +8人
+                    </div>
+                </div>
+                <div class="stats-number">45</div>
+                <div class="stats-label">用户总数</div>
+                <div class="text-xs text-muted-foreground mt-1">最近登录: 今日12人</div>
+            </div>
+
+            <div class="stats-card">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2 bg-role-admin/10 rounded-lg">
+                        <i data-lucide="crown" class="w-5 h-5" style="color: var(--role-admin)"></i>
+                    </div>
+                    <div class="text-xs text-muted-foreground">角色分布</div>
+                </div>
+                <div class="role-distribution">
+                    <div class="role-item">
+                        <div class="role-dot" style="background: var(--role-super-admin)"></div>
+                        <span>超管: 1人</span>
+                    </div>
+                    <div class="role-item">
+                        <div class="role-dot" style="background: var(--role-admin)"></div>
+                        <span>管理员: 3人</span>
+                    </div>
+                    <div class="role-item">
+                        <div class="role-dot" style="background: var(--role-developer)"></div>
+                        <span>开发者: 41人</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-card">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2 bg-status-online/10 rounded-lg">
+                        <i data-lucide="activity" class="w-5 h-5" style="color: var(--status-online)"></i>
+                    </div>
+                    <div class="text-xs text-muted-foreground">实时状态</div>
+                </div>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-muted-foreground">🟢 在线:</span>
+                        <span class="font-medium text-status-online">12人</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-muted-foreground">🟡 离线:</span>
+                        <span class="font-medium text-status-offline">28人</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-muted-foreground">🔴 禁用:</span>
+                        <span class="font-medium text-status-disabled">5人</span>
+                    </div>
+                    <div class="text-xs text-muted-foreground">平均在线率: 27%</div>
+                </div>
+            </div>
+
+            <div class="stats-card">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2 bg-accent/10 rounded-lg">
+                        <i data-lucide="trending-up" class="w-5 h-5 text-accent"></i>
+                    </div>
+                    <div class="stats-trend positive">
+                        <span>本月</span>
+                    </div>
+                </div>
+                <div class="stats-number text-accent">+8</div>
+                <div class="stats-label">新增用户</div>
+                <div class="activity-chart mt-3">
+                    <div class="text-center">
+                        <i data-lucide="bar-chart-3" class="w-6 h-6 text-muted-foreground mx-auto mb-1"></i>
+                        <p class="text-xs text-muted-foreground">用户增长趋势</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 视图切换器 -->
+        <section class="flex items-center justify-between">
+            <div class="view-switcher">
+                <button class="active" onclick="switchView('card')" data-view="card">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    卡片视图
+                </button>
+                <button onclick="switchView('list')" data-view="list">
+                    <i data-lucide="list" class="w-4 h-4"></i>
+                    列表视图
+                </button>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    <span>显示 <span id="visibleCount">45</span> 个用户</span>
+                </div>
+                <button class="user-action-btn" onclick="refreshUsers()">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    刷新
+                </button>
+            </div>
+        </section>
+
+        <!-- 用户管理区域 -->
+        <section class="user-layout" id="userLayout">
+            <!-- 用户列表区域 -->
+            <div class="user-container" id="userContainer">
+                <div class="user-grid stagger-animation" id="userGrid">
+                    <!-- 当前用户 Admin -->
+                    <div class="user-card current-user" onclick="selectUser(this, 'admin')" data-user="admin" data-role="super-admin" data-status="online">
+                        <div class="current-user-badge mb-3">
+                            <i data-lucide="user-check" class="w-3 h-3"></i>
+                            当前用户
+                        </div>
+
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="user-avatar" style="background: var(--role-super-admin)">
+                                <span>A</span>
+                                <div class="user-status online"></div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h3 class="font-semibold text-foreground">Admin</h3>
+                                    <div class="role-badge super-admin">
+                                        <i data-lucide="crown" class="w-3 h-3"></i>
+                                        超级管理员
+                                    </div>
+                                </div>
+                                <p class="text-sm text-muted-foreground">admin@dev.com</p>
+                                <div class="status-text online">
+                                    <i data-lucide="circle" class="w-3 h-3"></i>
+                                    在线
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 text-sm mb-4">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">最后登录:</span>
+                                <span class="font-medium text-status-online">刚刚</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">创建时间:</span>
+                                <span class="font-medium">2024-01-15</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">登录次数:</span>
+                                <span class="font-medium">1,247次</span>
+                            </div>
+                        </div>
+
+                        <div class="protected-notice mb-4">
+                            <i data-lucide="shield-check" class="w-4 h-4"></i>
+                            <span>受保护账户，无法删除</span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button class="user-action-btn">
+                                <i data-lucide="user" class="w-4 h-4"></i>
+                                详情
+                            </button>
+                            <button class="user-action-btn">
+                                <i data-lucide="edit" class="w-4 h-4"></i>
+                                编辑
+                            </button>
+                            <button class="user-action-btn">
+                                <i data-lucide="key" class="w-4 h-4"></i>
+                                重置密码
+                            </button>
+                            <button class="user-action-btn disabled" disabled>
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                删除
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 普通用户 Alice -->
+                    <div class="user-card" onclick="selectUser(this, 'alice')" data-user="alice" data-role="developer" data-status="online">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="user-avatar" style="background: var(--role-developer)">
+                                <span>A</span>
+                                <div class="user-status online"></div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h3 class="font-semibold text-foreground">Alice</h3>
+                                    <div class="role-badge developer">
+                                        <i data-lucide="code" class="w-3 h-3"></i>
+                                        开发者
+                                    </div>
+                                </div>
+                                <p class="text-sm text-muted-foreground">alice@dev.com</p>
+                                <div class="status-text online">
+                                    <i data-lucide="circle" class="w-3 h-3"></i>
+                                    在线
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 text-sm mb-4">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">最后登录:</span>
+                                <span class="font-medium text-status-online">10分钟前</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">创建时间:</span>
+                                <span class="font-medium">2024-03-15</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">创建应用:</span>
+                                <span class="font-medium">5个</span>
+                            </div>
+                        </div>
+
+                        <div class="activity-indicator high mb-4">
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                            <span>活跃用户</span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button class="user-action-btn">
+                                <i data-lucide="user" class="w-4 h-4"></i>
+                                详情
+                            </button>
+                            <button class="user-action-btn">
+                                <i data-lucide="edit" class="w-4 h-4"></i>
+                                编辑
+                            </button>
+                            <button class="user-action-btn">
+                                <i data-lucide="user-x" class="w-4 h-4"></i>
+                                禁用
+                            </button>
+                            <button class="user-action-btn danger">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                删除
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 离线用户 Bob -->
+                    <div class="user-card" onclick="selectUser(this, 'bob')" data-user="bob" data-role="developer" data-status="offline">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="user-avatar" style="background: var(--role-developer)">
+                                <span>B</span>
+                                <div class="user-status offline"></div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h3 class="font-semibold text-foreground">Bob</h3>
+                                    <div class="role-badge developer">
+                                        <i data-lucide="code" class="w-3 h-3"></i>
+                                        开发者
+                                    </div>
+                                </div>
+                                <p class="text-sm text-muted-foreground">bob@dev.com</p>
+                                <div class="status-text offline">
+                                    <i data-lucide="circle" class="w-3 h-3"></i>
+                                    离线 (2小时前)
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 text-sm mb-4">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">最后登录:</span>
+                                <span class="font-medium text-muted-foreground">2小时前</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">创建时间:</span>
+                                <span class="font-medium">2024-02-20</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">创建应用:</span>
+                                <span class="font-medium">12个</span>
+                            </div>
+                        </div>
+
+                        <div class="activity-indicator medium mb-4">
+                            <i data-lucide="clock" class="w-4 h-4"></i>
+                            <span>一般活跃</span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button class="user-action-btn">
+                                <i data-lucide="user" class="w-4 h-4"></i>
+                                详情
+                            </button>
+                            <button class="user-action-btn">
+                                <i data-lucide="edit" class="w-4 h-4"></i>
+                                编辑
+                            </button>
+                            <button class="user-action-btn">
+                                <i data-lucide="user-x" class="w-4 h-4"></i>
+                                禁用
+                            </button>
+                            <button class="user-action-btn danger">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                删除
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 被禁用用户 Charlie -->
+                    <div class="user-card disabled" onclick="selectUser(this, 'charlie')" data-user="charlie" data-role="admin" data-status="disabled">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="user-avatar" style="background: var(--status-disabled)">
+                                <span>C</span>
+                                <div class="user-status disabled"></div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h3 class="font-semibold text-foreground">Charlie</h3>
+                                    <div class="role-badge admin">
+                                        <i data-lucide="shield" class="w-3 h-3"></i>
+                                        管理员
+                                    </div>
+                                </div>
+                                <p class="text-sm text-muted-foreground">charlie@dev.com</p>
+                                <div class="status-text disabled">
+                                    <i data-lucide="ban" class="w-3 h-3"></i>
+                                    已禁用
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 text-sm mb-4">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">最后登录:</span>
+                                <span class="font-medium text-muted-foreground">1天前</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">禁用时间:</span>
+                                <span class="font-medium text-status-disabled">12小时前</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">禁用原因:</span>
+                                <span class="font-medium text-status-disabled">违规操作</span>
+                            </div>
+                        </div>
+
+                        <div class="activity-indicator low mb-4">
+                            <i data-lucide="slash" class="w-4 h-4"></i>
+                            <span>账户已禁用</span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button class="user-action-btn">
+                                <i data-lucide="user" class="w-4 h-4"></i>
+                                详情
+                            </button>
+                            <button class="user-action-btn">
+                                <i data-lucide="edit" class="w-4 h-4"></i>
+                                编辑
+                            </button>
+                            <button class="user-action-btn" style="background: var(--status-online); color: white;">
+                                <i data-lucide="user-check" class="w-4 h-4"></i>
+                                启用
+                            </button>
+                            <button class="user-action-btn danger">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                删除
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 普通开发者 Dave -->
+                    <div class="user-card" onclick="selectUser(this, 'dave')" data-user="dave" data-role="developer" data-status="online">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="user-avatar" style="background: var(--role-developer)">
+                                <span>D</span>
+                                <div class="user-status online"></div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h3 class="font-semibold text-foreground">Dave</h3>
+                                    <div class="role-badge developer">
+                                        <i data-lucide="code" class="w-3 h-3"></i>
+                                        开发者
+                                    </div>
+                                </div>
+                                <p class="text-sm text-muted-foreground">dave@dev.com</p>
+                                <div class="status-text online">
+                                    <i data-lucide="circle" class="w-3 h-3"></i>
+                                    在线
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 text-sm mb-4">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">最后登录:</span>
+                                <span class="font-medium text-status-online">5分钟前</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">创建时间:</span>
+                                <span class="font-medium">2024-04-10</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">创建应用:</span>
+                                <span class="font-medium">3个</span>
+                            </div>
+                        </div>
+
+                        <div class="activity-indicator medium mb-4">
+                            <i data-lucide="activity" class="w-4 h-4"></i>
+                            <span>正常活跃</span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button class="user-action-btn">
+                                <i data-lucide="user" class="w-4 h-4"></i>
+                                详情
+                            </button>
+                            <button class="user-action-btn">
+                                <i data-lucide="edit" class="w-4 h-4"></i>
+                                编辑
+                            </button>
+                            <button class="user-action-btn">
+                                <i data-lucide="user-x" class="w-4 h-4"></i>
+                                禁用
+                            </button>
+                            <button class="user-action-btn danger">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                删除
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分页 -->
+                <div class="flex items-center justify-between mt-8">
+                    <div class="text-sm text-muted-foreground">
+                        显示第 1-5 项，共 45 项
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="user-action-btn" disabled>
+                            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                        </button>
+                        <button class="user-action-btn" style="background: var(--primary); color: var(--primary-foreground);">1</button>
+                        <button class="user-action-btn">2</button>
+                        <button class="user-action-btn">3</button>
+                        <button class="user-action-btn">
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 详情面板 -->
+            <div class="detail-panel empty" id="detailPanel">
+                <div>
+                    <i data-lucide="user-circle" class="w-12 h-12 text-muted-foreground mx-auto mb-4"></i>
+                    <h3 class="text-lg font-semibold text-foreground mb-2">选择用户</h3>
+                    <p class="text-sm text-muted-foreground">点击左侧任一用户查看详细信息和权限配置</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 新建用户弹窗 -->
+    <div class="modal" id="addUserModal">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-semibold text-foreground">新建平台用户</h2>
+                <button onclick="closeAddUserModal()" class="p-2 hover:bg-secondary rounded-lg transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form class="space-y-6" id="addUserForm">
+                <!-- 基本信息 -->
+                <div class="form-group">
+                    <h3 class="text-sm font-medium text-foreground mb-4">基本信息</h3>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="form-label">用户名</label>
+                                <input type="text" class="form-input" placeholder="alice_new" required id="username">
+                                <div class="form-error" id="usernameError"></div>
+                            </div>
+                            <div>
+                                <label class="form-label">显示名称</label>
+                                <input type="text" class="form-input" placeholder="Alice New" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label">邮箱地址</label>
+                            <input type="email" class="form-input" placeholder="alice.new@dev.com" required id="email">
+                            <div class="form-error" id="emailError"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="form-label">初始密码</label>
+                                <input type="password" class="form-input" placeholder="请输入初始密码" required id="password">
+                                <div class="password-strength">
+                                    <div class="strength-bar"></div>
+                                    <div class="strength-bar"></div>
+                                    <div class="strength-bar"></div>
+                                    <div class="strength-bar"></div>
+                                </div>
+                                <div class="form-error" id="passwordError"></div>
+                            </div>
+                            <div>
+                                <label class="form-label">确认密码</label>
+                                <input type="password" class="form-input" placeholder="再次输入密码" required id="confirmPassword">
+                                <div class="form-error" id="confirmPasswordError"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 角色权限 -->
+                <div class="form-group">
+                    <h3 class="text-sm font-medium text-foreground mb-4">角色权限</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="form-label">用户角色</label>
+                            <div class="flex gap-4">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="role" value="developer" checked class="w-4 h-4">
+                                    <div class="role-badge developer">
+                                        <i data-lucide="code" class="w-3 h-3"></i>
+                                        开发者
+                                    </div>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="role" value="admin" class="w-4 h-4">
+                                    <div class="role-badge admin">
+                                        <i data-lucide="shield" class="w-3 h-3"></i>
+                                        管理员
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="permission-group">
+                            <div class="permission-group-title">
+                                <i data-lucide="settings" class="w-4 h-4"></i>
+                                功能权限
+                            </div>
+                            <div class="permission-grid">
+                                <div class="permission-checkbox">
+                                    <input type="checkbox" checked>
+                                    <div>
+                                        <div class="font-medium">应用管理</div>
+                                        <div class="text-xs text-muted-foreground">创建、管理JAR应用</div>
+                                    </div>
+                                </div>
+                                <div class="permission-checkbox">
+                                    <input type="checkbox" checked>
+                                    <div>
+                                        <div class="font-medium">日志查看</div>
+                                        <div class="text-xs text-muted-foreground">查看应用运行日志</div>
+                                    </div>
+                                </div>
+                                <div class="permission-checkbox">
+                                    <input type="checkbox">
+                                    <div>
+                                        <div class="font-medium">用户管理</div>
+                                        <div class="text-xs text-muted-foreground">管理平台用户</div>
+                                    </div>
+                                </div>
+                                <div class="permission-checkbox">
+                                    <input type="checkbox">
+                                    <div>
+                                        <div class="font-medium">系统设置</div>
+                                        <div class="text-xs text-muted-foreground">修改系统配置</div>
+                                    </div>
+                                </div>
+                                <div class="permission-checkbox">
+                                    <input type="checkbox" checked>
+                                    <div>
+                                        <div class="font-medium">SSH连接</div>
+                                        <div class="text-xs text-muted-foreground">远程SSH访问</div>
+                                    </div>
+                                </div>
+                                <div class="permission-checkbox">
+                                    <input type="checkbox" checked>
+                                    <div>
+                                        <div class="font-medium">文件上传</div>
+                                        <div class="text-xs text-muted-foreground">上传JAR文件</div>
+                                    </div>
+                                </div>
+                                <div class="permission-checkbox denied">
+                                    <input type="checkbox">
+                                    <div>
+                                        <div class="font-medium">服务器管理</div>
+                                        <div class="text-xs text-muted-foreground">管理服务器节点</div>
+                                    </div>
+                                </div>
+                                <div class="permission-checkbox denied">
+                                    <input type="checkbox">
+                                    <div>
+                                        <div class="font-medium">监控查看</div>
+                                        <div class="text-xs text-muted-foreground">查看监控数据</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 账户设置 -->
+                <div class="form-group">
+                    <h3 class="text-sm font-medium text-foreground mb-4">账户设置</h3>
+                    <div class="space-y-3">
+                        <div class="permission-checkbox">
+                            <input type="checkbox" checked>
+                            <div>
+                                <div class="font-medium">账户激活</div>
+                                <div class="text-xs text-muted-foreground">创建后立即激活账户</div>
+                            </div>
+                        </div>
+                        <div class="permission-checkbox">
+                            <input type="checkbox" checked>
+                            <div>
+                                <div class="font-medium">发送邮件通知</div>
+                                <div class="text-xs text-muted-foreground">向用户发送账户创建通知</div>
+                            </div>
+                        </div>
+                        <div class="permission-checkbox">
+                            <input type="checkbox" checked>
+                            <div>
+                                <div class="font-medium">强制首次登录修改密码</div>
+                                <div class="text-xs text-muted-foreground">用户首次登录时必须修改密码</div>
+                            </div>
+                        </div>
+                        <div class="permission-checkbox">
+                            <input type="checkbox">
+                            <div>
+                                <div class="font-medium">启用双因子认证</div>
+                                <div class="text-xs text-muted-foreground">增强账户安全性</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 备注说明 -->
+                <div class="form-group">
+                    <label class="form-label">备注说明</label>
+                    <textarea class="form-input" rows="3" placeholder="可选的用户描述信息"></textarea>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="flex justify-end gap-3 pt-6 border-t border-border">
+                    <button type="button" class="user-action-btn" onclick="sendInvitation()">
+                        <i data-lucide="mail" class="w-4 h-4"></i>
+                        发送邀请
+                    </button>
+                    <button type="button" class="user-action-btn" onclick="closeAddUserModal()">
+                        取消
+                    </button>
+                    <button type="submit" class="add-user-btn">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                        创建用户
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 初始化Lucide图标
+        lucide.createIcons();
+
+        let currentView = 'card';
+        let selectedUser = null;
+
+        // 视图切换功能
+        function switchView(view) {
+            if (view === currentView) return;
+
+            // 更新按钮状态
+            document.querySelectorAll('.view-switcher button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.view === view) {
+                    btn.classList.add('active');
+                }
+            });
+
+            const userLayout = document.getElementById('userLayout');
+            const userGrid = document.getElementById('userGrid');
+
+            if (view === 'list') {
+                userGrid.innerHTML = createListView();
+                userLayout.classList.add('list-view');
+            } else {
+                userLayout.classList.remove('list-view');
+                userGrid.className = 'user-grid stagger-animation';
+                // 保持原有卡片内容
+            }
+
+            currentView = view;
+            lucide.createIcons();
+        }
+
+        // 创建列表视图
+        function createListView() {
+            return `
+                <div class="w-full">
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th>用户信息</th>
+                                <th>角色</th>
+                                <th>状态</th>
+                                <th>最后登录</th>
+                                <th>创建时间</th>
+                                <th>应用数</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="current-user" onclick="selectUser(this, 'admin')" data-user="admin">
+                                <td>
+                                    <div class="flex items-center gap-3">
+                                        <div class="user-avatar sm" style="background: var(--role-super-admin)">
+                                            <span>A</span>
+                                            <div class="user-status online"></div>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium flex items-center gap-2">
+                                                Admin
+                                                <div class="current-user-badge">
+                                                    <i data-lucide="user-check" class="w-3 h-3"></i>
+                                                    当前
+                                                </div>
+                                            </div>
+                                            <div class="text-sm text-muted-foreground">admin@dev.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="role-badge super-admin">
+                                        <i data-lucide="crown" class="w-3 h-3"></i>
+                                        超管
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="status-text online">
+                                        <i data-lucide="circle" class="w-3 h-3"></i>
+                                        在线
+                                    </div>
+                                </td>
+                                <td>刚刚</td>
+                                <td>2024-01-15</td>
+                                <td>-</td>
+                                <td>
+                                    <div class="flex gap-1">
+                                        <button class="user-action-btn text-xs px-2 py-1">
+                                            <i data-lucide="user" class="w-3 h-3"></i>
+                                        </button>
+                                        <button class="user-action-btn disabled text-xs px-2 py-1" disabled>
+                                            <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr onclick="selectUser(this, 'alice')" data-user="alice">
+                                <td>
+                                    <div class="flex items-center gap-3">
+                                        <div class="user-avatar sm" style="background: var(--role-developer)">
+                                            <span>A</span>
+                                            <div class="user-status online"></div>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium">Alice</div>
+                                            <div class="text-sm text-muted-foreground">alice@dev.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="role-badge developer">
+                                        <i data-lucide="code" class="w-3 h-3"></i>
+                                        开发者
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="status-text online">
+                                        <i data-lucide="circle" class="w-3 h-3"></i>
+                                        在线
+                                    </div>
+                                </td>
+                                <td>10分钟前</td>
+                                <td>2024-03-15</td>
+                                <td>5个</td>
+                                <td>
+                                    <div class="flex gap-1">
+                                        <button class="user-action-btn text-xs px-2 py-1">
+                                            <i data-lucide="user" class="w-3 h-3"></i>
+                                        </button>
+                                        <button class="user-action-btn text-xs px-2 py-1">
+                                            <i data-lucide="edit" class="w-3 h-3"></i>
+                                        </button>
+                                        <button class="user-action-btn danger text-xs px-2 py-1">
+                                            <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr onclick="selectUser(this, 'bob')" data-user="bob">
+                                <td>
+                                    <div class="flex items-center gap-3">
+                                        <div class="user-avatar sm" style="background: var(--role-developer)">
+                                            <span>B</span>
+                                            <div class="user-status offline"></div>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium">Bob</div>
+                                            <div class="text-sm text-muted-foreground">bob@dev.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="role-badge developer">
+                                        <i data-lucide="code" class="w-3 h-3"></i>
+                                        开发者
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="status-text offline">
+                                        <i data-lucide="circle" class="w-3 h-3"></i>
+                                        离线
+                                    </div>
+                                </td>
+                                <td>2小时前</td>
+                                <td>2024-02-20</td>
+                                <td>12个</td>
+                                <td>
+                                    <div class="flex gap-1">
+                                        <button class="user-action-btn text-xs px-2 py-1">
+                                            <i data-lucide="user" class="w-3 h-3"></i>
+                                        </button>
+                                        <button class="user-action-btn text-xs px-2 py-1">
+                                            <i data-lucide="edit" class="w-3 h-3"></i>
+                                        </button>
+                                        <button class="user-action-btn danger text-xs px-2 py-1">
+                                            <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr onclick="selectUser(this, 'charlie')" data-user="charlie">
+                                <td>
+                                    <div class="flex items-center gap-3">
+                                        <div class="user-avatar sm" style="background: var(--status-disabled)">
+                                            <span>C</span>
+                                            <div class="user-status disabled"></div>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium">Charlie</div>
+                                            <div class="text-sm text-muted-foreground">charlie@dev.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="role-badge admin">
+                                        <i data-lucide="shield" class="w-3 h-3"></i>
+                                        管理员
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="status-text disabled">
+                                        <i data-lucide="ban" class="w-3 h-3"></i>
+                                        禁用
+                                    </div>
+                                </td>
+                                <td>1天前</td>
+                                <td>2024-01-20</td>
+                                <td>0个</td>
+                                <td>
+                                    <div class="flex gap-1">
+                                        <button class="user-action-btn text-xs px-2 py-1">
+                                            <i data-lucide="user-check" class="w-3 h-3"></i>
+                                        </button>
+                                        <button class="user-action-btn danger text-xs px-2 py-1">
+                                            <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr onclick="selectUser(this, 'dave')" data-user="dave">
+                                <td>
+                                    <div class="flex items-center gap-3">
+                                        <div class="user-avatar sm" style="background: var(--role-developer)">
+                                            <span>D</span>
+                                            <div class="user-status online"></div>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium">Dave</div>
+                                            <div class="text-sm text-muted-foreground">dave@dev.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="role-badge developer">
+                                        <i data-lucide="code" class="w-3 h-3"></i>
+                                        开发者
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="status-text online">
+                                        <i data-lucide="circle" class="w-3 h-3"></i>
+                                        在线
+                                    </div>
+                                </td>
+                                <td>5分钟前</td>
+                                <td>2024-04-10</td>
+                                <td>3个</td>
+                                <td>
+                                    <div class="flex gap-1">
+                                        <button class="user-action-btn text-xs px-2 py-1">
+                                            <i data-lucide="user" class="w-3 h-3"></i>
+                                        </button>
+                                        <button class="user-action-btn text-xs px-2 py-1">
+                                            <i data-lucide="edit" class="w-3 h-3"></i>
+                                        </button>
+                                        <button class="user-action-btn danger text-xs px-2 py-1">
+                                            <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // 选择用户
+        function selectUser(element, userId) {
+            // 移除之前的选中状态
+            document.querySelectorAll('.user-card, .user-table tr').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // 添加选中状态
+            element.classList.add('selected');
+            selectedUser = userId;
+
+            // 更新详情面板
+            updateDetailPanel(userId);
+        }
+
+        // 更新详情面板
+        function updateDetailPanel(userId) {
+            const detailPanel = document.getElementById('detailPanel');
+
+            const userData = {
+                'admin': {
+                    name: 'Admin',
+                    role: '超级管理员',
+                    email: 'admin@dev.com',
+                    status: 'online',
+                    avatar: 'A',
+                    isCurrentUser: true,
+                    lastLogin: '刚刚',
+                    createTime: '2024-01-15',
+                    loginCount: 1247,
+                    permissions: {
+                        applications: true,
+                        logs: true,
+                        users: true,
+                        servers: true,
+                        monitoring: true,
+                        settings: true
+                    }
+                },
+                'alice': {
+                    name: 'Alice',
+                    role: '开发者',
+                    email: 'alice@dev.com',
+                    status: 'online',
+                    avatar: 'A',
+                    isCurrentUser: false,
+                    lastLogin: '10分钟前',
+                    createTime: '2024-03-15',
+                    loginCount: 127,
+                    appsCreated: 5,
+                    onlineTime: '45小时',
+                    permissions: {
+                        applications: true,
+                        logs: true,
+                        users: false,
+                        servers: false,
+                        monitoring: false,
+                        settings: false
+                    }
+                }
+            };
+
+            const user = userData[userId] || userData['alice'];
+
+            detailPanel.classList.remove('empty');
+            detailPanel.innerHTML = `
+                <div class="space-y-6">
+                    <!-- 用户标题 -->
+                    <div class="flex items-center gap-4">
+                        <div class="user-avatar" style="background: ${user.status === 'online' ? 'var(--status-online)' : 'var(--role-developer)'}">
+                            <span>${user.avatar}</span>
+                            <div class="user-status ${user.status}"></div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <h2 class="text-xl font-semibold text-foreground">${user.name}</h2>
+                                ${user.isCurrentUser ? '<div class="current-user-badge"><i data-lucide="user-check" class="w-3 h-3"></i>当前用户</div>' : ''}
+                            </div>
+                            <p class="text-muted-foreground">${user.role}</p>
+                            <div class="status-text ${user.status}">
+                                <i data-lucide="circle" class="w-3 h-3"></i>
+                                ${user.status === 'online' ? '在线' : '离线'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 基本信息 -->
+                    <div>
+                        <h3 class="font-medium text-foreground mb-3">👤 基本信息</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">用户名:</span>
+                                <span class="font-medium">${user.name}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">邮箱:</span>
+                                <span class="font-medium">${user.email}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">角色:</span>
+                                <span class="font-medium">${user.role}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">状态:</span>
+                                <span class="font-medium" style="color: var(--status-${user.status})">${user.status === 'online' ? '在线' : '离线'}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">注册时间:</span>
+                                <span class="font-medium">${user.createTime}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 权限配置 -->
+                    <div>
+                        <h3 class="font-medium text-foreground mb-3">🔐 权限配置</h3>
+                        <div class="permission-editor space-y-2">
+                            <div class="permission-checkbox ${user.permissions.applications ? '' : 'denied'}">
+                                <input type="checkbox" ${user.permissions.applications ? 'checked' : ''} ${user.isCurrentUser ? 'disabled' : ''}>
+                                <div>
+                                    <div class="font-medium">应用管理</div>
+                                    <div class="text-xs text-muted-foreground">创建、管理JAR应用</div>
+                                </div>
+                            </div>
+                            <div class="permission-checkbox ${user.permissions.logs ? '' : 'denied'}">
+                                <input type="checkbox" ${user.permissions.logs ? 'checked' : ''} ${user.isCurrentUser ? 'disabled' : ''}>
+                                <div>
+                                    <div class="font-medium">日志查看</div>
+                                    <div class="text-xs text-muted-foreground">查看应用运行日志</div>
+                                </div>
+                            </div>
+                            <div class="permission-checkbox ${user.permissions.users ? '' : 'denied'}">
+                                <input type="checkbox" ${user.permissions.users ? 'checked' : ''} ${user.isCurrentUser ? 'disabled' : ''}>
+                                <div>
+                                    <div class="font-medium">用户管理</div>
+                                    <div class="text-xs text-muted-foreground">管理平台用户</div>
+                                </div>
+                            </div>
+                            <div class="permission-checkbox ${user.permissions.servers ? '' : 'denied'}">
+                                <input type="checkbox" ${user.permissions.servers ? 'checked' : ''} ${user.isCurrentUser ? 'disabled' : ''}>
+                                <div>
+                                    <div class="font-medium">服务器管理</div>
+                                    <div class="text-xs text-muted-foreground">管理服务器节点</div>
+                                </div>
+                            </div>
+                            <div class="permission-checkbox ${user.permissions.settings ? '' : 'denied'}">
+                                <input type="checkbox" ${user.permissions.settings ? 'checked' : ''} ${user.isCurrentUser ? 'disabled' : ''}>
+                                <div>
+                                    <div class="font-medium">系统设置</div>
+                                    <div class="text-xs text-muted-foreground">修改系统配置</div>
+                                </div>
+                            </div>
+                        </div>
+                        ${user.isCurrentUser ? '<p class="text-xs text-accent mt-2">当前用户权限不可修改</p>' : '<button class="user-action-btn mt-3"><i data-lucide="save" class="w-4 h-4"></i>保存权限</button>'}
+                    </div>
+
+                    <!-- 使用统计 -->
+                    <div>
+                        <h3 class="font-medium text-foreground mb-3">📊 使用统计</h3>
+                        <div class="space-y-2 text-sm">
+                            ${user.appsCreated ? `<div class="flex justify-between"><span class="text-muted-foreground">应用创建:</span><span class="font-medium">${user.appsCreated}个</span></div>` : ''}
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">登录次数:</span>
+                                <span class="font-medium">${user.loginCount}次</span>
+                            </div>
+                            ${user.onlineTime ? `<div class="flex justify-between"><span class="text-muted-foreground">在线时长:</span><span class="font-medium">${user.onlineTime}</span></div>` : ''}
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">最后登录:</span>
+                                <span class="font-medium text-status-online">${user.lastLogin}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 活动日志 -->
+                    <div>
+                        <h3 class="font-medium text-foreground mb-3">📝 活动日志</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">10:30</span>
+                                <span>登录成功</span>
+                            </div>
+                            ${user.appsCreated ? '<div class="flex justify-between"><span class="text-muted-foreground">10:25</span><span>创建应用 "MyApp"</span></div>' : ''}
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">09:45</span>
+                                <span>修改个人信息</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">09:30</span>
+                                <span>上传JAR文件</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 安全信息 -->
+                    <div>
+                        <h3 class="font-medium text-foreground mb-3">🔒 安全信息</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">密码强度:</span>
+                                <span class="font-medium text-status-online">强</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">上次密码修改:</span>
+                                <span class="font-medium">2024-09-15</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">登录失败:</span>
+                                <span class="font-medium">0次</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted-foreground">双因子认证:</span>
+                                <span class="font-medium text-muted-foreground">未启用</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${!user.isCurrentUser ? `
+                    <!-- 操作区域 -->
+                    <div class="pt-4 border-t border-border">
+                        <div class="grid grid-cols-2 gap-2">
+                            <button class="user-action-btn">
+                                <i data-lucide="edit" class="w-4 h-4"></i>
+                                编辑用户
+                            </button>
+                            <button class="user-action-btn">
+                                <i data-lucide="key" class="w-4 h-4"></i>
+                                重置密码
+                            </button>
+                            <button class="user-action-btn">
+                                <i data-lucide="user-x" class="w-4 h-4"></i>
+                                禁用用户
+                            </button>
+                            <button class="user-action-btn danger">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                删除用户
+                            </button>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+
+            lucide.createIcons();
+        }
+
+        // 新建用户弹窗
+        function openAddUserModal() {
+            document.getElementById('addUserModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAddUserModal() {
+            document.getElementById('addUserModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // 密码强度检测
+        document.getElementById('password').addEventListener('input', function(e) {
+            const password = e.target.value;
+            const strengthBars = document.querySelectorAll('.strength-bar');
+            const strength = calculatePasswordStrength(password);
+
+            strengthBars.forEach((bar, index) => {
+                bar.classList.remove('active', 'weak', 'medium', 'strong');
+                if (index < strength.level) {
+                    bar.classList.add('active', strength.class);
+                }
+            });
+        });
+
+        function calculatePasswordStrength(password) {
+            if (password.length < 6) return { level: 1, class: 'weak' };
+            if (password.length < 10) return { level: 2, class: 'medium' };
+            if (/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(password)) {
+                return { level: 4, class: 'strong' };
+            }
+            return { level: 3, class: 'medium' };
+        }
+
+        // 表单验证
+        function validateForm() {
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            let isValid = true;
+
+            // 用户名验证
+            if (username.length < 3) {
+                showError('usernameError', '用户名至少3个字符');
+                document.getElementById('username').classList.add('error');
+                isValid = false;
+            } else {
+                showError('usernameError', '');
+                document.getElementById('username').classList.remove('error');
+            }
+
+            // 邮箱验证
+            if (!/\S+@\S+\.\S+/.test(email)) {
+                showError('emailError', '请输入有效邮箱地址');
+                document.getElementById('email').classList.add('error');
+                isValid = false;
+            } else {
+                showError('emailError', '');
+                document.getElementById('email').classList.remove('error');
+            }
+
+            // 密码验证
+            if (password.length < 6) {
+                showError('passwordError', '密码至少6个字符');
+                document.getElementById('password').classList.add('error');
+                isValid = false;
+            } else {
+                showError('passwordError', '');
+                document.getElementById('password').classList.remove('error');
+            }
+
+            // 确认密码
+            if (password !== confirmPassword) {
+                showError('confirmPasswordError', '两次密码输入不一致');
+                document.getElementById('confirmPassword').classList.add('error');
+                isValid = false;
+            } else {
+                showError('confirmPasswordError', '');
+                document.getElementById('confirmPassword').classList.remove('error');
+            }
+
+            return isValid;
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId).textContent = message;
+        }
+
+        // 发送邀请
+        function sendInvitation() {
+            if (validateForm()) {
+                alert('邀请邮件已发送！');
+            }
+        }
+
+        // 搜索和筛选功能
+        function setupFilters() {
+            const searchInput = document.getElementById('searchInput');
+            const roleFilter = document.getElementById('roleFilter');
+            const statusFilter = document.getElementById('statusFilter');
+
+            [searchInput, roleFilter, statusFilter].forEach(element => {
+                element.addEventListener('change', applyFilters);
+                element.addEventListener('input', applyFilters);
+            });
+        }
+
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const roleFilter = document.getElementById('roleFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            const userCards = document.querySelectorAll('.user-card');
+            let visibleCount = 0;
+
+            userCards.forEach(card => {
+                const userName = card.querySelector('h3')?.textContent.toLowerCase() || '';
+                const userEmail = card.querySelector('p')?.textContent.toLowerCase() || '';
+                const userRole = card.dataset.role;
+                const userStatus = card.dataset.status;
+
+                const matchesSearch = userName.includes(searchTerm) || userEmail.includes(searchTerm);
+                const matchesRole = roleFilter === 'all' || userRole === roleFilter;
+                const matchesStatus = statusFilter === 'all' || userStatus === statusFilter;
+
+                if (matchesSearch && matchesRole && matchesStatus) {
+                    card.style.display = '';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            document.getElementById('visibleCount').textContent = visibleCount;
+        }
+
+        // 刷新用户列表
+        function refreshUsers() {
+            const btn = event.target.closest('button');
+            const icon = btn.querySelector('i');
+            icon.style.animation = 'spin 1s linear infinite';
+
+            setTimeout(() => {
+                icon.style.animation = '';
+                // 这里可以添加实际的数据刷新逻辑
+            }, 1000);
+        }
+
+        // 表单提交
+        document.getElementById('addUserForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (validateForm()) {
+                // 这里处理用户创建逻辑
+                alert('用户创建成功！');
+                closeAddUserModal();
+            }
+        });
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            setupFilters();
+
+            // 添加页面加载动画
+            setTimeout(() => {
+                document.body.classList.add('fade-in');
+            }, 100);
+        });
+
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'f':
+                        e.preventDefault();
+                        document.getElementById('searchInput').focus();
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        openAddUserModal();
+                        break;
+                }
+            }
+            if (e.key === 'Escape') {
+                closeAddUserModal();
+            }
+        });
+
+        // 点击模态框背景关闭
+        document.getElementById('addUserModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAddUserModal();
+            }
+        });
+
+        // 角色权限联动
+        document.querySelectorAll('input[name="role"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const permissionCheckboxes = document.querySelectorAll('.permission-checkbox input[type="checkbox"]');
+                if (this.value === 'admin') {
+                    // 管理员权限更多
+                    permissionCheckboxes.forEach((checkbox, index) => {
+                        checkbox.checked = index < 6; // 前6个权限
+                        checkbox.closest('.permission-checkbox').classList.toggle('denied', index >= 6);
+                    });
+                } else {
+                    // 开发者权限较少
+                    permissionCheckboxes.forEach((checkbox, index) => {
+                        checkbox.checked = index < 4; // 前4个权限
+                        checkbox.closest('.permission-checkbox').classList.toggle('denied', index >= 4);
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
