@@ -801,6 +801,199 @@
                 transition: none;
             }
         }
+
+        /* 极简终端背景样式 */
+        .minimal-terminal-bg {
+            position: absolute;
+            inset: 0;
+            opacity: 0.06;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        /* 简洁的代码行 */
+        .code-snippet {
+            position: absolute;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #64748b;
+            white-space: nowrap;
+            opacity: 0;
+            animation: codeReveal 8s ease-in-out infinite;
+        }
+
+        @keyframes codeReveal {
+            0%, 20% {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            25%, 75% {
+                opacity: 0.4;
+                transform: translateX(0);
+            }
+            80%, 100% {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+        }
+
+        /* 简约的连接线 */
+        .connection-lines {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .connect-line {
+            position: absolute;
+            background: linear-gradient(90deg, transparent, #64748b, transparent);
+            height: 1px;
+            opacity: 0;
+            animation: lineAppear 6s ease-in-out infinite;
+        }
+
+        @keyframes lineAppear {
+            0%, 40% {
+                opacity: 0;
+                transform: scaleX(0);
+                transform-origin: left;
+            }
+            50%, 90% {
+                opacity: 0.3;
+                transform: scaleX(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scaleX(0);
+                transform-origin: right;
+            }
+        }
+
+        /* 极简状态点 */
+        .status-dots {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        .status-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            animation: dotPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes dotPulse {
+            0%, 70% {
+                opacity: 0.2;
+                transform: scale(1);
+            }
+            35% {
+                opacity: 0.8;
+                transform: scale(1.5);
+            }
+        }
+
+        /* 极简命令行光标 */
+        .terminal-cursor {
+            position: absolute;
+            bottom: 30px;
+            left: 20px;
+            width: 2px;
+            height: 16px;
+            background: #64748b;
+            opacity: 0.3;
+            animation: cursorBlink 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes cursorBlink {
+            0%, 50% {
+                opacity: 0.3;
+            }
+            25% {
+                opacity: 0.8;
+            }
+        }
+
+        /* 简约版本号 */
+        .version-display {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            color: #64748b;
+            opacity: 0.2;
+            animation: versionFade 5s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes versionFade {
+            0%, 80% {
+                opacity: 0.1;
+            }
+            40% {
+                opacity: 0.4;
+            }
+        }
+
+        /* 进度条指示器 */
+        .progress-indicators {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        .progress-bar {
+            width: 3px;
+            height: 30px;
+            background: rgba(100, 116, 139, 0.2);
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(0deg, #22c55e, #3b82f6);
+            border-radius: 2px;
+            animation: progressGrow 4s ease-in-out infinite;
+        }
+
+        @keyframes progressGrow {
+            0%, 20% {
+                height: 0%;
+                opacity: 0.3;
+            }
+            60% {
+                height: 80%;
+                opacity: 0.8;
+            }
+            100% {
+                height: 0%;
+                opacity: 0.3;
+            }
+        }
+
+        /* 确保侧边栏内容在背景之上 */
+        .sidebar-content {
+            position: relative;
+            z-index: 10;
+        }
     </style>
 </head>
 <body class="layout-shell">
@@ -909,6 +1102,50 @@
                th:with="rawRole=${userType != null ? userType : userRole},
                         workspaceRole=${rawRole != null and #strings.equalsIgnoreCase(rawRole, 'ADMIN') ? 'admin' : 'developer'}"
                th:attr="data-variant=${workspaceRole}">
+
+            <!-- 极简终端背景 -->
+            <div class="minimal-terminal-bg">
+                <!-- 代码片段 -->
+                <div class="code-snippet" style="top: 12%; left: 8%; animation-delay: 0s; color: #22c55e;">console.log('debug');</div>
+                <div class="code-snippet" style="top: 28%; left: 12%; animation-delay: 2s; color: #3b82f6;">const app = express();</div>
+                <div class="code-snippet" style="top: 44%; left: 6%; animation-delay: 4s; color: #f59e0b;">await server.start();</div>
+                <div class="code-snippet" style="top: 60%; left: 10%; animation-delay: 6s; color: #8b5cf6;">debug.enabled = true;</div>
+                <div class="code-snippet" style="top: 76%; left: 8%; animation-delay: 1s; color: #ef4444;">process.exit(0);</div>
+
+                <!-- 连接线 -->
+                <div class="connection-lines">
+                    <div class="connect-line" style="top: 20%; left: 5%; width: 40%; animation-delay: 1s;"></div>
+                    <div class="connect-line" style="top: 50%; left: 15%; width: 50%; animation-delay: 3s;"></div>
+                    <div class="connect-line" style="top: 75%; left: 8%; width: 35%; animation-delay: 5s;"></div>
+                </div>
+
+                <!-- 状态点 -->
+                <div class="status-dots">
+                    <div class="status-dot" style="background: #22c55e; animation-delay: 0s;"></div>
+                    <div class="status-dot" style="background: #f59e0b; animation-delay: 1.3s;"></div>
+                    <div class="status-dot" style="background: #ef4444; animation-delay: 2.6s;"></div>
+                </div>
+
+                <!-- 终端光标 -->
+                <div class="terminal-cursor"></div>
+
+                <!-- 版本显示 -->
+                <div class="version-display">v2.1.0-debug</div>
+
+                <!-- 进度指示器 -->
+                <div class="progress-indicators">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="animation-delay: 0s;"></div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="animation-delay: 1s;"></div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="animation-delay: 2s;"></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="sidebar-content">
                 <div class="sidebar-brand">
                     <div class="brand-area" role="button" tabindex="0" data-action="navigate-home">
