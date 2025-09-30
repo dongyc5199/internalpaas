@@ -91,18 +91,20 @@
             grid-template-rows: var(--shell-header-height) 1fr;
             height: 100vh;
             overflow: hidden; /* 防止整个页面滚动 */
+            grid-template-areas: "sidebar header" "sidebar content";
         }
 
         .shell-grid[data-sidebar-state="collapsed"] {
             grid-template-columns: var(--shell-sidebar-width-collapsed) 1fr;
+            grid-template-areas: "sidebar header" "sidebar content";
         }
 
         .shell-header {
-            grid-column: 1 / -1;
+            grid-area: header;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 24px;
+            justify-content: flex-end;
+            gap: 16px;
             padding: 0 24px;
             height: var(--shell-header-height);
             background: var(--shell-glass);
@@ -122,8 +124,6 @@
             display: flex;
             align-items: center;
             gap: 16px;
-            flex: 0 0 auto;
-            min-width: 260px;
         }
 
         .brand-logo {
@@ -160,15 +160,15 @@
         }
 
         .shell-search {
-            flex: 1;
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 18px;
+            gap: 10px;
+            padding: 10px 18px;
             border-radius: 16px;
             background: rgba(15,23,42,0.05);
             border: 1px solid rgba(15,23,42,0.06);
-            max-width: 520px;
+            width: clamp(220px, 24vw, 320px);
+            flex-shrink: 0;
             transition: border 0.3s ease, box-shadow 0.3s ease;
             cursor: pointer;
         }
@@ -191,6 +191,7 @@
 
         .shell-search-placeholder {
             flex: 1;
+            min-width: 0;
             font-size: 14px;
             color: var(--shell-text-secondary);
         }
@@ -208,7 +209,9 @@
         .shell-toolbar {
             display: flex;
             align-items: center;
+            justify-content: flex-end;
             gap: 12px;
+            flex-wrap: wrap;
         }
 
         .toolbar-btn,
@@ -281,7 +284,7 @@
         }
 
         .sidebar {
-            grid-row: 2 / -1;
+            grid-area: sidebar;
             background: rgba(255, 255, 255, 0.9);
             box-shadow: 0 24px 44px rgba(15, 23, 42, 0.14);
             display: flex;
@@ -300,6 +303,51 @@
             flex-direction: column;
             overflow-y: auto;
             overflow-x: hidden;
+        }
+
+        .sidebar-brand {
+            margin-bottom: 24px;
+        }
+
+        .sidebar-brand .brand-area {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(148, 163, 184, 0.12);
+            cursor: pointer;
+        }
+
+        .sidebar-brand .brand-area:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(47, 155, 255, 0.28);
+        }
+
+        .sidebar[data-state="collapsed"] .sidebar-brand {
+            margin-bottom: 12px;
+        }
+
+        .sidebar[data-state="collapsed"] .sidebar-brand .brand-area {
+            justify-content: center;
+            padding: 12px;
+            border: none;
+            background: transparent;
+        }
+
+        .sidebar[data-state="collapsed"] .sidebar-brand .brand-meta {
+            display: none;
+        }
+
+        .sidebar[data-state="collapsed"] .sidebar-brand .brand-icon-container {
+            margin: 0;
+        }
+
+        .sidebar[data-variant="admin"] .brand-icon-container {
+            background: var(--shell-accent);
+        }
+
+        .sidebar[data-variant="developer"] .brand-icon-container {
+            background: var(--shell-accent-dev);
         }
 
         .sidebar-content::-webkit-scrollbar {
@@ -325,6 +373,7 @@
             .shell-grid {
                 grid-template-columns: 1fr;
                 grid-template-rows: var(--shell-header-height) 1fr;
+                grid-template-areas: "header" "content";
             }
 
             .sidebar {
@@ -348,7 +397,13 @@
         }
 
         @media (max-width: 768px) {
+            .shell-grid {
+                grid-template-columns: 1fr;
+                grid-template-areas: "header" "content";
+            }
+
             .shell-header {
+                grid-area: header;
                 padding: 0 16px;
             }
 
@@ -357,7 +412,7 @@
             }
 
             .shell-search {
-                max-width: 300px;
+                width: 100%;
             }
 
             /* 移动端内容区域样式 - 与content-framework完全一致 */
@@ -373,8 +428,7 @@
            内容区域 - 与content-framework完全一致
            ================================================ */
         .content {
-            grid-column: 2 / -1;
-            grid-row: 2 / -1;
+            grid-area: content;
             padding: var(--content-padding, 24px 32px);
             background: var(--content-bg, rgba(248, 250, 255, 0.72));
             min-height: 100%;
@@ -515,7 +569,7 @@
 
         @media (max-width: 1280px) {
             .shell-search {
-                max-width: none;
+                width: 100%;
             }
         }
 
@@ -724,15 +778,8 @@
                 th:with="rawRole=${userType != null ? userType : userRole},
                          workspaceRole=${rawRole != null and #strings.equalsIgnoreCase(rawRole, 'ADMIN') ? 'admin' : 'developer'}"
                 th:attr="data-variant=${workspaceRole}">
-            <div class="brand-area" role="button" tabindex="0" data-action="navigate-home">
-                <div class="brand-icon-container brand-icon-lg" aria-hidden="true">DD</div>
-                <span class="brand-meta">
-                    <span class="brand-title brand-text" th:text="${appName ?: 'Dev Debug Platform'}">Dev Debug Platform</span>
-                    <span class="brand-subtitle"
-                          th:text="${workspaceRole == 'admin' ? 'Admin Workspace' : 'Developer Workspace'}">Admin Workspace</span>
-                </span>
-            </div>
-            <div class="shell-search" role="button" tabindex="0" data-action="open-command-palette" aria-haspopup="dialog" aria-expanded="false">
+            <div class="shell-toolbar">
+                <div class="shell-search" role="button" tabindex="0" data-action="open-command-palette" aria-haspopup="dialog" aria-expanded="false">
 
                 <span class="shell-search-icon" aria-hidden="true">&#8984;</span>
 
@@ -748,8 +795,8 @@
 
                 <span class="shell-search-shortcut">Ctrl/&#8984; K</span>
 
-            </div>
-            <div class="shell-toolbar">
+                </div>
+
                 <button type="button" class="toolbar-btn" data-action="toggle-sidebar" aria-controls="primarySidebar" aria-expanded="true" title="展开/收起侧边栏">
                     &#9776;
                 </button>
@@ -828,8 +875,19 @@
                data-role="shell-sidebar"
                data-state="expanded"
                th:with="rawRole=${userType != null ? userType : userRole},
-                        workspaceRole=${rawRole != null and #strings.equalsIgnoreCase(rawRole, 'ADMIN') ? 'admin' : 'developer'}">
+                        workspaceRole=${rawRole != null and #strings.equalsIgnoreCase(rawRole, 'ADMIN') ? 'admin' : 'developer'}"
+               th:attr="data-variant=${workspaceRole}">
             <div class="sidebar-content">
+                <div class="sidebar-brand">
+                    <div class="brand-area" role="button" tabindex="0" data-action="navigate-home">
+                        <div class="brand-icon-container brand-icon-lg" aria-hidden="true">DD</div>
+                        <span class="brand-meta">
+                            <span class="brand-title brand-text" th:text="${appName ?: 'Dev Debug Platform'}">Dev Debug Platform</span>
+                            <span class="brand-subtitle"
+                                  th:text="${workspaceRole == 'admin' ? 'Admin Workspace' : 'Developer Workspace'}">Admin Workspace</span>
+                        </span>
+                    </div>
+                </div>
                 <div class="menu-group" th:each="section : ${navSections}"
                      th:if="${section.items != null and !#lists.isEmpty(section.items)}">
                     <div class="menu-item"
