@@ -137,9 +137,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 0 24px;
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: 8px;
+  padding: 0;
+  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .page-title-group {
@@ -182,35 +182,7 @@
   gap: var(--component-gap);
 }
 
-/* 面包屑导航 */
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin-bottom: 16px;
-}
-
-.breadcrumb-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.breadcrumb-separator {
-  color: var(--text-muted);
-}
-
-.breadcrumb-link {
-  color: var(--primary-color);
-  text-decoration: none;
-  transition: color var(--transition-fast);
-}
-
-.breadcrumb-link:hover {
-  color: var(--primary-hover);
-}
+/* 面包屑导航样式已移除 */
 
 /* ================================================
    统计概览区域

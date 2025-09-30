@@ -24,6 +24,29 @@
   --workspace-radius-md: 14px;
   --workspace-radius-sm: 10px;
   --workspace-border: 1px solid rgba(15, 23, 42, 0.08);
+
+  /* Brand Styles Variables */
+  --brand-title-color: #ffffff;
+  --brand-title-size: 18px;
+  --brand-title-weight: 600;
+  --brand-title-spacing: 0.3px;
+  --brand-title-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --brand-subtitle-color: rgba(255, 255, 255, 0.9);
+  --brand-subtitle-size: 12px;
+  --brand-subtitle-weight: 500;
+  --brand-subtitle-spacing: 0.6px;
+  --brand-subtitle-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --brand-meta-gap: 4px;
+
+  /* User Dropdown Variables */
+  --dropdown-bg: rgba(255, 255, 255, 0.98);
+  --dropdown-border: rgba(15, 23, 42, 0.08);
+  --dropdown-shadow: 0 18px 36px rgba(15, 23, 42, 0.2);
+  --dropdown-text: #1e293b;
+  --dropdown-text-secondary: rgba(15, 23, 42, 0.75);
+  --dropdown-text-tertiary: rgba(15, 23, 42, 0.55);
+  --dropdown-hover-bg: rgba(15, 23, 42, 0.06);
+  --dropdown-divider: rgba(15, 23, 42, 0.08);
 }
 
 [data-theme="dark"] {
@@ -40,6 +63,22 @@
   --workspace-tag-bg: rgba(148, 163, 184, 0.16);
   --workspace-sidebar-hover: rgba(79, 70, 229, 0.12);
   --workspace-sidebar-active: rgba(59, 130, 246, 0.18);
+
+  /* Brand Styles Variables for Dark Theme */
+  --brand-title-color: #ffffff;
+  --brand-title-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  --brand-subtitle-color: rgba(255, 255, 255, 0.9);
+  --brand-subtitle-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+
+  /* User Dropdown Variables for Dark Theme */
+  --dropdown-bg: rgba(30, 41, 59, 0.98);
+  --dropdown-border: rgba(148, 163, 184, 0.25);
+  --dropdown-shadow: 0 18px 36px rgba(2, 6, 23, 0.6);
+  --dropdown-text: #ffffff;
+  --dropdown-text-secondary: rgba(255, 255, 255, 0.85);
+  --dropdown-text-tertiary: rgba(255, 255, 255, 0.65);
+  --dropdown-hover-bg: rgba(79, 70, 229, 0.15);
+  --dropdown-divider: rgba(148, 163, 184, 0.25);
 }
 
 body {
@@ -198,18 +237,52 @@ body.sidebar-collapsed .toggle-icon::after {
   gap: 2px;
 }
 
-.brand-title {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--workspace-text);
+/* ========================= Sidebar Brand Styles ========================= */
+.brand-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--brand-meta-gap);
+}
+
+/* High Priority Brand Text Override */
+.sidebar-brand .brand-area .brand-meta .brand-title,
+.sidebar .brand-area .brand-meta .brand-title,
+.sidebar-content .brand-area .brand-meta .brand-title {
+  color: var(--brand-title-color) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  text-shadow: var(--brand-title-shadow) !important;
+}
+
+.brand-title,
+.brand-title.brand-text,
+span.brand-title,
+.sidebar .brand-title {
+  font-size: var(--brand-title-size) !important;
+  font-weight: var(--brand-title-weight) !important;
+  letter-spacing: var(--brand-title-spacing) !important;
+  color: var(--brand-title-color) !important;
+  text-shadow: var(--brand-title-shadow) !important;
+}
+
+.brand-subtitle,
+span.brand-subtitle,
+.sidebar .brand-subtitle {
+  font-size: var(--brand-subtitle-size) !important;
+  font-weight: var(--brand-subtitle-weight) !important;
+  text-transform: uppercase !important;
+  color: var(--brand-subtitle-color) !important;
+  letter-spacing: var(--brand-subtitle-spacing) !important;
+  text-shadow: var(--brand-subtitle-shadow) !important;
 }
 
 .brand-role {
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--workspace-text-tertiary);
+  font-size: var(--brand-subtitle-size);
+  font-weight: var(--brand-subtitle-weight);
+  letter-spacing: var(--brand-subtitle-spacing);
+  color: var(--brand-subtitle-color) !important;
   text-transform: uppercase;
+  text-shadow: var(--brand-subtitle-shadow);
 }
 
 .workspace-nav--admin .brand-role {
@@ -450,9 +523,9 @@ body.sidebar-collapsed .toggle-icon::after {
   width: 220px;
   padding: 12px;
   border-radius: 14px;
-  background: var(--workspace-sidebar-bg);
-  border: var(--workspace-border);
-  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.2);
+  background: var(--dropdown-bg);
+  border: 1px solid var(--dropdown-border);
+  box-shadow: var(--dropdown-shadow);
   opacity: 0;
   transform: translateY(-6px);
   pointer-events: none;
@@ -466,9 +539,9 @@ body.sidebar-collapsed .toggle-icon::after {
   right: 18px;
   width: 14px;
   height: 14px;
-  background: inherit;
-  border-left: var(--workspace-border);
-  border-top: var(--workspace-border);
+  background: var(--dropdown-bg);
+  border-left: 1px solid var(--dropdown-border);
+  border-top: 1px solid var(--dropdown-border);
   transform: rotate(45deg);
 }
 
@@ -482,7 +555,7 @@ body.sidebar-collapsed .toggle-icon::after {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  color: var(--workspace-text);
+  color: var(--dropdown-text);
 }
 
 .dropdown-user {
@@ -492,13 +565,13 @@ body.sidebar-collapsed .toggle-icon::after {
 
 .dropdown-role {
   font-size: 0.78rem;
-  color: var(--workspace-text-tertiary);
+  color: var(--dropdown-text-tertiary);
 }
 
 .dropdown-divider {
   height: 1px;
   margin: 10px 0;
-  background: var(--workspace-divider);
+  background: var(--dropdown-divider);
 }
 
 .dropdown-item {
@@ -507,7 +580,7 @@ body.sidebar-collapsed .toggle-icon::after {
   gap: 10px;
   padding: 8px 10px;
   border-radius: 10px;
-  color: var(--workspace-text-secondary);
+  color: var(--dropdown-text-secondary);
   font-size: 0.86rem;
   text-decoration: none;
   transition: background 0.15s ease, color 0.15s ease;
@@ -526,8 +599,48 @@ body.sidebar-collapsed .toggle-icon::after {
 
 .dropdown-item:hover,
 .dropdown-item:focus-visible {
-  background: rgba(15, 23, 42, 0.06);
-  color: var(--workspace-text);
+  background: var(--dropdown-hover-bg);
+  color: var(--dropdown-text);
+}
+
+/* 强制下拉框文字颜色 - 确保明暗主题下都可见 */
+.user-dropdown .dropdown-header,
+.user-dropdown .dropdown-user,
+.user-dropdown .dropdown-role,
+.user-dropdown .dropdown-item {
+  color: var(--dropdown-text-secondary) !important;
+}
+
+.user-dropdown .dropdown-user {
+  color: var(--dropdown-text) !important;
+  font-weight: 600 !important;
+}
+
+.user-dropdown .dropdown-role {
+  color: var(--dropdown-text-tertiary) !important;
+}
+
+.user-dropdown .dropdown-item:hover,
+.user-dropdown .dropdown-item:focus-visible {
+  color: var(--dropdown-text) !important;
+  background: var(--dropdown-hover-bg) !important;
+}
+
+/* 确保在明色主题下文字颜色正确 */
+[data-theme="light"] .user-dropdown .dropdown-user {
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .user-dropdown .dropdown-role {
+  color: rgba(15, 23, 42, 0.55) !important;
+}
+
+[data-theme="light"] .user-dropdown .dropdown-item {
+  color: rgba(15, 23, 42, 0.75) !important;
+}
+
+[data-theme="light"] .user-dropdown .dropdown-item:hover {
+  color: #1e293b !important;
 }
 
 /* ========================= 侧边导航 ========================= */
@@ -888,7 +1001,7 @@ body.sidebar-collapsed .workspace-content {
   border-radius: 16px;
   font-size: 15px;
   font-weight: 600;
-  color: rgba(15, 23, 42, 0.78);
+  color: rgba(243, 244, 246, 0.9);
   cursor: pointer;
   transition: all var(--transition-fast);
   overflow: hidden;
@@ -897,7 +1010,8 @@ body.sidebar-collapsed .workspace-content {
 
 
 .menu-item.selected {
-  background: rgba(47, 155, 255, 0.15);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(6, 182, 212, 0.1));
+  color: rgba(59, 130, 246, 0.95);
   position: relative;
 }
 .menu-item.selected::before {
@@ -908,10 +1022,11 @@ body.sidebar-collapsed .workspace-content {
   bottom: 10px;
   width: 4px;
   border-radius: 4px;
-  background: var(--primary-gradient);
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
 }
 .menu-item:hover:not(.selected) {
-  background: rgba(47, 155, 255, 0.05);
+  background: rgba(59, 130, 246, 0.1);
+  color: rgba(6, 182, 212, 0.9);
 }
 .menu-icon {
   width: 28px;
@@ -967,7 +1082,7 @@ body.sidebar-collapsed .workspace-content {
   gap: 10px;
   padding: 16px;
   border-radius: 16px;
-  background: rgba(15, 23, 42, 0.04);
+  background: rgba(55, 65, 81, 0.3);
 }
 .footer-block .pill {
   display: inline-flex;
@@ -976,12 +1091,12 @@ body.sidebar-collapsed .workspace-content {
   padding: 6px 12px;
   border-radius: 999px;
   font-size: 12px;
-  color: rgba(15, 23, 42, 0.65);
-  background: rgba(255, 255, 255, 0.72);
+  color: rgba(243, 244, 246, 0.9);
+  background: rgba(107, 114, 128, 0.4);
 }
 .footer-block .link {
   font-size: 12px;
-  color: rgba(59, 130, 246, 0.85);
+  color: rgba(147, 197, 253, 0.9);
   cursor: pointer;
   text-decoration: none;
 }

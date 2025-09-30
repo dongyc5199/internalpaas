@@ -345,31 +345,7 @@
     border: none;
 }
 
-/* Enhanced Breadcrumbs */
-.breadcrumb {
-    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-    border-radius: var(--border-radius-lg);
-    padding: 1rem 1.5rem;
-    box-shadow: var(--shadow-light);
-    margin-bottom: 1.5rem;
-}
-
-.breadcrumb-item a {
-    text-decoration: none;
-    color: #007bff;
-    font-weight: 500;
-    transition: var(--transition-fast);
-}
-
-.breadcrumb-item a:hover {
-    color: #0056b3;
-    text-shadow: 0 1px 3px rgba(0, 123, 255, 0.3);
-}
-
-.breadcrumb-item.active {
-    color: #6c757d;
-    font-weight: 600;
-}
+/* 面包屑样式已移除 */
 
 /* Loading States */
 .loading-overlay {

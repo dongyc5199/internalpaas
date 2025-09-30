@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,10 @@
     <link rel="stylesheet" href="/css/main.css">
     <link rel="stylesheet" href="/css/brand-icons.css">
     <link rel="stylesheet" href="/css/auth.css">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 </head>
+
 <body class="auth-page login-view">
     <div class="login-background auth-background"></div>
 
@@ -99,13 +103,8 @@
                 <div class="form-field">
                     <label class="field-label" for="username">用户名</label>
                     <div class="field-control">
-                        <input type="text"
-                               id="username"
-                               name="username"
-                               placeholder="请输入用户名"
-                               autocomplete="username"
-                               inputmode="text"
-                               required>
+                        <input type="text" id="username" name="username" placeholder="请输入用户名" autocomplete="username"
+                            inputmode="text" required>
                     </div>
                     <p class="field-hint">可使用企业账号或 SSO 账号登录</p>
                 </div>
@@ -113,17 +112,10 @@
                 <div class="form-field">
                     <label class="field-label" for="password">密码</label>
                     <div class="field-control">
-                        <input type="password"
-                               id="password"
-                               name="password"
-                               placeholder="请输入密码"
-                               autocomplete="current-password"
-                               required>
-                        <button type="button"
-                                class="control-addon"
-                                data-action="toggle-password"
-                                aria-controls="password"
-                                aria-label="显示或隐藏密码">
+                        <input type="password" id="password" name="password" placeholder="请输入密码"
+                            autocomplete="current-password" required>
+                        <button type="button" class="control-addon" data-action="toggle-password"
+                            aria-controls="password" aria-label="显示或隐藏密码">
                             显示
                         </button>
                     </div>
@@ -176,4 +168,5 @@
 
     <script src="/js/auth.js"></script>
 </body>
+
 </html>
