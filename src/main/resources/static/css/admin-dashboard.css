@@ -46,6 +46,15 @@
     box-sizing: border-box;
 }
 
+/* 全局最后更新时间样式 */
+.admin-dashboard .page-actions .last-update {
+    font-size: 0.7rem;
+    color: rgba(149, 165, 166, 0.7);
+    text-align: right;
+    margin-right: auto;
+    padding-right: 12px;
+}
+
 .admin-dashboard .stats-overview {
     margin-top: 0;
 }
