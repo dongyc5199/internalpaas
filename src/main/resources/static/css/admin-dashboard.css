@@ -4,6 +4,8 @@
     max-width: none;
     margin: 0;
     padding: 24px 0 48px;
+    --action-btn-height: var(--btn-height-md);
+    --action-btn-padding-x: var(--btn-padding-x-md);
 }
 
 .admin-dashboard .content-scrollable {
@@ -45,7 +47,13 @@
 }
 
 .admin-dashboard .page-actions .btn {
-    min-height: 40px;
+    height: var(--action-btn-height);
+    min-height: var(--action-btn-height);
+    padding: 0 var(--action-btn-padding-x);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
 }
 
 .admin-dashboard .stats-overview {
@@ -97,6 +105,13 @@
 
 .admin-dashboard .toolbar-right .btn {
     min-width: 130px;
+    height: var(--action-btn-height);
+    min-height: var(--action-btn-height);
+    padding: 0 var(--action-btn-padding-x);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
 }
 
 .admin-dashboard .content-grid {
@@ -169,6 +184,13 @@ html[lang="en" i] .admin-dashboard .hint-icon::after {
 
 .admin-dashboard .chart-toggle-group .btn {
     min-width: 88px;
+    height: var(--action-btn-height);
+    min-height: var(--action-btn-height);
+    padding: 0 var(--action-btn-padding-x);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
 }
 
 .admin-dashboard .server-panel {
@@ -426,6 +448,13 @@ html[lang="en" i] .admin-dashboard .hint-icon::after {
 .admin-dashboard .server-view-toggle .btn-toggle {
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
+    height: var(--action-btn-height);
+    min-height: var(--action-btn-height);
+    padding: 0 var(--action-btn-padding-x);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
 }
 
 .admin-dashboard .server-panel .status-hint {
@@ -462,10 +491,22 @@ html[lang="en" i] .admin-dashboard .hint-icon::after {
     color: var(--text-secondary);
 }
 
-.admin-dashboard .user-panel .section-actions .form-select,
+.admin-dashboard .user-panel .section-actions .form-select {
+    height: var(--action-btn-height);
+    min-height: var(--action-btn-height);
+    padding: 0 var(--action-btn-padding-x);
+    box-sizing: border-box;
+}
+
 .admin-dashboard .server-panel .section-actions .btn,
 .admin-dashboard .user-panel .section-actions .btn {
-    min-height: 36px;
+    height: var(--action-btn-height);
+    min-height: var(--action-btn-height);
+    padding: 0 var(--action-btn-padding-x);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
 }
 
 .admin-dashboard .user-summary {
