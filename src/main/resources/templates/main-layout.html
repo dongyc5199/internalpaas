@@ -1,5 +1,5 @@
-﻿<!DOCTYPE html>
-<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity" class="shell-theme-light" data-theme="light">
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -64,6 +64,19 @@
             --shell-scrollbar: rgba(15,23,42,0.18);
         }
 
+        /* 使用data-theme属性作为主题切换的标准 */
+        [data-theme="dark"] {
+            --shell-background: #111827;
+            --shell-surface: rgba(30,41,59,0.92);
+            --shell-glass: rgba(30,41,59,0.82);
+            --shell-border: rgba(148,163,184,0.32);
+            --shell-border-dark: rgba(15,23,42,0.36);
+            --shell-text-primary: #F9FAFB;
+            --shell-text-secondary: rgba(226,232,240,0.72);
+            --shell-scrollbar: rgba(148,163,184,0.35);
+        }
+        
+        /* 为了向后兼容，保留shell-theme-dark类，但内容与data-theme="dark"保持一致 */
         .shell-theme-dark {
             --shell-background: #111827;
             --shell-surface: rgba(30,41,59,0.92);
@@ -722,7 +735,9 @@
         /* 深色主题下的用户菜单样式 */
         .shell-theme-dark .user-menu__role,
         [data-theme="dark"] .user-menu__role {
-            color: rgba(226,232,240,0.8) !important;
+            color: #ffffff !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            font-weight: 600;
         }
 
         .shell-theme-dark .user-menu__header-role,
@@ -1047,8 +1062,6 @@
                         <span class="user-menu__meta">
                             <span class="user-menu__name"
                                   th:text="${username != null ? username : '访客'}">访客</span>
-                            <span class="user-menu__role"
-                                  th:text="${workspaceRole == 'admin' ? '管理员' : '开发者'}">管理员</span>
                         </span>
                         <span class="user-menu__caret" aria-hidden="true">▾</span>
                     </button>
@@ -1241,10 +1254,12 @@
 
             function applyTheme(theme, persistPref = true) {
                 currentTheme = theme === 'dark' ? 'dark' : 'light';
-                const themeClass = currentTheme === 'dark' ? 'shell-theme-dark' : 'shell-theme-light';
                 root.dataset.theme = currentTheme;
+                
+                // 移除旧的主题类，统一使用data-theme属性
                 root.classList.remove('shell-theme-light', 'shell-theme-dark');
-                root.classList.add(themeClass);
+                
+                // 为了兼容旧组件，仍然保留dark-mode类
                 body.classList.toggle('dark-mode', currentTheme === 'dark');
 
                 const toggle = document.querySelector('[data-action="toggle-theme"]');
