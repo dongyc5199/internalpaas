@@ -1,6 +1,5 @@
 package com.cmict.internalpaas.controller;
 
-import com.cmict.internalpaas.dto.UserPermissionDto;
 import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.model.ServerStatusTag;
@@ -12,7 +11,6 @@ import com.cmict.internalpaas.service.ServerService;
 import com.cmict.internalpaas.service.ServerStatusTagService;
 import com.cmict.internalpaas.service.SshConnectionService;
 import com.cmict.internalpaas.service.UserActivityService;
-import com.cmict.internalpaas.service.UserPermissionService;
 import com.cmict.internalpaas.service.UserServerCredentialService;
 import com.cmict.internalpaas.service.UserService;
 import com.cmict.internalpaas.repository.UserRepository;
@@ -21,7 +19,6 @@ import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -85,9 +82,6 @@ public class AdminController {
     
     @Autowired
     private com.cmict.internalpaas.service.ServerStatusTagSchedulerService statusTagSchedulerService;
-
-    @Autowired
-    private UserPermissionService userPermissionService;
 
     @GetMapping("/servers")
     public String serverManagement(Model model) {
@@ -2197,98 +2191,213 @@ public class AdminController {
     }
     
     /**
-     * 获取用户权限管理内容片段
+     * AJAX API: \u83B7\u53D6\u7528\u6237\u7BA1\u7406\u5185\u5BB9\u7247\u6BB5 - \u73B0\u4EE3\u5316\u7248\u672C
      */
     @GetMapping("/api/users-content")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public String getUsersContent() {
-        return "admin/user-permission-content :: user-permission-content";
-    }
-
-    /**
-     * 获取活跃用户TOP5
-     */
-    @GetMapping("/user-permission/api/active-users-top5")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     @ResponseBody
-    public ResponseEntity<?> getActiveUsersTop5(@RequestParam(defaultValue = "7") int hours) {
+    public ResponseEntity<String> getUsersContent() {
         try {
-            List<UserPermissionDto.ActiveUserRanking> rankings =
-                userPermissionService.getActiveUsersTop5(hours);
-            return ResponseEntity.ok(rankings);
+            List<User> users = userService.findAllUsers();
+            
+            StringBuilder htmlBuilder = new StringBuilder();
+            
+            // \u9875\u9762\u6807\u9898
+            htmlBuilder.append("<div class=\"content-header\">");
+            htmlBuilder.append("<div class=\"page-title-group\">");
+            htmlBuilder.append("<h1 class=\"page-title\">\u7528\u6237\u7BA1\u7406\u4E0E\u6743\u9650\u63A7\u5236</h1>");
+            htmlBuilder.append("</div></div>");
+            
+            // \u7EDF\u8BA1\u7528\u6237\u6570\u636E
+            long adminCount = users.stream()
+                .filter(u -> u.getRoles().contains(User.Role.ADMIN) || u.getRoles().contains(User.Role.SUPER_ADMIN))
+                .count();
+            long developerCount = users.stream()
+                .filter(u -> u.getRoles().contains(User.Role.USER))
+                .count();
+            long activeCount = users.size(); // \u7B80\u5316\u5904\u7406
+            long totalCount = users.size();
+            
+            // \u73B0\u4EE3\u5316\u7EDF\u8BA1\u9762\u677F
+            htmlBuilder.append("<section class=\"modern-stats-container\">");
+            htmlBuilder.append("<div class=\"stats-grid\">");
+            
+            // \u7BA1\u7406\u5458\u7528\u6237\u5361\u7247
+            htmlBuilder.append("<div class=\"modern-stats-card running\" onclick=\"filterUsers('admin')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">\u7BA1\u7406\u5458</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(adminCount).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">\u4EBA</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-up\">\u2197</span>\u9AD8\u7EA7\u6743\u9650</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-user-shield icon-pulse\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            // \u5F00\u53D1\u8005\u7528\u6237\u5361\u7247
+            htmlBuilder.append("<div class=\"modern-stats-card starting\" onclick=\"filterUsers('developer')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">\u5F00\u53D1\u8005</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(developerCount).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">\u4EBA</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>\u666E\u901A\u6743\u9650</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-code icon-bounce\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            // \u6D3B\u8DC3\u7528\u6237\u5361\u7247
+            htmlBuilder.append("<div class=\"modern-stats-card stopped\" onclick=\"filterUsers('active')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">\u6D3B\u8DC3\u7528\u6237</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(activeCount).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">\u4EBA</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-up\">\u2197</span>\u5728\u7EBF\u7528\u6237</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-users\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            // \u7528\u6237\u603B\u6570\u5361\u7247
+            htmlBuilder.append("<div class=\"modern-stats-card total\" onclick=\"filterUsers('all')\">");
+            htmlBuilder.append("<div class=\"stats-card-content\">");
+            htmlBuilder.append("<div class=\"stats-info\">");
+            htmlBuilder.append("<div class=\"stats-label\">\u7528\u6237\u603B\u6570</div>");
+            htmlBuilder.append("<div class=\"stats-value\">");
+            htmlBuilder.append("<span class=\"stats-value-main\">").append(totalCount).append("</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">\u4EBA</span>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>\u7528\u6237\u6982\u89C8</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("<div class=\"stats-icon-container\">");
+            htmlBuilder.append("<i class=\"stats-icon fas fa-user-friends\"></i>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</section>");
+            
+            // \u7528\u6237\u5361\u7247\u7F51\u683C
+            htmlBuilder.append("<section class=\"modern-apps-section\">");
+            htmlBuilder.append("<div class=\"section-header\">");
+            htmlBuilder.append("<h2 class=\"section-title\">\u7528\u6237\u5217\u8868</h2>");
+            htmlBuilder.append("<div class=\"section-actions\">");
+            htmlBuilder.append("<button class=\"action-btn secondary\" onclick=\"refreshAllData()\">");
+            htmlBuilder.append("<i class=\"fas fa-sync-alt\"></i>");
+            htmlBuilder.append("<span>\u5237\u65B0\u6570\u636E</span>");
+            htmlBuilder.append("</button>");
+            htmlBuilder.append("<button class=\"action-btn primary\" onclick=\"addUser()\">");
+            htmlBuilder.append("<i class=\"fas fa-user-plus\"></i>");
+            htmlBuilder.append("<span>\u6DFB\u52A0\u7528\u6237</span>");
+            htmlBuilder.append("</button>");
+            htmlBuilder.append("</div>");
+            htmlBuilder.append("</div>");
+            
+            if (users.isEmpty()) {
+                // \u7A7A\u72B6\u6001
+                htmlBuilder.append("<div class=\"empty-state\">");
+                htmlBuilder.append("<div class=\"empty-icon\">");
+                htmlBuilder.append("<i class=\"fas fa-users\"></i>");
+                htmlBuilder.append("</div>");
+                htmlBuilder.append("<h3 class=\"empty-title\">\u8FD8\u6CA1\u6709\u7528\u6237</h3>");
+                htmlBuilder.append("<p class=\"empty-description\">\u521B\u5EFA\u7B2C\u4E00\u4E2A\u7528\u6237\u8D26\u6237\u5F00\u59CB\u4F7F\u7528\u7CFB\u7EDF</p>");
+                htmlBuilder.append("<div class=\"empty-actions\">");
+                htmlBuilder.append("<button class=\"modern-action-btn primary\" onclick=\"addUser()\">");
+                htmlBuilder.append("<i class=\"fas fa-user-plus\"></i>");
+                htmlBuilder.append("<span>\u6DFB\u52A0\u7528\u6237</span>");
+                htmlBuilder.append("</button>");
+                htmlBuilder.append("</div>");
+                htmlBuilder.append("</div>");
+            } else {
+                // \u7528\u6237\u5361\u7247\u7F51\u683C
+                htmlBuilder.append("<div class=\"modern-apps-grid\">");
+                for (User user : users) {
+                    String statusClass = getUserStatusClass(user);
+                    String roleText = getUserRoleText(user);
+                    String statusIcon = getUserStatusIcon(user);
+                    
+                    htmlBuilder.append("<div class=\"modern-app-card ").append(statusClass).append("\">");
+                    
+                    // \u5361\u7247\u5934\u90E8
+                    htmlBuilder.append("<div class=\"app-header\">");
+                    htmlBuilder.append("<div class=\"app-info\">");
+                    htmlBuilder.append("<div class=\"app-name\">").append(escapeHtml(user.getUsername())).append("</div>");
+                    htmlBuilder.append("<div class=\"app-meta\">");
+                    htmlBuilder.append("<span class=\"app-id\">ID: ").append(user.getId()).append("</span>");
+                    if (user.getCreatedAt() != null) {
+                        htmlBuilder.append("<span class=\"app-time\">\u6CE8\u518C\u4E8E ").append(formatRelativeTime(user.getCreatedAt())).append("</span>");
+                    }
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("<div class=\"status-indicator ").append(statusClass).append("\">");
+                    htmlBuilder.append("<i class=\"").append(statusIcon).append("\"></i>");
+                    htmlBuilder.append("<span>").append(roleText).append("</span>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    
+                    // \u7528\u6237\u4FE1\u606F\u6307\u6807
+                    htmlBuilder.append("<div class=\"app-metrics\">");
+                    htmlBuilder.append("<div class=\"metrics-grid\">");
+                    htmlBuilder.append("<div class=\"metric-item\">");
+                    htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-envelope\"></i></div>");
+                    htmlBuilder.append("<div class=\"metric-info\">");
+                    htmlBuilder.append("<div class=\"metric-label\">\u90AE\u7BB1</div>");
+                    htmlBuilder.append("<div class=\"metric-value\">").append(escapeHtml(user.getEmail())).append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("<div class=\"metric-item\">");
+                    htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-user-tag\"></i></div>");
+                    htmlBuilder.append("<div class=\"metric-info\">");
+                    htmlBuilder.append("<div class=\"metric-label\">\u89D2\u8272</div>");
+                    htmlBuilder.append("<div class=\"metric-value\">").append(roleText).append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    htmlBuilder.append("</div>");
+                    
+                    // \u64CD\u4F5C\u6309\u94AE
+                    htmlBuilder.append("<div class=\"app-actions\">");
+                    htmlBuilder.append("<button class=\"app-action-btn primary\" onclick=\"editUser('").append(user.getId()).append("')\">");
+                    htmlBuilder.append("<i class=\"fas fa-edit\"></i>");
+                    htmlBuilder.append("<span>\u7F16\u8F91</span>");
+                    htmlBuilder.append("</button>");
+                    htmlBuilder.append("<button class=\"app-action-btn secondary\" onclick=\"resetPassword('").append(user.getId()).append("')\">");
+                    htmlBuilder.append("<i class=\"fas fa-key\"></i>");
+                    htmlBuilder.append("<span>\u91CD\u7F6E</span>");
+                    htmlBuilder.append("</button>");
+                    htmlBuilder.append("</div>");
+                    
+                    htmlBuilder.append("</div>");
+                }
+                htmlBuilder.append("</div>");
+            }
+            
+            htmlBuilder.append("</section>");
+            
+            return ResponseEntity.ok(htmlBuilder.toString());
+            
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to load active users: " + e.getMessage()));
+            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> \u52A0\u8F7D\u7528\u6237\u5185\u5BB9\u5931\u8D25: " + e.getMessage() + "</div>";
+            return ResponseEntity.status(500).body(errorContent);
         }
     }
-
-    /**
-     * 获取服务器活动关联数据
-     */
-    @GetMapping("/user-permission/api/server-correlation")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
-    @ResponseBody
-    public ResponseEntity<?> getServerCorrelation() {
-        try {
-            UserPermissionDto.ServerCorrelationData data =
-                userPermissionService.getServerCorrelation();
-            return ResponseEntity.ok(data);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to load server correlation: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * 获取应用参与度数据
-     */
-    @GetMapping("/user-permission/api/app-engagement")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
-    @ResponseBody
-    public ResponseEntity<?> getAppEngagement() {
-        try {
-            UserPermissionDto.AppEngagementData data =
-                userPermissionService.getAppEngagement();
-            return ResponseEntity.ok(data);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to load app engagement: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * 获取用户列表
-     */
-    @GetMapping("/user-permission/api/users")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
-    @ResponseBody
-    public ResponseEntity<?> getUsersList() {
-        try {
-            List<UserPermissionDto.UserListItem> users =
-                userPermissionService.getUserList();
-            return ResponseEntity.ok(users);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Failed to load users: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * 获取用户详情
-     */
-    @GetMapping("/user-permission/api/users/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
-    @ResponseBody
-    public ResponseEntity<?> getUserDetails(@PathVariable Long id) {
-        try {
-            Map<String, Object> details = userPermissionService.getUserDetails(id);
-            return ResponseEntity.ok(details);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", "User not found: " + e.getMessage()));
-        }
-    }
-
+    
     // \u7528\u6237\u72B6\u6001\u8F85\u52A9\u65B9\u6CD5
     private String getUserStatusClass(User user) {
         if (user.getRoles().contains(User.Role.SUPER_ADMIN)) {

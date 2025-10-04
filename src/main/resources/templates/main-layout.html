@@ -23,6 +23,8 @@
     <link rel="stylesheet" href="/css/admin-dashboard.css">
     <link rel="stylesheet" th:href="@{/admin-dashboard/stat-cards.css}">
     <link rel="stylesheet" href="/css/server-group-management.css">
+    <link rel="stylesheet" href="/css/user-permission-management.css">
+    <link rel="stylesheet" href="/css/server-modal.css">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="icon" type="image/svg+xml" sizes="16x16" href="/favicon-16x16.svg">
     <link rel="icon" type="image/svg+xml" sizes="32x32" href="/favicon-32x32.svg">
@@ -1211,6 +1213,7 @@
 
     <!-- Chart.js CDN -->
     <script src="/vendor/chartjs/chart.min.js"></script>
+    <script src="/js/server-modal.js"></script>
 
     <script>
         (function () {
@@ -1607,11 +1610,11 @@
                             case 'servers':
                                 apiUrl = '/admin/api/servers-content';
                                 break;
-                            case 'users':
-                                apiUrl = '/admin/api/users-content';
-                                break;
                             case 'server-groups':
                                 apiUrl = '/admin/server-groups/content';
+                                break;
+                            case 'users':
+                                apiUrl = '/admin/api/users-content';
                                 break;
                             case 'settings':
                                 outlet.innerHTML = '<div class="spa-placeholder" data-i18n-zh="系统设置功能开发中..." data-i18n-en="System settings coming soon...">系统设置功能开发中...</div>';
@@ -1646,6 +1649,8 @@
                             initAdminDashboard();
                         } else if (route === 'server-groups') {
                             initServerGroupManagement();
+                        } else if (route === 'users') {
+                            initUserPermissionManagement();
                         }
                     });
                 });
@@ -2465,6 +2470,13 @@ function initDashboardRealTimeUpdates() {
                     });
                 }
 
+                const addServerBtn = document.getElementById('addServerBtn');
+                if (addServerBtn) {
+                    addServerBtn.addEventListener('click', () => {
+                        addNewServer();
+                    });
+                }
+
                 const healthTrendRange = document.getElementById('healthTrendRange');
                 if (healthTrendRange) {
                     healthTrendRange.addEventListener('change', (e) => {
@@ -3106,6 +3118,31 @@ function initDashboardRealTimeUpdates() {
                 showSuccessMessage('Export feature coming soon');
             }
 
+            function addNewServer() {
+                console.log('addNewServer called');
+                console.log('window.openServerModal exists:', typeof window.openServerModal);
+                console.log('window.serverModal exists:', !!window.serverModal);
+
+                // Open the server modal to add a new server
+                if (typeof window.openServerModal === 'function') {
+                    console.log('Calling window.openServerModal()');
+                    window.openServerModal();
+                } else {
+                    console.error('Server modal not available');
+                    console.error('window object keys:', Object.keys(window).filter(k => k.includes('server') || k.includes('modal')));
+                    alert('无法打开服务器添加弹窗，请刷新页面后重试');
+                }
+            }
+
+            // Global function to refresh server list (called from server-modal.js)
+            window.refreshServerList = async function() {
+                if (typeof loadServerGroupList === 'function') {
+                    await loadServerGroupList();
+                    updateServerGroupLastUpdateTime();
+                    showSuccessMessage(currentLanguage === 'en' ? 'Server list refreshed' : '服务器列表已刷新');
+                }
+            };
+
             function viewServerDetails(serverId) {
                 console.log('Viewing server details:', serverId);
             }
@@ -3136,6 +3173,514 @@ function initDashboardRealTimeUpdates() {
 
             function showErrorMessage(message) {
                 console.error('Error:', message);
+            }
+
+            // ===================================================================
+            // 🎯 [用户权限管理] User Permission Management Functions
+            // ===================================================================
+            function initUserPermissionManagement() {
+                if (!document.querySelector('.user-permission-management')) {
+                    return;
+                }
+
+                console.log('初始化用户权限管理...');
+
+                initUserPermissionData();
+                initUserPermissionEvents();
+
+                console.log('用户权限管理初始化完成');
+            }
+
+            function initUserPermissionData() {
+                loadActiveUsersTop5();
+                loadServerActivityCorrelation();
+                loadAppEngagement();
+                loadUserList();
+                updateUserPermissionLastUpdateTime();
+            }
+
+            function initUserPermissionEvents() {
+                // 刷新数据按钮
+                const refreshBtn = document.getElementById('refreshUserDataBtn');
+                if (refreshBtn) {
+                    refreshBtn.addEventListener('click', () => {
+                        refreshAllUserData();
+                    });
+                }
+
+                // 导出报告按钮
+                const exportBtn = document.getElementById('exportUserReportBtn');
+                if (exportBtn) {
+                    exportBtn.addEventListener('click', () => {
+                        exportUserReport();
+                    });
+                }
+
+                // 添加用户按钮
+                const addUserBtn = document.getElementById('addUserBtn');
+                if (addUserBtn) {
+                    addUserBtn.addEventListener('click', () => {
+                        addNewUser();
+                    });
+                }
+
+                // 活跃用户时间范围选择
+                const activeRankingRange = document.getElementById('activeRankingRange');
+                if (activeRankingRange) {
+                    activeRankingRange.addEventListener('change', (e) => {
+                        loadActiveUsersTop5(parseInt(e.target.value));
+                    });
+                }
+
+                // 搜索框
+                const searchInput = document.getElementById('userSearchInput');
+                if (searchInput) {
+                    let searchTimeout;
+                    searchInput.addEventListener('input', (e) => {
+                        clearTimeout(searchTimeout);
+                        searchTimeout = setTimeout(() => {
+                            filterUserList();
+                        }, 300);
+                    });
+                }
+
+                // 角色筛选
+                const roleFilter = document.getElementById('userRoleFilter');
+                if (roleFilter) {
+                    roleFilter.addEventListener('change', filterUserList);
+                }
+
+                // 状态筛选
+                const statusFilter = document.getElementById('userStatusFilter');
+                if (statusFilter) {
+                    statusFilter.addEventListener('change', filterUserList);
+                }
+
+                // 视图切换按钮
+                const tableViewBtn = document.getElementById('userTableViewBtn');
+                if (tableViewBtn) {
+                    tableViewBtn.addEventListener('click', () => {
+                        switchUserView('table');
+                    });
+                }
+
+                const cardViewBtn = document.getElementById('userCardViewBtn');
+                if (cardViewBtn) {
+                    cardViewBtn.addEventListener('click', () => {
+                        switchUserView('card');
+                    });
+                }
+
+                // 全选复选框
+                const selectAllCheckbox = document.getElementById('selectAllUsers');
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.addEventListener('change', (e) => {
+                        toggleSelectAllUsers(e.target.checked);
+                    });
+                }
+            }
+
+            async function loadActiveUsersTop5(hours = 7 * 24) {
+                const container = document.getElementById('topActiveUsers');
+                if (!container) return;
+
+                try {
+                    const response = await fetch(`/admin/user-permission/api/active-users-top5?hours=${hours}`);
+                    if (!response.ok) throw new Error('Failed to load active users');
+
+                    const data = await response.json();
+                    renderActiveUsersTop5(data);
+                } catch (error) {
+                    console.error('Failed to load active users:', error);
+                    container.innerHTML = '<li class="empty-state"><span data-i18n-zh="加载失败" data-i18n-en="Failed to load">加载失败</span></li>';
+                }
+            }
+
+            function renderActiveUsersTop5(users) {
+                const container = document.getElementById('topActiveUsers');
+                if (!container || !users || users.length === 0) {
+                    container.innerHTML = '<li class="empty-state"><span data-i18n-zh="暂无数据" data-i18n-en="No data">暂无数据</span></li>';
+                    return;
+                }
+
+                const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+                const maxEvents = Math.max(...users.map(u => u.eventCount));
+
+                container.innerHTML = users.map((user, index) => `
+                    <li class="ranking-item">
+                        <div class="ranking-medal">${medals[index]}</div>
+                        <div class="ranking-info">
+                            <div class="ranking-header">
+                                <span class="ranking-name">${user.userName}</span>
+                                <span class="ranking-badge">${user.role}</span>
+                            </div>
+                            <div class="ranking-progress">
+                                <div class="ranking-progress-bar" style="width: ${(user.eventCount / maxEvents * 100)}%"></div>
+                            </div>
+                            <div class="ranking-stats">
+                                <span><span class="ranking-count">${user.eventCount}</span> 次事件</span>
+                                <span class="ranking-trend ${user.trend > 0 ? 'up' : 'down'}">
+                                    ${user.trend > 0 ? '↑' : '↓'} ${Math.abs(user.trend)}%
+                                </span>
+                            </div>
+                        </div>
+                    </li>
+                `).join('');
+            }
+
+            async function loadServerActivityCorrelation() {
+                try {
+                    const response = await fetch('/admin/user-permission/api/server-correlation');
+                    if (!response.ok) throw new Error('Failed to load server correlation');
+
+                    const data = await response.json();
+                    renderServerActivityCorrelation(data);
+                } catch (error) {
+                    console.error('Failed to load server correlation:', error);
+                }
+            }
+
+            function renderServerActivityCorrelation(data) {
+                const avgServerPerUser = document.getElementById('avgServerPerUser');
+                const topServerUser = document.getElementById('topServerUser');
+                const topServer = document.getElementById('topServer');
+                const topServerPairs = document.getElementById('topServerPairs');
+
+                if (avgServerPerUser) avgServerPerUser.textContent = data.avgServerPerUser || '--';
+                if (topServerUser) topServerUser.textContent = data.topServerUser || '--';
+                if (topServer) topServer.textContent = data.topServer || '--';
+
+                if (topServerPairs && data.topPairs && data.topPairs.length > 0) {
+                    topServerPairs.innerHTML = data.topPairs.map((pair, index) => `
+                        <li class="pair-item">
+                            <span class="pair-rank">#${index + 1}</span>
+                            <div class="pair-content">
+                                <span class="pair-user">${pair.userName}</span>
+                                <span class="pair-arrow">→</span>
+                                <span class="pair-server">${pair.serverName}</span>
+                            </div>
+                            <span class="pair-count">${pair.count}</span>
+                        </li>
+                    `).join('');
+                } else if (topServerPairs) {
+                    topServerPairs.innerHTML = '<li class="empty-state"><span data-i18n-zh="暂无数据" data-i18n-en="No data">暂无数据</span></li>';
+                }
+            }
+
+            async function loadAppEngagement() {
+                try {
+                    const response = await fetch('/admin/user-permission/api/app-engagement');
+                    if (!response.ok) throw new Error('Failed to load app engagement');
+
+                    const data = await response.json();
+                    renderAppEngagement(data);
+                } catch (error) {
+                    console.error('Failed to load app engagement:', error);
+                }
+            }
+
+            function renderAppEngagement(data) {
+                const avgAppsPerUser = document.getElementById('avgAppsPerUser');
+                const topAppOwner = document.getElementById('topAppOwner');
+                const avgHealthScore = document.getElementById('avgHealthScore');
+
+                if (avgAppsPerUser) avgAppsPerUser.textContent = data.avgAppsPerUser || '--';
+                if (topAppOwner) topAppOwner.textContent = data.topAppOwner || '--';
+                if (avgHealthScore) avgHealthScore.textContent = data.avgHealthScore || '--';
+
+                // 渲染饼图
+                const chartCanvas = document.getElementById('appOperationsChart');
+                const chartContainer = document.getElementById('appOperationsChartContainer');
+                const chartPlaceholder = document.getElementById('appOperationsPlaceholder');
+
+                if (chartCanvas && data.operations) {
+                    if (chartContainer) chartContainer.style.display = 'flex';
+                    if (chartPlaceholder) chartPlaceholder.style.display = 'none';
+
+                    const ctx = chartCanvas.getContext('2d');
+                    new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: data.operations.map(op => op.label),
+                            datasets: [{
+                                data: data.operations.map(op => op.value),
+                                backgroundColor: [
+                                    'rgba(59, 130, 246, 0.8)',
+                                    'rgba(16, 185, 129, 0.8)',
+                                    'rgba(245, 158, 11, 0.8)',
+                                    'rgba(239, 68, 68, 0.8)',
+                                    'rgba(139, 92, 246, 0.8)'
+                                ],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 12,
+                                        font: { size: 12 }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            async function loadUserList() {
+                const tableBody = document.getElementById('userTableBody');
+                const cardGrid = document.getElementById('userCardGrid');
+
+                if (!tableBody && !cardGrid) return;
+
+                try {
+                    const response = await fetch('/admin/user-permission/api/users');
+                    if (!response.ok) throw new Error('Failed to load users');
+
+                    const users = await response.json();
+                    renderUserList(users);
+                } catch (error) {
+                    console.error('Failed to load users:', error);
+                    if (tableBody) {
+                        tableBody.innerHTML = '<tr><td colspan="9" class="empty-state"><span data-i18n-zh="加载失败" data-i18n-en="Failed to load">加载失败</span></td></tr>';
+                    }
+                }
+            }
+
+            function renderUserList(users) {
+                renderUserTable(users);
+                renderUserCards(users);
+            }
+
+            function renderUserTable(users) {
+                const tableBody = document.getElementById('userTableBody');
+                if (!tableBody) return;
+
+                if (!users || users.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="9" class="empty-state"><span data-i18n-zh="未找到用户" data-i18n-en="No users found">未找到用户</span></td></tr>';
+                    return;
+                }
+
+                tableBody.innerHTML = users.map(user => `
+                    <tr>
+                        <td><input type="checkbox" class="user-checkbox" data-user-id="${user.id}"></td>
+                        <td>
+                            <div class="user-info">
+                                <img src="${user.avatar || '/images/default-avatar.png'}" alt="${user.name}" class="user-avatar">
+                                <div class="user-details">
+                                    <div class="user-name">${user.name}</div>
+                                    <div class="user-email">${user.email}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="role-badge ${user.role.toLowerCase().replace('_', '-')}">${getRoleDisplayName(user.role)}</span>
+                        </td>
+                        <td>
+                            <span class="status-badge ${user.status}">
+                                <span class="status-dot"></span>
+                                ${getStatusDisplayName(user.status)}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="activity-indicator">
+                                <div class="activity-bar">
+                                    <div class="activity-fill ${getActivityLevel(user.activityScore)}" style="width: ${user.activityScore}%"></div>
+                                </div>
+                                <span class="activity-label">${user.activityScore}%</span>
+                            </div>
+                        </td>
+                        <td><span class="count-badge">${user.serverCount || 0}</span></td>
+                        <td><span class="count-badge">${user.appCount || 0}</span></td>
+                        <td><span class="time-text">${formatTime(user.lastActive)}</span></td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn" onclick="viewUserDetails(${user.id})">查看</button>
+                                <button class="action-btn" onclick="editUser(${user.id})">编辑</button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            function renderUserCards(users) {
+                const cardGrid = document.getElementById('userCardGrid');
+                if (!cardGrid) return;
+
+                if (!users || users.length === 0) {
+                    cardGrid.innerHTML = '<div class="empty-state"><span data-i18n-zh="未找到用户" data-i18n-en="No users found">未找到用户</span></div>';
+                    return;
+                }
+
+                cardGrid.innerHTML = users.map(user => `
+                    <div class="user-card">
+                        <div class="user-card-header">
+                            <img src="${user.avatar || '/images/default-avatar.png'}" alt="${user.name}" class="user-card-avatar">
+                            <div class="user-card-info">
+                                <div class="user-card-name">${user.name}</div>
+                                <div class="user-card-email">${user.email}</div>
+                                <div class="user-card-badges">
+                                    <span class="role-badge ${user.role.toLowerCase().replace('_', '-')}">${getRoleDisplayName(user.role)}</span>
+                                    <span class="status-badge ${user.status}">
+                                        <span class="status-dot"></span>
+                                        ${getStatusDisplayName(user.status)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="user-card-body">
+                            <div class="user-card-stats">
+                                <div class="user-card-stat">
+                                    <span class="user-card-stat-label">活跃度</span>
+                                    <span class="user-card-stat-value">${user.activityScore}%</span>
+                                </div>
+                                <div class="user-card-stat">
+                                    <span class="user-card-stat-label">服务器</span>
+                                    <span class="user-card-stat-value">${user.serverCount || 0}</span>
+                                </div>
+                                <div class="user-card-stat">
+                                    <span class="user-card-stat-label">应用</span>
+                                    <span class="user-card-stat-value">${user.appCount || 0}</span>
+                                </div>
+                                <div class="user-card-stat">
+                                    <span class="user-card-stat-label">最后活跃</span>
+                                    <span class="user-card-stat-value">${formatTime(user.lastActive)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="user-card-footer">
+                            <span class="user-card-time">${formatTime(user.lastActive)}</span>
+                            <div class="user-card-actions">
+                                <button class="action-btn" onclick="viewUserDetails(${user.id})">查看</button>
+                                <button class="action-btn" onclick="editUser(${user.id})">编辑</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            function switchUserView(viewType) {
+                const tableView = document.getElementById('userTableView');
+                const cardView = document.getElementById('userCardView');
+                const tableBtn = document.getElementById('userTableViewBtn');
+                const cardBtn = document.getElementById('userCardViewBtn');
+
+                if (viewType === 'table') {
+                    if (tableView) tableView.style.display = 'block';
+                    if (cardView) cardView.style.display = 'none';
+                    if (tableBtn) tableBtn.classList.add('active');
+                    if (cardBtn) cardBtn.classList.remove('active');
+                } else if (viewType === 'card') {
+                    if (tableView) tableView.style.display = 'none';
+                    if (cardView) cardView.style.display = 'block';
+                    if (tableBtn) tableBtn.classList.remove('active');
+                    if (cardBtn) cardBtn.classList.add('active');
+                }
+            }
+
+            function filterUserList() {
+                const searchTerm = document.getElementById('userSearchInput')?.value.toLowerCase() || '';
+                const roleFilter = document.getElementById('userRoleFilter')?.value || 'all';
+                const statusFilter = document.getElementById('userStatusFilter')?.value || 'all';
+
+                console.log('Filtering users:', { searchTerm, roleFilter, statusFilter });
+                // TODO: 实现筛选逻辑
+                loadUserList();
+            }
+
+            function toggleSelectAllUsers(checked) {
+                const checkboxes = document.querySelectorAll('.user-checkbox');
+                checkboxes.forEach(cb => cb.checked = checked);
+            }
+
+            function refreshAllUserData() {
+                console.log('刷新所有用户数据...');
+                initUserPermissionData();
+                updateUserPermissionLastUpdateTime();
+                showSuccessMessage('数据已刷新');
+            }
+
+            function exportUserReport() {
+                console.log('导出用户报告...');
+                showSuccessMessage('导出功能即将上线');
+            }
+
+            function addNewUser() {
+                console.log('addNewUser called');
+                console.log('window.UserAddModal exists:', !!window.UserAddModal);
+                console.log('window.UserAddModal.open exists:', window.UserAddModal && typeof window.UserAddModal.open === 'function');
+
+                // Open the user modal to add a new user
+                if (window.UserAddModal && typeof window.UserAddModal.open === 'function') {
+                    console.log('Calling window.UserAddModal.open()');
+                    window.UserAddModal.open();
+                } else {
+                    console.error('User modal not available');
+                    console.error('window object keys:', Object.keys(window).filter(k => k.includes('user') || k.includes('modal')));
+                    alert('无法打开用户添加弹窗，请刷新页面后重试');
+                }
+            }
+
+            function viewUserDetails(userId) {
+                console.log('查看用户详情:', userId);
+            }
+
+            function editUser(userId) {
+                console.log('编辑用户:', userId);
+            }
+
+            function updateUserPermissionLastUpdateTime() {
+                const timeElement = document.getElementById('userPermissionUpdateTime');
+                if (timeElement) {
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                    const currentLang = document.documentElement.lang || 'zh-CN';
+                    timeElement.textContent = currentLang === 'en' ? `Last updated: ${timeStr}` : `最后更新: ${timeStr}`;
+                }
+            }
+
+            function getRoleDisplayName(role) {
+                const roleMap = {
+                    'SUPER_ADMIN': '超级管理员',
+                    'ADMIN': '管理员',
+                    'DEVELOPER': '开发者'
+                };
+                return roleMap[role] || role;
+            }
+
+            function getStatusDisplayName(status) {
+                const statusMap = {
+                    'online': '在线',
+                    'idle': '空闲',
+                    'offline': '离线'
+                };
+                return statusMap[status] || status;
+            }
+
+            function getActivityLevel(score) {
+                if (score >= 70) return 'high';
+                if (score >= 40) return 'medium';
+                return 'low';
+            }
+
+            function formatTime(timestamp) {
+                if (!timestamp) return '--';
+                const date = new Date(timestamp);
+                const now = new Date();
+                const diff = now - date;
+                const minutes = Math.floor(diff / 60000);
+                const hours = Math.floor(diff / 3600000);
+                const days = Math.floor(diff / 86400000);
+
+                if (minutes < 1) return '刚刚';
+                if (minutes < 60) return `${minutes}分钟前`;
+                if (hours < 24) return `${hours}小时前`;
+                if (days < 7) return `${days}天前`;
+                return date.toLocaleDateString('zh-CN');
             }
 
             // 工具函数
@@ -3694,6 +4239,530 @@ function initDashboardRealTimeUpdates() {
                 getState() {
                     return { theme: currentTheme, sidebar: sidebarState, language: currentLanguage };
                 }
+            };
+        })();
+
+        // ======================================================================
+        // 用户添加弹窗逻辑 - User Add Modal Logic
+        // ======================================================================
+        (function() {
+            // DOM 元素引用
+            let modalOverlay, userAddForm, addUsernameInput, addEmailInput, addPasswordInput,
+                addConfirmPasswordInput, addUsernameStatus, addEmailStatus, addPasswordStatus,
+                addRoleMatrix, addServerGrid, addDefaultServer, addAdvancedPanel,
+                addAdvancedToggleText, submitUserAddBtn;
+
+            // 状态管理
+            const selectedRoles = new Set(['USER']); // 默认选中USER角色
+            const selectedServers = new Set();
+            let availableServers = [];
+
+            // 工具函数
+            function delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            function updateValidation(element, message, status) {
+                if (!element) return;
+                const span = element.querySelector('span') || element;
+                span.textContent = message;
+                element.classList.remove('success', 'error');
+                if (status) {
+                    element.classList.add(status);
+                }
+            }
+
+            function showToast(message, type = 'info') {
+                // 使用平台现有的通知系统
+                if (window.AppShell && window.AppShell.emit) {
+                    window.AppShell.emit('notification:show', {
+                        message: message,
+                        type: type
+                    });
+                } else {
+                    console.log(`[Toast ${type}] ${message}`);
+                }
+            }
+
+            // 初始化DOM元素引用
+            function initDomReferences() {
+                modalOverlay = document.getElementById('userAddModalOverlay');
+                userAddForm = document.getElementById('userAddForm');
+                addUsernameInput = document.getElementById('addUsername');
+                addEmailInput = document.getElementById('addEmail');
+                addPasswordInput = document.getElementById('addPassword');
+                addConfirmPasswordInput = document.getElementById('addConfirmPassword');
+                addUsernameStatus = document.getElementById('addUsernameStatus');
+                addEmailStatus = document.getElementById('addEmailStatus');
+                addPasswordStatus = document.getElementById('addPasswordStatus');
+                addRoleMatrix = document.getElementById('addRoleMatrix');
+                addServerGrid = document.getElementById('addServerGrid');
+                addDefaultServer = document.getElementById('addDefaultServer');
+                addAdvancedPanel = document.getElementById('addAdvancedPanel');
+                addAdvancedToggleText = document.getElementById('addAdvancedToggleText');
+                submitUserAddBtn = document.getElementById('submitUserAddBtn');
+            }
+
+            // 打开弹窗
+            function openUserAddModal() {
+                // 每次打开时重新获取DOM引用（确保动态加载的内容被正确引用）
+                initDomReferences();
+
+                if (!modalOverlay) {
+                    console.error('[UserAddModal] 未找到弹窗元素，可能页面尚未加载');
+                    return;
+                }
+
+                modalOverlay.classList.add('show');
+                document.body.style.overflow = 'hidden';
+
+                // 加载服务器列表
+                loadAvailableServers();
+
+                // 聚焦用户名输入框
+                if (addUsernameInput) {
+                    setTimeout(() => addUsernameInput.focus(), 100);
+                }
+            }
+
+            // 关闭弹窗
+            function closeUserAddModal() {
+                // 重新获取modalOverlay引用以防DOM已更新
+                const overlay = document.getElementById('userAddModalOverlay');
+                if (!overlay) {
+                    console.warn('[UserAddModal] 关闭弹窗时未找到弹窗元素');
+                    return;
+                }
+
+                overlay.classList.remove('show');
+                document.body.style.overflow = '';
+                resetForm();
+            }
+
+            // 重置表单
+            function resetForm() {
+                if (!userAddForm) return;
+
+                userAddForm.reset();
+                selectedRoles.clear();
+                selectedRoles.add('USER');
+                selectedServers.clear();
+
+                updateValidation(addUsernameStatus, '用于登录及工作目录名称,需唯一。');
+                updateValidation(addEmailStatus, '用于接收通知及重置密码,需唯一。');
+                updateValidation(addPasswordStatus, '确保两次输入一致。');
+
+                renderRoleChips();
+                renderServerOptions();
+
+                // 关闭高级选项
+                if (addAdvancedPanel) {
+                    addAdvancedPanel.classList.remove('show');
+                    if (addAdvancedToggleText) {
+                        addAdvancedToggleText.textContent = '展开';
+                    }
+                }
+            }
+
+            // 检查用户名唯一性
+            async function checkUsernameAvailability(username) {
+                if (!username || username.trim() === '') {
+                    return {
+                        status: 'idle',
+                        message: '用于登录及工作目录名称,需唯一。'
+                    };
+                }
+
+                try {
+                    const response = await fetch(`/admin/api/users/check-username?username=${encodeURIComponent(username.trim())}`);
+                    const data = await response.json();
+
+                    return {
+                        status: data.available ? 'success' : 'error',
+                        message: data.message || (data.available ? '用户名可用。' : '该用户名已存在,请更换。')
+                    };
+                } catch (error) {
+                    console.error('[UserAddModal] 检查用户名失败:', error);
+                    return {
+                        status: 'error',
+                        message: '检查用户名时出错,请稍后重试。'
+                    };
+                }
+            }
+
+            // 检查邮箱唯一性
+            async function checkEmailAvailability(email) {
+                if (!email || email.trim() === '') {
+                    return {
+                        status: 'idle',
+                        message: '用于接收通知及重置密码,需唯一。'
+                    };
+                }
+
+                try {
+                    const response = await fetch(`/admin/api/users/check-email?email=${encodeURIComponent(email.trim())}`);
+                    const data = await response.json();
+
+                    return {
+                        status: data.available ? 'success' : 'error',
+                        message: data.message || (data.available ? '邮箱可用。' : '该邮箱已存在,请更换。')
+                    };
+                } catch (error) {
+                    console.error('[UserAddModal] 检查邮箱失败:', error);
+                    return {
+                        status: 'error',
+                        message: '检查邮箱时出错,请稍后重试。'
+                    };
+                }
+            }
+
+            // 渲染角色按钮
+            function renderRoleChips() {
+                if (!addRoleMatrix) return;
+
+                const roleChips = addRoleMatrix.querySelectorAll('.role-chip');
+                roleChips.forEach(chip => {
+                    const role = chip.dataset.role;
+                    if (selectedRoles.has(role)) {
+                        chip.classList.add('active');
+                    } else {
+                        chip.classList.remove('active');
+                    }
+                });
+            }
+
+            // 加载可用服务器列表
+            async function loadAvailableServers() {
+                try {
+                    const response = await fetch('/admin/api/servers/available');
+                    if (!response.ok) {
+                        throw new Error('获取服务器列表失败');
+                    }
+                    availableServers = await response.json();
+                    renderServerOptions();
+                } catch (error) {
+                    console.error('[UserAddModal] 加载服务器列表失败:', error);
+                    showToast('加载服务器列表失败', 'error');
+                }
+            }
+
+            // 渲染服务器选项
+            function renderServerOptions() {
+                if (!addServerGrid) return;
+
+                addServerGrid.innerHTML = '';
+
+                availableServers.forEach(server => {
+                    const label = document.createElement('label');
+                    label.className = 'checkbox-tile';
+
+                    const isSelected = selectedServers.has(server.id);
+                    const statusClass = server.connectionStatus === 'CONNECTED' || server.connectionStatus === 'MONITORING' ? 'active' : 'pending';
+
+                    label.innerHTML = `
+                        <header>
+                            <div style="display:flex; align-items:center; gap: 8px;">
+                                <input type="checkbox" value="${server.id}" ${isSelected ? 'checked' : ''}>
+                                <span style="font-weight:600;">${server.name}</span>
+                            </div>
+                            <span class="status-pill ${statusClass}" style="font-size:11px;">
+                                ${server.connectionStatus || 'UNKNOWN'}
+                            </span>
+                        </header>
+                        <div class="tile-meta">${server.hostname}</div>
+                    `;
+
+                    const checkbox = label.querySelector('input[type="checkbox"]');
+                    checkbox.addEventListener('change', function() {
+                        const serverId = parseInt(this.value);
+                        if (this.checked) {
+                            selectedServers.add(serverId);
+                        } else {
+                            selectedServers.delete(serverId);
+                        }
+                        renderDefaultServerOptions();
+                    });
+
+                    addServerGrid.appendChild(label);
+                });
+
+                renderDefaultServerOptions();
+            }
+
+            // 渲染默认服务器下拉选项
+            function renderDefaultServerOptions() {
+                if (!addDefaultServer) return;
+
+                const selected = Array.from(selectedServers);
+                addDefaultServer.innerHTML = '';
+
+                if (selected.length === 0) {
+                    addDefaultServer.disabled = true;
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = '尚未勾选服务器';
+                    addDefaultServer.appendChild(option);
+                    return;
+                }
+
+                addDefaultServer.disabled = false;
+                selected.forEach(id => {
+                    const server = availableServers.find(s => s.id === id);
+                    if (server) {
+                        const option = document.createElement('option');
+                        option.value = server.id;
+                        option.textContent = `${server.name} · ${server.hostname}`;
+                        addDefaultServer.appendChild(option);
+                    }
+                });
+            }
+
+            // 构建请求payload
+            function buildPayload() {
+                const formData = new FormData(userAddForm);
+                const accountEnabled = document.getElementById('addAccountEnabled');
+                const forceReset = document.getElementById('addForceReset');
+                const sendWelcome = document.getElementById('addSendWelcome');
+
+                const payload = {
+                    username: (formData.get('username') || '').trim(),
+                    email: (formData.get('email') || '').trim(),
+                    fullName: (formData.get('fullName') || '').trim() || null,
+                    department: (formData.get('department') || '').trim() || null,
+                    password: formData.get('password'),
+                    enabled: accountEnabled ? accountEnabled.checked : true,
+                    enforcePasswordReset: forceReset ? forceReset.checked : false,
+                    roles: Array.from(selectedRoles),
+                    serverIds: Array.from(selectedServers),
+                    defaultServerId: addDefaultServer.value ? parseInt(addDefaultServer.value) : null,
+                    workDirectory: (formData.get('workspacePath') || '').trim() || null,
+                    sendWelcomeMail: sendWelcome ? sendWelcome.checked : false
+                };
+
+                return payload;
+            }
+
+            // 提交表单
+            async function handleSubmit(event) {
+                event.preventDefault();
+
+                const password = addPasswordInput.value;
+                const confirmPassword = addConfirmPasswordInput.value;
+
+                // 验证密码
+                if (!password || password.length < 8) {
+                    showToast('❌ 密码至少 8 位且需包含字母与数字', 'error');
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showToast('❌ 两次密码输入不一致', 'error');
+                    return;
+                }
+
+                // 验证角色
+                if (selectedRoles.size === 0) {
+                    showToast('❌ 请至少选择一个角色', 'error');
+                    return;
+                }
+
+                // 验证必填项
+                if (!addUsernameInput.value || !addEmailInput.value) {
+                    showToast('❌ 请补全必填信息', 'error');
+                    return;
+                }
+
+                // 显示加载状态
+                submitUserAddBtn.classList.add('is-loading');
+                submitUserAddBtn.disabled = true;
+
+                try {
+                    const payload = buildPayload();
+                    console.log('[UserAddModal] 提交用户数据:', payload);
+
+                    const response = await fetch('/admin/api/users', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.message || '创建用户失败');
+                    }
+
+                    showToast('✅ ' + (result.message || '用户创建成功'), 'success');
+                    closeUserAddModal();
+
+                    // 刷新用户列表
+                    if (window.AppShell && window.AppShell.emit) {
+                        window.AppShell.emit('user:created', result.user);
+                    }
+
+                    // 如果当前在用户权限管理页面,刷新列表
+                    if (typeof refreshUserList === 'function') {
+                        refreshUserList();
+                    }
+                } catch (error) {
+                    console.error('[UserAddModal] 创建用户失败:', error);
+                    showToast('❌ ' + error.message, 'error');
+                } finally {
+                    submitUserAddBtn.classList.remove('is-loading');
+                    submitUserAddBtn.disabled = false;
+                }
+            }
+
+            // 初始化事件监听器
+            function initEventListeners() {
+                // 等待DOM加载完成
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => {
+                        initDomReferences();
+                        attachEventListeners();
+                    });
+                } else {
+                    initDomReferences();
+                    attachEventListeners();
+                }
+            }
+
+            function attachEventListeners() {
+                // 打开弹窗按钮 (使用事件委托)
+                document.addEventListener('click', function(e) {
+                    if (e.target && (e.target.id === 'addUserBtn' || e.target.closest('#addUserBtn'))) {
+                        e.preventDefault();
+                        openUserAddModal();
+                    }
+
+                    // 关闭弹窗按钮 (使用事件委托)
+                    if (e.target && (e.target.id === 'closeUserAddModal' || e.target.closest('#closeUserAddModal'))) {
+                        e.preventDefault();
+                        closeUserAddModal();
+                    }
+
+                    // 取消按钮 (使用事件委托)
+                    if (e.target && (e.target.id === 'cancelUserAddBtn' || e.target.closest('#cancelUserAddBtn'))) {
+                        e.preventDefault();
+                        closeUserAddModal();
+                    }
+
+                    // 点击遮罩层关闭 (使用事件委托)
+                    if (e.target && e.target.id === 'userAddModalOverlay' && e.target.classList.contains('modal-overlay')) {
+                        closeUserAddModal();
+                    }
+
+                    // 密码显示/隐藏切换
+                    if (e.target && e.target.id === 'addPasswordToggle') {
+                        const passwordInput = document.getElementById('addPassword');
+                        if (passwordInput) {
+                            const type = passwordInput.type === 'password' ? 'text' : 'password';
+                            passwordInput.type = type;
+                            e.target.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
+                        }
+                    }
+                });
+
+                // ESC键关闭
+                document.addEventListener('keydown', function(e) {
+                    const overlay = document.getElementById('userAddModalOverlay');
+                    if (e.key === 'Escape' && overlay && overlay.classList.contains('show')) {
+                        closeUserAddModal();
+                    }
+                });
+
+                // 表单提交 (使用事件委托)
+                document.addEventListener('submit', function(e) {
+                    if (e.target && e.target.id === 'userAddForm') {
+                        handleSubmit(e);
+                    }
+                });
+
+                // 使用事件委托处理输入验证
+                document.addEventListener('blur', async function(e) {
+                    // 用户名唯一性检查
+                    if (e.target && e.target.id === 'addUsername') {
+                        const result = await checkUsernameAvailability(e.target.value);
+                        const statusElement = document.getElementById('addUsernameStatus');
+                        updateValidation(
+                            statusElement,
+                            result.message,
+                            result.status === 'success' ? 'success' : result.status === 'error' ? 'error' : undefined
+                        );
+                    }
+
+                    // 邮箱唯一性检查
+                    if (e.target && e.target.id === 'addEmail') {
+                        const result = await checkEmailAvailability(e.target.value);
+                        const statusElement = document.getElementById('addEmailStatus');
+                        updateValidation(
+                            statusElement,
+                            result.message,
+                            result.status === 'success' ? 'success' : result.status === 'error' ? 'error' : undefined
+                        );
+                    }
+                }, true); // 使用捕获阶段
+
+                // 使用事件委托处理输入事件
+                document.addEventListener('input', function(e) {
+                    // 密码一致性检查
+                    if (e.target && e.target.id === 'addConfirmPassword') {
+                        const passwordInput = document.getElementById('addPassword');
+                        const statusElement = document.getElementById('addPasswordStatus');
+                        if (!e.target.value) {
+                            updateValidation(statusElement, '确保两次输入一致。');
+                            return;
+                        }
+                        if (e.target.value === passwordInput.value) {
+                            updateValidation(statusElement, '两次输入一致。', 'success');
+                        } else {
+                            updateValidation(statusElement, '密码不一致,请重新确认。', 'error');
+                        }
+                    }
+                });
+
+                // 角色选择 (使用事件委托)
+                document.addEventListener('click', function(e) {
+                    const chip = e.target.closest('.role-chip');
+                    const roleMatrix = document.getElementById('addRoleMatrix');
+                    if (chip && roleMatrix && roleMatrix.contains(chip)) {
+                        const role = chip.dataset.role;
+                        if (selectedRoles.has(role)) {
+                            selectedRoles.delete(role);
+                        } else {
+                            selectedRoles.add(role);
+                        }
+
+                        // 至少保留一个角色
+                        if (selectedRoles.size === 0) {
+                            selectedRoles.add('USER');
+                            showToast('⚠️ 至少保留一个角色', 'warning');
+                        }
+
+                        renderRoleChips();
+                    }
+
+                    // 高级选项切换
+                    if (e.target && (e.target.id === 'addAdvancedToggle' || e.target.closest('#addAdvancedToggle'))) {
+                        const panel = document.getElementById('addAdvancedPanel');
+                        const toggleText = document.getElementById('addAdvancedToggleText');
+                        if (panel && toggleText) {
+                            const isShown = panel.classList.toggle('show');
+                            toggleText.textContent = isShown ? '收起' : '展开';
+                        }
+                    }
+                });
+            }
+
+            // 初始化
+            initEventListeners();
+
+            // 暴露API
+            window.UserAddModal = {
+                open: openUserAddModal,
+                close: closeUserAddModal
             };
         })();
     </script>

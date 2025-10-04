@@ -21,9 +21,53 @@
 }
 
 .server-group-management .page-header {
-    margin-bottom: 0;
+    background: var(--bg-primary, #ffffff);
+    border-radius: var(--border-radius-xl, 16px);
     padding: 0;
+    margin-bottom: var(--spacing-lg, 24px);
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.1));
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-md, 16px);
     border-bottom: none;
+}
+
+/* Page Header 内部元素边距调整 */
+.server-group-management .page-title-group {
+    gap: 20px; /* 增加图标和标题内容之间的间距 */
+    padding-left: 24px; /* 左侧padding */
+}
+
+/* 页面标题样式 - 与用户与权限页面保持一致 */
+.server-group-management .page-title-content h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.server-group-management .page-title-group .page-icon {
+    margin-right: 4px; /* 额外的右边距 */
+}
+
+.server-group-management .page-actions {
+    gap: 16px; /* 增加按钮之间的间距 */
+    padding-right: 24px; /* 右侧padding */
+}
+
+.server-group-management .page-actions .last-update {
+    margin-right: 8px; /* 最后更新时间与按钮之间的额外间距 */
+}
+
+.server-group-management .page-actions button {
+    padding-left: 20px;  /* 增加按钮左右内边距 */
+    padding-right: 20px;
+}
+
+.server-group-management .page-actions button i {
+    margin-right: 10px; /* 增加按钮图标和文字之间的间距 */
 }
 
 /* ===== Deep Analysis Section ===== */
@@ -64,7 +108,7 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: 12px;
-    padding-bottom: 12px;
+    padding: 0 0 10px 0;
     border-bottom: 1px solid var(--border-light, #f1f5f9);
 }
 
@@ -130,6 +174,7 @@
     min-height: 280px;
     display: flex;
     flex-direction: column;
+    padding: 0;
 }
 
 .chart-container {

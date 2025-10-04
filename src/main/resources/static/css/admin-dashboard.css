@@ -15,45 +15,68 @@
 }
 
 .admin-dashboard .page-header {
-    margin-bottom: 0;
+    background: var(--bg-primary, #ffffff);
+    border-radius: var(--border-radius-xl, 16px);
     padding: 0;
+    margin-bottom: var(--spacing-lg, 24px);
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.1));
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--component-gap, 16px);
     border-bottom: none;
 }
 
-.admin-dashboard .stats-overview {
-    margin-top: 0;
-    margin-bottom: 0;
+/* Page Header 内部元素边距调整 */
+.admin-dashboard .page-title-group {
+    gap: 20px; /* 增加图标和标题内容之间的间距 */
+    padding-left: 24px; /* 左侧padding */
 }
 
-.admin-dashboard .page-header {
-    gap: var(--component-gap);
-    flex-wrap: wrap;
+/* 页面标题样式 - 与用户与权限页面保持一致 */
+.admin-dashboard .page-title-content h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.admin-dashboard .page-title-group .page-icon {
+    margin-right: 4px; /* 额外的右边距 */
 }
 
 .admin-dashboard .page-actions {
-    gap: var(--component-gap);
+    gap: 16px; /* 增加按钮之间的间距 */
+    padding-right: 24px; /* 右侧padding */
     flex-wrap: wrap;
     justify-content: flex-end;
 }
 
+.admin-dashboard .page-actions .last-update {
+    font-size: 0.7rem;
+    color: rgba(149, 165, 166, 0.7);
+    text-align: right;
+    margin-right: 8px; /* 最后更新时间与按钮之间的额外间距 */
+    padding-right: 12px;
+}
+
+.admin-dashboard .page-actions button,
 .admin-dashboard .page-actions .btn {
     height: var(--action-btn-height);
     min-height: var(--action-btn-height);
-    padding: 0 var(--action-btn-padding-x);
+    padding-left: 20px;  /* 增加按钮左右内边距 */
+    padding-right: 20px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
 }
 
-/* 全局最后更新时间样式 */
-.admin-dashboard .page-actions .last-update {
-    font-size: 0.7rem;
-    color: rgba(149, 165, 166, 0.7);
-    text-align: right;
-    margin-right: auto;
-    padding-right: 12px;
+.admin-dashboard .page-actions button i {
+    margin-right: 10px; /* 增加按钮图标和文字之间的间距 */
 }
+
 
 .admin-dashboard .stats-overview {
     margin-top: 0;

@@ -617,4 +617,17 @@ public class ServerService {
             Thread.currentThread().interrupt();
         }
     }
+
+    /**
+     * 测试服务器连接 (不保存到数据库)
+     */
+    public boolean testServerConnection(Server server) {
+        try {
+            Server.ConnectionStatus status = sshConnectionService.checkConnection(server);
+            return status == Server.ConnectionStatus.CONNECTED || status == Server.ConnectionStatus.MONITORING;
+        } catch (Exception e) {
+            logger.error("测试服务器连接失败: {}", server.getHostname(), e);
+            return false;
+        }
+    }
 }

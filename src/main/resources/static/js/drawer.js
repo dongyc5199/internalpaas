@@ -3243,12 +3243,22 @@ function editServer(element) {
 }
 
 function addUser() {
-    const manager = drawerManager || initDrawerManager();
-    if (manager) {
-        manager.openUserDrawer();
+    console.log('addUser called');
+    
+    // 优先使用我们重构的模态框实现
+    if (window.UserAddModal && typeof window.UserAddModal.open === 'function') {
+        console.log('Using UserAddModal implementation');
+        window.UserAddModal.open();
     } else {
-        console.error('DrawerManager初始化失败');
-        alert('功能初始化失败，请刷新页面后重试');
+        // 降级使用抽屉实现（兼容旧版）
+        const manager = drawerManager || initDrawerManager();
+        if (manager) {
+            console.log('Falling back to DrawerManager implementation');
+            manager.openUserDrawer();
+        } else {
+            console.error('User management UI not available');
+            alert('无法打开用户添加功能，请刷新页面后重试');
+        }
     }
 }
 

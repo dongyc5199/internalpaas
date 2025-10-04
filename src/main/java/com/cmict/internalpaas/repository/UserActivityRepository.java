@@ -173,6 +173,16 @@ public interface UserActivityRepository extends JpaRepository<UserActivity, Long
     @Query("SELECT COUNT(DISTINCT ua.username) FROM UserActivity ua WHERE ua.createdAt BETWEEN :startTime AND :endTime")
     long countDistinctUsersByCreatedAtBetween(@Param("startTime") LocalDateTime startTime,
                                              @Param("endTime") LocalDateTime endTime);
+
+    /**
+     * 统计指定用户在指定时间范围内的活动数量
+     */
+    long countByUsernameAndCreatedAtBetween(String username, LocalDateTime startTime, LocalDateTime endTime);
+
+    /**
+     * 查找指定时间范围内创建的用户活动
+     */
+    List<UserActivity> findByCreatedAtBetween(LocalDateTime startTime, LocalDateTime endTime);
 }
 
 
