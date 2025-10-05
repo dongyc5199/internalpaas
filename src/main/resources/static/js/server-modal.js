@@ -28,6 +28,18 @@
         }
 
         /**
+         * 获取CSRF token
+         */
+        getCsrfToken() {
+            const token = document.querySelector('meta[name="_csrf"]');
+            const header = document.querySelector('meta[name="_csrf_header"]');
+            return {
+                token: token ? token.getAttribute('content') : '',
+                header: header ? header.getAttribute('content') : 'X-CSRF-TOKEN'
+            };
+        }
+
+        /**
          * 初始化模态弹窗HTML结构
          */
         initModal() {
@@ -459,11 +471,17 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 测试中...';
 
             try {
+                const csrf = this.getCsrfToken();
+                const headers = {
+                    'Content-Type': 'application/json',
+                };
+                if (csrf.token) {
+                    headers[csrf.header] = csrf.token;
+                }
+
                 const response = await fetch('/admin/servers/test-connection', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: headers,
                     body: JSON.stringify({
                         hostname: hostname,
                         port: parseInt(port),
@@ -517,24 +535,36 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 添加中...';
 
             try {
-                const response = await fetch('/admin/servers', {
+                const csrf = this.getCsrfToken();
+                const headers = {
+                    'Content-Type': 'application/json',
+                };
+                if (csrf.token) {
+                    headers[csrf.header] = csrf.token;
+                }
+
+                const response = await fetch('/admin/servers/api/create', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: headers,
                     body: JSON.stringify(serverData)
                 });
 
                 if (response.ok) {
-                    this.showToast('服务器添加成功！', 'success');
+                    const result = await response.json();
+                    this.showToast('服务器添加成功！正在收集监控数据...', 'success');
 
-                    // 延迟关闭并刷新列表
+                    // 立即关闭并刷新列表（显示加载状态）
                     setTimeout(() => {
                         this.close();
                         if (typeof window.refreshServerList === 'function') {
                             window.refreshServerList();
                         }
-                    }, 1500);
+
+                        // 启动轮询检查指标是否收集完成
+                        if (result.serverId && typeof window.startServerMetricsPolling === 'function') {
+                            window.startServerMetricsPolling(result.serverId);
+                        }
+                    }, 800);
                 } else {
                     const error = await response.json();
                     this.showToast(error.message || '添加服务器失败', 'error');

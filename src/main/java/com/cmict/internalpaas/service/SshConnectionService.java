@@ -612,30 +612,34 @@ public class SshConnectionService {
      */
     private String getDecryptedPassword(Server server) {
         try {
-            // 设置密码加密服务到Server实体中
-            server.setPasswordEncryptionService(passwordEncryptionService);
-            
-            // 获取解密后的密码
-            String password = server.getSshPasswordSafely();
-            
-            // 如果获取到的仍然是加密密码，尝试直接解密
-            if (password != null && passwordEncryptionService.isPasswordEncrypted(password)) {
-                password = passwordEncryptionService.decryptPassword(password);
+            // 获取存储的密码字段
+            String storedPassword = server.getSshPasswordEncrypted();
+
+            if (storedPassword == null || storedPassword.isEmpty()) {
+                logger.warn("服务器 {} 未设置SSH密码", server.getHostname());
+                return null;
             }
-            
-            return password;
-            
+
+            // 检查是否为加密密码（包含冒号分隔符）
+            if (passwordEncryptionService.isPasswordEncrypted(storedPassword)) {
+                // 是加密密码，需要解密
+                logger.debug("检测到加密密码，进行解密: {}", server.getHostname());
+                try {
+                    String decrypted = passwordEncryptionService.decryptPassword(storedPassword);
+                    logger.debug("密码解密成功: {}", server.getHostname());
+                    return decrypted;
+                } catch (Exception e) {
+                    logger.error("密码解密失败: {} - {}", server.getHostname(), e.getMessage());
+                    return null;
+                }
+            } else {
+                // 是明文密码，直接使用（向后兼容或测试连接时）
+                logger.debug("检测到明文密码，直接使用: {}", server.getHostname());
+                return storedPassword;
+            }
+
         } catch (Exception e) {
-            logger.error("SSH密码解密失败: {} - {}", server.getHostname(), e.getMessage());
-            
-            // 如果解密失败，可能是旧的明文密码，尝试直接使用
-            String encryptedPassword = server.getSshPasswordEncrypted();
-            if (encryptedPassword != null && !passwordEncryptionService.isPasswordEncrypted(encryptedPassword)) {
-                logger.warn("检测到明文密码，建议升级加密存储: {}", server.getHostname());
-                return encryptedPassword;
-            }
-            
-            logger.error("无法获取有效的SSH密码: {}", server.getHostname());
+            logger.error("获取SSH密码异常: {} - {}", server.getHostname(), e.getMessage(), e);
             return null;
         }
     }

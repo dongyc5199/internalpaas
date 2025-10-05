@@ -58,6 +58,8 @@
 }
 
 .server-group-management .page-actions .last-update {
+    font-size: 13px;
+    color: var(--text-tertiary);
     margin-right: 8px; /* 最后更新时间与按钮之间的额外间距 */
 }
 
@@ -894,9 +896,32 @@
     animation: spin 0.8s linear infinite;
 }
 
+.metrics-loading {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary, #6366f1);
+    font-size: 14px;
+    opacity: 0.6;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.metrics-loading i {
+    font-size: 16px;
+}
+
 @keyframes spin {
     to {
         transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.4;
+    }
+    50% {
+        opacity: 0.8;
     }
 }
 

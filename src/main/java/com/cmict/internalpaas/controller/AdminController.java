@@ -35,7 +35,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/admin")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")  // \u5141\u8BB8\u8D85\u7EA7\u7BA1\u7406\u5458\u548C\u7BA1\u7406\u5458\u8BBF\u95EE
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")  // 允许超级管理员和管理员访问
 public class AdminController {
     
     private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
@@ -89,12 +89,15 @@ public class AdminController {
     @Autowired
     private UserPermissionService userPermissionService;
 
+    @Autowired
+    private com.cmict.internalpaas.service.PasswordEncryptionService passwordEncryptionService;
+
     @GetMapping("/servers")
     public String serverManagement(Model model) {
         List<Server> servers = serverService.getAllServers();
         model.addAttribute("servers", servers);
         
-        // \u8BA1\u7B97\u7EDF\u8BA1\u6570\u636E - \u57FA\u4E8E\u8FDE\u63A5\u72B6\u6001\u800C\u4E0D\u662Factive\u5B57\u6BB5
+        // 计算统计数据 - 基于连接状态而不是active字段
         long totalServers = servers.size();
         long activeServers = servers.stream()
             .filter(server -> server.getConnectionStatus() == Server.ConnectionStatus.CONNECTED || 
@@ -115,7 +118,7 @@ public class AdminController {
         model.addAttribute("inactiveServers", inactiveServers);
         model.addAttribute("monitoringServers", monitoringServers);
         
-        // \u6DFB\u52A0\u76D1\u63A7\u76F8\u5173\u529F\u80FD\u7684\u6807\u5FD7
+        // 添加监控相关功能的标志
         model.addAttribute("hasHistoryFeature", true);
         model.addAttribute("hasThresholdFeature", true);
         
@@ -126,9 +129,9 @@ public class AdminController {
     @GetMapping("/servers/{id}")
     public String serverDetail(@PathVariable Long id, Model model) {
         Server server = serverService.findById(id)
-            .orElseThrow(() -> new RuntimeException("\u670D\u52A1\u5668\u672A\u627E\u5230"));
+            .orElseThrow(() -> new RuntimeException("服务器未找到"));
         
-        // \u4F7F\u7528\u670D\u52A1\u5668\u5F53\u524D\u5B58\u50A8\u7684\u8FDE\u63A5\u72B6\u6001\uFF0C\u907F\u514D\u540C\u6B65SSH\u68C0\u67E5\u5BFC\u81F4\u9875\u9762\u5361\u4F4F
+        // 使用服务器当前存储的连接状态，避免同步SSH检查导致页面卡住
         Server.ConnectionStatus currentStatus = server.getConnectionStatus() != null ? 
             server.getConnectionStatus() : Server.ConnectionStatus.UNKNOWN;
         String connectionDescription = serverService.getConnectionStatusDescription(currentStatus);
@@ -143,18 +146,18 @@ public class AdminController {
     @PostMapping("/servers")
     public String saveServer(@ModelAttribute Server server, RedirectAttributes redirectAttributes) {
         try {
-            // \u4FDD\u5B58\u670D\u52A1\u5668\uFF0C\u4E0D\u8FDB\u884C\u81EA\u52A8\u68C0\u6D4B
+            // 保存服务器，不进行自动检测
             Server savedServer = serverService.saveServer(server);
             
-            // \u5F02\u6B65\u5237\u65B0\u670D\u52A1\u5668\u72B6\u6001\u548C\u76D1\u63A7\u6570\u636E\uFF08\u63D0\u4EA4\u5230\u540E\u53F0\u4EFB\u52A1\u961F\u5217\uFF09
+            // 异步刷新服务器状态和监控数据（提交到后台任务队列）
             CompletableFuture.runAsync(() -> {
                 try {
-                    logger.info("\u5F00\u59CB\u4E3A\u65B0\u521B\u5EFA\u7684\u670D\u52A1\u5668 {} \u6267\u884C\u5F02\u6B65\u72B6\u6001\u5237\u65B0", savedServer.getName());
+                    logger.info("开始为新创建的服务器 {} 执行异步状态刷新", savedServer.getName());
                     Server refreshedServer = serverService.checkServerConnectionAndMetrics(savedServer.getId());
-                    logger.info("\u65B0\u670D\u52A1\u5668 {} \u5F02\u6B65\u72B6\u6001\u5237\u65B0\u5B8C\u6210\uFF0C\u8FDE\u63A5\u72B6\u6001: {}", 
+                    logger.info("新服务器 {} 异步状态刷新完成，连接状态: {}", 
                         refreshedServer.getName(), refreshedServer.getConnectionStatus());
                     
-                    // \u901A\u77E5\u524D\u7AEF\u66F4\u65B0\u670D\u52A1\u5668\u72B6\u6001
+                    // 通知前端更新服务器状态
                     webSocketController.broadcast("/topic/server-status", Map.of(
                         "type", "SERVER_CREATED_STATUS_UPDATED",
                         "serverId", savedServer.getId(),
@@ -164,20 +167,101 @@ public class AdminController {
                     ));
                     
                 } catch (Exception e) {
-                    logger.error("\u65B0\u670D\u52A1\u5668 {} \u5F02\u6B65\u72B6\u6001\u5237\u65B0\u5931\u8D25: {}", savedServer.getName(), e.getMessage(), e);
+                    logger.error("新服务器 {} 异步状态刷新失败: {}", savedServer.getName(), e.getMessage(), e);
                 }
             });
             
             redirectAttributes.addFlashAttribute("successMessage", 
-                String.format("\u670D\u52A1\u5668 '%s' \u5DF2\u4FDD\u5B58\uFF0C\u72B6\u6001\u68C0\u67E5\u6B63\u5728\u540E\u53F0\u8FDB\u884C", savedServer.getName()));
+                String.format("服务器 '%s' 已保存，状态检查正在后台进行", savedServer.getName()));
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "\u4FDD\u5B58\u5931\u8D25: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "保存失败: " + e.getMessage());
         }
         return "redirect:/admin/servers";
     }
+
+    /**
+     * 添加服务器API - 接收JSON格式数据
+     */
+    @PostMapping("/servers/api/create")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> createServerApi(@RequestBody Map<String, Object> serverData) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            logger.info("接收到创建服务器请求: {}", serverData.get("name"));
+
+            // 手动构建Server对象
+            Server server = new Server();
+            server.setName((String) serverData.get("name"));
+            server.setHostname((String) serverData.get("hostname"));
+            server.setSshPort(serverData.get("port") != null ? ((Number) serverData.get("port")).intValue() : 22);
+            server.setSshUsername((String) serverData.get("username"));
+            server.setDescription((String) serverData.get("description"));
+
+            // 获取明文密码并直接加密
+            String plainPassword = (String) serverData.get("password");
+            if (plainPassword != null && !plainPassword.isEmpty()) {
+                try {
+                    String encryptedPassword = passwordEncryptionService.encryptPassword(plainPassword);
+                    server.setSshPasswordEncrypted(encryptedPassword);
+                    logger.info("密码已加密，加密后长度: {}, 包含分隔符: {}",
+                        encryptedPassword.length(), encryptedPassword.contains(":"));
+                } catch (Exception e) {
+                    logger.error("密码加密失败", e);
+                    response.put("success", false);
+                    response.put("message", "密码加密失败: " + e.getMessage());
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+                }
+            } else {
+                logger.warn("未提供密码");
+            }
+
+            // 保存服务器
+            Server savedServer = serverService.saveServer(server);
+
+            // 异步收集服务器状态和监控数据
+            CompletableFuture.runAsync(() -> {
+                try {
+                    logger.info("开始为新创建的服务器 {} 执行异步状态刷新", savedServer.getName());
+                    Server refreshedServer = serverService.checkServerConnectionAndMetrics(savedServer.getId());
+                    logger.info("新服务器 {} 异步状态刷新完成，连接状态: {}",
+                        refreshedServer.getName(), refreshedServer.getConnectionStatus());
+
+                    // 通知前端更新服务器状态
+                    webSocketController.broadcast("/topic/server-status", Map.of(
+                        "type", "SERVER_METRICS_UPDATED",
+                        "serverId", savedServer.getId(),
+                        "serverName", savedServer.getName(),
+                        "connectionStatus", refreshedServer.getConnectionStatus().name(),
+                        "timestamp", System.currentTimeMillis()
+                    ));
+
+                } catch (Exception e) {
+                    logger.error("新服务器 {} 异步状态刷新失败: {}", savedServer.getName(), e.getMessage(), e);
+                    // 通知前端收集失败
+                    webSocketController.broadcast("/topic/server-status", Map.of(
+                        "type", "SERVER_METRICS_FAILED",
+                        "serverId", savedServer.getId(),
+                        "serverName", savedServer.getName(),
+                        "error", e.getMessage(),
+                        "timestamp", System.currentTimeMillis()
+                    ));
+                }
+            });
+
+            response.put("success", true);
+            response.put("message", String.format("服务器 '%s' 已保存，正在收集监控数据...", savedServer.getName()));
+            response.put("serverId", savedServer.getId());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("创建服务器失败: {}", e.getMessage(), e);
+            response.put("success", false);
+            response.put("message", "保存失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
     
     /**
-     * \u83B7\u53D6\u670D\u52A1\u5668\u5217\u8868API - \u7528\u4E8E\u524D\u7AEF\u9009\u62E9
+     * 获取服务器列表API - 用于前端选择
      */
     @GetMapping("/api/servers")
     @ResponseBody
@@ -194,22 +278,22 @@ public class AdminController {
     }
 
     /**
-     * \u83B7\u53D6\u53EF\u7528\u670D\u52A1\u5668\u5217\u8868API - \u7528\u4E8E\u7528\u6237\u7BA1\u7406\u4E2D\u7684\u670D\u52A1\u5668\u9009\u62E9
+     * 获取可用服务器列表API - 用于用户管理中的服务器选择
      */
     @GetMapping("/api/servers/available")
     @ResponseBody
     public ResponseEntity<?> getAvailableServersApi() {
         try {
-            // \u9996\u5148\u5C1D\u8BD5\u83B7\u53D6\u6D3B\u8DC3\u670D\u52A1\u5668
+            // 首先尝试获取活跃服务器
             List<Server> activeServers = serverService.getActiveServers();
             
-            // \u5982\u679C\u6CA1\u6709\u6D3B\u8DC3\u670D\u52A1\u5668\uFF0C\u5219\u83B7\u53D6\u6240\u6709\u670D\u52A1\u5668
+            // 如果没有活跃服务器，则获取所有服务器
             if (activeServers.isEmpty()) {
                 activeServers = serverService.getAllServers();
-                logger.warn("\u6CA1\u6709\u627E\u5230\u6D3B\u8DC3\u670D\u52A1\u5668\uFF0C\u8FD4\u56DE\u6240\u6709\u670D\u52A1\u5668\u5217\u8868");
+                logger.warn("没有找到活跃服务器，返回所有服务器列表");
             }
             
-            // \u8F6C\u6362\u4E3A\u524D\u7AEF\u9700\u8981\u7684\u683C\u5F0F\uFF0C\u5305\u542B\u62BD\u5C49\u7EC4\u4EF6\u9700\u8981\u7684\u5B57\u6BB5
+            // 转换为前端需要的格式，包含抽屉组件需要的字段
             List<Map<String, Object>> responseData = activeServers.stream()
                 .map(server -> {
                     Map<String, Object> serverData = new HashMap<>();
@@ -233,41 +317,41 @@ public class AdminController {
     }
     
     /**
-     * \u521B\u5EFA\u670D\u52A1\u5668API - \u7528\u4E8E\u62BD\u5C49\u63D0\u4EA4
+     * 创建服务器API - 用于抽屉提交
      */
     @PostMapping("/api/servers")
     @ResponseBody
     public ResponseEntity<?> createServerApi(@ModelAttribute Server server) {
         try {
-            // \u8BBE\u7F6E\u9ED8\u8BA4\u7AEF\u53E3\u503C\uFF08\u5982\u679C\u672A\u63D0\u4F9B\uFF09
+            // 设置默认端口值（如果未提供）
             if (server.getPort() == null) {
-                server.setPort(8080); // \u9ED8\u8BA4\u5E94\u7528\u7AEF\u53E3
+                server.setPort(8080); // 默认应用端口
             }
             
             Server savedServer = serverService.saveServer(server);
             
-            // \u68C0\u67E5\u5E76\u521B\u5EFA\u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55
+            // 检查并创建基础工作目录
             Map<String, Object> directoryResult = ensureBaseWorkDirectory(savedServer);
             boolean directoryCreated = (Boolean) directoryResult.get("created");
             
-            // \u81EA\u52A8\u521D\u59CB\u5316\u9ED8\u8BA4\u7528\u6237\u7EC4
+            // 自动初始化默认用户组
             try {
                 int initializedCount = serverUserGroupService.initializeDefaultUserGroups(savedServer);
-                logger.info("\u4E3A\u670D\u52A1\u5668 {} \u6210\u529F\u521D\u59CB\u5316 {} \u4E2A\u9ED8\u8BA4\u7528\u6237\u7EC4", savedServer.getName(), initializedCount);
+                logger.info("为服务器 {} 成功初始化 {} 个默认用户组", savedServer.getName(), initializedCount);
             } catch (Exception e) {
-                logger.error("\u4E3A\u670D\u52A1\u5668 {} \u521D\u59CB\u5316\u7528\u6237\u7EC4\u5931\u8D25: {}", savedServer.getName(), e.getMessage(), e);
-                // \u4E0D\u4E2D\u65AD\u670D\u52A1\u5668\u521B\u5EFA\u6D41\u7A0B\uFF0C\u53EA\u8BB0\u5F55\u9519\u8BEF
+                logger.error("为服务器 {} 初始化用户组失败: {}", savedServer.getName(), e.getMessage(), e);
+                // 不中断服务器创建流程，只记录错误
             }
             
-            // \u5F02\u6B65\u5237\u65B0\u670D\u52A1\u5668\u72B6\u6001\u548C\u76D1\u63A7\u6570\u636E\uFF08\u63D0\u4EA4\u5230\u540E\u53F0\u4EFB\u52A1\u961F\u5217\uFF09
+            // 异步刷新服务器状态和监控数据（提交到后台任务队列）
             CompletableFuture.runAsync(() -> {
                 try {
-                    logger.info("\u5F00\u59CB\u4E3A\u65B0\u521B\u5EFA\u7684\u670D\u52A1\u5668 {} \u6267\u884C\u5F02\u6B65\u72B6\u6001\u5237\u65B0", savedServer.getName());
+                    logger.info("开始为新创建的服务器 {} 执行异步状态刷新", savedServer.getName());
                     Server refreshedServer = serverService.checkServerConnectionAndMetrics(savedServer.getId());
-                    logger.info("\u65B0\u670D\u52A1\u5668 {} \u5F02\u6B65\u72B6\u6001\u5237\u65B0\u5B8C\u6210\uFF0C\u8FDE\u63A5\u72B6\u6001: {}", 
+                    logger.info("新服务器 {} 异步状态刷新完成，连接状态: {}", 
                         refreshedServer.getName(), refreshedServer.getConnectionStatus());
                     
-                    // \u901A\u77E5\u524D\u7AEF\u66F4\u65B0\u670D\u52A1\u5668\u72B6\u6001
+                    // 通知前端更新服务器状态
                     webSocketController.broadcast("/topic/server-status", Map.of(
                         "type", "SERVER_CREATED_STATUS_UPDATED",
                         "serverId", savedServer.getId(),
@@ -277,19 +361,19 @@ public class AdminController {
                     ));
                     
                 } catch (Exception e) {
-                    logger.error("\u65B0\u670D\u52A1\u5668 {} \u5F02\u6B65\u72B6\u6001\u5237\u65B0\u5931\u8D25: {}", savedServer.getName(), e.getMessage(), e);
+                    logger.error("新服务器 {} 异步状态刷新失败: {}", savedServer.getName(), e.getMessage(), e);
                 }
             });
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
             
-            // \u6784\u5EFA\u6210\u529F\u6D88\u606F
-            StringBuilder message = new StringBuilder("\u670D\u52A1\u5668\u521B\u5EFA\u6210\u529F");
+            // 构建成功消息
+            StringBuilder message = new StringBuilder("服务器创建成功");
             if (directoryCreated) {
-                message.append("\u5E76\u5DF2\u521B\u5EFA\u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55");
+                message.append("并已创建基础工作目录");
             }
-            message.append("\u5E76\u5DF2\u521D\u59CB\u5316\u9ED8\u8BA4\u7528\u6237\u7EC4");
+            message.append("并已初始化默认用户组");
             
             response.put("message", message.toString());
             response.put("server", savedServer);
@@ -305,14 +389,14 @@ public class AdminController {
 
     
     /**
-     * \u83B7\u53D6\u670D\u52A1\u5668\u6570\u636EAPI - \u7528\u4E8E\u62BD\u5C49\u7F16\u8F91
+     * 获取服务器数据API - 用于抽屉编辑
      */
     @GetMapping("/servers/{id}/data")
     @ResponseBody
     public ResponseEntity<?> getServerData(@PathVariable Long id) {
         try {
             Server server = serverService.findById(id)
-                .orElseThrow(() -> new RuntimeException("\u670D\u52A1\u5668\u672A\u627E\u5230"));
+                .orElseThrow(() -> new RuntimeException("服务器未找到"));
             
             Map<String, Object> data = new HashMap<>();
             data.put("id", server.getId());
@@ -339,15 +423,15 @@ public class AdminController {
         try {
             Server updatedServer = serverService.updateServer(id, server);
             
-            // \u5F02\u6B65\u5237\u65B0\u670D\u52A1\u5668\u72B6\u6001\u548C\u76D1\u63A7\u6570\u636E\uFF08\u63D0\u4EA4\u5230\u540E\u53F0\u4EFB\u52A1\u961F\u5217\uFF09
+            // 异步刷新服务器状态和监控数据（提交到后台任务队列）
             CompletableFuture.runAsync(() -> {
                 try {
-                    logger.info("\u5F00\u59CB\u4E3A\u66F4\u65B0\u540E\u7684\u670D\u52A1\u5668 {} \u6267\u884C\u5F02\u6B65\u72B6\u6001\u5237\u65B0", updatedServer.getName());
+                    logger.info("开始为更新后的服务器 {} 执行异步状态刷新", updatedServer.getName());
                     Server refreshedServer = serverService.checkServerConnectionAndMetrics(updatedServer.getId());
-                    logger.info("\u66F4\u65B0\u540E\u670D\u52A1\u5668 {} \u5F02\u6B65\u72B6\u6001\u5237\u65B0\u5B8C\u6210\uFF0C\u8FDE\u63A5\u72B6\u6001: {}", 
+                    logger.info("更新后服务器 {} 异步状态刷新完成，连接状态: {}", 
                         refreshedServer.getName(), refreshedServer.getConnectionStatus());
                     
-                    // \u901A\u77E5\u524D\u7AEF\u66F4\u65B0\u670D\u52A1\u5668\u72B6\u6001
+                    // 通知前端更新服务器状态
                     webSocketController.broadcast("/topic/server-status", Map.of(
                         "type", "SERVER_UPDATED_STATUS_UPDATED",
                         "serverId", updatedServer.getId(),
@@ -357,21 +441,21 @@ public class AdminController {
                     ));
                     
                 } catch (Exception e) {
-                    logger.error("\u66F4\u65B0\u540E\u670D\u52A1\u5668 {} \u5F02\u6B65\u72B6\u6001\u5237\u65B0\u5931\u8D25: {}", updatedServer.getName(), e.getMessage(), e);
+                    logger.error("更新后服务器 {} 异步状态刷新失败: {}", updatedServer.getName(), e.getMessage(), e);
                 }
             });
             
             redirectAttributes.addFlashAttribute("successMessage", 
-                String.format("\u670D\u52A1\u5668 '%s' \u66F4\u65B0\u6210\u529F\uFF0C\u72B6\u6001\u68C0\u67E5\u6B63\u5728\u540E\u53F0\u8FDB\u884C", updatedServer.getName()));
+                String.format("服务器 '%s' 更新成功，状态检查正在后台进行", updatedServer.getName()));
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "\u66F4\u65B0\u5931\u8D25: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "更新失败: " + e.getMessage());
         }
         
         return "redirect:/admin/servers";
     }
     
     /**
-     * \u66F4\u65B0\u670D\u52A1\u5668API - \u7528\u4E8E\u62BD\u5C49\u63D0\u4EA4
+     * 更新服务器API - 用于抽屉提交
      */
     @PostMapping("/api/servers/{id}/update")
     @ResponseBody
@@ -379,19 +463,19 @@ public class AdminController {
         try {
             Server updatedServer = serverService.updateServer(id, server);
             
-            // \u68C0\u67E5\u5E76\u521B\u5EFA\u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55
+            // 检查并创建基础工作目录
             Map<String, Object> directoryResult = ensureBaseWorkDirectory(updatedServer);
             boolean directoryCreated = (Boolean) directoryResult.get("created");
             
-            // \u5F02\u6B65\u5237\u65B0\u670D\u52A1\u5668\u72B6\u6001\u548C\u76D1\u63A7\u6570\u636E\uFF08\u63D0\u4EA4\u5230\u540E\u53F0\u4EFB\u52A1\u961F\u5217\uFF09
+            // 异步刷新服务器状态和监控数据（提交到后台任务队列）
             CompletableFuture.runAsync(() -> {
                 try {
-                    logger.info("\u5F00\u59CB\u4E3A\u66F4\u65B0\u540E\u7684\u670D\u52A1\u5668 {} \u6267\u884C\u5F02\u6B65\u72B6\u6001\u5237\u65B0", updatedServer.getName());
+                    logger.info("开始为更新后的服务器 {} 执行异步状态刷新", updatedServer.getName());
                     Server refreshedServer = serverService.checkServerConnectionAndMetrics(updatedServer.getId());
-                    logger.info("\u66F4\u65B0\u540E\u670D\u52A1\u5668 {} \u5F02\u6B65\u72B6\u6001\u5237\u65B0\u5B8C\u6210\uFF0C\u8FDE\u63A5\u72B6\u6001: {}", 
+                    logger.info("更新后服务器 {} 异步状态刷新完成，连接状态: {}", 
                         refreshedServer.getName(), refreshedServer.getConnectionStatus());
                     
-                    // \u901A\u77E5\u524D\u7AEF\u66F4\u65B0\u670D\u52A1\u5668\u72B6\u6001
+                    // 通知前端更新服务器状态
                     webSocketController.broadcast("/topic/server-status", Map.of(
                         "type", "SERVER_UPDATED_STATUS_UPDATED",
                         "serverId", updatedServer.getId(),
@@ -401,17 +485,17 @@ public class AdminController {
                     ));
                     
                 } catch (Exception e) {
-                    logger.error("\u66F4\u65B0\u540E\u670D\u52A1\u5668 {} \u5F02\u6B65\u72B6\u6001\u5237\u65B0\u5931\u8D25: {}", updatedServer.getName(), e.getMessage(), e);
+                    logger.error("更新后服务器 {} 异步状态刷新失败: {}", updatedServer.getName(), e.getMessage(), e);
                 }
             });
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
             
-            // \u6784\u5EFA\u6210\u529F\u6D88\u606F
-            StringBuilder message = new StringBuilder("\u670D\u52A1\u5668\u66F4\u65B0\u6210\u529F");
+            // 构建成功消息
+            StringBuilder message = new StringBuilder("服务器更新成功");
             if (directoryCreated) {
-                message.append("\u5E76\u5DF2\u521B\u5EFA\u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55");
+                message.append("并已创建基础工作目录");
             }
             
             response.put("message", message.toString());
@@ -440,24 +524,24 @@ public class AdminController {
             String statusDesc = serverService.getConnectionStatusDescription(server.getConnectionStatus());
             
             redirectAttributes.addFlashAttribute("successMessage", 
-                String.format("\u670D\u52A1\u5668 '%s' \u8FDE\u63A5\u72B6\u6001: %s", server.getName(), statusDesc));
+                String.format("服务器 '%s' 连接状态: %s", server.getName(), statusDesc));
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "\u68C0\u67E5\u8FDE\u63A5\u5931\u8D25: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "检查连接失败: " + e.getMessage());
         }
         return "redirect:/admin/servers";
     }
     
     /**
-     * \u83B7\u53D6\u670D\u52A1\u5668\u76D1\u63A7\u6570\u636EAPI - \u4E0E\u76D1\u63A7\u63A7\u5236\u5668\u4FDD\u6301\u4E00\u81F4
+     * 获取服务器监控数据API - 与监控控制器保持一致
      */
     @GetMapping("/servers/{id}/metrics")
     @ResponseBody
     public ResponseEntity<?> getServerMetrics(@PathVariable Long id) {
         try {
-            // \u9996\u5148\u68C0\u67E5\u670D\u52A1\u5668\u662F\u5426\u5B58\u5728
+            // 首先检查服务器是否存在
             if (!serverService.findById(id).isPresent()) {
                 Map<String, String> error = new HashMap<>();
-                error.put("error", "\u670D\u52A1\u5668\u4E0D\u5B58\u5728");
+                error.put("error", "服务器不存在");
                 error.put("serverId", String.valueOf(id));
                 return ResponseEntity.status(404).body(error);
             }
@@ -465,13 +549,13 @@ public class AdminController {
             ServerMetrics metrics = serverService.getServerLatestMetrics(id);
             
             if (metrics == null) {
-                // \u5982\u679C\u6CA1\u6709\u6570\u636E\uFF0C\u5C1D\u8BD5\u5237\u65B0
+                // 如果没有数据，尝试刷新
                 metrics = serverService.refreshServerMetrics(id);
             }
             
             if (metrics == null) {
                 Map<String, String> error = new HashMap<>();
-                error.put("error", "\u76D1\u63A7\u6570\u636E\u4E0D\u53EF\u7528");
+                error.put("error", "监控数据不可用");
                 error.put("serverId", String.valueOf(id));
                 return ResponseEntity.status(404).body(error);
             }
@@ -486,37 +570,37 @@ public class AdminController {
     }
     
     /**
-     * \u83B7\u53D6\u670D\u52A1\u5668\u8BE6\u60C5\u6570\u636E - \u7528\u4E8E\u65B0\u7684\u7CFB\u7EDF\u98CE\u683C\u6A21\u6001\u6846
+     * 获取服务器详情数据 - 用于新的系统风格模态框
      * GET /admin/api/servers/{id}/details
      */
     @GetMapping("/api/servers/{id}/details")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> getServerDetails(@PathVariable Long id) {
-        logger.info("\u83B7\u53D6\u670D\u52A1\u5668\u8BE6\u60C5\u6570\u636E: serverId={}", id);
+        logger.info("获取服务器详情数据: serverId={}", id);
         
         Map<String, Object> response = new HashMap<>();
         
         try {
-            // \u68C0\u67E5\u670D\u52A1\u5668\u662F\u5426\u5B58\u5728
+            // 检查服务器是否存在
             Optional<Server> serverOpt = serverService.getServerById(id);
             if (!serverOpt.isPresent()) {
                 response.put("success", false);
-                response.put("error", "\u670D\u52A1\u5668\u4E0D\u5B58\u5728");
+                response.put("error", "服务器不存在");
                 return ResponseEntity.status(404).body(response);
             }
             
             Server server = serverOpt.get();
             
-            // 1. \u57FA\u672C\u4FE1\u606F
+            // 1. 基本信息
             Map<String, Object> basicInfo = buildBasicServerInfo(server);
             
-            // 2. \u5E94\u7528\u5217\u8868 - \u83B7\u53D6\u5728\u8BE5\u670D\u52A1\u5668\u4E0A\u6709\u6743\u9650\u7684\u7528\u6237\u7684\u5E94\u7528
+            // 2. 应用列表 - 获取在该服务器上有权限的用户的应用
             List<Map<String, Object>> applications = getServerApplications(id);
             
-            // 3. \u64CD\u4F5C\u65E5\u5FD7 - \u83B7\u53D6\u8BE5\u670D\u52A1\u5668\u7684\u7528\u6237\u6D3B\u52A8\u8BB0\u5F55
+            // 3. 操作日志 - 获取该服务器的用户活动记录
             List<Map<String, Object>> operationLogs = getServerOperationLogs(id);
             
-            // \u6784\u5EFA\u54CD\u5E94
+            // 构建响应
             response.put("success", true);
             response.put("serverId", id);
             response.put("basicInfo", basicInfo);
@@ -524,19 +608,19 @@ public class AdminController {
             response.put("operationLogs", operationLogs);
             response.put("retrieveTime", System.currentTimeMillis());
             
-            logger.info("\u6210\u529F\u83B7\u53D6\u670D\u52A1\u5668 {} \u7684\u8BE6\u60C5\u6570\u636E: \u5E94\u7528\u6570={}, \u65E5\u5FD7\u6570={}", id, applications.size(), operationLogs.size());
+            logger.info("成功获取服务器 {} 的详情数据: 应用数={}, 日志数={}", id, applications.size(), operationLogs.size());
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            logger.error("\u83B7\u53D6\u670D\u52A1\u5668\u8BE6\u60C5\u5931\u8D25: serverId={}", id, e);
+            logger.error("获取服务器详情失败: serverId={}", id, e);
             response.put("success", false);
-            response.put("error", "\u83B7\u53D6\u670D\u52A1\u5668\u8BE6\u60C5\u5931\u8D25: " + e.getMessage());
+            response.put("error", "获取服务器详情失败: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
         }
     }
     
     /**
-     * \u6784\u5EFA\u670D\u52A1\u5668\u57FA\u672C\u4FE1\u606F
+     * 构建服务器基本信息
      */
     private Map<String, Object> buildBasicServerInfo(Server server) {
         Map<String, Object> basicInfo = new HashMap<>();
@@ -548,39 +632,39 @@ public class AdminController {
         basicInfo.put("operatingSystem", server.getDescription() != null ? server.getDescription() : "Linux");
         basicInfo.put("workDirectory", server.getBaseWorkDirectory());
         
-        // \u8FDE\u63A5\u72B6\u6001
+        // 连接状态
         String status = "UNKNOWN";
         if (server.getConnectionStatus() != null) {
             status = server.getConnectionStatus().name();
         }
         basicInfo.put("connectionStatus", status);
         
-        // \u83B7\u53D6\u7CFB\u7EDF\u76D1\u63A7\u4FE1\u606F
+        // 获取系统监控信息
         try {
-            // \u8FD9\u91CC\u53EF\u4EE5\u8C03\u7528\u76D1\u63A7\u670D\u52A1\u83B7\u53D6\u5B9E\u65F6\u6570\u636E
-            // \u6682\u65F6\u4F7F\u7528\u7B80\u5355\u7684\u72B6\u6001\u4FE1\u606F
-            basicInfo.put("uptime", "\u8FD0\u884C\u4E2D");
-            basicInfo.put("lastCheck", "\u521A\u521A\u68C0\u67E5");
+            // 这里可以调用监控服务获取实时数据
+            // 暂时使用简单的状态信息
+            basicInfo.put("uptime", "运行中");
+            basicInfo.put("lastCheck", "刚刚检查");
         } catch (Exception e) {
-            logger.warn("\u83B7\u53D6\u670D\u52A1\u5668 {} \u76D1\u63A7\u4FE1\u606F\u5931\u8D25: {}", server.getId(), e.getMessage());
-            basicInfo.put("uptime", "\u672A\u77E5");
-            basicInfo.put("lastCheck", "\u68C0\u67E5\u5931\u8D25");
+            logger.warn("获取服务器 {} 监控信息失败: {}", server.getId(), e.getMessage());
+            basicInfo.put("uptime", "未知");
+            basicInfo.put("lastCheck", "检查失败");
         }
         
         return basicInfo;
     }
     
     /**
-     * \u83B7\u53D6\u670D\u52A1\u5668\u4E0A\u7684\u5E94\u7528\u5217\u8868
+     * 获取服务器上的应用列表
      */
     private List<Map<String, Object>> getServerApplications(Long serverId) {
         List<Map<String, Object>> applications = new ArrayList<>();
         
         try {
-            // \u83B7\u53D6\u6709\u6743\u9650\u8BBF\u95EE\u8BE5\u670D\u52A1\u5668\u7684\u6240\u6709\u7528\u6237
+            // 获取有权限访问该服务器的所有用户
             List<User> serverUsers = userService.findUsersByServerId(serverId);
             
-            // \u83B7\u53D6\u8FD9\u4E9B\u7528\u6237\u7684\u5E94\u7528
+            // 获取这些用户的应用
             for (User user : serverUsers) {
                 List<com.cmict.internalpaas.model.Application> userApps = applicationService.getUserApplications(user);
                 
@@ -597,12 +681,12 @@ public class AdminController {
                     appInfo.put("lastStartedAt", app.getLastStartedAt());
                     appInfo.put("createdAt", app.getCreatedAt());
                     
-                    // \u8BA1\u7B97\u8FD0\u884C\u65F6\u95F4
+                    // 计算运行时间
                     if ("running".equals(app.getStatus().toLowerCase()) && app.getLastStartedAt() != null) {
                         java.time.Duration duration = java.time.Duration.between(app.getLastStartedAt(), java.time.LocalDateTime.now());
                         appInfo.put("uptime", formatDuration(duration));
                     } else {
-                        appInfo.put("uptime", "\u672A\u8FD0\u884C");
+                        appInfo.put("uptime", "未运行");
                     }
                     
                     applications.add(appInfo);
@@ -610,10 +694,10 @@ public class AdminController {
             }
             
         } catch (Exception e) {
-            logger.error("\u83B7\u53D6\u670D\u52A1\u5668 {} \u5E94\u7528\u5217\u8868\u5931\u8D25: {}", serverId, e.getMessage(), e);
-            // \u6DFB\u52A0\u4E00\u4E2A\u9519\u8BEF\u6307\u793A\u5E94\u7528
+            logger.error("获取服务器 {} 应用列表失败: {}", serverId, e.getMessage(), e);
+            // 添加一个错误指示应用
             Map<String, Object> errorApp = new HashMap<>();
-            errorApp.put("name", "\u83B7\u53D6\u5E94\u7528\u5217\u8868\u5931\u8D25");
+            errorApp.put("name", "获取应用列表失败");
             errorApp.put("status", "error");
             errorApp.put("error", e.getMessage());
             applications.add(errorApp);
@@ -623,64 +707,64 @@ public class AdminController {
     }
     
     /**
-     * \u83B7\u53D6\u670D\u52A1\u5668\u64CD\u4F5C\u65E5\u5FD7
+     * 获取服务器操作日志
      */
     private List<Map<String, Object>> getServerOperationLogs(Long serverId) {
         List<Map<String, Object>> operationLogs = new ArrayList<>();
         
         try {
-            // \u83B7\u53D6\u6700\u8FD1\u7684\u7528\u6237\u6D3B\u52A8\u8BB0\u5F55
+            // 获取最近的用户活动记录
             List<com.cmict.internalpaas.model.UserActivity> activities = userActivityService.getRecentActivities(serverId);
             
             for (com.cmict.internalpaas.model.UserActivity activity : activities) {
                 Map<String, Object> logEntry = new HashMap<>();
                 
-                // \u683C\u5F0F\u5316\u65F6\u95F4
+                // 格式化时间
                 if (activity.getLoginTime() != null) {
                     logEntry.put("time", activity.getLoginTime().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")));
                 } else {
-                    logEntry.put("time", "\u672A\u77E5\u65F6\u95F4");
+                    logEntry.put("time", "未知时间");
                 }
                 
-                logEntry.put("user", activity.getUsername() != null ? activity.getUsername() : "\u672A\u77E5\u7528\u6237");
+                logEntry.put("user", activity.getUsername() != null ? activity.getUsername() : "未知用户");
                 logEntry.put("ip", activity.getRemoteIp() != null ? activity.getRemoteIp() : "");
                 
-                // \u6839\u636E\u6D3B\u52A8\u7C7B\u578B\u751F\u6210\u64CD\u4F5C\u63CF\u8FF0
+                // 根据活动类型生成操作描述
                 String action = generateActionDescription(activity);
                 logEntry.put("action", action);
                 
-                // \u6784\u5EFA\u8BE6\u7EC6\u4FE1\u606F
+                // 构建详细信息
                 List<Map<String, Object>> details = buildActivityDetails(activity);
                 logEntry.put("details", details);
                 
                 operationLogs.add(logEntry);
             }
             
-            // \u5982\u679C\u6CA1\u6709\u6D3B\u52A8\u8BB0\u5F55\uFF0C\u663E\u793A\u63D0\u793A\u4FE1\u606F
+            // 如果没有活动记录，显示提示信息
             if (operationLogs.isEmpty()) {
                 Map<String, Object> noDataLog = new HashMap<>();
                 noDataLog.put("time", "");
-                noDataLog.put("user", "\u7CFB\u7EDF");
+                noDataLog.put("user", "系统");
                 noDataLog.put("ip", "");
-                noDataLog.put("action", "\uD83D\uDCDD \u6682\u65E0\u64CD\u4F5C\u8BB0\u5F55");
+                noDataLog.put("action", "📝 暂无操作记录");
                 noDataLog.put("details", List.of(
-                    Map.of("label", "\u72B6\u6001", "value", "\u6682\u65E0\u7528\u6237\u6D3B\u52A8\u8BB0\u5F55"),
-                    Map.of("label", "\u8BF4\u660E", "value", "\u7528\u6237\u9996\u6B21\u64CD\u4F5C\u540E\u4F1A\u663E\u793A\u8BB0\u5F55")
+                    Map.of("label", "状态", "value", "暂无用户活动记录"),
+                    Map.of("label", "说明", "value", "用户首次操作后会显示记录")
                 ));
                 operationLogs.add(noDataLog);
             }
             
         } catch (Exception e) {
-            logger.error("\u83B7\u53D6\u670D\u52A1\u5668 {} \u64CD\u4F5C\u65E5\u5FD7\u5931\u8D25: {}", serverId, e.getMessage(), e);
-            // \u6DFB\u52A0\u9519\u8BEF\u65E5\u5FD7
+            logger.error("获取服务器 {} 操作日志失败: {}", serverId, e.getMessage(), e);
+            // 添加错误日志
             Map<String, Object> errorLog = new HashMap<>();
             errorLog.put("time", "");
-            errorLog.put("user", "\u7CFB\u7EDF");
+            errorLog.put("user", "系统");
             errorLog.put("ip", "");
-            errorLog.put("action", "\u274C \u83B7\u53D6\u64CD\u4F5C\u65E5\u5FD7\u5931\u8D25");
+            errorLog.put("action", "❌ 获取操作日志失败");
             errorLog.put("details", List.of(
-                Map.of("label", "\u9519\u8BEF\u4FE1\u606F", "value", e.getMessage()),
-                Map.of("label", "\u5EFA\u8BAE", "value", "\u8BF7\u8054\u7CFB\u7BA1\u7406\u5458\u68C0\u67E5\u65E5\u5FD7\u670D\u52A1")
+                Map.of("label", "错误信息", "value", e.getMessage()),
+                Map.of("label", "建议", "value", "请联系管理员检查日志服务")
             ));
             operationLogs.add(errorLog);
         }
@@ -689,7 +773,7 @@ public class AdminController {
     }
     
     /**
-     * \u683C\u5F0F\u5316\u6301\u7EED\u65F6\u95F4
+     * 格式化持续时间
      */
     private String formatDuration(java.time.Duration duration) {
         long days = duration.toDays();
@@ -697,81 +781,81 @@ public class AdminController {
         long minutes = duration.toMinutes() % 60;
         
         if (days > 0) {
-            return String.format("%d\u5929%d\u5C0F\u65F6", days, hours);
+            return String.format("%d天%d小时", days, hours);
         } else if (hours > 0) {
-            return String.format("%d\u5C0F\u65F6%d\u5206\u949F", hours, minutes);
+            return String.format("%d小时%d分钟", hours, minutes);
         } else {
-            return String.format("%d\u5206\u949F", minutes);
+            return String.format("%d分钟", minutes);
         }
     }
     
     /**
-     * \u751F\u6210\u6D3B\u52A8\u63CF\u8FF0
+     * 生成活动描述
      */
     private String generateActionDescription(com.cmict.internalpaas.model.UserActivity activity) {
         if (activity.getActivityType() != null) {
             switch (activity.getActivityType()) {
                 case LOGIN:
-                    return "\uD83D\uDD10 \u7528\u6237\u767B\u5F55";
+                    return "🔐 用户登录";
                 case LOGOUT:
-                    return "\uD83D\uDD13 \u7528\u6237\u767B\u51FA";
+                    return "🔓 用户登出";
                 case COMMAND_EXECUTE:
-                    return "\u26A1 \u6267\u884C\u547D\u4EE4";
+                    return "⚡ 执行命令";
                 case FILE_TRANSFER:
-                    return "\uD83D\uDCC1 \u6587\u4EF6\u4F20\u8F93";
+                    return "📁 文件传输";
                 case FILE_EDIT:
-                    return "\u270F\uFE0F \u6587\u4EF6\u7F16\u8F91";
+                    return "✏️ 文件编辑";
                 case PROCESS_START:
-                    return "\u25B6\uFE0F \u8FDB\u7A0B\u542F\u52A8";
+                    return "▶️ 进程启动";
                 case PROCESS_STOP:
-                    return "\u23F9\uFE0F \u8FDB\u7A0B\u505C\u6B62";
+                    return "⏹️ 进程停止";
                 case DIRECTORY_CHANGE:
-                    return "\uD83D\uDCC2 \u76EE\u5F55\u5207\u6362";
+                    return "📂 目录切换";
                 case SYSTEM_INFO:
-                    return "\u2139\uFE0F \u7CFB\u7EDF\u4FE1\u606F";
+                    return "ℹ️ 系统信息";
                 default:
-                    return "\uD83D\uDCCB \u7528\u6237\u6D3B\u52A8";
+                    return "📋 用户活动";
             }
         } else {
-            return "\uD83D\uDCCB \u7528\u6237\u6D3B\u52A8";
+            return "📋 用户活动";
         }
     }
     
     /**
-     * \u6784\u5EFA\u6D3B\u52A8\u8BE6\u7EC6\u4FE1\u606F
+     * 构建活动详细信息
      */
     private List<Map<String, Object>> buildActivityDetails(com.cmict.internalpaas.model.UserActivity activity) {
         List<Map<String, Object>> details = new ArrayList<>();
         
         if (activity.getSessionId() != null) {
-            details.add(Map.of("label", "\u4F1A\u8BDDID", "value", activity.getSessionId()));
+            details.add(Map.of("label", "会话ID", "value", activity.getSessionId()));
         }
         
         if (activity.getActivityDetails() != null && activity.getActivityType() == UserActivity.ActivityType.COMMAND_EXECUTE) {
-            details.add(Map.of("label", "\u6267\u884C\u547D\u4EE4", "value", activity.getActivityDetails()));
+            details.add(Map.of("label", "执行命令", "value", activity.getActivityDetails()));
         }
         
         if (activity.getRemoteIp() != null) {
-            details.add(Map.of("label", "\u8FDC\u7A0BIP", "value", activity.getRemoteIp()));
+            details.add(Map.of("label", "远程IP", "value", activity.getRemoteIp()));
         }
         
         if (activity.getLoginTime() != null && activity.getLogoutTime() != null) {
             java.time.Duration sessionDuration = java.time.Duration.between(activity.getLoginTime(), activity.getLogoutTime());
-            details.add(Map.of("label", "\u4F1A\u8BDD\u65F6\u957F", "value", formatDuration(sessionDuration)));
+            details.add(Map.of("label", "会话时长", "value", formatDuration(sessionDuration)));
         }
         
-        // \u6DFB\u52A0\u72B6\u6001\u4FE1\u606F
+        // 添加状态信息
         if (activity.getLogoutTime() == null && activity.getLoginTime() != null) {
-            details.add(Map.of("label", "\u72B6\u6001", "value", "\u8FDB\u884C\u4E2D", "status", "success"));
+            details.add(Map.of("label", "状态", "value", "进行中", "status", "success"));
         } else {
-            details.add(Map.of("label", "\u72B6\u6001", "value", "\u5DF2\u5B8C\u6210"));
+            details.add(Map.of("label", "状态", "value", "已完成"));
         }
         
         return details;
     }
     
     /**
-     * \u624B\u52A8\u89E6\u53D1\u5065\u5EB7\u68C0\u67E5API
+     * 手动触发健康检查API
      */
     @PostMapping("/servers/trigger-health-check")
     @ResponseBody
@@ -780,7 +864,7 @@ public class AdminController {
             schedulerService.triggerFullHealthCheck();
             Map<String, String> response = new HashMap<>();
             response.put("status", "success");
-            response.put("message", "\u5065\u5EB7\u68C0\u67E5\u5DF2\u89E6\u53D1");
+            response.put("message", "健康检查已触发");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> response = new HashMap<>();
@@ -794,9 +878,9 @@ public class AdminController {
     public String checkAllServerConnections(RedirectAttributes redirectAttributes) {
         try {
             serverService.checkAllServerConnectionsAndMetrics();
-            redirectAttributes.addFlashAttribute("successMessage", "\u5DF2\u542F\u52A8\u6240\u6709\u670D\u52A1\u5668\u7684\u8FDE\u63A5\u68C0\u67E5\u548C\u76D1\u63A7\u6570\u636E\u66F4\u65B0");
+            redirectAttributes.addFlashAttribute("successMessage", "已启动所有服务器的连接检查和监控数据更新");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "\u6279\u91CF\u68C0\u67E5\u5931\u8D25: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "批量检查失败: " + e.getMessage());
         }
         return "redirect:/admin/servers";
     }
@@ -821,12 +905,18 @@ public class AdminController {
                 return ResponseEntity.badRequest().body(response);
             }
 
+            logger.info("测试SSH连接: {}@{}:{}", username, hostname, port);
+
             // 创建临时服务器对象进行测试
             Server tempServer = new Server();
             tempServer.setHostname(hostname);
             tempServer.setSshPort(port);
             tempServer.setSshUsername(username);
-            tempServer.setSshPassword(password);
+
+            // 直接设置明文密码到加密字段（测试连接不需要真正加密）
+            // SshConnectionService的getDecryptedPassword方法会自动处理明文密码
+            tempServer.setSshPasswordEncrypted(password);
+            logger.debug("已设置测试连接密码，密码长度: {}", password.length());
 
             // 测试连接
             boolean connected = serverService.testServerConnection(tempServer);
@@ -853,7 +943,7 @@ public class AdminController {
     public ResponseEntity<Map<String, String>> getServerStatus(@PathVariable Long id) {
         try {
             Server server = serverService.findById(id)
-                .orElseThrow(() -> new RuntimeException("\u670D\u52A1\u5668\u672A\u627E\u5230"));
+                .orElseThrow(() -> new RuntimeException("服务器未找到"));
             
             Map<String, String> status = new HashMap<>();
             status.put("connectionStatus", server.getConnectionStatus() != null ? 
@@ -863,9 +953,9 @@ public class AdminController {
             
             return ResponseEntity.ok(status);
         } catch (Exception e) {
-            logger.error("\u83B7\u53D6\u670D\u52A1\u5668\u72B6\u6001\u5931\u8D25\uFF0CID: {}", id, e);
+            logger.error("获取服务器状态失败，ID: {}", id, e);
             Map<String, String> error = new HashMap<>();
-            error.put("error", "\u83B7\u53D6\u72B6\u6001\u5931\u8D25: " + e.getMessage());
+            error.put("error", "获取状态失败: " + e.getMessage());
             return ResponseEntity.status(500).body(error);
         }
     }
@@ -874,24 +964,24 @@ public class AdminController {
     @ResponseBody
     public ResponseEntity<Map<String, String>> refreshServer(@PathVariable Long id) {
         try {
-            // \u589E\u52A0\u8D85\u65F6\u4FDD\u62A4\u548C\u66F4\u8BE6\u7EC6\u7684\u65E5\u5FD7
+            // 增加超时保护和更详细的日志
             long startTime = System.currentTimeMillis();
-            logger.info("\u5F00\u59CB\u5237\u65B0\u670D\u52A1\u5668\u72B6\u6001\uFF0CID: {}", id);
+            logger.info("开始刷新服务器状态，ID: {}", id);
             
             Server server = serverService.checkServerConnectionAndMetrics(id);
             
             long duration = System.currentTimeMillis() - startTime;
-            logger.info("\u670D\u52A1\u5668\u72B6\u6001\u5237\u65B0\u5B8C\u6210\uFF0CID: {}, \u8017\u65F6: {}ms, \u72B6\u6001: {}", 
+            logger.info("服务器状态刷新完成，ID: {}, 耗时: {}ms, 状态: {}", 
                 id, duration, server.getConnectionStatus().name());
             
             Map<String, String> response = new HashMap<>();
             response.put("status", "success");
-            response.put("message", String.format("\u670D\u52A1\u5668\u72B6\u6001\u5DF2\u5237\u65B0 (\u8017\u65F6: %dms)", duration));
+            response.put("message", String.format("服务器状态已刷新 (耗时: %dms)", duration));
             response.put("connectionStatus", server.getConnectionStatus().name());
             response.put("duration", String.valueOf(duration));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            logger.error("\u5237\u65B0\u670D\u52A1\u5668\u72B6\u6001\u5931\u8D25\uFF0CID: {}", id, e);
+            logger.error("刷新服务器状态失败，ID: {}", id, e);
             Map<String, String> error = new HashMap<>();
             error.put("status", "error");
             error.put("message", e.getMessage());
@@ -900,13 +990,13 @@ public class AdminController {
     }
 
     /**
-     * \u83B7\u53D6\u670D\u52A1\u5668\u65E5\u5FD7\u9875\u9762
+     * 获取服务器日志页面
      */
     @GetMapping("/servers/{id}/logs")
     public String serverLogs(@PathVariable Long id, Model model) {
         Optional<Server> serverOpt = serverService.getServerById(id);
         if (serverOpt.isEmpty()) {
-            model.addAttribute("errorMessage", "\u670D\u52A1\u5668\u4E0D\u5B58\u5728");
+            model.addAttribute("errorMessage", "服务器不存在");
             return "redirect:/admin/servers";
         }
         
@@ -922,7 +1012,7 @@ public class AdminController {
         List<User> users = userService.findAllUsers();
         model.addAttribute("users", users);
         
-        // \u8BA1\u7B97\u7EDF\u8BA1\u6570\u636E
+        // 计算统计数据
         long totalUsers = users.size();
         long adminUsers = users.stream().filter(user -> 
             user.getRoles().contains(User.Role.ADMIN) || 
@@ -932,7 +1022,7 @@ public class AdminController {
             !user.getRoles().contains(User.Role.ADMIN) && 
             !user.getRoles().contains(User.Role.SUPER_ADMIN)).count();
         long firstLoginUsers = users.stream().filter(User::getIsFirstLogin).count();
-        // \u8BA1\u7B97\u8FD1\u671F\u6D3B\u8DC3\u7528\u6237\uFF087\u5929\u5185\u767B\u5F55\uFF09
+        // 计算近期活跃用户（7天内登录）
         long recentUsers = users.stream().filter(user -> 
             user.getLastLoginTime() != null && 
             user.getLastLoginTime().isAfter(java.time.LocalDateTime.now().minusDays(7))).count();
@@ -946,7 +1036,7 @@ public class AdminController {
         return "admin/users";
     }
 
-    // \u4EC5\u8D85\u7EA7\u7BA1\u7406\u5458\u53EF\u4EE5\u5207\u6362\u89D2\u8272
+    // 仅超级管理员可以切换角色
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping("/users/{id}/toggle-admin")
     public String toggleAdminRole(@PathVariable Long id) {
@@ -954,7 +1044,7 @@ public class AdminController {
         return "redirect:/admin/users";
     }
     
-    // \u4EC5\u8D85\u7EA7\u7BA1\u7406\u5458\u53EF\u4EE5\u5207\u6362\u89D2\u8272
+    // 仅超级管理员可以切换角色
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping("/users/{id}/toggle-super-admin")
     public String toggleSuperAdminRole(@PathVariable Long id) {
@@ -962,12 +1052,12 @@ public class AdminController {
         return "redirect:/admin/users";
     }
     
-    // \u7BA1\u7406\u5458\u548C\u8D85\u7EA7\u7BA1\u7406\u5458\u90FD\u53EF\u4EE5\u5220\u9664\u7528\u6237\uFF0C\u4F46\u9700\u8981\u6DFB\u52A0\u989D\u5916\u7684\u68C0\u67E5
+    // 管理员和超级管理员都可以删除用户，但需要添加额外的检查
     @PostMapping("/users/{id}/delete")
     public String deleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
             userService.deleteUser(id);
-            redirectAttributes.addFlashAttribute("successMessage", "\u7528\u6237\u5220\u9664\u6210\u529F");
+            redirectAttributes.addFlashAttribute("successMessage", "用户删除成功");
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
@@ -975,7 +1065,7 @@ public class AdminController {
     }
     
     /**
-     * \u5220\u9664\u7528\u6237API - AJAX\u8C03\u7528
+     * 删除用户API - AJAX调用
      */
     @DeleteMapping("/users/{id}")
     @ResponseBody
@@ -984,7 +1074,7 @@ public class AdminController {
             userService.deleteUser(id);
             Map<String, String> response = new HashMap<>();
             response.put("status", "success");
-            response.put("message", "\u7528\u6237\u5220\u9664\u6210\u529F");
+            response.put("message", "用户删除成功");
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();
@@ -995,28 +1085,28 @@ public class AdminController {
     }
     
     /**
-     * \u91CD\u7F6E\u7528\u6237\u5BC6\u7801API - AJAX\u8C03\u7528
+     * 重置用户密码API - AJAX调用
      */
     @PostMapping("/users/{id}/reset-password")
     @ResponseBody
     public ResponseEntity<?> resetUserPasswordApi(@PathVariable Long id) {
         try {
-            // \u751F\u6210\u968F\u673A\u5BC6\u7801
+            // 生成随机密码
             String newPassword = generateRandomPassword();
             
             User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("\u7528\u6237\u672A\u627E\u5230"));
+                .orElseThrow(() -> new RuntimeException("用户未找到"));
             
-            // \u66F4\u65B0\u5BC6\u7801
+            // 更新密码
             user.setPassword(passwordEncoder.encode(newPassword));
-            user.setIsFirstLogin(true); // \u5F3A\u5236\u9996\u6B21\u767B\u5F55\u4FEE\u6539\u5BC6\u7801
+            user.setIsFirstLogin(true); // 强制首次登录修改密码
             userRepository.save(user);
             
-            logger.info("\u7BA1\u7406\u5458\u91CD\u7F6E\u4E86\u7528\u6237 {} \u7684\u5BC6\u7801", user.getUsername());
+            logger.info("管理员重置了用户 {} 的密码", user.getUsername());
             
             Map<String, String> response = new HashMap<>();
             response.put("status", "success");
-            response.put("message", "\u5BC6\u7801\u91CD\u7F6E\u6210\u529F\uFF0C\u65B0\u5BC6\u7801\uFF1A" + newPassword);
+            response.put("message", "密码重置成功，新密码：" + newPassword);
             response.put("newPassword", newPassword);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -1028,7 +1118,7 @@ public class AdminController {
     }
     
     /**
-     * \u751F\u6210\u968F\u673A\u5BC6\u7801
+     * 生成随机密码
      */
     private String generateRandomPassword() {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -1041,9 +1131,9 @@ public class AdminController {
     }
     
     /**
-     * \u68C0\u67E5\u5E76\u521B\u5EFA\u670D\u52A1\u5668\u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55
-     * @param server \u670D\u52A1\u5668\u4FE1\u606F
-     * @return \u68C0\u67E5\u548C\u521B\u5EFA\u7ED3\u679C
+     * 检查并创建服务器基础工作目录
+     * @param server 服务器信息
+     * @return 检查和创建结果
      */
     private Map<String, Object> ensureBaseWorkDirectory(Server server) {
         Map<String, Object> result = new HashMap<>();
@@ -1053,59 +1143,59 @@ public class AdminController {
         try {
             String baseWorkDir = server.getBaseWorkDirectory();
             if (baseWorkDir == null || baseWorkDir.trim().isEmpty()) {
-                result.put("message", "\u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55\u8DEF\u5F84\u4E3A\u7A7A\uFF0C\u8DF3\u8FC7\u68C0\u67E5");
+                result.put("message", "基础工作目录路径为空，跳过检查");
                 result.put("success", true);
                 return result;
             }
             
-            // \u68C0\u67E5\u76EE\u5F55\u662F\u5426\u5B58\u5728
+            // 检查目录是否存在
             String checkCommand = String.format("[ -d '%s' ] && echo 'exists' || echo 'not_exists'", baseWorkDir);
-            logger.info("\u68C0\u67E5\u670D\u52A1\u5668 {} \u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55\u662F\u5426\u5B58\u5728: {}", server.getName(), baseWorkDir);
+            logger.info("检查服务器 {} 基础工作目录是否存在: {}", server.getName(), baseWorkDir);
             
             String checkResult = sshConnectionService.executeCommand(server, checkCommand, 10000);
             
             if ("exists".equals(checkResult.trim())) {
                 result.put("success", true);
-                result.put("message", "\u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55\u5DF2\u5B58\u5728: " + baseWorkDir);
-                logger.info("\u670D\u52A1\u5668 {} \u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55\u5DF2\u5B58\u5728: {}", server.getName(), baseWorkDir);
+                result.put("message", "基础工作目录已存在: " + baseWorkDir);
+                logger.info("服务器 {} 基础工作目录已存在: {}", server.getName(), baseWorkDir);
             } else {
-                // \u76EE\u5F55\u4E0D\u5B58\u5728\uFF0C\u521B\u5EFA\u5B83
-                logger.info("\u670D\u52A1\u5668 {} \u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55\u4E0D\u5B58\u5728\uFF0C\u5F00\u59CB\u521B\u5EFA: {}", server.getName(), baseWorkDir);
+                // 目录不存在，创建它
+                logger.info("服务器 {} 基础工作目录不存在，开始创建: {}", server.getName(), baseWorkDir);
                 String createCommand = String.format("mkdir -p '%s' && chmod 755 '%s'", baseWorkDir, baseWorkDir);
                 
                 sshConnectionService.executeCommand(server, createCommand, 15000);
                 
-                // \u518D\u6B21\u68C0\u67E5\u662F\u5426\u521B\u5EFA\u6210\u529F
+                // 再次检查是否创建成功
                 String verifyResult = sshConnectionService.executeCommand(server, checkCommand, 5000);
                 if ("exists".equals(verifyResult.trim())) {
                     result.put("success", true);
                     result.put("created", true);
-                    result.put("message", "\u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55\u521B\u5EFA\u6210\u529F: " + baseWorkDir);
-                    logger.info("\u670D\u52A1\u5668 {} \u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55\u521B\u5EFA\u6210\u529F: {}", server.getName(), baseWorkDir);
+                    result.put("message", "基础工作目录创建成功: " + baseWorkDir);
+                    logger.info("服务器 {} 基础工作目录创建成功: {}", server.getName(), baseWorkDir);
                 } else {
-                    result.put("message", "\u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55\u521B\u5EFA\u5931\u8D25\uFF0C\u9A8C\u8BC1\u65F6\u4ECD\u4E0D\u5B58\u5728");
-                    logger.error("\u670D\u52A1\u5668 {} \u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55\u521B\u5EFA\u5931\u8D25: {}", server.getName(), baseWorkDir);
+                    result.put("message", "基础工作目录创建失败，验证时仍不存在");
+                    logger.error("服务器 {} 基础工作目录创建失败: {}", server.getName(), baseWorkDir);
                 }
             }
             
         } catch (Exception e) {
-            result.put("message", "\u68C0\u67E5\u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55\u65F6\u53D1\u751F\u9519\u8BEF: " + e.getMessage());
-            logger.error("\u68C0\u67E5\u670D\u52A1\u5668 {} \u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55\u65F6\u53D1\u751F\u9519\u8BEF: {}", server.getName(), e.getMessage(), e);
+            result.put("message", "检查基础工作目录时发生错误: " + e.getMessage());
+            logger.error("检查服务器 {} 基础工作目录时发生错误: {}", server.getName(), e.getMessage(), e);
         }
         
         return result;
     }
     
     /**
-     * \u83B7\u53D6\u7528\u6237\u6570\u636EAPI - \u7528\u4E8E\u62BD\u5C49\u7F16\u8F91
+     * 获取用户数据API - 用于抽屉编辑
      */
     @GetMapping("/users/{id}/data")
     @ResponseBody
-    @Transactional // \u6DFB\u52A0\u4E8B\u52A1\u6CE8\u89E3\u4EE5\u89E3\u51B3\u61D2\u52A0\u8F7D\u95EE\u9898
+    @Transactional // 添加事务注解以解决懒加载问题
     public ResponseEntity<?> getUserData(@PathVariable Long id) {
         try {
             User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("\u7528\u6237\u672A\u627E\u5230"));
+                .orElseThrow(() -> new RuntimeException("用户未找到"));
             
             Map<String, Object> data = new HashMap<>();
             data.put("id", user.getId());
@@ -1114,7 +1204,7 @@ public class AdminController {
             data.put("workDirectory", user.getWorkDirectory());
             data.put("enabled", !user.getIsAccountLocked());
             
-            // \u8F6C\u6362\u89D2\u8272\u4E3A\u5B57\u7B26\u4E32\u6570\u7EC4
+            // 转换角色为字符串数组
             List<String> roleNames = user.getRoles().stream()
                 .map(role -> role.name())
                 .collect(java.util.stream.Collectors.toList());
@@ -1129,29 +1219,29 @@ public class AdminController {
     }
     
     /**
-     * \u521B\u5EFA\u7528\u6237API - \u7528\u4E8E\u62BD\u5C49\u63D0\u4EA4
+     * 创建用户API - 用于抽屉提交
      */
     @PostMapping("/api/users")
     @ResponseBody
     public ResponseEntity<?> createUserApi(@RequestBody Map<String, Object> userData) {
         try {
-            logger.info("\u6536\u5230\u521B\u5EFA\u7528\u6237\u8BF7\u6C42\uFF0C\u6570\u636E: {}", userData);
+            logger.info("收到创建用户请求，数据: {}", userData);
             String username = (String) userData.get("username");
             String email = (String) userData.get("email");
             
-            // \u68C0\u67E5\u7528\u6237\u540D\u552F\u4E00\u6027
+            // 检查用户名唯一性
             if (userRepository.findByUsername(username).isPresent()) {
                 Map<String, String> error = new HashMap<>();
                 error.put("status", "error");
-                error.put("message", "\u7528\u6237\u540D\u5DF2\u5B58\u5728: " + username);
+                error.put("message", "用户名已存在: " + username);
                 return ResponseEntity.badRequest().body(error);
             }
             
-            // \u68C0\u67E5\u90AE\u7BB1\u552F\u4E00\u6027
+            // 检查邮箱唯一性
             if (userRepository.findByEmail(email).isPresent()) {
                 Map<String, String> error = new HashMap<>();
                 error.put("status", "error");
-                error.put("message", "\u90AE\u7BB1\u5DF2\u5B58\u5728: " + email);
+                error.put("message", "邮箱已存在: " + email);
                 return ResponseEntity.badRequest().body(error);
             }
             
@@ -1161,51 +1251,51 @@ public class AdminController {
             user.setWorkDirectory((String) userData.get("workDirectory"));
             user.setIsAccountLocked(!((Boolean) userData.getOrDefault("enabled", true)));
             
-            // \u8BBE\u7F6E\u5BC6\u7801
+            // 设置密码
             String password = (String) userData.get("password");
             if (password != null && !password.trim().isEmpty()) {
                 user.setPassword(passwordEncoder.encode(password));
             }
             
-            // \u8BBE\u7F6E\u89D2\u8272
+            // 设置角色
             List<String> roleNames = (List<String>) userData.get("roles");
-            logger.info("\u6536\u5230\u7684\u89D2\u8272\u6570\u636E: {}", roleNames);
+            logger.info("收到的角色数据: {}", roleNames);
             if (roleNames != null && !roleNames.isEmpty()) {
                 Set<User.Role> roles = new HashSet<>();
                 for (String roleName : roleNames) {
                     try {
                         User.Role role = User.Role.valueOf(roleName);
                         roles.add(role);
-                        logger.info("\u6DFB\u52A0\u89D2\u8272: {}", role);
+                        logger.info("添加角色: {}", role);
                     } catch (IllegalArgumentException e) {
-                        logger.warn("\u65E0\u6548\u89D2\u8272: {}", roleName);
+                        logger.warn("无效角色: {}", roleName);
                     }
                 }
                 user.setRoles(roles);
-                logger.info("\u7528\u6237\u8BBE\u7F6E\u7684\u89D2\u8272\u96C6\u5408: {}", roles);
+                logger.info("用户设置的角色集合: {}", roles);
             } else {
-                logger.warn("\u6CA1\u6709\u6536\u5230\u89D2\u8272\u6570\u636E\u6216\u89D2\u8272\u6570\u636E\u4E3A\u7A7A");
+                logger.warn("没有收到角色数据或角色数据为空");
             }
             
-            // \u5904\u7406\u670D\u52A1\u5668\u5206\u914D
+            // 处理服务器分配
             this.handleUserServerAssignment(user, userData);
             
-            // \u6839\u636E\u53EF\u7528\u670D\u52A1\u5668\u751F\u6210\u5DE5\u4F5C\u76EE\u5F55\u8DEF\u5F84
+            // 根据可用服务器生成工作目录路径
             this.generateUserWorkDirectory(user);
             
             User savedUser = userService.save(user);
             
-            // \u81EA\u52A8\u5C06\u7528\u6237\u52A0\u5165\u670D\u52A1\u5668\u7684\u9ED8\u8BA4\u7528\u6237\u7EC4
+            // 自动将用户加入服务器的默认用户组
             autoAssignUserToDefaultGroups(savedUser);
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
             
-            // \u6784\u5EFA\u8BE6\u7EC6\u7684\u6210\u529F\u6D88\u606F
-            StringBuilder message = new StringBuilder("\u7528\u6237\u521B\u5EFA\u6210\u529F");
+            // 构建详细的成功消息
+            StringBuilder message = new StringBuilder("用户创建成功");
             if (savedUser.getAvailableServers() != null && !savedUser.getAvailableServers().isEmpty()) {
-                message.append("\uFF0C\u5DF2\u5728 ").append(savedUser.getAvailableServers().size()).append(" \u53F0\u670D\u52A1\u5668\u4E0A\u521B\u5EFA\u8D26\u6237\u548C\u5DE5\u4F5C\u76EE\u5F55");
-                message.append("\uFF0C\u5DF2\u81EA\u52A8\u52A0\u5165\u5BF9\u5E94\u7684\u9ED8\u8BA4\u7528\u6237\u7EC4");
+                message.append("，已在 ").append(savedUser.getAvailableServers().size()).append(" 台服务器上创建账户和工作目录");
+                message.append("，已自动加入对应的默认用户组");
             }
             
             response.put("message", message.toString());
@@ -1221,27 +1311,27 @@ public class AdminController {
     }
     
     /**
-     * \u66F4\u65B0\u7528\u6237API - \u7528\u4E8E\u62BD\u5C49\u63D0\u4EA4
+     * 更新用户API - 用于抽屉提交
      */
     @PostMapping("/api/users/{id}/update")
     @ResponseBody
     public ResponseEntity<?> updateUserApi(@PathVariable Long id, @RequestBody Map<String, Object> userData) {
         try {
             User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("\u7528\u6237\u672A\u627E\u5230"));
+                .orElseThrow(() -> new RuntimeException("用户未找到"));
             
-            // \u66F4\u65B0\u57FA\u672C\u4FE1\u606F
+            // 更新基本信息
             user.setUsername((String) userData.get("username"));
             user.setEmail((String) userData.get("email"));
             user.setIsAccountLocked(!((Boolean) userData.getOrDefault("enabled", true)));
             
-            // \u66F4\u65B0\u5BC6\u7801\uFF08\u5982\u679C\u63D0\u4F9B\uFF09
+            // 更新密码（如果提供）
             String password = (String) userData.get("password");
             if (password != null && !password.trim().isEmpty()) {
                 user.setPassword(passwordEncoder.encode(password));
             }
             
-            // \u66F4\u65B0\u89D2\u8272
+            // 更新角色
             List<String> roleNames = (List<String>) userData.get("roles");
             if (roleNames != null && !roleNames.isEmpty()) {
                 Set<User.Role> roles = new HashSet<>();
@@ -1249,30 +1339,30 @@ public class AdminController {
                     try {
                         roles.add(User.Role.valueOf(roleName));
                     } catch (IllegalArgumentException e) {
-                        // \u5FFD\u7565\u65E0\u6548\u89D2\u8272
+                        // 忽略无效角色
                     }
                 }
                 user.setRoles(roles);
             }
             
-            // \u5904\u7406\u670D\u52A1\u5668\u5206\u914D
+            // 处理服务器分配
             this.handleUserServerAssignment(user, userData);
             
-            // \u6839\u636E\u53EF\u7528\u670D\u52A1\u5668\u91CD\u65B0\u751F\u6210\u5DE5\u4F5C\u76EE\u5F55\u8DEF\u5F84
+            // 根据可用服务器重新生成工作目录路径
             this.generateUserWorkDirectory(user);
             
             User updatedUser = userService.save(user);
             
-            // \u91CD\u65B0\u5206\u914D\u7528\u6237\u5230\u670D\u52A1\u5668\u7684\u9ED8\u8BA4\u7528\u6237\u7EC4\uFF08\u5982\u679C\u670D\u52A1\u5668\u5206\u914D\u53D1\u751F\u4E86\u53D8\u5316\uFF09
+            // 重新分配用户到服务器的默认用户组（如果服务器分配发生了变化）
             autoAssignUserToDefaultGroups(updatedUser);
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
             
-            // \u6784\u5EFA\u8BE6\u7EC6\u7684\u6210\u529F\u6D88\u606F
-            StringBuilder message = new StringBuilder("\u7528\u6237\u66F4\u65B0\u6210\u529F");
+            // 构建详细的成功消息
+            StringBuilder message = new StringBuilder("用户更新成功");
             if (updatedUser.getAvailableServers() != null && !updatedUser.getAvailableServers().isEmpty()) {
-                message.append("\uFF0C\u5DF2\u5728 ").append(updatedUser.getAvailableServers().size()).append(" \u53F0\u670D\u52A1\u5668\u4E0A\u66F4\u65B0\u8D26\u6237\u548C\u5DE5\u4F5C\u76EE\u5F55");
+                message.append("，已在 ").append(updatedUser.getAvailableServers().size()).append(" 台服务器上更新账户和工作目录");
             }
             
             response.put("message", message.toString());
@@ -1290,18 +1380,18 @@ public class AdminController {
     
     
     /**
-     * \u68C0\u67E5\u7528\u6237\u540D\u53EF\u7528\u6027API - \u7528\u4E8E\u5B9E\u65F6\u9A8C\u8BC1
+     * 检查用户名可用性API - 用于实时验证
      */
     @GetMapping("/api/users/check-username")
     @ResponseBody
     public ResponseEntity<?> checkUsernameAvailability(@RequestParam String username) {
         try {
-            // \u68C0\u67E5\u7528\u6237\u540D\u662F\u5426\u5DF2\u5B58\u5728
+            // 检查用户名是否已存在
             boolean exists = userRepository.findByUsername(username).isPresent();
             
             Map<String, Object> response = new HashMap<>();
             response.put("available", !exists);
-            response.put("message", exists ? "\u7528\u6237\u540D\u5DF2\u5B58\u5728" : "\u7528\u6237\u540D\u53EF\u7528");
+            response.put("message", exists ? "用户名已存在" : "用户名可用");
             
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -1312,18 +1402,18 @@ public class AdminController {
     }
     
     /**
-     * \u68C0\u67E5\u90AE\u7BB1\u53EF\u7528\u6027API - \u7528\u4E8E\u5B9E\u65F6\u9A8C\u8BC1
+     * 检查邮箱可用性API - 用于实时验证
      */
     @GetMapping("/api/users/check-email")
     @ResponseBody
     public ResponseEntity<?> checkEmailAvailability(@RequestParam String email) {
         try {
-            // \u68C0\u67E5\u90AE\u7BB1\u662F\u5426\u5DF2\u5B58\u5728
+            // 检查邮箱是否已存在
             boolean exists = userRepository.findByEmail(email).isPresent();
             
             Map<String, Object> response = new HashMap<>();
             response.put("available", !exists);
-            response.put("message", exists ? "\u90AE\u7BB1\u5DF2\u5B58\u5728" : "\u90AE\u7BB1\u53EF\u7528");
+            response.put("message", exists ? "邮箱已存在" : "邮箱可用");
             
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -1334,7 +1424,7 @@ public class AdminController {
     }
 
     /**
-     * \u83B7\u53D6\u7528\u6237\u5DF2\u5206\u914D\u7684\u670D\u52A1\u5668\u5217\u8868API - \u7528\u4E8E\u62BD\u5C49\u7F16\u8F91
+     * 获取用户已分配的服务器列表API - 用于抽屉编辑
      */
     @GetMapping("/api/users/{id}/servers")
     @ResponseBody
@@ -1342,12 +1432,12 @@ public class AdminController {
     public ResponseEntity<?> getUserServersApi(@PathVariable Long id) {
         try {
             User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("\u7528\u6237\u672A\u627E\u5230"));
+                .orElseThrow(() -> new RuntimeException("用户未找到"));
             
-            // \u83B7\u53D6\u7528\u6237\u5DF2\u5206\u914D\u7684\u670D\u52A1\u5668
+            // 获取用户已分配的服务器
             Set<Server> userServers = user.getAvailableServers();
             
-            // \u8F6C\u6362\u4E3A\u524D\u7AEF\u9700\u8981\u7684\u683C\u5F0F
+            // 转换为前端需要的格式
             List<Map<String, Object>> responseData = userServers.stream()
                 .map(server -> {
                     Map<String, Object> serverData = new HashMap<>();
@@ -1368,12 +1458,12 @@ public class AdminController {
     }
 
     /**
-     * \u5904\u7406\u7528\u6237\u670D\u52A1\u5668\u5206\u914D
+     * 处理用户服务器分配
      */
     private void handleUserServerAssignment(User user, Map<String, Object> userData) {
-        // \u5904\u7406\u670D\u52A1\u5668\u5206\u914D
+        // 处理服务器分配
         List<Integer> serverIds = (List<Integer>) userData.get("serverIds");
-        logger.info("\u63A5\u6536\u5230\u7684\u670D\u52A1\u5668ID\u5217\u8868: {}", serverIds);
+        logger.info("接收到的服务器ID列表: {}", serverIds);
         if (serverIds != null && !serverIds.isEmpty()) {
             Set<Server> assignedServers = new HashSet<>();
             for (Integer serverId : serverIds) {
@@ -1381,113 +1471,113 @@ public class AdminController {
             }
             user.setAvailableServers(assignedServers);
             
-            // \u5982\u679C\u6CA1\u6709\u9ED8\u8BA4\u670D\u52A1\u5668\uFF0C\u8BBE\u7F6E\u7B2C\u4E00\u4E2A\u4E3A\u9ED8\u8BA4\u670D\u52A1\u5668
+            // 如果没有默认服务器，设置第一个为默认服务器
             if (!assignedServers.isEmpty() && user.getDefaultServer() == null) {
                 user.setDefaultServer(assignedServers.iterator().next());
             }
         }
-        logger.info("\u7528\u6237 {} \u4FE1\u606F\u66F4\u65B0\u5B8C\u6210\uFF0C\u5206\u914D\u4E86 {} \u4E2A\u670D\u52A1\u5668", user.getUsername(), 
+        logger.info("用户 {} 信息更新完成，分配了 {} 个服务器", user.getUsername(), 
             user.getAvailableServers().size());
     }
     
     /**
-     * \u6839\u636E\u7528\u6237\u7684\u53EF\u7528\u670D\u52A1\u5668\u751F\u6210\u5DE5\u4F5C\u76EE\u5F55\u8DEF\u5F84
+     * 根据用户的可用服务器生成工作目录路径
      */
     private void generateUserWorkDirectory(User user) {
         String userWorkDirectory;
         
         if (user.getAvailableServers() != null && !user.getAvailableServers().isEmpty()) {
-            // \u83B7\u53D6\u7B2C\u4E00\u4E2A\u670D\u52A1\u5668\u7684\u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55\u4F5C\u4E3A\u4E3B\u8981\u5DE5\u4F5C\u76EE\u5F55
+            // 获取第一个服务器的基础工作目录作为主要工作目录
             Server firstServer = user.getAvailableServers().iterator().next();
             String baseWorkDirectory = firstServer.getBaseWorkDirectory();
             
-            // \u5728\u57FA\u7840\u5DE5\u4F5C\u76EE\u5F55\u4E0B\u521B\u5EFA\u7528\u6237\u540D\u76EE\u5F55
+            // 在基础工作目录下创建用户名目录
             userWorkDirectory = baseWorkDirectory + "/" + user.getUsername();
-            // \u89C4\u8303\u5316\u8DEF\u5F84\uFF0C\u907F\u514D\u53CC\u659C\u6760
+            // 规范化路径，避免双斜杠
             userWorkDirectory = userWorkDirectory.replaceAll("/+", "/");
             
-            logger.info("\u4E3A\u7528\u6237 {} \u751F\u6210\u5DE5\u4F5C\u76EE\u5F55: {}", user.getUsername(), userWorkDirectory);
+            logger.info("为用户 {} 生成工作目录: {}", user.getUsername(), userWorkDirectory);
         } else {
-            // \u5982\u679C\u6CA1\u6709\u53EF\u7528\u670D\u52A1\u5668\uFF0C\u4F7F\u7528\u9ED8\u8BA4\u5DE5\u4F5C\u76EE\u5F55
+            // 如果没有可用服务器，使用默认工作目录
             userWorkDirectory = "./workspaces/" + user.getUsername();
-            logger.warn("\u7528\u6237 {} \u6CA1\u6709\u53EF\u7528\u670D\u52A1\u5668\uFF0C\u4F7F\u7528\u9ED8\u8BA4\u5DE5\u4F5C\u76EE\u5F55: {}", user.getUsername(), userWorkDirectory);
+            logger.warn("用户 {} 没有可用服务器，使用默认工作目录: {}", user.getUsername(), userWorkDirectory);
         }
         
         user.setWorkDirectory(userWorkDirectory);
         
-        // \u5728\u6240\u6709\u9009\u4E2D\u7684\u670D\u52A1\u5668\u4E0A\u521B\u5EFA\u7528\u6237\u8D26\u6237\u548C\u5DE5\u4F5C\u76EE\u5F55
+        // 在所有选中的服务器上创建用户账户和工作目录
         createUserAccountsOnServers(user);
         
-        // \u672C\u5730\u521B\u5EFA\u5907\u7528\u5DE5\u4F5C\u76EE\u5F55
+        // 本地创建备用工作目录
         createLocalWorkDirectory(user);
     }
     
     /**
-     * \u5728\u6240\u6709\u9009\u4E2D\u7684\u670D\u52A1\u5668\u4E0A\u521B\u5EFA\u7528\u6237\u8D26\u6237\u548C\u5DE5\u4F5C\u76EE\u5F55
+     * 在所有选中的服务器上创建用户账户和工作目录
      */
     private void createUserAccountsOnServers(User user) {
         if (user.getAvailableServers() == null || user.getAvailableServers().isEmpty()) {
-            logger.warn("\u7528\u6237 {} \u6CA1\u6709\u53EF\u7528\u670D\u52A1\u5668\uFF0C\u8DF3\u8FC7\u8FDC\u7A0B\u8D26\u6237\u521B\u5EFA", user.getUsername());
+            logger.warn("用户 {} 没有可用服务器，跳过远程账户创建", user.getUsername());
             return;
         }
         
         for (Server server : user.getAvailableServers()) {
             try {
-                logger.info("\u5F00\u59CB\u5728\u670D\u52A1\u5668 {} \u4E0A\u4E3A\u7528\u6237 {} \u521B\u5EFA\u8D26\u6237\u548C\u5DE5\u4F5C\u76EE\u5F55", server.getName(), user.getUsername());
+                logger.info("开始在服务器 {} 上为用户 {} 创建账户和工作目录", server.getName(), user.getUsername());
                 
                 String username = user.getUsername();
                 String userWorkDir = server.getBaseWorkDirectory() + "/" + username;
                 userWorkDir = userWorkDir.replaceAll("/+", "/");
                 
-                // 1. \u68C0\u67E5\u7528\u6237\u662F\u5426\u5DF2\u5B58\u5728
+                // 1. 检查用户是否已存在
                 String checkUserCommand = String.format("id %s >/dev/null 2>&1 && echo 'exists' || echo 'not_exists'", username);
                 String userCheckResult = sshConnectionService.executeCommand(server, checkUserCommand, 10000);
                 
                 if ("exists".equals(userCheckResult.trim())) {
-                    logger.info("\u7528\u6237 {} \u5728\u670D\u52A1\u5668 {} \u4E0A\u5DF2\u5B58\u5728\uFF0C\u8DF3\u8FC7\u521B\u5EFA", username, server.getName());
+                    logger.info("用户 {} 在服务器 {} 上已存在，跳过创建", username, server.getName());
                 } else {
-                    // 2. \u521B\u5EFA\u7528\u6237\u8D26\u6237
+                    // 2. 创建用户账户
                     String createUserCommand = String.format("useradd -m -d %s -s /bin/bash %s", userWorkDir, username);
                     sshConnectionService.executeCommand(server, createUserCommand, 15000);
-                    logger.info("\u5728\u670D\u52A1\u5668 {} \u4E0A\u6210\u529F\u521B\u5EFA\u7528\u6237 {}", server.getName(), username);
+                    logger.info("在服务器 {} 上成功创建用户 {}", server.getName(), username);
                     
-                    // 3. \u751F\u6210\u9AD8\u5B89\u5168\u6027\u968F\u673A\u5BC6\u7801
+                    // 3. 生成高安全性随机密码
                     String randomPassword = generateSecurePassword();
                     String setPasswordCommand = String.format("echo '%s:%s' | chpasswd", username, randomPassword);
                     sshConnectionService.executeCommand(server, setPasswordCommand, 10000);
-                    logger.info("\u4E3A\u7528\u6237 {} \u5728\u670D\u52A1\u5668 {} \u4E0A\u8BBE\u7F6E\u4E86\u9AD8\u5B89\u5168\u6027\u968F\u673A\u5BC6\u7801", username, server.getName());
+                    logger.info("为用户 {} 在服务器 {} 上设置了高安全性随机密码", username, server.getName());
                     
-                    // 4. \u5C06\u52A0\u5BC6\u5BC6\u7801\u4FDD\u5B58\u5230\u6570\u636E\u5E93\u4E2D\uFF0C\u4F9BSSH\u81EA\u52A8\u767B\u5F55\u4F7F\u7528
+                    // 4. 将加密密码保存到数据库中，供SSH自动登录使用
                     credentialService.saveCredential(user, server, username, randomPassword);
-                    logger.info("\u5DF2\u5C06\u7528\u6237 {} \u5728\u670D\u52A1\u5668 {} \u4E0A\u7684SSH\u51ED\u636E\u4FDD\u5B58\u5230\u6570\u636E\u5E93", username, server.getName());
+                    logger.info("已将用户 {} 在服务器 {} 上的SSH凭据保存到数据库", username, server.getName());
                 }
                 
-                // 5. \u786E\u4FDD\u5DE5\u4F5C\u76EE\u5F55\u5B58\u5728\u5E76\u8BBE\u7F6E\u6B63\u786E\u6743\u9650
+                // 5. 确保工作目录存在并设置正确权限
                 String ensureDirCommand = String.format(
                     "mkdir -p %s && chown %s:%s %s && chmod 755 %s", 
                     userWorkDir, username, username, userWorkDir, userWorkDir);
                 sshConnectionService.executeCommand(server, ensureDirCommand, 15000);
                 
-                // 6. \u9A8C\u8BC1\u521B\u5EFA\u7ED3\u679C
+                // 6. 验证创建结果
                 String verifyCommand = String.format("[ -d %s ] && [ \"$(stat -c %%U %s)\" = \"%s\" ] && echo 'success' || echo 'failed'", 
                     userWorkDir, userWorkDir, username);
                 String verifyResult = sshConnectionService.executeCommand(server, verifyCommand, 10000);
                 
                 if ("success".equals(verifyResult.trim())) {
-                    logger.info("\u5728\u670D\u52A1\u5668 {} \u4E0A\u6210\u529F\u4E3A\u7528\u6237 {} \u521B\u5EFA\u5DE5\u4F5C\u76EE\u5F55: {}", server.getName(), username, userWorkDir);
+                    logger.info("在服务器 {} 上成功为用户 {} 创建工作目录: {}", server.getName(), username, userWorkDir);
                 } else {
-                    logger.error("\u5728\u670D\u52A1\u5668 {} \u4E0A\u4E3A\u7528\u6237 {} \u521B\u5EFA\u5DE5\u4F5C\u76EE\u5F55\u5931\u8D25: {}", server.getName(), username, userWorkDir);
+                    logger.error("在服务器 {} 上为用户 {} 创建工作目录失败: {}", server.getName(), username, userWorkDir);
                 }
                 
             } catch (Exception e) {
-                logger.error("\u5728\u670D\u52A1\u5668 {} \u4E0A\u4E3A\u7528\u6237 {} \u521B\u5EFA\u8D26\u6237\u65F6\u53D1\u751F\u9519\u8BEF: {}", server.getName(), user.getUsername(), e.getMessage(), e);
-                // \u7EE7\u7EED\u5904\u7406\u4E0B\u4E00\u4E2A\u670D\u52A1\u5668\uFF0C\u4E0D\u4E2D\u65AD\u6574\u4E2A\u6D41\u7A0B
+                logger.error("在服务器 {} 上为用户 {} 创建账户时发生错误: {}", server.getName(), user.getUsername(), e.getMessage(), e);
+                // 继续处理下一个服务器，不中断整个流程
             }
         }
     }
     
     /**
-     * \u521B\u5EFA\u672C\u5730\u5907\u7528\u5DE5\u4F5C\u76EE\u5F55
+     * 创建本地备用工作目录
      */
     private void createLocalWorkDirectory(User user) {
         String localWorkDir = "./workspaces/" + user.getUsername();
@@ -1495,19 +1585,19 @@ public class AdminController {
             java.nio.file.Path workPath = java.nio.file.Paths.get(localWorkDir);
             if (!java.nio.file.Files.exists(workPath)) {
                 java.nio.file.Files.createDirectories(workPath);
-                logger.info("\u6210\u529F\u521B\u5EFA\u672C\u5730\u5907\u7528\u5DE5\u4F5C\u76EE\u5F55: {}", localWorkDir);
+                logger.info("成功创建本地备用工作目录: {}", localWorkDir);
             } else {
-                logger.info("\u672C\u5730\u5907\u7528\u5DE5\u4F5C\u76EE\u5F55\u5DF2\u5B58\u5728: {}", localWorkDir);
+                logger.info("本地备用工作目录已存在: {}", localWorkDir);
             }
         } catch (Exception e) {
-            logger.error("\u521B\u5EFA\u672C\u5730\u5907\u7528\u5DE5\u4F5C\u76EE\u5F55\u5931\u8D25: {} - {}", localWorkDir, e.getMessage(), e);
+            logger.error("创建本地备用工作目录失败: {} - {}", localWorkDir, e.getMessage(), e);
         }
     }
     
     /**
-     * \u751F\u6210\u9AD8\u5B89\u5168\u6027\u968F\u673A\u5BC6\u7801
-     * \u5BC6\u7801\u5305\u542B\u5927\u5199\u5B57\u6BCD\u3001\u5C0F\u5199\u5B57\u6BCD\u3001\u6570\u5B57\u548C\u7279\u6B8A\u5B57\u7B26
-     * \u957F\u5EA6\u4E3A16\u4F4D\uFF0C\u786E\u4FDD\u8DB3\u591F\u7684\u5B89\u5168\u6027
+     * 生成高安全性随机密码
+     * 密码包含大写字母、小写字母、数字和特殊字符
+     * 长度为16位，确保足够的安全性
      */
     private String generateSecurePassword() {
         String upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -1519,18 +1609,18 @@ public class AdminController {
         java.security.SecureRandom random = new java.security.SecureRandom();
         StringBuilder password = new StringBuilder(16);
         
-        // \u786E\u4FDD\u5BC6\u7801\u81F3\u5C11\u5305\u542B\u6BCF\u79CD\u7C7B\u578B\u7684\u5B57\u7B26
+        // 确保密码至少包含每种类型的字符
         password.append(upperCase.charAt(random.nextInt(upperCase.length())));
         password.append(lowerCase.charAt(random.nextInt(lowerCase.length())));
         password.append(digits.charAt(random.nextInt(digits.length())));
         password.append(specialChars.charAt(random.nextInt(specialChars.length())));
         
-        // \u586B\u5145\u5269\u4F59\u768412\u4E2A\u5B57\u7B26
+        // 填充剩余的12个字符
         for (int i = 4; i < 16; i++) {
             password.append(allChars.charAt(random.nextInt(allChars.length())));
         }
         
-        // \u6253\u4E71\u5B57\u7B26\u987A\u5E8F
+        // 打乱字符顺序
         char[] chars = password.toString().toCharArray();
         for (int i = chars.length - 1; i > 0; i--) {
             int j = random.nextInt(i + 1);
@@ -1543,82 +1633,82 @@ public class AdminController {
     }
     
     /**
-     * \u81EA\u52A8\u5C06\u7528\u6237\u5206\u914D\u5230\u670D\u52A1\u5668\u7684\u9ED8\u8BA4\u7528\u6237\u7EC4
-     * \u5982\u679C\u670D\u52A1\u5668\u6CA1\u6709\u9ED8\u8BA4\u7528\u6237\u7EC4\uFF0C\u5C06\u5C1D\u8BD5\u521B\u5EFA\u4E00\u4E2A\u7B80\u5316\u7684\u9ED8\u8BA4\u7528\u6237\u7EC4
+     * 自动将用户分配到服务器的默认用户组
+     * 如果服务器没有默认用户组，将尝试创建一个简化的默认用户组
      */
     private void autoAssignUserToDefaultGroups(User user) {
-        logger.info("\u5F00\u59CB\u4E3A\u7528\u6237 {} \u81EA\u52A8\u5206\u914D\u9ED8\u8BA4\u7528\u6237\u7EC4", user.getUsername());
+        logger.info("开始为用户 {} 自动分配默认用户组", user.getUsername());
         
         if (user.getAvailableServers() == null || user.getAvailableServers().isEmpty()) {
-            logger.info("\u7528\u6237 {} \u6CA1\u6709\u53EF\u7528\u7684\u670D\u52A1\u5668\uFF0C\u8DF3\u8FC7\u7528\u6237\u7EC4\u5206\u914D", user.getUsername());
+            logger.info("用户 {} 没有可用的服务器，跳过用户组分配", user.getUsername());
             return;
         }
         
         for (Server server : user.getAvailableServers()) {
             try {
-                logger.info("\u5904\u7406\u670D\u52A1\u5668 {} \u7684\u7528\u6237\u7EC4\u5206\u914D", server.getName());
+                logger.info("处理服务器 {} 的用户组分配", server.getName());
                 
-                // \u68C0\u67E5\u670D\u52A1\u5668\u662F\u5426\u6709\u9ED8\u8BA4\u7528\u6237\u7EC4
+                // 检查服务器是否有默认用户组
                 Optional<com.cmict.internalpaas.model.ServerUserGroup> defaultGroup = 
                     serverUserGroupService.getDefaultUserGroup(server.getId());
                     
                 if (defaultGroup.isPresent()) {
-                    logger.info("\u670D\u52A1\u5668 {} \u5DF2\u6709\u9ED8\u8BA4\u7528\u6237\u7EC4: {}", server.getName(), defaultGroup.get().getGroupName());
+                    logger.info("服务器 {} 已有默认用户组: {}", server.getName(), defaultGroup.get().getGroupName());
                     
-                    // \u521B\u5EFA\u7528\u6237\u670D\u52A1\u5668\u8D26\u6237\u5E76\u5206\u914D\u5230\u9ED8\u8BA4\u7528\u6237\u7EC4
+                    // 创建用户服务器账户并分配到默认用户组
                     try {
                         userServerAccountService.createUserAccount(user, server, defaultGroup.get());
-                        logger.info("\u6210\u529F\u4E3A\u7528\u6237 {} \u5728\u670D\u52A1\u5668 {} \u4E0A\u521B\u5EFA\u8D26\u6237\u5E76\u52A0\u5165\u7528\u6237\u7EC4 {}", 
+                        logger.info("成功为用户 {} 在服务器 {} 上创建账户并加入用户组 {}", 
                             user.getUsername(), server.getName(), defaultGroup.get().getGroupName());
                     } catch (Exception e) {
-                        logger.warn("\u4E3A\u7528\u6237 {} \u5728\u670D\u52A1\u5668 {} \u4E0A\u521B\u5EFA\u8D26\u6237\u6216\u5206\u914D\u7528\u6237\u7EC4\u5931\u8D25: {}", 
+                        logger.warn("为用户 {} 在服务器 {} 上创建账户或分配用户组失败: {}", 
                             user.getUsername(), server.getName(), e.getMessage());
                     }
                 } else {
-                    logger.info("\u670D\u52A1\u5668 {} \u6CA1\u6709\u9ED8\u8BA4\u7528\u6237\u7EC4\uFF0C\u5C1D\u8BD5\u521B\u5EFA\u7B80\u5316\u9ED8\u8BA4\u7528\u6237\u7EC4", server.getName());
+                    logger.info("服务器 {} 没有默认用户组，尝试创建简化默认用户组", server.getName());
                     
-                    // \u68C0\u67E5\u670D\u52A1\u5668\u7C7B\u578B\uFF0C\u5982\u679C\u4E3A\u7A7A\u5219\u8BBE\u7F6E\u4E3A\u5F00\u53D1\u73AF\u5883
+                    // 检查服务器类型，如果为空则设置为开发环境
                     if (server.getServerType() == null) {
                         server.setServerType(Server.ServerType.DEVELOPMENT);
                         serverService.saveServer(server);
-                        logger.info("\u670D\u52A1\u5668 {} \u7C7B\u578B\u4E3A\u7A7A\uFF0C\u5DF2\u8BBE\u7F6E\u4E3A\u5F00\u53D1\u73AF\u5883", server.getName());
+                        logger.info("服务器 {} 类型为空，已设置为开发环境", server.getName());
                     }
                     
-                    // \u5C1D\u8BD5\u4E3A\u670D\u52A1\u5668\u521B\u5EFA\u7B80\u5316\u7684\u9ED8\u8BA4\u7528\u6237\u7EC4
+                    // 尝试为服务器创建简化的默认用户组
                     try {
                         int createdCount = serverUserGroupService.initializeDefaultUserGroups(server);
-                        logger.info("\u4E3A\u670D\u52A1\u5668 {} \u6210\u529F\u521B\u5EFA\u4E86 {} \u4E2A\u9ED8\u8BA4\u7528\u6237\u7EC4", server.getName(), createdCount);
+                        logger.info("为服务器 {} 成功创建了 {} 个默认用户组", server.getName(), createdCount);
                         
-                        // \u91CD\u65B0\u83B7\u53D6\u9ED8\u8BA4\u7528\u6237\u7EC4
+                        // 重新获取默认用户组
                         Optional<com.cmict.internalpaas.model.ServerUserGroup> newDefaultGroup = 
                             serverUserGroupService.getDefaultUserGroup(server.getId());
                         if (newDefaultGroup.isPresent()) {
-                            // \u521B\u5EFA\u7528\u6237\u670D\u52A1\u5668\u8D26\u6237\u5E76\u5206\u914D\u5230\u65B0\u521B\u5EFA\u7684\u9ED8\u8BA4\u7528\u6237\u7EC4
+                            // 创建用户服务器账户并分配到新创建的默认用户组
                             try {
                                 userServerAccountService.createUserAccount(user, server, newDefaultGroup.get());
-                                logger.info("\u6210\u529F\u4E3A\u7528\u6237 {} \u5728\u670D\u52A1\u5668 {} \u4E0A\u521B\u5EFA\u8D26\u6237\u5E76\u52A0\u5165\u65B0\u7684\u9ED8\u8BA4\u7528\u6237\u7EC4 {}", 
+                                logger.info("成功为用户 {} 在服务器 {} 上创建账户并加入新的默认用户组 {}", 
                                     user.getUsername(), server.getName(), newDefaultGroup.get().getGroupName());
                             } catch (Exception createAccountException) {
-                                logger.warn("\u4E3A\u7528\u6237 {} \u5728\u670D\u52A1\u5668 {} \u4E0A\u521B\u5EFA\u8D26\u6237\u6216\u5206\u914D\u7528\u6237\u7EC4\u5931\u8D25: {}", 
+                                logger.warn("为用户 {} 在服务器 {} 上创建账户或分配用户组失败: {}", 
                                     user.getUsername(), server.getName(), createAccountException.getMessage());
                             }
                         }
                     } catch (Exception e) {
-                        logger.warn("\u4E3A\u670D\u52A1\u5668 {} \u521B\u5EFA\u9ED8\u8BA4\u7528\u6237\u7EC4\u5931\u8D25: {}", server.getName(), e.getMessage());
+                        logger.warn("为服务器 {} 创建默认用户组失败: {}", server.getName(), e.getMessage());
                     }
                 }
                 
             } catch (Exception e) {
-                logger.error("\u4E3A\u7528\u6237 {} \u5728\u670D\u52A1\u5668 {} \u4E0A\u5206\u914D\u7528\u6237\u7EC4\u65F6\u51FA\u9519: {}", 
+                logger.error("为用户 {} 在服务器 {} 上分配用户组时出错: {}", 
                     user.getUsername(), server.getName(), e.getMessage(), e);
             }
         }
         
-        logger.info("\u5B8C\u6210\u4E3A\u7528\u6237 {} \u7684\u7528\u6237\u7EC4\u5206\u914D\u5904\u7406", user.getUsername());
+        logger.info("完成为用户 {} 的用户组分配处理", user.getUsername());
     }
     
     /**
-     * \u83B7\u53D6\u670D\u52A1\u5668\u72B6\u6001\u6807\u7B7EAPI - \u7528\u4E8E\u524D\u7AEF\u9875\u9762\u52A8\u6001\u663E\u793A
+     * 获取服务器状态标签API - 用于前端页面动态显示
      */
     @GetMapping("/api/servers/{serverId}/status-tags")
     @ResponseBody
@@ -1635,14 +1725,14 @@ public class AdminController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            logger.error("\u83B7\u53D6\u670D\u52A1\u5668 {} \u72B6\u6001\u6807\u7B7E\u5931\u8D25: {}", serverId, e.getMessage(), e);
+            logger.error("获取服务器 {} 状态标签失败: {}", serverId, e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                .body(Map.of("status", "error", "message", "\u83B7\u53D6\u72B6\u6001\u6807\u7B7E\u5931\u8D25: " + e.getMessage()));
+                .body(Map.of("status", "error", "message", "获取状态标签失败: " + e.getMessage()));
         }
     }
     
     /**
-     * \u83B7\u53D6\u6240\u6709\u670D\u52A1\u5668\u7684\u72B6\u6001\u6807\u7B7EAPI
+     * 获取所有服务器的状态标签API
      */
     @GetMapping("/api/servers/status-tags")
     @ResponseBody
@@ -1668,23 +1758,23 @@ public class AdminController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            logger.error("\u83B7\u53D6\u6240\u6709\u670D\u52A1\u5668\u72B6\u6001\u6807\u7B7E\u5931\u8D25: {}", e.getMessage(), e);
+            logger.error("获取所有服务器状态标签失败: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                .body(Map.of("status", "error", "message", "\u83B7\u53D6\u6240\u6709\u670D\u52A1\u5668\u72B6\u6001\u6807\u7B7E\u5931\u8D25: " + e.getMessage()));
+                .body(Map.of("status", "error", "message", "获取所有服务器状态标签失败: " + e.getMessage()));
         }
     }
     
     /**
-     * \u5237\u65B0\u670D\u52A1\u5668\u72B6\u6001\u6807\u7B7EAPI
+     * 刷新服务器状态标签API
      */
     /**
-     * \u5237\u65B0\u6307\u5B9A\u670D\u52A1\u5668\u7684\u72B6\u6001\u6807\u7B7E\uFF08\u5F02\u6B65\u5904\u7406\uFF0C\u7ACB\u5373\u8FD4\u56DE\uFF09
+     * 刷新指定服务器的状态标签（异步处理，立即返回）
      */
     @PostMapping("/api/servers/{serverId}/refresh-status")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> refreshServerStatus(@PathVariable Long serverId) {
         try {
-            // \u9A8C\u8BC1\u670D\u52A1\u5668\u662F\u5426\u5B58\u5728
+            // 验证服务器是否存在
             Optional<Server> serverOpt = serverService.findById(serverId);
             if (!serverOpt.isPresent()) {
                 return ResponseEntity.notFound().build();
@@ -1692,16 +1782,16 @@ public class AdminController {
             
             Server server = serverOpt.get();
             
-            // \u83B7\u53D6\u5F53\u524D\u7684\u72B6\u6001\u6807\u7B7E\uFF08\u4ECE\u6570\u636E\u5E93\u8BFB\u53D6\uFF09
+            // 获取当前的状态标签（从数据库读取）
             List<ServerStatusTag> currentTags = statusTagService.getServerStatusTags(serverId);
             
-            // \u5F02\u6B65\u6267\u884C\u72B6\u6001\u5237\u65B0\uFF08\u63D0\u4EA4\u5230\u540E\u53F0\u4EFB\u52A1\u961F\u5217\uFF09
+            // 异步执行状态刷新（提交到后台任务队列）
             CompletableFuture.runAsync(() -> {
                 try {
                     statusTagService.refreshAllServerTags(serverId);
-                    logger.info("\u2705 \u5F02\u6B65\u5237\u65B0\u670D\u52A1\u5668 {} \u72B6\u6001\u5B8C\u6210", server.getName());
+                    logger.info("✅ 异步刷新服务器 {} 状态完成", server.getName());
                     
-                    // \u901A\u77E5\u524D\u7AEF\u66F4\u65B0
+                    // 通知前端更新
                     webSocketController.broadcast("/topic/server-status", Map.of(
                         "type", "SERVER_STATUS_REFRESHED",
                         "serverId", serverId,
@@ -1710,33 +1800,33 @@ public class AdminController {
                     ));
                     
                 } catch (Exception e) {
-                    logger.error("\u274C \u5F02\u6B65\u5237\u65B0\u670D\u52A1\u5668 {} \u72B6\u6001\u5931\u8D25: {}", server.getName(), e.getMessage(), e);
+                    logger.error("❌ 异步刷新服务器 {} 状态失败: {}", server.getName(), e.getMessage(), e);
                 }
             });
             
-            // \u7ACB\u5373\u8FD4\u56DE\u5F53\u524D\u72B6\u6001\uFF0C\u4E0D\u7B49\u5F85\u5237\u65B0\u5B8C\u6210
+            // 立即返回当前状态，不等待刷新完成
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
             response.put("serverId", serverId);
             response.put("serverName", server.getName());
             response.put("tags", currentTags.stream().map(this::convertTagToMap).toArray());
-            response.put("message", "\u72B6\u6001\u5237\u65B0\u5DF2\u63D0\u4EA4\uFF0C\u5C06\u5728\u540E\u53F0\u5F02\u6B65\u6267\u884C");
+            response.put("message", "状态刷新已提交，将在后台异步执行");
             response.put("refreshType", "async");
             response.put("timestamp", System.currentTimeMillis());
             
-            logger.info("\uD83D\uDE80 \u670D\u52A1\u5668 {} \u72B6\u6001\u5237\u65B0\u4EFB\u52A1\u5DF2\u63D0\u4EA4\u5230\u540E\u53F0\u6267\u884C", server.getName());
+            logger.info("🚀 服务器 {} 状态刷新任务已提交到后台执行", server.getName());
             
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            logger.error("\u63D0\u4EA4\u670D\u52A1\u5668 {} \u72B6\u6001\u5237\u65B0\u4EFB\u52A1\u5931\u8D25: {}", serverId, e.getMessage(), e);
+            logger.error("提交服务器 {} 状态刷新任务失败: {}", serverId, e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                .body(Map.of("status", "error", "message", "\u63D0\u4EA4\u5237\u65B0\u4EFB\u52A1\u5931\u8D25: " + e.getMessage()));
+                .body(Map.of("status", "error", "message", "提交刷新任务失败: " + e.getMessage()));
         }
     }
 
     /**
-     * \u83B7\u53D6\u670D\u52A1\u5668\u72B6\u6001\u6807\u7B7E\u8C03\u5EA6\u670D\u52A1\u7EDF\u8BA1\u4FE1\u606F
+     * 获取服务器状态标签调度服务统计信息
      */
     @GetMapping("/api/servers/status-scheduler/statistics")
     @ResponseBody
@@ -1752,14 +1842,14 @@ public class AdminController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            logger.error("\u83B7\u53D6\u8C03\u5EA6\u670D\u52A1\u7EDF\u8BA1\u4FE1\u606F\u5931\u8D25: {}", e.getMessage(), e);
+            logger.error("获取调度服务统计信息失败: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                .body(Map.of("status", "error", "message", "\u83B7\u53D6\u7EDF\u8BA1\u4FE1\u606F\u5931\u8D25: " + e.getMessage()));
+                .body(Map.of("status", "error", "message", "获取统计信息失败: " + e.getMessage()));
         }
     }
     
     /**
-     * \u5220\u9664\u6240\u6709\u76D1\u63A7\u5F02\u5E38\u6807\u7B7E
+     * 删除所有监控异常标签
      */
     @PostMapping("/api/servers/cleanup-monitoring-tags")
     @ResponseBody
@@ -1769,26 +1859,26 @@ public class AdminController {
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
-            response.put("message", "\u76D1\u63A7\u5F02\u5E38\u6807\u7B7E\u5DF2\u5220\u9664");
+            response.put("message", "监控异常标签已删除");
             response.put("timestamp", System.currentTimeMillis());
             
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            logger.error("\u5220\u9664\u76D1\u63A7\u5F02\u5E38\u6807\u7B7E\u5931\u8D25: {}", e.getMessage(), e);
+            logger.error("删除监控异常标签失败: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                .body(Map.of("status", "error", "message", "\u5220\u9664\u76D1\u63A7\u5F02\u5E38\u6807\u7B7E\u5931\u8D25: " + e.getMessage()));
+                .body(Map.of("status", "error", "message", "删除监控异常标签失败: " + e.getMessage()));
         }
     }
     
     /**
-     * AJAX API: \u83B7\u53D6\u5DE5\u4F5C\u53F0\u5185\u5BB9\u7247\u6BB5
+     * AJAX API: 获取工作台内容片段
      */
     @GetMapping("/api/dashboard-content")
     @ResponseBody
     public ResponseEntity<String> getDashboardContent(Model model) {
         try {
-            // \u83B7\u53D6\u7EDF\u8BA1\u6570\u636E
+            // 获取统计数据
             List<Server> servers = serverService.getAllServers();
             List<User> users = userService.findAllUsers();
             
@@ -1805,18 +1895,18 @@ public class AdminController {
                 .count();
             long regularUsers = totalUsers - adminUsers;
             
-            // \u6A21\u62DF\u7CFB\u7EDF\u76D1\u63A7\u6570\u636E
+            // 模拟系统监控数据
             double cpuUsage = Math.random() * 50 + 20; // 20-70%
             double memoryUsage = Math.random() * 40 + 30; // 30-70%
             
             StringBuilder content = new StringBuilder();
             content.append("<div class=\"content-header\">\n");
             content.append("    <div class=\"page-title-group\">\n");
-            content.append("        <h1 class=\"page-title\"><i class=\"fas fa-tachometer-alt\"></i> \u7BA1\u7406\u5458\u5DE5\u4F5C\u53F0</h1>\n");
+            content.append("        <h1 class=\"page-title\"><i class=\"fas fa-tachometer-alt\"></i> 管理员工作台</h1>\n");
             content.append("    </div>\n");
             content.append("</div>\n\n");
             
-            // \u7EDF\u8BA1\u9762\u677F
+            // 统计面板
             content.append("<section class=\"modern-stats-grid\">\n");
             content.append("    <div class=\"modern-stat-card servers\">\n");
             content.append("        <div class=\"stat-header\">\n");
@@ -1825,8 +1915,8 @@ public class AdminController {
             content.append("        </div>\n");
             content.append("        <div class=\"stat-body\">\n");
             content.append("            <div class=\"stat-number\">").append(totalServers).append("</div>\n");
-            content.append("            <div class=\"stat-label\">\u670D\u52A1\u5668\u603B\u6570</div>\n");
-            content.append("            <div class=\"stat-sublabel\">\u6D3B\u8DC3\u670D\u52A1\u5668: <span>").append(activeServers).append("</span></div>\n");
+            content.append("            <div class=\"stat-label\">服务器总数</div>\n");
+            content.append("            <div class=\"stat-sublabel\">活跃服务器: <span>").append(activeServers).append("</span></div>\n");
             content.append("        </div>\n");
             content.append("    </div>\n");
             
@@ -1837,9 +1927,9 @@ public class AdminController {
             content.append("        </div>\n");
             content.append("        <div class=\"stat-body\">\n");
             content.append("            <div class=\"stat-number\">").append(totalUsers).append("</div>\n");
-            content.append("            <div class=\"stat-label\">\u7528\u6237\u603B\u6570</div>\n");
-            content.append("            <div class=\"stat-sublabel\">\u7BA1\u7406\u5458: <span>").append(adminUsers)
-                      .append("</span> | \u666E\u901A\u7528\u6237: <span>").append(regularUsers).append("</span></div>\n");
+            content.append("            <div class=\"stat-label\">用户总数</div>\n");
+            content.append("            <div class=\"stat-sublabel\">管理员: <span>").append(adminUsers)
+                      .append("</span> | 普通用户: <span>").append(regularUsers).append("</span></div>\n");
             content.append("        </div>\n");
             content.append("    </div>\n");
             
@@ -1850,52 +1940,52 @@ public class AdminController {
             content.append("        </div>\n");
             content.append("        <div class=\"stat-body\">\n");
             content.append("            <div class=\"stat-number\">").append(String.format("%.1f", cpuUsage)).append("%</div>\n");
-            content.append("            <div class=\"stat-label\">CPU\u4F7F\u7528\u7387</div>\n");
-            content.append("            <div class=\"stat-sublabel\">\u5185\u5B58: <span>").append(String.format("%.1f", memoryUsage)).append("%</span></div>\n");
+            content.append("            <div class=\"stat-label\">CPU使用率</div>\n");
+            content.append("            <div class=\"stat-sublabel\">内存: <span>").append(String.format("%.1f", memoryUsage)).append("%</span></div>\n");
             content.append("        </div>\n");
             content.append("    </div>\n");
             
             content.append("    <div class=\"modern-stat-card activity\">\n");
             content.append("        <div class=\"stat-header\">\n");
             content.append("            <div class=\"stat-icon-wrapper activity\"><i class=\"fas fa-chart-line\"></i></div>\n");
-            content.append("            <div class=\"stat-trend positive\">\u2197</div>\n");
+            content.append("            <div class=\"stat-trend positive\">↗</div>\n");
             content.append("        </div>\n");
             content.append("        <div class=\"stat-body\">\n");
             content.append("            <div class=\"stat-number\">").append(totalUsers).append("</div>\n");
-            content.append("            <div class=\"stat-label\">\u7CFB\u7EDF\u6D3B\u8DC3\u5EA6</div>\n");
-            content.append("            <div class=\"stat-sublabel\">\u4ECA\u65E5\u767B\u5F55\u7528\u6237\u6570</div>\n");
+            content.append("            <div class=\"stat-label\">系统活跃度</div>\n");
+            content.append("            <div class=\"stat-sublabel\">今日登录用户数</div>\n");
             content.append("        </div>\n");
             content.append("    </div>\n");
             content.append("</section>\n\n");
             
-            // \u5FEB\u6377\u64CD\u4F5C\u533A
+            // 快捷操作区
             content.append("<section class=\"modern-actions-grid\">\n");
             content.append("    <a href=\"javascript:void(0)\" onclick=\"loadContent('servers')\" class=\"modern-action-card servers\">\n");
             content.append("        <div class=\"action-card-content\">\n");
             content.append("            <div class=\"action-icon-wrapper\"><i class=\"fas fa-server\"></i></div>\n");
-            content.append("            <h3 class=\"action-title\">\u670D\u52A1\u5668\u7BA1\u7406</h3>\n");
-            content.append("            <p class=\"action-description\">\u7BA1\u7406\u548C\u76D1\u63A7\u6240\u6709\u670D\u52A1\u5668\u7684\u72B6\u6001</p>\n");
+            content.append("            <h3 class=\"action-title\">服务器管理</h3>\n");
+            content.append("            <p class=\"action-description\">管理和监控所有服务器的状态</p>\n");
             content.append("        </div>\n");
             content.append("    </a>\n");
             content.append("    <a href=\"javascript:void(0)\" onclick=\"loadContent('users')\" class=\"modern-action-card users\">\n");
             content.append("        <div class=\"action-card-content\">\n");
             content.append("            <div class=\"action-icon-wrapper\"><i class=\"fas fa-users\"></i></div>\n");
-            content.append("            <h3 class=\"action-title\">\u7528\u6237\u7BA1\u7406</h3>\n");
-            content.append("            <p class=\"action-description\">\u7BA1\u7406\u7528\u6237\u8D26\u6237\u548C\u6743\u9650\u8BBE\u7F6E</p>\n");
+            content.append("            <h3 class=\"action-title\">用户管理</h3>\n");
+            content.append("            <p class=\"action-description\">管理用户账户和权限设置</p>\n");
             content.append("        </div>\n");
             content.append("    </a>\n");
             content.append("    <a href=\"javascript:void(0)\" onclick=\"loadContent('applications')\" class=\"modern-action-card servers\">\n");
             content.append("        <div class=\"action-card-content\">\n");
             content.append("            <div class=\"action-icon-wrapper\"><i class=\"fas fa-rocket\"></i></div>\n");
-            content.append("            <h3 class=\"action-title\">\u5E94\u7528\u7BA1\u7406</h3>\n");
-            content.append("            <p class=\"action-description\">\u7BA1\u7406\u548C\u76D1\u63A7\u5E94\u7528\u7A0B\u5E8F</p>\n");
+            content.append("            <h3 class=\"action-title\">应用管理</h3>\n");
+            content.append("            <p class=\"action-description\">管理和监控应用程序</p>\n");
             content.append("        </div>\n");
             content.append("    </a>\n");
             content.append("    <a href=\"javascript:void(0)\" onclick=\"loadContent('monitoring')\" class=\"modern-action-card users\">\n");
             content.append("        <div class=\"action-card-content\">\n");
             content.append("            <div class=\"action-icon-wrapper\"><i class=\"fas fa-chart-line\"></i></div>\n");
-            content.append("            <h3 class=\"action-title\">\u7CFB\u7EDF\u76D1\u63A7</h3>\n");
-            content.append("            <p class=\"action-description\">\u67E5\u770B\u7CFB\u7EDF\u8FD0\u884C\u72B6\u6001\u548C\u6027\u80FD\u6307\u6807</p>\n");
+            content.append("            <h3 class=\"action-title\">系统监控</h3>\n");
+            content.append("            <p class=\"action-description\">查看系统运行状态和性能指标</p>\n");
             content.append("        </div>\n");
             content.append("    </a>\n");
             content.append("</section>\n");
@@ -1903,15 +1993,15 @@ public class AdminController {
             return ResponseEntity.ok(content.toString());
             
         } catch (Exception e) {
-            logger.error("\u83B7\u53D6\u5DE5\u4F5C\u53F0\u5185\u5BB9\u5931\u8D25", e);
-            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> \u52A0\u8F7D\u5DE5\u4F5C\u53F0\u5185\u5BB9\u5931\u8D25: " + e.getMessage() + "</div>";
+            logger.error("获取工作台内容失败", e);
+            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载工作台内容失败: " + e.getMessage() + "</div>";
             return ResponseEntity.status(500).body(errorContent);
         }
     }
     
 
     /**
-     * AJAX API: \u83B7\u53D6\u670D\u52A1\u5668\u7BA1\u7406\u5185\u5BB9\u7247\u6BB5 - \u73B0\u4EE3\u5316\u7248\u672C
+     * AJAX API: 获取服务器管理内容片段 - 现代化版本
      */
     @GetMapping("/api/servers-content")
     @ResponseBody
@@ -1921,13 +2011,13 @@ public class AdminController {
             
             StringBuilder htmlBuilder = new StringBuilder();
             
-            // \u9875\u9762\u6807\u9898
+            // 页面标题
             htmlBuilder.append("<div class=\"content-header\">");
             htmlBuilder.append("<div class=\"page-title-group\">");
-            htmlBuilder.append("<h1 class=\"page-title\">\u670D\u52A1\u5668\u7BA1\u7406\u4E0E\u76D1\u63A7</h1>");
+            htmlBuilder.append("<h1 class=\"page-title\">服务器管理与监控</h1>");
             htmlBuilder.append("</div></div>");
             
-            // \u7EDF\u8BA1\u670D\u52A1\u5668\u72B6\u6001
+            // 统计服务器状态
             long activeCount = servers.stream()
                 .filter(server -> server.getConnectionStatus() != null && 
                         (server.getConnectionStatus() == Server.ConnectionStatus.CONNECTED || 
@@ -1936,20 +2026,20 @@ public class AdminController {
             long inactiveCount = servers.size() - activeCount;
             long totalCount = servers.size();
             
-            // \u73B0\u4EE3\u5316\u7EDF\u8BA1\u9762\u677F
+            // 现代化统计面板
             htmlBuilder.append("<section class=\"modern-stats-container\">");
             htmlBuilder.append("<div class=\"stats-grid\">");
             
-            // \u5728\u7EBF\u670D\u52A1\u5668\u5361\u7247
+            // 在线服务器卡片
             htmlBuilder.append("<div class=\"modern-stats-card running\" onclick=\"filterServers('online')\">");
             htmlBuilder.append("<div class=\"stats-card-content\">");
             htmlBuilder.append("<div class=\"stats-info\">");
-            htmlBuilder.append("<div class=\"stats-label\">\u5728\u7EBF\u670D\u52A1\u5668</div>");
+            htmlBuilder.append("<div class=\"stats-label\">在线服务器</div>");
             htmlBuilder.append("<div class=\"stats-value\">");
             htmlBuilder.append("<span class=\"stats-value-main\">").append(activeCount).append("</span>");
-            htmlBuilder.append("<span class=\"stats-value-unit\">\u53F0</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
             htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-up\">\u2197</span>\u8FDE\u63A5\u6B63\u5E38</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-up\">↗</span>连接正常</div>");
             htmlBuilder.append("</div>");
             htmlBuilder.append("<div class=\"stats-icon-container\">");
             htmlBuilder.append("<i class=\"stats-icon fas fa-server icon-pulse\"></i>");
@@ -1957,16 +2047,16 @@ public class AdminController {
             htmlBuilder.append("</div>");
             htmlBuilder.append("</div>");
             
-            // \u79BB\u7EBF\u670D\u52A1\u5668\u5361\u7247
+            // 离线服务器卡片
             htmlBuilder.append("<div class=\"modern-stats-card stopped\" onclick=\"filterServers('offline')\">");
             htmlBuilder.append("<div class=\"stats-card-content\">");
             htmlBuilder.append("<div class=\"stats-info\">");
-            htmlBuilder.append("<div class=\"stats-label\">\u79BB\u7EBF\u670D\u52A1\u5668</div>");
+            htmlBuilder.append("<div class=\"stats-label\">离线服务器</div>");
             htmlBuilder.append("<div class=\"stats-value\">");
             htmlBuilder.append("<span class=\"stats-value-main\">").append(inactiveCount).append("</span>");
-            htmlBuilder.append("<span class=\"stats-value-unit\">\u53F0</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
             htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-down\">\u2193</span>\u9700\u8981\u68C0\u67E5</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-down\">↓</span>需要检查</div>");
             htmlBuilder.append("</div>");
             htmlBuilder.append("<div class=\"stats-icon-container\">");
             htmlBuilder.append("<i class=\"stats-icon fas fa-exclamation-triangle\"></i>");
@@ -1974,16 +2064,16 @@ public class AdminController {
             htmlBuilder.append("</div>");
             htmlBuilder.append("</div>");
             
-            // \u76D1\u63A7\u4E2D\u670D\u52A1\u5668\u5361\u7247
+            // 监控中服务器卡片
             htmlBuilder.append("<div class=\"modern-stats-card starting\" onclick=\"filterServers('monitoring')\">");
             htmlBuilder.append("<div class=\"stats-card-content\">");
             htmlBuilder.append("<div class=\"stats-info\">");
-            htmlBuilder.append("<div class=\"stats-label\">\u76D1\u63A7\u4E2D</div>");
+            htmlBuilder.append("<div class=\"stats-label\">监控中</div>");
             htmlBuilder.append("<div class=\"stats-value\">");
             htmlBuilder.append("<span class=\"stats-value-main\">").append(activeCount).append("</span>");
-            htmlBuilder.append("<span class=\"stats-value-unit\">\u53F0</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
             htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>\u6570\u636E\u91C7\u96C6\u4E2D</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>数据采集中</div>");
             htmlBuilder.append("</div>");
             htmlBuilder.append("<div class=\"stats-icon-container\">");
             htmlBuilder.append("<i class=\"stats-icon fas fa-chart-line icon-bounce\"></i>");
@@ -1991,16 +2081,16 @@ public class AdminController {
             htmlBuilder.append("</div>");
             htmlBuilder.append("</div>");
             
-            // \u603B\u670D\u52A1\u5668\u6570\u5361\u7247
+            // 总服务器数卡片
             htmlBuilder.append("<div class=\"modern-stats-card total\" onclick=\"filterServers('all')\">");
             htmlBuilder.append("<div class=\"stats-card-content\">");
             htmlBuilder.append("<div class=\"stats-info\">");
-            htmlBuilder.append("<div class=\"stats-label\">\u670D\u52A1\u5668\u603B\u6570</div>");
+            htmlBuilder.append("<div class=\"stats-label\">服务器总数</div>");
             htmlBuilder.append("<div class=\"stats-value\">");
             htmlBuilder.append("<span class=\"stats-value-main\">").append(totalCount).append("</span>");
-            htmlBuilder.append("<span class=\"stats-value-unit\">\u53F0</span>");
+            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
             htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>\u670D\u52A1\u5668\u6982\u89C8</div>");
+            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>服务器概览</div>");
             htmlBuilder.append("</div>");
             htmlBuilder.append("<div class=\"stats-icon-container\">");
             htmlBuilder.append("<i class=\"stats-icon fas fa-database\"></i>");
@@ -2011,39 +2101,39 @@ public class AdminController {
             htmlBuilder.append("</div>");
             htmlBuilder.append("</section>");
             
-            // \u670D\u52A1\u5668\u5361\u7247\u7F51\u683C
+            // 服务器卡片网格
             htmlBuilder.append("<section class=\"modern-apps-section\">");
             htmlBuilder.append("<div class=\"section-header\">");
-            htmlBuilder.append("<h2 class=\"section-title\">\u670D\u52A1\u5668\u5217\u8868</h2>");
+            htmlBuilder.append("<h2 class=\"section-title\">服务器列表</h2>");
             htmlBuilder.append("<div class=\"section-actions\">");
             htmlBuilder.append("<button class=\"action-btn secondary\" onclick=\"refreshAllData()\">");
             htmlBuilder.append("<i class=\"fas fa-sync-alt\"></i>");
-            htmlBuilder.append("<span>\u5237\u65B0\u6570\u636E</span>");
+            htmlBuilder.append("<span>刷新数据</span>");
             htmlBuilder.append("</button>");
             htmlBuilder.append("<button class=\"action-btn primary\" onclick=\"addServer()\">");
             htmlBuilder.append("<i class=\"fas fa-plus\"></i>");
-            htmlBuilder.append("<span>\u6DFB\u52A0\u670D\u52A1\u5668</span>");
+            htmlBuilder.append("<span>添加服务器</span>");
             htmlBuilder.append("</button>");
             htmlBuilder.append("</div>");
             htmlBuilder.append("</div>");
             
             if (servers.isEmpty()) {
-                // \u7A7A\u72B6\u6001
+                // 空状态
                 htmlBuilder.append("<div class=\"empty-state\">");
                 htmlBuilder.append("<div class=\"empty-icon\">");
                 htmlBuilder.append("<i class=\"fas fa-server\"></i>");
                 htmlBuilder.append("</div>");
-                htmlBuilder.append("<h3 class=\"empty-title\">\u8FD8\u6CA1\u6709\u670D\u52A1\u5668</h3>");
-                htmlBuilder.append("<p class=\"empty-description\">\u6DFB\u52A0\u60A8\u7684\u7B2C\u4E00\u4E2A\u670D\u52A1\u5668\u5F00\u59CB\u7BA1\u7406\u548C\u76D1\u63A7\u57FA\u7840\u8BBE\u65BD</p>");
+                htmlBuilder.append("<h3 class=\"empty-title\">还没有服务器</h3>");
+                htmlBuilder.append("<p class=\"empty-description\">添加您的第一个服务器开始管理和监控基础设施</p>");
                 htmlBuilder.append("<div class=\"empty-actions\">");
                 htmlBuilder.append("<button class=\"modern-action-btn primary\" onclick=\"addServer()\">");
                 htmlBuilder.append("<i class=\"fas fa-plus\"></i>");
-                htmlBuilder.append("<span>\u6DFB\u52A0\u670D\u52A1\u5668</span>");
+                htmlBuilder.append("<span>添加服务器</span>");
                 htmlBuilder.append("</button>");
                 htmlBuilder.append("</div>");
                 htmlBuilder.append("</div>");
             } else {
-                // \u670D\u52A1\u5668\u5361\u7247\u7F51\u683C
+                // 服务器卡片网格
                 htmlBuilder.append("<div class=\"modern-apps-grid\">");
                 for (Server server : servers) {
                     String statusClass = getServerStatusClass(server);
@@ -2052,7 +2142,7 @@ public class AdminController {
                     
                     htmlBuilder.append("<div class=\"modern-app-card ").append(statusClass).append("\">");
                     
-                    // \u5361\u7247\u5934\u90E8
+                    // 卡片头部
                     htmlBuilder.append("<div class=\"app-header\">");
                     htmlBuilder.append("<div class=\"app-info\">");
                     htmlBuilder.append("<div class=\"app-name\">").append(escapeHtml(server.getName())).append("</div>");
@@ -2069,35 +2159,35 @@ public class AdminController {
                     htmlBuilder.append("</div>");
                     htmlBuilder.append("</div>");
                     
-                    // \u670D\u52A1\u5668\u6307\u6807
+                    // 服务器指标
                     htmlBuilder.append("<div class=\"app-metrics\">");
                     htmlBuilder.append("<div class=\"metrics-grid\">");
                     htmlBuilder.append("<div class=\"metric-item\">");
                     htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-network-wired\"></i></div>");
                     htmlBuilder.append("<div class=\"metric-info\">");
-                    htmlBuilder.append("<div class=\"metric-label\">\u4E3B\u673A</div>");
+                    htmlBuilder.append("<div class=\"metric-label\">主机</div>");
                     htmlBuilder.append("<div class=\"metric-value\">").append(server.getHostname()).append("</div>");
                     htmlBuilder.append("</div>");
                     htmlBuilder.append("</div>");
                     htmlBuilder.append("<div class=\"metric-item\">");
                     htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-plug\"></i></div>");
                     htmlBuilder.append("<div class=\"metric-info\">");
-                    htmlBuilder.append("<div class=\"metric-label\">\u7AEF\u53E3</div>");
+                    htmlBuilder.append("<div class=\"metric-label\">端口</div>");
                     htmlBuilder.append("<div class=\"metric-value\">").append(server.getPort()).append("</div>");
                     htmlBuilder.append("</div>");
                     htmlBuilder.append("</div>");
                     htmlBuilder.append("</div>");
                     htmlBuilder.append("</div>");
                     
-                    // \u64CD\u4F5C\u6309\u94AE
+                    // 操作按钮
                     htmlBuilder.append("<div class=\"app-actions\">");
                     htmlBuilder.append("<button class=\"app-action-btn primary\" onclick=\"editServer(this)\" data-id=\"").append(server.getId()).append("\">");
                     htmlBuilder.append("<i class=\"fas fa-edit\"></i>");
-                    htmlBuilder.append("<span>\u7F16\u8F91</span>");
+                    htmlBuilder.append("<span>编辑</span>");
                     htmlBuilder.append("</button>");
                     htmlBuilder.append("<button class=\"app-action-btn secondary\" onclick=\"refreshServer(this)\" data-id=\"").append(server.getId()).append("\">");
                     htmlBuilder.append("<i class=\"fas fa-sync-alt\"></i>");
-                    htmlBuilder.append("<span>\u5237\u65B0</span>");
+                    htmlBuilder.append("<span>刷新</span>");
                     htmlBuilder.append("</button>");
                     htmlBuilder.append("</div>");
                     
@@ -2111,12 +2201,12 @@ public class AdminController {
             return ResponseEntity.ok(htmlBuilder.toString());
             
         } catch (Exception e) {
-            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> \u52A0\u8F7D\u670D\u52A1\u5668\u5185\u5BB9\u5931\u8D25: " + e.getMessage() + "</div>";
+            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载服务器内容失败: " + e.getMessage() + "</div>";
             return ResponseEntity.status(500).body(errorContent);
         }
     }
     
-    // \u670D\u52A1\u5668\u72B6\u6001\u8F85\u52A9\u65B9\u6CD5
+    // 服务器状态辅助方法
     private String getServerStatusClass(Server server) {
         if (server.getConnectionStatus() == null) return "stopped";
         
@@ -2134,22 +2224,22 @@ public class AdminController {
     }
     
     private String getServerStatusText(Server server) {
-        if (server.getConnectionStatus() == null) return "\u672A\u77E5";
+        if (server.getConnectionStatus() == null) return "未知";
         
         switch (server.getConnectionStatus()) {
             case CONNECTED:
-                return "\u5DF2\u8FDE\u63A5";
+                return "已连接";
             case MONITORING:
-                return "\u76D1\u63A7\u4E2D";
+                return "监控中";
             case FAILED:
-                return "\u8FDE\u63A5\u5931\u8D25";
+                return "连接失败";
             case TIMEOUT:
-                return "\u8FDE\u63A5\u8D85\u65F6";
+                return "连接超时";
             case AUTH_FAILED:
-                return "\u8BA4\u8BC1\u5931\u8D25";
+                return "认证失败";
             case UNKNOWN:
             default:
-                return "\u672A\u77E5";
+                return "未知";
         }
     }
     
@@ -2179,11 +2269,11 @@ public class AdminController {
         long days = duration.toDays();
         
         if (minutes < 60) {
-            return minutes + "\u5206\u949F\u524D";
+            return minutes + "分钟前";
         } else if (hours < 24) {
-            return hours + "\u5C0F\u65F6\u524D";
+            return hours + "小时前";
         } else {
-            return days + "\u5929\u524D";
+            return days + "天前";
         }
     }
     
@@ -2289,7 +2379,7 @@ public class AdminController {
         }
     }
 
-    // \u7528\u6237\u72B6\u6001\u8F85\u52A9\u65B9\u6CD5
+    // 用户状态辅助方法
     private String getUserStatusClass(User user) {
         if (user.getRoles().contains(User.Role.SUPER_ADMIN)) {
             return "running";
@@ -2302,11 +2392,11 @@ public class AdminController {
     
     private String getUserRoleText(User user) {
         if (user.getRoles().contains(User.Role.SUPER_ADMIN)) {
-            return "\u8D85\u7EA7\u7BA1\u7406\u5458";
+            return "超级管理员";
         } else if (user.getRoles().contains(User.Role.ADMIN)) {
-            return "\u7BA1\u7406\u5458";
+            return "管理员";
         } else {
-            return "\u5F00\u53D1\u8005";
+            return "开发者";
         }
     }
     
@@ -2321,7 +2411,7 @@ public class AdminController {
     }
 
     /**
-     * \u91CD\u65B0\u751F\u6210\u670D\u52A1\u5668\u5DE5\u4F5C\u76EE\u5F55 API
+     * 重新生成服务器工作目录 API
      */
     @PostMapping("/servers/{id}/initialize-working-directory")
     @ResponseBody
@@ -2329,11 +2419,11 @@ public class AdminController {
         Map<String, Object> response = new HashMap<>();
         try {
             Server server = serverService.findById(id)
-                .orElseThrow(() -> new RuntimeException("\u670D\u52A1\u5668\u672A\u627E\u5230"));
+                .orElseThrow(() -> new RuntimeException("服务器未找到"));
             
-            logger.info("\u5F00\u59CB\u4E3A\u670D\u52A1\u5668 {} \u91CD\u65B0\u751F\u6210\u5DE5\u4F5C\u76EE\u5F55", server.getName());
+            logger.info("开始为服务器 {} 重新生成工作目录", server.getName());
             
-            // \u8C03\u7528\u73B0\u6709\u7684\u5DE5\u4F5C\u76EE\u5F55\u521B\u5EFA\u529F\u80FD
+            // 调用现有的工作目录创建功能
             Map<String, Object> directoryResult = ensureBaseWorkDirectory(server);
             boolean success = (Boolean) directoryResult.get("success");
             boolean created = (Boolean) directoryResult.get("created");
@@ -2344,25 +2434,25 @@ public class AdminController {
                 response.put("workingDirectory", server.getBaseWorkDirectory());
                 response.put("created", created);
                 response.put("message", message);
-                logger.info("\u670D\u52A1\u5668 {} \u5DE5\u4F5C\u76EE\u5F55\u521D\u59CB\u5316\u6210\u529F: {}", server.getName(), message);
+                logger.info("服务器 {} 工作目录初始化成功: {}", server.getName(), message);
             } else {
                 response.put("status", "error");
                 response.put("message", message);
-                logger.error("\u670D\u52A1\u5668 {} \u5DE5\u4F5C\u76EE\u5F55\u521D\u59CB\u5316\u5931\u8D25: {}", server.getName(), message);
+                logger.error("服务器 {} 工作目录初始化失败: {}", server.getName(), message);
             }
             
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            logger.error("\u91CD\u65B0\u751F\u6210\u670D\u52A1\u5668\u5DE5\u4F5C\u76EE\u5F55\u65F6\u53D1\u751F\u9519\u8BEF: {}", e.getMessage(), e);
+            logger.error("重新生成服务器工作目录时发生错误: {}", e.getMessage(), e);
             response.put("status", "error");
-            response.put("message", "\u64CD\u4F5C\u5931\u8D25: " + e.getMessage());
+            response.put("message", "操作失败: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
         }
     }
 
     /**
-     * \u8F6C\u6362\u6807\u7B7E\u4E3A\u524D\u7AEF\u6240\u9700\u7684Map\u683C\u5F0F
+     * 转换标签为前端所需的Map格式
      */
     private Map<String, Object> convertTagToMap(ServerStatusTag tag) {
         Map<String, Object> tagMap = new HashMap<>();

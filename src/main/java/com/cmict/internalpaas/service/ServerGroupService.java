@@ -34,6 +34,9 @@ public class ServerGroupService {
     @Autowired
     private MonitoringService monitoringService;
 
+    @Autowired
+    private ServerService serverService;
+
     /**
      * Get enhanced server list with monitoring data and health scores
      */
@@ -204,8 +207,12 @@ public class ServerGroupService {
             try {
                 Optional<Server> serverOpt = serverRepository.findById(serverId);
                 if (serverOpt.isPresent()) {
-                    // TODO: Implement actual refresh logic when available
-                    logger.debug("Refresh requested for server: {}", serverOpt.get().getName());
+                    Server server = serverOpt.get();
+                    logger.debug("Refreshing metrics for server: {}", server.getName());
+
+                    // Collect and save server metrics
+                    serverService.checkServerConnectionAndMetrics(serverId);
+                    logger.info("Successfully refreshed metrics for server: {}", server.getName());
                 }
             } catch (Exception e) {
                 logger.error("Failed to refresh server {}: {}", serverId, e.getMessage());

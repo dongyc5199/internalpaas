@@ -176,6 +176,58 @@ public class ServerService {
     }
     
     /**
+     * 创建服务器并设置密码（确保密码正确加密）
+     */
+    @Transactional
+    public Server createServerWithPassword(Server server, String plainPassword) {
+        logger.info("创建服务器: {}, 明文密码长度: {}", server.getName(),
+            plainPassword != null ? plainPassword.length() : 0);
+
+        // 设置默认值（在加密密码之前）
+        if (server.getSshPort() == null) {
+            server.setSshPort(22);
+        }
+        if (server.getConnectionStatus() == null) {
+            server.setConnectionStatus(Server.ConnectionStatus.UNKNOWN);
+        }
+
+        // 注入密码加密服务
+        server.setPasswordEncryptionService(passwordEncryptionService);
+        logger.debug("密码加密服务已注入");
+
+        // 设置密码（会自动加密）
+        if (plainPassword != null && !plainPassword.isEmpty()) {
+            try {
+                server.setSshPassword(plainPassword);
+                String encryptedPwd = server.getSshPasswordEncrypted();
+                logger.info("密码加密成功 - 加密后长度: {}, 格式检查: {}",
+                    encryptedPwd != null ? encryptedPwd.length() : 0,
+                    encryptedPwd != null && encryptedPwd.contains(":") ? "VALID(包含:)" : "INVALID(无:)");
+
+                // 验证加密格式
+                if (encryptedPwd != null && !encryptedPwd.contains(":")) {
+                    logger.error("密码加密格式异常！加密后的密码不包含分隔符 ':' - 内容: {}",
+                        encryptedPwd.substring(0, Math.min(50, encryptedPwd.length())));
+                    throw new RuntimeException("密码加密格式异常");
+                }
+            } catch (Exception e) {
+                logger.error("密码加密失败", e);
+                throw new RuntimeException("密码加密失败: " + e.getMessage(), e);
+            }
+        } else {
+            logger.warn("未提供密码");
+        }
+
+        // 调用标准保存方法（不会再次加密密码）
+        Server savedServer = saveServer(server);
+        logger.info("服务器已保存到数据库，ID: {}, 密码字段长度: {}",
+            savedServer.getId(),
+            savedServer.getSshPasswordEncrypted() != null ? savedServer.getSshPasswordEncrypted().length() : 0);
+
+        return savedServer;
+    }
+    
+    /**
      * 保存服务器并自动检测连接
      */
     @Transactional(propagation = Propagation.REQUIRED)

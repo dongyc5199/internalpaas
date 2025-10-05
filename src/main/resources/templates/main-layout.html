@@ -1290,7 +1290,7 @@
                 emit('theme:changed', { theme: currentTheme });
             }
 
-            function applyLanguage(lang, persistPref = true) {
+            function applyLanguage(lang, persistPref = true, emitEvent = true) {
                 const normalized = (typeof lang === 'string' && lang.toLowerCase() === 'en') ? 'en' : 'zh';
                 currentLanguage = normalized;
 
@@ -1328,7 +1328,10 @@
                     }
                 });
 
-                emit('language:changed', { language: currentLanguage });
+                // 只有在emitEvent为true时才触发事件，避免循环调用
+                if (emitEvent) {
+                    emit('language:changed', { language: currentLanguage });
+                }
 
                 if (persistPref) {
                     persist(LANGUAGE_KEY, currentLanguage);
@@ -2434,8 +2437,16 @@ function initDashboardRealTimeUpdates() {
             }
 
             // Server Group Management Functions
+            let serverGroupManagementInitialized = false;
+
             function initServerGroupManagement() {
                 if (!document.querySelector('.server-group-management')) {
+                    return;
+                }
+
+                // 防止重复初始化
+                if (serverGroupManagementInitialized) {
+                    console.log('Server group management already initialized, skipping...');
                     return;
                 }
 
@@ -2444,10 +2455,12 @@ function initDashboardRealTimeUpdates() {
                 initServerGroupData();
                 initServerGroupEvents();
 
+                serverGroupManagementInitialized = true;
                 console.log('Server group management initialized');
             }
 
             function initServerGroupData() {
+                console.log('Loading server group data...');
                 loadHealthTrendChart();
                 loadLoadDistributionChart();
                 loadAppDistributionChart();
@@ -2558,6 +2571,7 @@ function initDashboardRealTimeUpdates() {
             let healthTrendChart = null;
             let loadDistributionChart = null;
             let appDistributionChart = null;
+            let healthTrendLoading = false;
 
             async function loadHealthTrendChart(hours = 24) {
                 const container = document.getElementById('healthTrendChartContainer');
@@ -2566,7 +2580,16 @@ function initDashboardRealTimeUpdates() {
 
                 if (!container || !canvas) return;
 
+                // 防止并发调用
+                if (healthTrendLoading) {
+                    console.log('Health trend chart is already loading, skipping...');
+                    return;
+                }
+
+                healthTrendLoading = true;
+
                 try {
+                    console.log(`Loading health trend chart (${hours} hours)...`);
                     const response = await fetch(`/admin/server-groups/api/health-trend?hours=${hours}`);
                     if (!response.ok) throw new Error('Failed to load health trend');
 
@@ -2631,8 +2654,12 @@ function initDashboardRealTimeUpdates() {
                         placeholder.textContent = currentLanguage === 'en' ? 'Failed to load chart data' : '加载图表数据失败';
                         placeholder.classList.remove('hidden');
                     }
+                } finally {
+                    healthTrendLoading = false;
                 }
             }
+
+            let loadDistributionLoading = false;
 
             async function loadLoadDistributionChart() {
                 const container = document.getElementById('loadDistributionChartContainer');
@@ -2641,7 +2668,16 @@ function initDashboardRealTimeUpdates() {
 
                 if (!container || !canvas) return;
 
+                // 防止并发调用
+                if (loadDistributionLoading) {
+                    console.log('Load distribution chart is already loading, skipping...');
+                    return;
+                }
+
+                loadDistributionLoading = true;
+
                 try {
+                    console.log('Loading load distribution chart...');
                     const response = await fetch('/admin/server-groups/api/load-distribution');
                     if (!response.ok) throw new Error('Failed to load distribution');
 
@@ -2702,8 +2738,12 @@ function initDashboardRealTimeUpdates() {
                         placeholder.textContent = currentLanguage === 'en' ? 'Failed to load chart data' : '加载图表数据失败';
                         placeholder.classList.remove('hidden');
                     }
+                } finally {
+                    loadDistributionLoading = false;
                 }
             }
+
+            let appDistributionLoading = false;
 
             async function loadAppDistributionChart() {
                 const container = document.getElementById('appDistributionChartContainer');
@@ -2712,7 +2752,16 @@ function initDashboardRealTimeUpdates() {
 
                 if (!container || !canvas) return;
 
+                // 防止并发调用
+                if (appDistributionLoading) {
+                    console.log('App distribution chart is already loading, skipping...');
+                    return;
+                }
+
+                appDistributionLoading = true;
+
                 try {
+                    console.log('Loading app distribution chart...');
                     const response = await fetch('/admin/server-groups/api/app-distribution');
                     if (!response.ok) throw new Error('Failed to load app distribution');
 
@@ -2769,6 +2818,8 @@ function initDashboardRealTimeUpdates() {
                         placeholder.textContent = currentLanguage === 'en' ? 'Failed to load chart data' : '加载图表数据失败';
                         placeholder.classList.remove('hidden');
                     }
+                } finally {
+                    appDistributionLoading = false;
                 }
             }
 
@@ -2846,26 +2897,44 @@ function initDashboardRealTimeUpdates() {
                             </td>
                             <td>
                                 <div class="usage-metric">
-                                    <span class="usage-value">${(server.cpuUsage || 0).toFixed(1)}%</span>
-                                    <div class="usage-bar">
-                                        <div class="usage-fill ${getUsageClass(server.cpuUsage)}" style="width: ${server.cpuUsage || 0}%"></div>
-                                    </div>
+                                    ${server.cpuUsage != null ? `
+                                        <span class="usage-value">${server.cpuUsage.toFixed(1)}%</span>
+                                        <div class="usage-bar">
+                                            <div class="usage-fill ${getUsageClass(server.cpuUsage)}" style="width: ${server.cpuUsage}%"></div>
+                                        </div>
+                                    ` : `
+                                        <span class="metrics-loading">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                        </span>
+                                    `}
                                 </div>
                             </td>
                             <td>
                                 <div class="usage-metric">
-                                    <span class="usage-value">${(server.memoryUsage || 0).toFixed(1)}%</span>
-                                    <div class="usage-bar">
-                                        <div class="usage-fill ${getUsageClass(server.memoryUsage)}" style="width: ${server.memoryUsage || 0}%"></div>
-                                    </div>
+                                    ${server.memoryUsage != null ? `
+                                        <span class="usage-value">${server.memoryUsage.toFixed(1)}%</span>
+                                        <div class="usage-bar">
+                                            <div class="usage-fill ${getUsageClass(server.memoryUsage)}" style="width: ${server.memoryUsage}%"></div>
+                                        </div>
+                                    ` : `
+                                        <span class="metrics-loading">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                        </span>
+                                    `}
                                 </div>
                             </td>
                             <td>
                                 <div class="usage-metric">
-                                    <span class="usage-value">${(server.diskUsage || 0).toFixed(1)}%</span>
-                                    <div class="usage-bar">
-                                        <div class="usage-fill ${getUsageClass(server.diskUsage)}" style="width: ${server.diskUsage || 0}%"></div>
-                                    </div>
+                                    ${server.diskUsage != null ? `
+                                        <span class="usage-value">${server.diskUsage.toFixed(1)}%</span>
+                                        <div class="usage-bar">
+                                            <div class="usage-fill ${getUsageClass(server.diskUsage)}" style="width: ${server.diskUsage}%"></div>
+                                        </div>
+                                    ` : `
+                                        <span class="metrics-loading">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                        </span>
+                                    `}
                                 </div>
                             </td>
                             <td>${server.apps || 0}</td>
@@ -2938,7 +3007,8 @@ function initDashboardRealTimeUpdates() {
                 }
 
                 attachServerCheckboxEvents();
-                applyLanguage(currentLanguage, false);
+                // 不触发language:changed事件，避免无限递归
+                applyLanguage(currentLanguage, false, false);
             }
 
             function getUsageClass(value) {
@@ -3141,6 +3211,66 @@ function initDashboardRealTimeUpdates() {
                     updateServerGroupLastUpdateTime();
                     showSuccessMessage(currentLanguage === 'en' ? 'Server list refreshed' : '服务器列表已刷新');
                 }
+            };
+
+            // 轮询检查服务器指标是否收集完成
+            const pollingIntervals = new Map();
+            let isPolling = false; // 防止并发轮询
+
+            window.startServerMetricsPolling = function(serverId) {
+                console.log('Starting metrics polling for server:', serverId);
+
+                // 如果已有该服务器的轮询，先清除
+                if (pollingIntervals.has(serverId)) {
+                    clearInterval(pollingIntervals.get(serverId));
+                }
+
+                let attemptCount = 0;
+                const maxAttempts = 15; // 最多轮询15次（约45秒）
+
+                const intervalId = setInterval(async () => {
+                    // 防止并发请求
+                    if (isPolling) {
+                        console.log('Skipping poll - previous request still in progress');
+                        return;
+                    }
+
+                    attemptCount++;
+                    console.log(`Polling attempt ${attemptCount} for server ${serverId}`);
+                    isPolling = true;
+
+                    try {
+                        // 只获取服务器列表数据，不触发其他API调用
+                        const response = await fetch('/admin/server-groups/api/list');
+                        if (!response.ok) throw new Error('Failed to fetch server list');
+
+                        const servers = await response.json();
+                        serverGroupListCache = servers;
+
+                        // 静默更新列表（不显示加载状态）
+                        renderServerGroupList(servers);
+
+                        // 检查该服务器的指标是否已有数据
+                        const server = servers.find(s => s.id === serverId);
+                        if (server && server.cpuUsage != null && server.memoryUsage != null && server.diskUsage != null) {
+                            console.log('Metrics collected for server:', serverId);
+                            clearInterval(intervalId);
+                            pollingIntervals.delete(serverId);
+                            showSuccessMessage(currentLanguage === 'en' ? 'Server metrics loaded' : '服务器监控数据已加载');
+                        } else if (attemptCount >= maxAttempts) {
+                            console.warn('Metrics polling timeout for server:', serverId);
+                            clearInterval(intervalId);
+                            pollingIntervals.delete(serverId);
+                            showWarningMessage(currentLanguage === 'en' ? 'Metrics collection timeout' : '监控数据收集超时');
+                        }
+                    } catch (error) {
+                        console.error('Error during metrics polling:', error);
+                    } finally {
+                        isPolling = false;
+                    }
+                }, 3000); // 每3秒轮询一次（降低频率）
+
+                pollingIntervals.set(serverId, intervalId);
             };
 
             function viewServerDetails(serverId) {
@@ -3470,7 +3600,7 @@ function initDashboardRealTimeUpdates() {
                         <td><input type="checkbox" class="user-checkbox" data-user-id="${user.id}"></td>
                         <td>
                             <div class="user-info">
-                                <img src="${user.avatar || '/images/default-avatar.png'}" alt="${user.name}" class="user-avatar">
+                                <img src="${user.avatar || '/images/default-avatar.svg'}" alt="${user.name}" class="user-avatar">
                                 <div class="user-details">
                                     <div class="user-name">${user.name}</div>
                                     <div class="user-email">${user.email}</div>
@@ -3519,7 +3649,7 @@ function initDashboardRealTimeUpdates() {
                 cardGrid.innerHTML = users.map(user => `
                     <div class="user-card">
                         <div class="user-card-header">
-                            <img src="${user.avatar || '/images/default-avatar.png'}" alt="${user.name}" class="user-card-avatar">
+                            <img src="${user.avatar || '/images/default-avatar.svg'}" alt="${user.name}" class="user-card-avatar">
                             <div class="user-card-info">
                                 <div class="user-card-name">${user.name}</div>
                                 <div class="user-card-email">${user.email}</div>
