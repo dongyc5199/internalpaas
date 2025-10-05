@@ -11,14 +11,14 @@
 .admin-dashboard .content-scrollable {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 16px;
 }
 
 .admin-dashboard .page-header {
     background: var(--bg-primary, #ffffff);
     border-radius: var(--border-radius-xl, 16px);
     padding: 0;
-    margin-bottom: var(--spacing-lg, 24px);
+    margin-bottom: var(--spacing-sm, 12px);
     box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.1));
     display: flex;
     justify-content: space-between;

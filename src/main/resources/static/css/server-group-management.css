@@ -17,14 +17,14 @@
 .server-group-management .content-scrollable {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 16px;
 }
 
 .server-group-management .page-header {
     background: var(--bg-primary, #ffffff);
     border-radius: var(--border-radius-xl, 16px);
     padding: 0;
-    margin-bottom: var(--spacing-lg, 24px);
+    margin-bottom: var(--spacing-sm, 12px);
     box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.1));
     display: flex;
     justify-content: space-between;
@@ -255,6 +255,10 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    background: var(--bg-primary, #ffffff);
+    border-radius: var(--border-radius-xl, 16px);
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.1));
+    padding: var(--spacing-xl, 32px);
 }
 
 .section-header {
@@ -454,6 +458,7 @@
     border: 1px solid var(--border-primary, #e2e8f0);
     border-radius: var(--border-radius-lg, 12px);
     overflow: hidden;
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.1));
 }
 
 .table-responsive {
@@ -471,6 +476,7 @@
 }
 
 .server-table th {
+    background: var(--bg-secondary, #f8fafc);
     padding: 14px 16px;
     text-align: left;
     font-size: var(--font-size-sm, 0.875rem);

@@ -1,10 +1,11 @@
-        /* 移除user-permission-management的padding */
+/* 移除user-permission-management的padding */
         .content-framework.admin-theme.user-permission-management {
             padding: 0 !important;
         }
 
         .content-framework.admin-theme.user-permission-management .content-scrollable {
             padding: 0 !important;
+            gap: 16px !important;
         }
 
         * {
@@ -69,7 +70,7 @@
             background: var(--bg-primary);
             border-radius: var(--radius-xl);
             padding: 0;
-            margin-bottom: var(--spacing-lg);
+            margin-bottom: var(--spacing-sm);
             box-shadow: var(--shadow-sm);
             display: flex;
             justify-content: space-between;
