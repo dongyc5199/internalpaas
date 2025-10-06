@@ -1646,6 +1646,15 @@
                 on('spa:navigate', ({ route }) => {
                     outlet.dataset.route = route;
                     emit('spa:loading', { route });
+
+                    // 路由切换前清理上一个页面的资源
+                    const previousRoute = outlet.dataset.previousRoute;
+                    if (previousRoute === 'server-groups') {
+                        cleanupServerGroupManagement();
+                    }
+
+                    outlet.dataset.previousRoute = route;
+
                     loadContent(route).then(() => {
                         // 路由加载完成后，初始化对应页面的逻辑
                         if (route === 'admin-dashboard' || route === 'overview') {
@@ -2438,6 +2447,7 @@ function initDashboardRealTimeUpdates() {
 
             // Server Group Management Functions
             let serverGroupManagementInitialized = false;
+            let serverGroupAutoRefreshTimer = null;
 
             function initServerGroupManagement() {
                 if (!document.querySelector('.server-group-management')) {
@@ -2454,9 +2464,16 @@ function initDashboardRealTimeUpdates() {
 
                 initServerGroupData();
                 initServerGroupEvents();
+                startServerGroupAutoRefresh();
 
                 serverGroupManagementInitialized = true;
                 console.log('Server group management initialized');
+            }
+
+            function cleanupServerGroupManagement() {
+                stopServerGroupAutoRefresh();
+                serverGroupManagementInitialized = false;
+                console.log('Server group management cleaned up');
             }
 
             function initServerGroupData() {
@@ -3167,6 +3184,68 @@ function initDashboardRealTimeUpdates() {
                     loadServerGroupList()
                 ]);
                 showSuccessMessage('Data refreshed successfully');
+            }
+
+            // 自动刷新图表功能
+            function startServerGroupAutoRefresh() {
+                // 清除已存在的定时器
+                stopServerGroupAutoRefresh();
+
+                console.log('Starting server group auto-refresh (10s interval)...');
+
+                serverGroupAutoRefreshTimer = setInterval(async () => {
+                    // 检查是否还在服务器群组管理页面
+                    if (!document.querySelector('.server-group-management')) {
+                        console.log('Not on server group page, stopping auto-refresh');
+                        stopServerGroupAutoRefresh();
+                        return;
+                    }
+
+                    // 检查是否有服务器
+                    if (!serverGroupListCache || serverGroupListCache.length === 0) {
+                        console.log('No servers available, skipping auto-refresh');
+                        return;
+                    }
+
+                    console.log('Auto-refreshing server group charts...');
+
+                    // 异步刷新3个图表，不阻塞UI
+                    // 使用Promise.allSettled确保即使某个图表失败也不影响其他图表
+                    const healthTrendRange = document.getElementById('healthTrendRange');
+                    const hours = healthTrendRange ? parseInt(healthTrendRange.value) : 24;
+
+                    const results = await Promise.allSettled([
+                        loadHealthTrendChart(hours),
+                        loadLoadDistributionChart(),
+                        loadAppDistributionChart()
+                    ]);
+
+                    // 记录刷新结果
+                    const successCount = results.filter(r => r.status === 'fulfilled').length;
+                    const failedCount = results.filter(r => r.status === 'rejected').length;
+
+                    console.log(`Auto-refresh completed: ${successCount} succeeded, ${failedCount} failed`);
+
+                    if (failedCount > 0) {
+                        results.forEach((result, index) => {
+                            if (result.status === 'rejected') {
+                                const chartNames = ['Health Trend', 'Load Distribution', 'App Distribution'];
+                                console.error(`Failed to refresh ${chartNames[index]}:`, result.reason);
+                            }
+                        });
+                    }
+
+                    // 更新最后刷新时间
+                    updateServerGroupLastUpdateTime();
+                }, 10000); // 10秒间隔
+            }
+
+            function stopServerGroupAutoRefresh() {
+                if (serverGroupAutoRefreshTimer) {
+                    console.log('Stopping server group auto-refresh...');
+                    clearInterval(serverGroupAutoRefreshTimer);
+                    serverGroupAutoRefreshTimer = null;
+                }
             }
 
             function updateServerGroupLastUpdateTime() {
@@ -4710,11 +4789,22 @@ function initDashboardRealTimeUpdates() {
                     const payload = buildPayload();
                     console.log('[UserAddModal] 提交用户数据:', payload);
 
+                    // 获取CSRF token
+                    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+                    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+                    const headers = {
+                        'Content-Type': 'application/json'
+                    };
+
+                    // 添加CSRF header
+                    if (csrfToken && csrfHeader) {
+                        headers[csrfHeader] = csrfToken;
+                    }
+
                     const response = await fetch('/admin/api/users', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: headers,
                         body: JSON.stringify(payload)
                     });
 
@@ -4752,11 +4842,21 @@ function initDashboardRealTimeUpdates() {
                     document.addEventListener('DOMContentLoaded', () => {
                         initDomReferences();
                         attachEventListeners();
+                        setupPageUnloadCleanup();
                     });
                 } else {
                     initDomReferences();
                     attachEventListeners();
+                    setupPageUnloadCleanup();
                 }
+            }
+
+            // 设置页面卸载清理
+            function setupPageUnloadCleanup() {
+                window.addEventListener('beforeunload', () => {
+                    // 清理服务器群组管理的定时器
+                    stopServerGroupAutoRefresh();
+                });
             }
 
             function attachEventListeners() {
