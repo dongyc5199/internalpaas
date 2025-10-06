@@ -5,7 +5,7 @@
 
         .content-framework.admin-theme.user-permission-management .content-scrollable {
             padding: 0 !important;
-            gap: 16px !important;
+            gap: 12px !important;
         }
 
         * {
@@ -51,7 +51,7 @@
 
             /* 间距 */
             --spacing-xs: 4px;
-            --spacing-sm: 8px;
+            --spacing-sm: 12px;
             --spacing-md: 16px;
             --spacing-lg: 24px;
             --spacing-xl: 32px;
@@ -171,7 +171,8 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: var(--spacing-lg);
-            margin-bottom: var(--spacing-lg);
+            margin: 0 !important;
+            margin-bottom: 0 !important;
         }
 
         .analysis-panel {
@@ -375,6 +376,9 @@
 
         /* 用户列表区域 */
         .user-list-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
             background: var(--bg-primary);
             border-radius: var(--radius-xl);
             box-shadow: var(--shadow-sm);
@@ -629,93 +633,101 @@
         }
 
         /* 卡片视图 */
-        .card-view {
+        .user-card-view {
             display: none;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: var(--spacing-lg);
         }
 
-        .card-view.active {
+        .user-card-grid {
             display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
         }
 
         .user-card {
-            background: var(--bg-secondary);
+            background: var(--bg-primary);
             border-radius: var(--radius-lg);
-            padding: var(--spacing-lg);
+            padding: 14px;
             transition: all 0.3s;
-            border: 2px solid transparent;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .user-card:hover {
             border-color: var(--primary-color);
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
         .user-card-header {
             display: flex;
             align-items: center;
-            gap: var(--spacing-md);
-            margin-bottom: var(--spacing-md);
+            gap: 10px;
         }
 
         .user-card-avatar {
-            width: 56px;
-            height: 56px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 24px;
-            font-weight: 700;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
         }
 
         .user-card-info {
             flex: 1;
+            min-width: 0;
         }
 
         .user-card-name {
-            font-size: 16px;
-            font-weight: 700;
+            font-size: 13px;
+            font-weight: 600;
             color: var(--text-primary);
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .user-card-username {
-            font-size: 13px;
+            font-size: 11px;
             color: var(--text-tertiary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .user-card-badges {
             display: flex;
-            gap: var(--spacing-sm);
-            margin-bottom: var(--spacing-md);
+            gap: 6px;
+            flex-wrap: wrap;
         }
 
         .user-card-stats {
-            margin-bottom: var(--spacing-md);
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
         }
 
         .stat-item {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: var(--spacing-sm) 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .stat-item:last-child {
-            border-bottom: none;
+            flex-direction: column;
+            gap: 2px;
+            padding: 6px 8px;
+            background: var(--bg-secondary);
+            border-radius: 6px;
         }
 
         .stat-label {
-            font-size: 13px;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-weight: 500;
         }
 
         .stat-value {
@@ -726,9 +738,16 @@
 
         .user-card-footer {
             display: flex;
-            gap: var(--spacing-sm);
-            padding-top: var(--spacing-md);
+            gap: 6px;
+            padding-top: 6px;
             border-top: 1px solid var(--border-color);
+        }
+
+        .user-card-footer .btn {
+            flex: 1;
+            font-size: 11px;
+            padding: 5px 8px;
+            white-space: nowrap;
         }
 
         /* 响应式 */
@@ -736,9 +755,16 @@
             .deep-analysis-section {
                 grid-template-columns: 1fr;
             }
+
+            .user-card-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
         }
 
         @media (max-width: 768px) {
+            .user-card-grid {
+                grid-template-columns: 1fr;
+            }
             body {
                 padding: var(--spacing-md);
             }

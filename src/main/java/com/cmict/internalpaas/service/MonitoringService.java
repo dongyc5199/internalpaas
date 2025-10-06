@@ -316,39 +316,139 @@ public class MonitoringService {
     private void collectDiskMetrics(Server server, ServerMetrics metrics) {
         logger.debug("开始收集服务器 {} 的磁盘指标", server.getHostname());
         try {
+            // 方法1: 使用df -B1命令（字节为单位）
             String diskCmd = "df -B1 / | tail -1 | awk '{print $2, $3, $4}'";
             String result = sshConnectionService.executeCommand(server, diskCmd);
-            
-            if (!result.isEmpty()) {
+
+            if (!result.isEmpty() && !result.contains("Error") && !result.contains("error")) {
+                logger.debug("磁盘命令原始输出: [{}]", result);
                 String[] parts = result.trim().split("\\s+");
                 if (parts.length >= 3) {
-                    long total = Long.parseLong(parts[0]);
-                    long used = Long.parseLong(parts[1]);
-                    long available = Long.parseLong(parts[2]);
-                    double usage = (double) used / total * 100;
-                    
-                    metrics.setDiskTotal(total);
-                    metrics.setDiskUsed(used);
-                    metrics.setDiskAvailable(available);
-                    metrics.setDiskUsage(usage);
-                    
-                    logger.debug("磁盘指标 - 总量: {}GB, 已用: {}GB, 可用: {}GB, 使用率: {:.2f}%", 
-                        total / 1024 / 1024 / 1024, used / 1024 / 1024 / 1024, available / 1024 / 1024 / 1024, usage);
+                    try {
+                        // 尝试解析数值，移除可能的非数字字符
+                        String totalStr = parts[0].replaceAll("[^0-9]", "");
+                        String usedStr = parts[1].replaceAll("[^0-9]", "");
+                        String availStr = parts[2].replaceAll("[^0-9]", "");
+
+                        if (!totalStr.isEmpty() && !usedStr.isEmpty() && !availStr.isEmpty()) {
+                            long total = Long.parseLong(totalStr);
+                            long used = Long.parseLong(usedStr);
+                            long available = Long.parseLong(availStr);
+
+                            if (total > 0) {
+                                double usage = (double) used / total * 100;
+
+                                metrics.setDiskTotal(total);
+                                metrics.setDiskUsed(used);
+                                metrics.setDiskAvailable(available);
+                                metrics.setDiskUsage(usage);
+
+                                logger.debug("磁盘指标收集成功 - 总量: {}GB, 已用: {}GB, 可用: {}GB, 使用率: {:.2f}%",
+                                    total / 1024 / 1024 / 1024, used / 1024 / 1024 / 1024, available / 1024 / 1024 / 1024, usage);
+                                return;
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        logger.warn("方法1：磁盘数值解析失败，尝试备用方法。原始数据: {}, 错误: {}", result, e.getMessage());
+                    }
                 } else {
-                    logger.warn("磁盘命令返回的数据格式不正确: {}", result);
+                    logger.warn("方法1：磁盘命令返回的数据格式不正确，字段数: {}, 内容: {}", parts.length, result);
                 }
             } else {
-                logger.warn("磁盘命令返回空结果");
+                logger.warn("方法1：磁盘命令返回空结果或包含错误");
             }
-        } catch (NumberFormatException e) {
-            logger.warn("磁盘数值解析失败: {}", e.getMessage());
+
+            // 方法2: 使用df -k命令（KB为单位）作为备用
+            logger.debug("尝试备用磁盘命令（KB）");
+            diskCmd = "df -k / | tail -1 | awk '{print $2, $3, $4}'";
+            result = sshConnectionService.executeCommand(server, diskCmd);
+
+            if (!result.isEmpty() && !result.contains("Error") && !result.contains("error")) {
+                logger.debug("备用磁盘命令原始输出: [{}]", result);
+                String[] parts = result.trim().split("\\s+");
+                if (parts.length >= 3) {
+                    try {
+                        String totalStr = parts[0].replaceAll("[^0-9]", "");
+                        String usedStr = parts[1].replaceAll("[^0-9]", "");
+                        String availStr = parts[2].replaceAll("[^0-9]", "");
+
+                        if (!totalStr.isEmpty() && !usedStr.isEmpty() && !availStr.isEmpty()) {
+                            // KB转换为字节
+                            long total = Long.parseLong(totalStr) * 1024;
+                            long used = Long.parseLong(usedStr) * 1024;
+                            long available = Long.parseLong(availStr) * 1024;
+
+                            if (total > 0) {
+                                double usage = (double) used / total * 100;
+
+                                metrics.setDiskTotal(total);
+                                metrics.setDiskUsed(used);
+                                metrics.setDiskAvailable(available);
+                                metrics.setDiskUsage(usage);
+
+                                logger.debug("方法2成功：磁盘指标 - 总量: {}GB, 已用: {}GB, 可用: {}GB, 使用率: {:.2f}%",
+                                    total / 1024 / 1024 / 1024, used / 1024 / 1024 / 1024, available / 1024 / 1024 / 1024, usage);
+                                return;
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        logger.warn("方法2：磁盘数值解析失败。原始数据: {}, 错误: {}", result, e.getMessage());
+                    }
+                }
+            }
+
+            // 方法3: 使用更简单的df命令
+            logger.debug("尝试第三种磁盘命令");
+            diskCmd = "df / | tail -1";
+            result = sshConnectionService.executeCommand(server, diskCmd);
+            logger.warn("方法3：df完整输出: [{}]", result);
+
+            // 如果所有方法都失败，设置默认值
+            logger.error("服务器 {} 所有磁盘检测方法均失败", server.getHostname());
             metrics.setDiskUsage(0.0);
+
         } catch (Exception e) {
-            logger.warn("收集服务器 {} 磁盘指标失败: {}", server.getHostname(), e.getMessage());
+            logger.error("收集服务器 {} 磁盘指标时发生异常: {}", server.getHostname(), e.getMessage(), e);
             metrics.setDiskUsage(0.0);
         }
     }
     
+    /**
+     * 将uptime英文输出转换为中文
+     */
+    private String convertUptimeToChinese(String uptimeEnglish) {
+        if (uptimeEnglish == null || uptimeEnglish.isEmpty()) {
+            return "未知";
+        }
+
+        try {
+            String result = uptimeEnglish.trim();
+
+            // 移除"up "前缀
+            result = result.replaceAll("^up\\s+", "");
+
+            // 替换英文单位为中文
+            result = result.replaceAll("\\s*years?\\s*", "年");
+            result = result.replaceAll("\\s*months?\\s*", "个月");
+            result = result.replaceAll("\\s*weeks?\\s*", "周");
+            result = result.replaceAll("\\s*days?\\s*", "天");
+            result = result.replaceAll("\\s*hours?\\s*", "小时");
+            result = result.replaceAll("\\s*minutes?\\s*", "分钟");
+            result = result.replaceAll("\\s*seconds?\\s*", "秒");
+
+            // 移除多余的逗号和空格
+            result = result.replaceAll(",\\s*", "");
+            result = result.replaceAll("\\s+", "");
+
+            logger.debug("运行时间转换: {} -> {}", uptimeEnglish, result);
+            return result.isEmpty() ? "未知" : result;
+
+        } catch (Exception e) {
+            logger.warn("转换运行时间格式失败: {}", e.getMessage());
+            return uptimeEnglish;
+        }
+    }
+
     /**
      * 收集系统指标
      */
@@ -360,14 +460,15 @@ public class MonitoringService {
                 String uptimeCmd = "uptime -p";
                 String result = sshConnectionService.executeCommand(server, uptimeCmd);
                 if (!result.isEmpty()) {
-                    String uptime = result.trim();
+                    String uptime = convertUptimeToChinese(result.trim());
                     metrics.setUptime(uptime);
                     logger.debug("系统运行时间: {}", uptime);
                 } else {
                     // 备用命令
                     uptimeCmd = "uptime | awk '{print $3, $4, $5}' | sed 's/,//g'";
                     result = sshConnectionService.executeCommand(server, uptimeCmd);
-                    metrics.setUptime(result.trim());
+                    String uptime = convertUptimeToChinese(result.trim());
+                    metrics.setUptime(uptime);
                 }
             } catch (Exception e) {
                 logger.debug("获取系统运行时间失败: {}", e.getMessage());

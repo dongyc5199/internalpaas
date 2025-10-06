@@ -3725,51 +3725,54 @@ function initDashboardRealTimeUpdates() {
                     return;
                 }
 
-                cardGrid.innerHTML = users.map(user => `
+                cardGrid.innerHTML = users.map(user => {
+                    // 生成头像HTML：使用用户名首字母
+                    const avatarHtml = user.avatar
+                        ? `<img src="${user.avatar}" alt="${user.name}" class="user-card-avatar">`
+                        : `<div class="user-card-avatar">${user.name.charAt(0).toUpperCase()}</div>`;
+
+                    return `
                     <div class="user-card">
                         <div class="user-card-header">
-                            <img src="${user.avatar || '/images/default-avatar.svg'}" alt="${user.name}" class="user-card-avatar">
+                            ${avatarHtml}
                             <div class="user-card-info">
-                                <div class="user-card-name">${user.name}</div>
-                                <div class="user-card-email">${user.email}</div>
-                                <div class="user-card-badges">
-                                    <span class="role-badge ${user.role.toLowerCase().replace('_', '-')}">${getRoleDisplayName(user.role)}</span>
-                                    <span class="status-badge ${user.status}">
-                                        <span class="status-dot"></span>
-                                        ${getStatusDisplayName(user.status)}
-                                    </span>
-                                </div>
+                                <div class="user-card-name">${user.name || 'Unknown'}</div>
+                                <div class="user-card-username">${user.email || ''}</div>
                             </div>
                         </div>
-                        <div class="user-card-body">
-                            <div class="user-card-stats">
-                                <div class="user-card-stat">
-                                    <span class="user-card-stat-label">活跃度</span>
-                                    <span class="user-card-stat-value">${user.activityScore}%</span>
-                                </div>
-                                <div class="user-card-stat">
-                                    <span class="user-card-stat-label">服务器</span>
-                                    <span class="user-card-stat-value">${user.serverCount || 0}</span>
-                                </div>
-                                <div class="user-card-stat">
-                                    <span class="user-card-stat-label">应用</span>
-                                    <span class="user-card-stat-value">${user.appCount || 0}</span>
-                                </div>
-                                <div class="user-card-stat">
-                                    <span class="user-card-stat-label">最后活跃</span>
-                                    <span class="user-card-stat-value">${formatTime(user.lastActive)}</span>
-                                </div>
+                        <div class="user-card-badges">
+                            <span class="role-badge ${user.role.toLowerCase().replace('_', '-')}">${getRoleDisplayName(user.role)}</span>
+                            <span class="status-badge ${user.status}">
+                                <span class="status-indicator"></span>
+                                ${getStatusDisplayName(user.status)}
+                            </span>
+                        </div>
+                        <div class="user-card-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">活跃度</span>
+                                <span class="stat-value">${user.activityScore || 0}%</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">服务器</span>
+                                <span class="stat-value">${user.serverCount || 0}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">应用</span>
+                                <span class="stat-value">${user.appCount || 0}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">最后活跃</span>
+                                <span class="stat-value">${formatTime(user.lastActive)}</span>
                             </div>
                         </div>
                         <div class="user-card-footer">
-                            <span class="user-card-time">${formatTime(user.lastActive)}</span>
-                            <div class="user-card-actions">
-                                <button class="action-btn" onclick="viewUserDetails(${user.id})">查看</button>
-                                <button class="action-btn" onclick="editUser(${user.id})">编辑</button>
-                            </div>
+                            <button class="btn btn-sm" onclick="viewUserDetails(${user.id})">查看</button>
+                            <button class="btn btn-sm" onclick="editUser(${user.id})">编辑</button>
+                            ${user.role !== 'SUPER_ADMIN' ? `<button class="btn btn-sm" onclick="deleteUser(${user.id})">删除</button>` : ''}
                         </div>
                     </div>
-                `).join('');
+                `;
+                }).join('');
             }
 
             function switchUserView(viewType) {
