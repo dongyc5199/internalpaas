@@ -1305,6 +1305,12 @@
                     languageToggleButton.setAttribute('aria-pressed', String(currentLanguage === 'en'));
                 }
 
+                // 更新标题栏元素
+                updateHeaderLanguage(currentLanguage);
+
+                // 更新侧边栏元素
+                updateSidebarLanguage(currentLanguage);
+
                 const translatable = document.querySelectorAll('[data-i18n-zh]');
                 translatable.forEach((element) => {
                     const zh = element.getAttribute('data-i18n-zh');
@@ -1335,6 +1341,136 @@
 
                 if (persistPref) {
                     persist(LANGUAGE_KEY, currentLanguage);
+                }
+            }
+
+            // 更新标题栏语言
+            function updateHeaderLanguage(lang) {
+                const isEn = lang === 'en';
+                const workspaceRole = document.querySelector('[data-role="shell-header"]')?.dataset?.variant || 'developer';
+
+                // 更新搜索框占位文本
+                const searchPlaceholder = document.querySelector('.shell-search-placeholder');
+                if (searchPlaceholder) {
+                    if (workspaceRole === 'admin') {
+                        searchPlaceholder.textContent = isEn ? 'Search servers, tasks, or commands' : '搜索服务器、任务或命令';
+                    } else {
+                        searchPlaceholder.textContent = isEn ? 'Search apps, services, or commands' : '搜索应用、服务或命令';
+                    }
+                }
+
+                // 更新按钮标题
+                const toggleSidebarBtn = document.querySelector('[data-action="toggle-sidebar"]');
+                if (toggleSidebarBtn) {
+                    toggleSidebarBtn.title = isEn ? 'Toggle sidebar' : '展开/收起侧边栏';
+                }
+
+                const notificationBtn = document.querySelector('[data-action="open-notifications"]');
+                if (notificationBtn) {
+                    notificationBtn.title = isEn ? 'Notifications' : '通知中心';
+                }
+
+                const themeBtn = document.querySelector('[data-action="toggle-theme"]');
+                if (themeBtn) {
+                    themeBtn.title = isEn ? 'Toggle theme' : '切换主题';
+                    const themeLabel = themeBtn.querySelector('.theme-label');
+                    if (themeLabel) {
+                        const isDark = currentTheme === 'dark';
+                        themeLabel.textContent = isEn ? (isDark ? 'Dark' : 'Light') : (isDark ? '暗色' : '浅色');
+                    }
+                }
+
+                // 更新用户菜单
+                const userRoleLabel = document.querySelector('.user-menu__header-role');
+                if (userRoleLabel) {
+                    userRoleLabel.textContent = isEn
+                        ? (workspaceRole === 'admin' ? 'Platform Admin' : 'Developer')
+                        : (workspaceRole === 'admin' ? '平台管理员' : '研发成员');
+                }
+
+                // 更新用户菜单选项
+                const menuOptions = document.querySelectorAll('.user-menu__option span');
+                const menuLabels = isEn
+                    ? ['Profile', 'Preferences', 'Admin Panel', 'Help Center', 'Sign Out']
+                    : ['个人资料', '偏好设置', '管理面板', '帮助中心', '退出登录'];
+
+                menuOptions.forEach((option, index) => {
+                    if (index < menuLabels.length) {
+                        option.textContent = menuLabels[index];
+                    }
+                });
+            }
+
+            // 更新侧边栏语言
+            function updateSidebarLanguage(lang) {
+                const isEn = lang === 'en';
+                const workspaceRole = document.querySelector('[data-role="shell-sidebar"]')?.dataset?.variant || 'developer';
+
+                // 更新workspace subtitle
+                const brandSubtitle = document.querySelector('.brand-subtitle');
+                if (brandSubtitle) {
+                    brandSubtitle.textContent = isEn
+                        ? (workspaceRole === 'admin' ? 'Admin Workspace' : 'Developer Workspace')
+                        : (workspaceRole === 'admin' ? '管理员工作区' : '开发者工作区');
+                }
+
+                // 定义菜单项的国际化映射
+                const menuTranslations = {
+                    'zh': {
+                        'overview': '工作区概览',
+                        'admin-dashboard': '管理仪表板',
+                        'applications': '我的应用',
+                        'servers': '服务器管理',
+                        'server-groups': '服务器群组',
+                        'users': '用户与权限',
+                        'monitoring': '监控中心',
+                        'logs': '日志中心',
+                        'terminal': 'SSH终端',
+                        'settings': '系统设置'
+                    },
+                    'en': {
+                        'overview': 'Workspace Overview',
+                        'admin-dashboard': 'Admin Dashboard',
+                        'applications': 'My Applications',
+                        'servers': 'Server Management',
+                        'server-groups': 'Server Groups',
+                        'users': 'Users & Permissions',
+                        'monitoring': 'Monitoring',
+                        'logs': 'Logs',
+                        'terminal': 'SSH Terminal',
+                        'settings': 'Settings'
+                    }
+                };
+
+                // 更新侧边栏菜单项
+                const menuItems = document.querySelectorAll('.menu-item');
+                menuItems.forEach(item => {
+                    const route = item.dataset.route;
+                    if (route && menuTranslations[lang][route]) {
+                        const textSpan = item.querySelector('.text');
+                        const tooltip = item.querySelector('.nav-tooltip');
+                        const translatedText = menuTranslations[lang][route];
+
+                        if (textSpan) {
+                            textSpan.textContent = translatedText;
+                        }
+                        if (tooltip) {
+                            tooltip.textContent = translatedText;
+                        }
+                    }
+                });
+
+                // 更新footer环境标签
+                const footerPill = document.querySelector('.footer-block .pill span:last-child');
+                if (footerPill && footerPill.textContent.includes('环境') || footerPill?.textContent.includes('Environment')) {
+                    const envValue = footerPill.textContent.split(/[：:]/)[1]?.trim() || 'DEV';
+                    footerPill.textContent = isEn ? `Environment: ${envValue}` : `环境：${envValue}`;
+                }
+
+                // 更新footer链接
+                const footerLink = document.querySelector('.footer-block .link');
+                if (footerLink) {
+                    footerLink.textContent = isEn ? 'Help & Feedback' : '帮助与反馈';
                 }
             }
 
