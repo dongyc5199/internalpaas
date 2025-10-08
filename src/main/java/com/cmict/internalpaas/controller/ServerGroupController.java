@@ -120,4 +120,23 @@ public class ServerGroupController {
             return ResponseEntity.internalServerError().body(response);
         }
     }
+
+    /**
+     * Get detailed information for a specific server
+     */
+    @GetMapping("/api/{serverId}/detail")
+    @ResponseBody
+    public ResponseEntity<ServerDetailDto> getServerDetail(@PathVariable Long serverId) {
+        logger.info("API: Getting server detail for {}", serverId);
+        try {
+            ServerDetailDto detail = serverGroupService.getServerDetail(serverId);
+            return ResponseEntity.ok(detail);
+        } catch (IllegalArgumentException ex) {
+            logger.warn("Server detail not found: {}", ex.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            logger.error("Failed to get server detail", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }

@@ -75,6 +75,15 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
            "LEFT JOIN u.availableServers s " +
            "WHERE s.id = :serverId OR u.defaultServer.id = :serverId")
     long countApplicationsBoundToServer(@Param("serverId") Long serverId);
+
+    /**
+     * 获取与指定服务器关联的应用列表（通过用户授权关系）
+     */
+    @Query("SELECT DISTINCT a FROM Application a " +
+           "JOIN a.user u " +
+           "LEFT JOIN u.availableServers s " +
+           "WHERE s.id = :serverId OR u.defaultServer.id = :serverId")
+    List<Application> findApplicationsBoundToServer(@Param("serverId") Long serverId);
     
     /**
      * 统计指定用户的应用总数

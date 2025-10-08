@@ -1570,6 +1570,10 @@
 
             on('language:changed', () => {
                 updateUserTrendChart(userTrendPoints);
+                if (serverDetailOverlay && serverDetailOverlay.classList.contains('is-open')) {
+                    syncServerDetailChartsFromSeries(serverDetailChartSeriesData);
+                    initServerDetailCharts();
+                }
             });
 
             function loadPreferences() {
@@ -2649,6 +2653,34 @@ function initDashboardRealTimeUpdates() {
             let serverDetailPreviousFocus = null;
             let serverDetailTimeFormatter = null;
             let serverDetailBodyOverflowBackup = '';
+            let serverDetailCurrentDetail = null;
+            let serverDetailChartSeriesData = [];
+
+            function setLocalizedText(element, zh, en) {
+                if (!element) {
+                    return;
+                }
+                const zhValue = zh || '';
+                const enValue = en || '';
+                element.setAttribute('data-i18n-zh', zhValue);
+                element.setAttribute('data-i18n-en', enValue);
+                element.textContent = currentLanguage === 'en'
+                    ? (enValue || zhValue || '--')
+                    : (zhValue || enValue || '--');
+            }
+
+            function updateMetricSummaryText(selector, zh, en) {
+                if (!serverDetailOverlay) {
+                    return;
+                }
+                const element = serverDetailOverlay.querySelector(selector);
+                if (!element) {
+                    return;
+                }
+                const zhText = zh || '暂无数据';
+                const enText = en || 'No data';
+                setLocalizedText(element, zhText, enText);
+            }
 
             function initServerGroupManagement() {
                 if (!document.querySelector('.server-group-management')) {
@@ -3567,50 +3599,47 @@ function initDashboardRealTimeUpdates() {
                 pollingIntervals.set(serverId, intervalId);
             };
 
-            const SERVER_DETAIL_UPDATE_INTERVAL = 5000;
-            const SERVER_DETAIL_MAX_POINTS = 36;
-            const SERVER_DETAIL_CHART_DEFINITIONS = [
+            const SERVER_DETAIL_UPDATE_INTERVAL = 20000;
+            const SERVER_DETAIL_CHART_TEMPLATE = [
                 {
+                    key: 'cpu',
                     id: 'serverDetailCpuChart',
-                    label: 'CPU %',
+                    labelZh: 'CPU 使用率',
+                    labelEn: 'CPU Usage',
                     color: '#3b82f6',
-                    baseData: [32, 41, 35, 38, 40, 42, 38],
-                    min: 10,
-                    max: 95,
-                    variance: 6,
                     decimals: 1
                 },
                 {
+                    key: 'memory',
                     id: 'serverDetailMemChart',
-                    label: currentLanguage === 'en' ? 'Memory %' : '内存使用率 %',
+                    labelZh: '内存使用率 %',
+                    labelEn: 'Memory %',
                     color: '#22d3ee',
-                    baseData: [62, 63, 64, 65, 66, 66, 65],
-                    min: 40,
-                    max: 95,
-                    variance: 2,
                     decimals: 1
                 },
                 {
+                    key: 'disk',
                     id: 'serverDetailDiskChart',
-                    label: currentLanguage === 'en' ? 'Disk IO MB/s' : '写入 MB/s',
+                    labelZh: '写入 MB/s',
+                    labelEn: 'Disk IO MB/s',
                     color: '#f97316',
-                    baseData: [52, 68, 75, 80, 92, 88, 70],
-                    min: 20,
-                    max: 160,
-                    variance: 12,
                     decimals: 0
                 },
                 {
+                    key: 'network',
                     id: 'serverDetailNetChart',
-                    label: currentLanguage === 'en' ? 'Network Gbps' : '吞吐 Gbps',
+                    labelZh: '网络带宽',
+                    labelEn: 'Network Gbps',
                     color: '#34d399',
-                    baseData: [1.2, 1.6, 1.4, 1.8, 1.5, 1.7, 1.6],
-                    min: 0.4,
-                    max: 3,
-                    variance: 0.25,
                     decimals: 2
                 }
             ];
+            let serverDetailChartDefinitions = SERVER_DETAIL_CHART_TEMPLATE.map((template) => ({
+                ...template,
+                label: currentLanguage === 'en' ? template.labelEn : template.labelZh,
+                baseData: [],
+                labels: []
+            }));
 
             function initServerDetailOverlay() {
                 serverDetailOverlay = document.querySelector('[data-role="server-detail-overlay"]');
@@ -3655,7 +3684,7 @@ function initDashboardRealTimeUpdates() {
                 const refreshProcessButtons = serverDetailOverlay.querySelectorAll('[data-action="detail-refresh-process"]');
                 refreshProcessButtons.forEach((button) => {
                     button.addEventListener('click', () => {
-                        console.log('Process list refresh requested');
+                        refreshServerDetailData(false);
                     });
                 });
 
@@ -3671,10 +3700,11 @@ function initDashboardRealTimeUpdates() {
                         serverDetailChartsPaused = !serverDetailChartsPaused;
                         if (serverDetailChartsPaused) {
                             stopServerDetailCharts();
-                            serverDetailToggleRefreshBtn.textContent = currentLanguage === 'en' ? 'Resume' : '恢复刷新';
+                            updateServerDetailRefreshButton(true);
                         } else {
                             startServerDetailCharts();
-                            serverDetailToggleRefreshBtn.textContent = currentLanguage === 'en' ? 'Pause' : '暂停刷新';
+                            refreshServerDetailData(false);
+                            updateServerDetailRefreshButton(false);
                         }
                     });
                 }
@@ -3682,9 +3712,7 @@ function initDashboardRealTimeUpdates() {
                 if (serverDetailToggleChartsBtn && serverDetailMonitorGrid) {
                     serverDetailToggleChartsBtn.addEventListener('click', () => {
                         const isCollapsed = serverDetailMonitorGrid.classList.toggle('is-collapsed');
-                        serverDetailToggleChartsBtn.textContent = isCollapsed
-                            ? (currentLanguage === 'en' ? 'Expand charts' : '展开图表')
-                            : (currentLanguage === 'en' ? 'Collapse charts' : '收起图表');
+                        updateServerDetailChartsButton(isCollapsed);
                         if (!isCollapsed) {
                             requestAnimationFrame(() => {
                                 serverDetailCharts.forEach((chart) => chart?.resize());
@@ -3757,18 +3785,17 @@ function initDashboardRealTimeUpdates() {
                 destroyServerDetailCharts();
                 destroyServerDetailNavigation();
 
+                serverDetailCurrentDetail = null;
+                serverDetailChartSeriesData = [];
+
                 serverDetailChartsPaused = false;
-                if (serverDetailToggleRefreshBtn) {
-                    serverDetailToggleRefreshBtn.textContent = currentLanguage === 'en' ? 'Pause' : '暂停刷新';
-                }
+                updateServerDetailRefreshButton(false);
 
                 if (serverDetailMonitorGrid) {
                     serverDetailMonitorGrid.classList.remove('is-collapsed');
                 }
 
-                if (serverDetailToggleChartsBtn) {
-                    serverDetailToggleChartsBtn.textContent = currentLanguage === 'en' ? 'Collapse charts' : '收起图表';
-                }
+                updateServerDetailChartsButton(false);
 
                 document.body.style.overflow = serverDetailBodyOverflowBackup || '';
 
@@ -3779,7 +3806,18 @@ function initDashboardRealTimeUpdates() {
                 serverDetailPreviousFocus = null;
             }
 
-            function viewServerDetails(serverId) {
+            async function fetchServerDetail(serverId) {
+                const response = await fetch(`/admin/server-groups/api/${serverId}/detail`, {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin'
+                });
+                if (!response.ok) {
+                    throw new Error(`Failed to load server detail (${response.status})`);
+                }
+                return response.json();
+            }
+
+            async function viewServerDetails(serverId) {
                 if (!serverDetailOverlay || !document.body.contains(serverDetailOverlay)) {
                     initServerDetailOverlay();
                 }
@@ -3789,18 +3827,29 @@ function initDashboardRealTimeUpdates() {
                     return;
                 }
 
-                const server = serverGroupListCache.find((item) => String(item.id) === String(serverId));
-                serverDetailCurrentServer = server || null;
+                const server = serverGroupListCache.find((item) => String(item.id) === String(serverId)) || null;
+                serverDetailCurrentServer = server || { id: serverId };
+                serverDetailCurrentDetail = null;
 
-                updateServerDetailContent(server);
+                updateServerDetailContent(server, null);
                 openServerDetailOverlay();
+
+                try {
+                    const detail = await fetchServerDetail(serverId);
+                    serverDetailCurrentDetail = detail;
+                    updateServerDetailContent(server, detail);
+                } catch (error) {
+                    console.error('Failed to load server detail:', error);
+                    showErrorMessage(currentLanguage === 'en' ? 'Failed to load server detail' : '加载服务器详情失败');
+                }
             }
 
-            function updateServerDetailContent(server) {
+            function updateServerDetailContent(server, detail) {
                 if (!serverDetailOverlay) {
                     return;
                 }
 
+                const overview = detail && detail.overview ? detail.overview : null;
                 const select = (selector) => serverDetailOverlay.querySelector(selector);
                 const setText = (selector, value, fallback = '--') => {
                     const element = select(selector);
@@ -3809,41 +3858,86 @@ function initDashboardRealTimeUpdates() {
                     }
                 };
 
-                const name = server?.name || (currentLanguage === 'en' ? 'Unknown Server' : '未知服务器');
-                const description = server?.description || (currentLanguage === 'en' ? 'Core node' : '生产核心节点');
-                const addressPart = server?.address ? server.address : '';
-                const portPart = server?.port != null ? `:${server.port}` : '';
-                const addressText = `${addressPart}${portPart}`.replace(/^:/, '') || '--';
-                const subtitle = server
-                    ? [name, addressText !== '--' ? addressText : null].filter(Boolean).join(' · ')
-                    : (currentLanguage === 'en' ? 'No server selected' : '未选择服务器');
+                const name = (overview && overview.name) || (server && server.name) || (currentLanguage === 'en' ? 'Unknown Server' : '未知服务器');
+                const description = (overview && overview.description) || (server && server.description) || '--';
+                const hostname = (overview && overview.hostname) || (server && (server.hostname || server.address)) || '--';
+                const port = overview && overview.port != null ? overview.port : (server && server.port);
+                const address = port != null ? hostname + ':' + port : hostname;
+                const subtitleParts = [name];
+                if (address && address !== '--') {
+                    subtitleParts.push(address);
+                }
+                const subtitle = subtitleParts.join(' · ');
 
                 setText('[data-role="detail-server-name"]', name);
                 setText('[data-role="detail-description"]', description);
-                setText('[data-role="detail-address"]', addressText);
-                setText('[data-role="detail-panel-subtitle"]', subtitle, subtitle);
-                setText('[data-role="detail-hostname"]', server?.hostname || name);
-                setText('[data-role="detail-os"]', server?.os || 'Ubuntu 22.04.4 LTS');
-                setText('[data-role="detail-kernel"]', server?.kernel || '5.15.0-1041-azure');
-                setText('[data-role="detail-cpu"]', server?.cpu || 'Intel Xeon Gold 6338 · 32 核');
-                setText('[data-role="detail-memory"]', server?.memory || '128 GB');
-                setText('[data-role="detail-disk"]', server?.disk || '/dev/nvme0n1p1 · 300 GB');
-                setText('[data-role="detail-nic"]', server?.nic || 'eth0 · 10.12.88.43/24');
-                setText('[data-role="detail-uptime"]', server?.uptime || '--');
-                setText('[data-role="detail-workdir"]', server?.workdir || '/srv/app/prod');
+                setText('[data-role="detail-address"]', address);
+                setText('[data-role="detail-panel-subtitle"]', subtitle);
 
-                const updateTimeText = server?.lastUpdated
-                    ? `${currentLanguage === 'en' ? 'Last updated' : '最近更新'}：${server.lastUpdated}`
-                    : currentLanguage === 'en' ? 'Last updated: --' : '最近更新：--';
-                setText('[data-role="detail-update-time"]', updateTimeText);
+                const infoItems = overview && Array.isArray(overview.infoItems) ? overview.infoItems : [];
+                const getInfoValue = (key) => {
+                    const item = infoItems.find((info) => info.key === key);
+                    return item && item.value ? item.value : null;
+                };
+
+                setText('[data-role="detail-hostname"]', hostname);
+                setText('[data-role="detail-os"]', overview && overview.osVersion ? overview.osVersion : '--');
+                setText('[data-role="detail-kernel"]', getInfoValue('kernel') || '--');
+                setText('[data-role="detail-cpu"]', getInfoValue('cpu') || '--');
+                setText('[data-role="detail-memory"]', getInfoValue('memory') || '--');
+                setText('[data-role="detail-disk"]', getInfoValue('disk') || '--');
+                setText('[data-role="detail-nic"]', getInfoValue('nic') || '--');
+                setText('[data-role="detail-uptime"]', overview && overview.uptime ? overview.uptime : '--');
+                setText('[data-role="detail-workdir"]', getInfoValue('workdir') || (server && server.baseWorkDirectory) || '--');
+
+                const updateTimeElement = select('[data-role="detail-update-time"]');
+                if (updateTimeElement) {
+                    const formatted = formatServerDetailDateTime(overview && overview.lastMetricsTime);
+                    setLocalizedText(updateTimeElement,
+                        '最近更新：' + formatted.zh,
+                        'Last updated: ' + formatted.en
+                    );
+                }
 
                 const statusChip = select('[data-role="detail-status-chip"]');
-                const statusText = getStatusText(server?.status) || (currentLanguage === 'en' ? 'Unknown' : '未知');
                 if (statusChip) {
-                    applyServerDetailStatus(server?.status, statusChip);
-                    const statusSuffix = server?.statusUpdatedAt ? ` · ${server.statusUpdatedAt}` : '';
-                    statusChip.textContent = `${statusText}${statusSuffix}`;
+                    const statusInfo = resolveServerDetailStatus(overview, server);
+                    setLocalizedText(statusChip, statusInfo.zh, statusInfo.en);
+                    applyServerDetailStatus(statusInfo.key, statusChip);
                 }
+
+                const metrics = detail && detail.metrics ? detail.metrics : null;
+                updateMetricSummaryText('[data-role="detail-metric-summary-cpu"]', metrics?.cpuSummaryZh, metrics?.cpuSummaryEn);
+                updateMetricSummaryText('[data-role="detail-metric-summary-memory"]', metrics?.memorySummaryZh, metrics?.memorySummaryEn);
+                updateMetricSummaryText('[data-role="detail-metric-summary-disk"]', metrics?.diskSummaryZh, metrics?.diskSummaryEn);
+                updateMetricSummaryText('[data-role="detail-metric-summary-network"]', metrics?.networkSummaryZh, metrics?.networkSummaryEn);
+
+                if (metrics && Array.isArray(metrics.series)) {
+                    serverDetailChartSeriesData = metrics.series;
+                } else {
+                    serverDetailChartSeriesData = [];
+                }
+                syncServerDetailChartsFromSeries(serverDetailChartSeriesData);
+
+                renderServerDetailProcesses(detail);
+                renderServerDetailApplications(detail);
+                renderServerDetailUsers(detail);
+
+                if (typeof applyLanguage === 'function') {
+                    applyLanguage(currentLanguage, false);
+                }
+
+                if (serverDetailToggleRefreshBtn) {
+                    setLocalizedText(serverDetailToggleRefreshBtn,
+                        serverDetailChartsPaused ? '恢复刷新' : '暂停刷新',
+                        serverDetailChartsPaused ? 'Resume' : 'Pause');
+                }
+                if (serverDetailToggleChartsBtn) {
+                    const collapsed = serverDetailMonitorGrid ? serverDetailMonitorGrid.classList.contains('is-collapsed') : false;
+                    updateServerDetailChartsButton(collapsed);
+                }
+
+                initServerDetailCharts();
             }
 
             function applyServerDetailStatus(status, element) {
@@ -3869,7 +3963,7 @@ function initDashboardRealTimeUpdates() {
                     nextClass = 'server-detail-chip--warn';
                 } else if (normalized === 'offline' || normalized === 'error' || normalized === 'critical') {
                     nextClass = 'server-detail-chip--error';
-                } else if (normalized === 'pending' || normalized === 'checking') {
+                } else if (normalized === 'pending' || normalized === 'checking' || normalized === 'info') {
                     nextClass = 'server-detail-chip--info';
                 }
 
@@ -3947,6 +4041,210 @@ function initDashboardRealTimeUpdates() {
                 });
             }
 
+            function renderServerDetailProcesses(detail) {
+                const tbody = serverDetailOverlay?.querySelector('[data-role="detail-process-list"]');
+                if (!tbody) {
+                    return;
+                }
+
+                const processes = detail && Array.isArray(detail.processes) ? detail.processes : [];
+                if (!processes.length) {
+                    renderServerDetailEmptyState(tbody, 7, '暂无进程数据', 'No process data available');
+                    return;
+                }
+
+                const rows = processes.map((process) => {
+                    const statusClass = mapStatusKeyToClass(process.statusKey);
+                    const statusZh = process.statusZh || '--';
+                    const statusEn = process.statusEn || '--';
+                    const uptimeZh = process.uptimeZh || '--';
+                    const uptimeEn = process.uptimeEn || uptimeZh;
+
+                    return (
+                        '<tr>' +
+                            '<td>' + escapeHtml(process.pid || '--') + '</td>' +
+                            '<td>' + escapeHtml(process.name || '--') + '</td>' +
+                            '<td>' + (process.cpu != null ? escapeHtml(process.cpu.toFixed(1)) + '%' : '--') + '</td>' +
+                            '<td>' + (process.memory != null ? escapeHtml(process.memory.toFixed(1)) + '%' : '--') + '</td>' +
+                            '<td><span class="server-detail-chip ' + statusClass + '" data-i18n-zh="' + escapeHtml(statusZh) + '" data-i18n-en="' + escapeHtml(statusEn) + '">' + (currentLanguage === 'en' ? escapeHtml(statusEn) : escapeHtml(statusZh)) + '</span></td>' +
+                            '<td><span data-i18n-zh="' + escapeHtml(uptimeZh) + '" data-i18n-en="' + escapeHtml(uptimeEn) + '">' + (currentLanguage === 'en' ? escapeHtml(uptimeEn) : escapeHtml(uptimeZh)) + '</span></td>' +
+                            '<td>' + escapeHtml(process.command || '--') + '</td>' +
+                        '</tr>'
+                    );
+                }).join('');
+
+                tbody.innerHTML = rows;
+            }
+
+            function renderServerDetailApplications(detail) {
+                const tbody = serverDetailOverlay?.querySelector('[data-role="detail-app-list"]');
+                if (!tbody) {
+                    return;
+                }
+
+                const applications = detail && Array.isArray(detail.applications) ? detail.applications : [];
+                if (!applications.length) {
+                    renderServerDetailEmptyState(tbody, 7, '暂无应用数据', 'No application data available');
+                    return;
+                }
+
+                const rows = applications.map((app) => {
+                    const statusClass = mapStatusKeyToClass(app.statusKey);
+                    const statusZh = app.statusZh || '--';
+                    const statusEn = app.statusEn || '--';
+                    const ownerDisplay = app.ownerDisplay || app.owner || '--';
+                    const lastDeploy = formatServerDetailDateTime(app.lastStartedAt);
+                    const version = app.version || '--';
+
+                    return (
+                        '<tr>' +
+                            '<td><strong>' + escapeHtml(app.name || '--') + '</strong><span class="server-detail-caption">' + escapeHtml(version) + '</span></td>' +
+                            '<td>' + escapeHtml(version) + '</td>' +
+                            '<td>' + escapeHtml(ownerDisplay) + '</td>' +
+                            '<td><span class="server-detail-chip ' + statusClass + '" data-i18n-zh="' + escapeHtml(statusZh) + '" data-i18n-en="' + escapeHtml(statusEn) + '">' + (currentLanguage === 'en' ? escapeHtml(statusEn) : escapeHtml(statusZh)) + '</span></td>' +
+                            '<td>' + (app.port != null ? escapeHtml(String(app.port)) : '--') + '</td>' +
+                            '<td data-i18n-zh="' + lastDeploy.zh + '" data-i18n-en="' + lastDeploy.en + '">' + (currentLanguage === 'en' ? lastDeploy.en : lastDeploy.zh) + '</td>' +
+                            '<td>' + escapeHtml(app.remarks || '--') + '</td>' +
+                        '</tr>'
+                    );
+                }).join('');
+
+                tbody.innerHTML = rows;
+            }
+
+            function renderServerDetailUsers(detail) {
+                const tbody = serverDetailOverlay?.querySelector('[data-role="detail-user-list"]');
+                if (!tbody) {
+                    return;
+                }
+
+                const users = detail && Array.isArray(detail.users) ? detail.users : [];
+                if (!users.length) {
+                    renderServerDetailEmptyState(tbody, 6, '暂无用户数据', 'No user data available');
+                    return;
+                }
+
+                const currentServerName = serverDetailCurrentDetail && serverDetailCurrentDetail.overview && serverDetailCurrentDetail.overview.name
+                    ? serverDetailCurrentDetail.overview.name
+                    : (serverDetailCurrentServer && serverDetailCurrentServer.name) || '--';
+
+                const rows = users.map((user) => {
+                    const roleClass = mapStatusKeyToClass(user.roleKey);
+                    const lastLogin = formatServerDetailDateTime(user.lastLoginTime);
+                    const displayName = user.fullName && user.fullName.trim().length > 0 ? user.fullName : user.username;
+                    const accessZh = user.accessTypeZh || '--';
+                    const accessEn = user.accessTypeEn || '--';
+                    const defaultServerDisplay = user.accessTypeKey === 'default' ? currentServerName : '--';
+
+                    return (
+                        '<tr>' +
+                            '<td><strong>' + escapeHtml(displayName || '--') + '</strong><span class="server-detail-caption">' + escapeHtml(user.email || '') + '</span></td>' +
+                            '<td><span class="server-detail-chip ' + roleClass + '" data-i18n-zh="' + escapeHtml(user.roleZh || '--') + '" data-i18n-en="' + escapeHtml(user.roleEn || '--') + '">' + (currentLanguage === 'en' ? escapeHtml(user.roleEn || '--') : escapeHtml(user.roleZh || '--')) + '</span></td>' +
+                            '<td>' + escapeHtml(defaultServerDisplay) + '</td>' +
+                            '<td><span data-i18n-zh="' + escapeHtml(accessZh) + '" data-i18n-en="' + escapeHtml(accessEn) + '">' + (currentLanguage === 'en' ? escapeHtml(accessEn) : escapeHtml(accessZh)) + '</span></td>' +
+                            '<td data-i18n-zh="' + lastLogin.zh + '" data-i18n-en="' + lastLogin.en + '">' + (currentLanguage === 'en' ? lastLogin.en : lastLogin.zh) + '</td>' +
+                            '<td>--</td>' +
+                        '</tr>'
+                    );
+                }).join('');
+
+                tbody.innerHTML = rows;
+            }
+
+            function renderServerDetailEmptyState(tbody, colspan, messageZh, messageEn) {
+                if (!tbody) {
+                    return;
+                }
+                tbody.innerHTML = '<tr><td colspan="' + colspan + '" class="empty-state" data-i18n-zh="' + messageZh + '" data-i18n-en="' + messageEn + '">' + (currentLanguage === 'en' ? messageEn : messageZh) + '</td></tr>';
+            }
+
+            function updateServerDetailRefreshButton(paused) {
+                if (serverDetailToggleRefreshBtn) {
+                    setLocalizedText(serverDetailToggleRefreshBtn,
+                        paused ? '恢复刷新' : '暂停刷新',
+                        paused ? 'Resume' : 'Pause');
+                }
+            }
+
+            function updateServerDetailChartsButton(collapsed) {
+                if (serverDetailToggleChartsBtn) {
+                    setLocalizedText(serverDetailToggleChartsBtn,
+                        collapsed ? '展开图表' : '收起图表',
+                        collapsed ? 'Expand charts' : 'Collapse charts');
+                }
+            }
+
+            function mapStatusKeyToClass(statusKey) {
+                const normalized = (statusKey || '').toString().toLowerCase();
+                if (normalized === 'running' || normalized === 'online' || normalized === 'connected' || normalized === 'ok') {
+                    return 'server-detail-chip--ok';
+                }
+                if (normalized === 'warning' || normalized === 'warn') {
+                    return 'server-detail-chip--warn';
+                }
+                if (normalized === 'info' || normalized === 'monitoring' || normalized === 'pending') {
+                    return 'server-detail-chip--info';
+                }
+                if (normalized === 'error' || normalized === 'failed' || normalized === 'offline' || normalized === 'timeout') {
+                    return 'server-detail-chip--error';
+                }
+                return 'server-detail-chip--neutral';
+            }
+
+            function resolveServerDetailStatus(overview, server) {
+                const status = overview && overview.connectionStatus ? overview.connectionStatus : (server && server.status);
+                const description = overview && overview.connectionStatusDescription ? overview.connectionStatusDescription : '';
+                const normalized = (status || '').toString().toUpperCase();
+                switch (normalized) {
+                    case 'CONNECTED':
+                    case 'ONLINE':
+                    case 'RUNNING':
+                        return { key: 'online', zh: description || '连接正常', en: 'Connected' };
+                    case 'MONITORING':
+                    case 'INFO':
+                        return { key: 'info', zh: description || '监控中', en: 'Monitoring' };
+                    case 'FAILED':
+                    case 'TIMEOUT':
+                    case 'AUTH_FAILED':
+                    case 'OFFLINE':
+                    case 'ERROR':
+                        return { key: 'error', zh: description || '连接异常', en: 'Connection issue' };
+                    default:
+                        return { key: 'neutral', zh: description || '未知状态', en: 'Unknown' };
+                }
+            }
+
+            function formatServerDetailDateTime(value) {
+                if (!value) {
+                    return { zh: '--', en: '--' };
+                }
+                const isoString = typeof value === 'string' ? value.replace(' ', 'T') : value;
+                const date = new Date(isoString);
+                if (Number.isNaN(date.getTime())) {
+                    return { zh: '--', en: '--' };
+                }
+                return {
+                    zh: date.toLocaleString('zh-CN', { hour12: false }),
+                    en: date.toLocaleString('en-US', { hour12: false })
+                };
+            }
+
+            async function refreshServerDetailData(isAuto = true) {
+                if (!serverDetailCurrentServer) {
+                    return;
+                }
+                try {
+                    const detail = await fetchServerDetail(serverDetailCurrentServer.id);
+                    serverDetailCurrentDetail = detail;
+                    updateServerDetailContent(serverDetailCurrentServer, detail);
+                } catch (error) {
+                    if (!isAuto) {
+                        showErrorMessage(currentLanguage === 'en' ? 'Failed to refresh server detail' : '刷新服务器详情失败');
+                    }
+                    console.error('Failed to refresh server detail:', error);
+                }
+            }
+
             function handleServerDetailNavClick(event) {
                 event.preventDefault();
                 const link = event.currentTarget;
@@ -3974,6 +4272,37 @@ function initDashboardRealTimeUpdates() {
                 serverDetailBody.scrollTo({ top: offset, behavior: 'smooth' });
             }
 
+            function syncServerDetailChartsFromSeries(seriesList) {
+                const source = Array.isArray(seriesList) ? seriesList : [];
+                serverDetailChartDefinitions = SERVER_DETAIL_CHART_TEMPLATE.map((template) => {
+                    const series = source.find((item) => item && item.id === template.key);
+                    const values = series && Array.isArray(series.points)
+                        ? series.points.map((point) => sanitizeMetricValue(point && point.value))
+                        : [];
+                    const labels = series && Array.isArray(series.points)
+                        ? series.points.map((point) => (point && point.timestamp) ? point.timestamp : '')
+                        : [];
+                    const labelZh = series && series.labelZh ? series.labelZh : template.labelZh;
+                    const labelEn = series && series.labelEn ? series.labelEn : template.labelEn;
+                    return {
+                        ...template,
+                        baseData: values,
+                        labels,
+                        labelZh,
+                        labelEn,
+                        label: currentLanguage === 'en' ? labelEn : labelZh
+                    };
+                });
+            }
+
+            function sanitizeMetricValue(value) {
+                if (value === null || value === undefined) {
+                    return null;
+                }
+                const numeric = Number(value);
+                return Number.isFinite(numeric) ? numeric : null;
+            }
+
             function initServerDetailCharts() {
                 if (typeof Chart === 'undefined') {
                     console.warn('Chart.js 未加载，无法初始化服务器详情图表');
@@ -3989,14 +4318,14 @@ function initDashboardRealTimeUpdates() {
                     hour12: false
                 });
 
-                serverDetailCharts = SERVER_DETAIL_CHART_DEFINITIONS.map((definition) => {
+                serverDetailCharts = serverDetailChartDefinitions.map((definition) => {
                     const canvas = document.getElementById(definition.id);
                     if (!canvas) {
                         return null;
                     }
 
                     const context = canvas.getContext('2d');
-                    const labels = buildServerDetailLabels(definition.baseData.length);
+                    const labels = buildServerDetailLabels(definition);
                     const chart = new Chart(context, getServerDetailChartConfig(definition, labels));
                     chart.$definition = definition;
                     return chart;
@@ -4006,8 +4335,9 @@ function initDashboardRealTimeUpdates() {
                     return;
                 }
 
-                serverDetailChartsPaused = false;
-                startServerDetailCharts();
+                if (!serverDetailChartsPaused) {
+                    startServerDetailCharts();
+                }
             }
 
             function destroyServerDetailCharts() {
@@ -4023,12 +4353,12 @@ function initDashboardRealTimeUpdates() {
             function startServerDetailCharts() {
                 stopServerDetailCharts();
 
-                if (!serverDetailCharts.length) {
+                if (!serverDetailCurrentServer || !serverDetailCharts.length) {
                     return;
                 }
 
                 serverDetailChartTimer = setInterval(() => {
-                    serverDetailCharts.forEach((chart) => appendServerDetailPoint(chart));
+                    refreshServerDetailData(true);
                 }, SERVER_DETAIL_UPDATE_INTERVAL);
             }
 
@@ -4039,30 +4369,8 @@ function initDashboardRealTimeUpdates() {
                 }
             }
 
-            function appendServerDetailPoint(chart) {
-                if (!chart || !chart.$definition || !serverDetailTimeFormatter) {
-                    return;
-                }
-
-                const dataset = chart.data.datasets[0];
-                const labels = chart.data.labels;
-                const definition = chart.$definition;
-
-                const lastValue = dataset.data[dataset.data.length - 1];
-                const nextValue = getNextServerDetailValue(lastValue, definition);
-
-                dataset.data.push(nextValue);
-                labels.push(serverDetailTimeFormatter.format(new Date()));
-
-                if (dataset.data.length > SERVER_DETAIL_MAX_POINTS) {
-                    dataset.data.shift();
-                }
-
-                if (labels.length > SERVER_DETAIL_MAX_POINTS) {
-                    labels.shift();
-                }
-
-                chart.update('none');
+            function appendServerDetailPoint() {
+                // Deprecated: real-time updates handled via refreshServerDetailData
             }
 
             function getServerDetailChartConfig(definition, labels) {
@@ -4109,22 +4417,20 @@ function initDashboardRealTimeUpdates() {
                 };
             }
 
-            function buildServerDetailLabels(count) {
+            function buildServerDetailLabels(definition) {
+                if (definition && Array.isArray(definition.labels) && definition.labels.length) {
+                    return definition.labels;
+                }
+
+                const count = definition && Array.isArray(definition.baseData)
+                    ? definition.baseData.length
+                    : 0;
+
                 const now = Date.now();
                 return Array.from({ length: count }, (_, index) => {
                     const offset = (count - index - 1) * SERVER_DETAIL_UPDATE_INTERVAL;
                     return serverDetailTimeFormatter.format(new Date(now - offset));
                 });
-            }
-
-            function getNextServerDetailValue(lastValue, definition) {
-                const fallback = definition.baseData.at(-1) ?? definition.min;
-                const baseline = Number.isFinite(lastValue) ? lastValue : fallback;
-                const delta = (Math.random() * 2 - 1) * definition.variance;
-                const raw = baseline + delta;
-                const clamped = Math.max(definition.min, Math.min(definition.max, raw));
-                const decimals = typeof definition.decimals === 'number' ? definition.decimals : 2;
-                return Number(clamped.toFixed(decimals));
             }
 
             function getServerDetailLocale() {
@@ -5780,4 +6086,3 @@ function initDashboardRealTimeUpdates() {
     </script>
 </body>
 </html>
-
