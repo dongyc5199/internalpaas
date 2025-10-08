@@ -1239,6 +1239,54 @@
             let serverPanelCache = [];
             let userTrendPoints = [];
 
+            // 全局国际化配置对象
+            const i18n = {
+                en: {
+                    // 图表相关
+                    chart: {
+                        // 负载分布图表
+                        cpu: 'CPU Average Load',
+                        memory: 'Memory Average Usage',
+                        disk: 'Disk Average Usage',
+                        //network: 'Network Average Traffic',
+                        // 应用分布图表
+                        total: 'Total Applications',
+                        // 图表轴标签
+                        healthScore: 'Health Score',
+                        time: 'Time',
+                        usagePercent: 'Usage (%)',
+                        applicationCount: 'Application Count'
+                    }
+                },
+                zh: {
+                    // 图表相关
+                    chart: {
+                        // 负载分布图表
+                        cpu: 'CPU平均负载',
+                        memory: '内存平均使用率',
+                        disk: '磁盘平均使用率',
+                        //network: '网络平均流量',
+                        // 应用分布图表
+                        total: '应用总数',
+                        // 图表轴标签
+                        healthScore: '健康分数',
+                        time: '时间',
+                        usagePercent: '使用率 (%)',
+                        applicationCount: '应用数量'
+                    }
+                }
+            };
+
+            // 国际化辅助函数
+            function t(key, category = 'chart') {
+                try {
+                    return i18n[currentLanguage][category][key] || key;
+                } catch (e) {
+                    console.warn(`[i18n] Translation not found: ${category}.${key}`);
+                    return key;
+                }
+            }
+
             function persist(key, value) {
                 try {
                     localStorage.setItem(key, value);
@@ -2789,13 +2837,13 @@ function initDashboardRealTimeUpdates() {
                                     max: 100,
                                     title: {
                                         display: true,
-                                        text: currentLanguage === 'en' ? 'Health Score' : '健康分数'
+                                        text: t('healthScore', 'chart')
                                     }
                                 },
                                 x: {
                                     title: {
                                         display: true,
-                                        text: currentLanguage === 'en' ? 'Time' : '时间'
+                                        text: t('time', 'chart')
                                     }
                                 }
                             }
@@ -2847,7 +2895,7 @@ function initDashboardRealTimeUpdates() {
 
                     const ctx = canvas.getContext('2d');
                     const datasets = (data.metrics || []).map((metric, index) => ({
-                        label: metric.label,
+                        label: t(metric.label, 'chart'), // 使用国际化函数翻译标签
                         data: metric.servers.map(s => s.value),
                         backgroundColor: getChartColor(index, 0.8),
                         borderColor: getChartColor(index),
@@ -2879,7 +2927,7 @@ function initDashboardRealTimeUpdates() {
                                     max: 100,
                                     title: {
                                         display: true,
-                                        text: currentLanguage === 'en' ? 'Usage (%)' : '使用率 (%)'
+                                        text: t('usagePercent', 'chart')
                                     }
                                 }
                             }
@@ -2929,7 +2977,7 @@ function initDashboardRealTimeUpdates() {
 
                     const ctx = canvas.getContext('2d');
                     const datasets = (data.appTypes || []).map((appType) => ({
-                        label: appType.label,
+                        label: t(appType.label, 'chart'), // 使用国际化函数翻译标签
                         data: appType.data,
                         backgroundColor: appType.color || '#6366f1',
                         borderColor: '#ffffff',
@@ -2956,7 +3004,7 @@ function initDashboardRealTimeUpdates() {
                                     beginAtZero: true,
                                     title: {
                                         display: true,
-                                        text: currentLanguage === 'en' ? 'Application Count' : '应用数量'
+                                        text: t('applicationCount', 'chart')
                                     },
                                     ticks: {
                                         stepSize: 1
@@ -3511,6 +3559,10 @@ function initDashboardRealTimeUpdates() {
                     showErrorMessage('Refresh failed. Please try again.');
                 }
             }
+
+            // 曝露服务器操作函数供模板调用
+            window.viewServerDetails = viewServerDetails;
+            window.refreshServer = refreshServer;
 
             function showSuccessMessage(message) {
                 console.log('Success:', message);

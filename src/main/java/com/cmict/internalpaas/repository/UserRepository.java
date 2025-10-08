@@ -23,7 +23,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     @Query("SELECT u FROM User u WHERE u.defaultServer.id = :serverId")
     List<User> findByDefaultServerId(@Param("serverId") Long serverId);
-    
+
+    /**
+     * Count users associated with a server via default or accessible bindings
+     */
+    @Query("SELECT COUNT(DISTINCT u.id) FROM User u LEFT JOIN u.availableServers s " +
+           "WHERE s.id = :serverId OR u.defaultServer.id = :serverId")
+    long countUsersBoundToServer(@Param("serverId") Long serverId);
+
     /**
      * 查找有权限访问指定服务器的所有用户
      */

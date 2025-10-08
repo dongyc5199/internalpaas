@@ -7,6 +7,7 @@ import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.repository.ApplicationRepository;
 import com.cmict.internalpaas.repository.ServerMetricsRepository;
 import com.cmict.internalpaas.repository.ServerRepository;
+import com.cmict.internalpaas.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,9 @@ public class ServerGroupService {
 
     @Autowired
     private ApplicationRepository applicationRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private MonitoringService monitoringService;
@@ -56,9 +60,9 @@ public class ServerGroupService {
             // Get latest metrics
             ServerMetrics metrics = metricsRepository.findTopByServerIdOrderByTimestampDesc(server.getId()).orElse(null);
             if (metrics != null) {
-                dto.setCpuUsage(metrics.getCpuUsage());
-                dto.setMemoryUsage(metrics.getMemoryUsage());
-                dto.setDiskUsage(metrics.getDiskUsage());
+                dto.setCpuUsage(metrics.getCpuUsagePercent());
+                dto.setMemoryUsage(metrics.getMemoryUsagePercent());
+                dto.setDiskUsage(metrics.getDiskUsagePercent());
                 dto.setUptime(metrics.getUptime());
                 dto.setLastUpdateTime(metrics.getTimestamp());
 
@@ -66,14 +70,17 @@ public class ServerGroupService {
                 int healthScore = calculateHealthScore(metrics);
                 dto.setHealthScore(healthScore);
             } else {
+                dto.setCpuUsage(0.0);
+                dto.setMemoryUsage(0.0);
+                dto.setDiskUsage(0.0);
                 dto.setHealthScore(0);
             }
 
-            // Get application count (currently not tracked per server)
-            dto.setApps(0);
+            // Get application count
+            dto.setApps(fetchAppCountForServer(server.getId()));
 
-            // Get user count (placeholder, can be enhanced)
-            dto.setUsers(0);
+            // Get user count
+            dto.setUsers(fetchUserCountForServer(server.getId()));
 
             // Determine status
             String status = determineServerStatus(server, metrics);
@@ -133,17 +140,17 @@ public class ServerGroupService {
         List<Server> servers = serverRepository.findAll();
         List<LoadDistributionDto.MetricDistribution> metrics = new ArrayList<>();
 
-        // CPU distribution
-        metrics.add(createMetricDistribution("cpu", "CPU Average Load", servers));
+        // CPU distribution - 返回标识符，由前端国际化
+        metrics.add(createMetricDistribution("cpu", "cpu", servers));
 
-        // Memory distribution
-        metrics.add(createMetricDistribution("memory", "Memory Average Usage", servers));
+        // Memory distribution - 返回标识符，由前端国际化
+        metrics.add(createMetricDistribution("memory", "memory", servers));
 
-        // Disk distribution
-        metrics.add(createMetricDistribution("disk", "Disk Average Usage", servers));
+        // Disk distribution - 返回标识符，由前端国际化
+        metrics.add(createMetricDistribution("disk", "disk", servers));
 
-        // Network distribution (placeholder)
-        metrics.add(createMetricDistribution("network", "Network Average Traffic", servers));
+        // Network distribution (placeholder) - 返回标识符，由前端国际化
+        //metrics.add(createMetricDistribution("network", "network", servers));
 
         // Calculate statistics
         LoadDistributionDto.Statistics stats = calculateDistributionStatistics(metrics);
@@ -172,8 +179,9 @@ public class ServerGroupService {
             appCounts.add(0);
         }
 
+        // 返回标识符，由前端国际化
         appTypes.add(new AppDistributionDto.AppTypeData(
-                "total", "Total Applications", appCounts, "#2F9BFF"));
+                "total", "total", appCounts, "#2F9BFF"));
 
         return new AppDistributionDto(serverNames, appTypes);
     }
@@ -217,6 +225,42 @@ public class ServerGroupService {
             } catch (Exception e) {
                 logger.error("Failed to refresh server {}: {}", serverId, e.getMessage());
             }
+        }
+    }
+
+    private int fetchAppCountForServer(Long serverId) {
+        if (serverId == null) {
+            return 0;
+        }
+
+        try {
+            long count = applicationRepository.countApplicationsBoundToServer(serverId);
+            if (count > Integer.MAX_VALUE) {
+                logger.warn("Application count for server {} exceeds int range: {}", serverId, count);
+                return Integer.MAX_VALUE;
+            }
+            return (int) count;
+        } catch (Exception ex) {
+            logger.warn("Failed to count applications for server {}", serverId, ex);
+            return 0;
+        }
+    }
+
+    private int fetchUserCountForServer(Long serverId) {
+        if (serverId == null) {
+            return 0;
+        }
+
+        try {
+            long count = userRepository.countUsersBoundToServer(serverId);
+            if (count > Integer.MAX_VALUE) {
+                logger.warn("User count for server {} exceeds int range: {}", serverId, count);
+                return Integer.MAX_VALUE;
+            }
+            return (int) count;
+        } catch (Exception ex) {
+            logger.warn("Failed to count users for server {}", serverId, ex);
+            return 0;
         }
     }
 
