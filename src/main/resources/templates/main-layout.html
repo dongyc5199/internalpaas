@@ -3073,6 +3073,8 @@ function initDashboardRealTimeUpdates() {
 
                     const statusText = getStatusText(server.status);
                     const viewDetailsTitle = currentLanguage === 'en' ? 'View Details' : '查看详情';
+                    const sshTitle = currentLanguage === 'en' ? 'Open SSH' : '打开 SSH';
+
                     const refreshTitle = currentLanguage === 'en' ? 'Refresh' : '刷新';
 
                     return `
@@ -3143,8 +3145,9 @@ function initDashboardRealTimeUpdates() {
                             <td>${server.uptime || '--'}</td>
                             <td>
                                 <div class="action-buttons">
-                                    <button class="btn-icon" onclick="viewServerDetails(${server.id})" title="${viewDetailsTitle}">👁️</button>
-                                    <button class="btn-icon" onclick="refreshServer(${server.id})" title="${refreshTitle}">🔄</button>
+                                    <button class="btn-icon" onclick="viewServerDetails(${server.id})" title="${viewDetailsTitle}">详情</button>
+                                    <button class="btn-icon" onclick="connectToServer(${server.id})" title="${sshTitle}" aria-label="${sshTitle}">SSH</button>
+                                    <button class="btn-icon" onclick="refreshServer(${server.id})" title="${refreshTitle}">刷新</button>
                                 </div>
                             </td>
                         </tr>
@@ -3164,6 +3167,8 @@ function initDashboardRealTimeUpdates() {
                         const healthLabel = currentLanguage === 'en' ? 'Health' : '健康度';
                         const appsLabel = currentLanguage === 'en' ? 'Apps' : '应用';
                         const usersLabel = currentLanguage === 'en' ? 'Users' : '用户';
+                        const sshTitle = currentLanguage === 'en' ? 'Open SSH' : '打开 SSH';
+
 
                         return `
                             <div class="server-card" data-server-id="${server.id}">
@@ -3198,6 +3203,7 @@ function initDashboardRealTimeUpdates() {
                                     </div>
                                     <div class="action-buttons">
                                         <button class="btn-icon" onclick="viewServerDetails(${server.id})">👁️</button>
+                                        <button class="btn-icon" onclick="connectToServer(${server.id})" title="${sshTitle}" aria-label="${sshTitle}">SSH</button>
                                         <button class="btn-icon" onclick="refreshServer(${server.id})">🔄</button>
                                     </div>
                                 </div>
