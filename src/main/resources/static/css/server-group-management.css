@@ -1152,22 +1152,8 @@
     gap: 24px;
 }
 
-.server-detail-breadcrumbs {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: #64748b;
-}
-
-.server-detail-breadcrumbs span + span::before {
-    content: '/';
-    margin-right: 8px;
-    color: #94a3b8;
-}
-
 .server-detail-title {
-    margin-top: 10px;
+    margin-top: 0;
     display: grid;
     gap: 6px;
 }
