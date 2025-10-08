@@ -1,0 +1,348 @@
+<div th:fragment="server-detail-content">
+    <div class="server-detail-layout" data-role="server-detail-layout">
+        <nav class="server-detail-nav" aria-label="页面导航" data-role="server-detail-nav">
+            <div class="server-detail-nav__title">页面导航</div>
+            <ul class="server-detail-nav__list">
+                <li>
+                    <a class="server-detail-nav__link is-active" href="#server-overview" data-target="server-overview">
+                        <span class="server-detail-nav__label">基本信息</span>
+                        <span class="server-detail-nav__hint">服务器概览</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="server-detail-nav__link" href="#realtime-monitor" data-target="realtime-monitor">
+                        <span class="server-detail-nav__label">实时监控</span>
+                        <span class="server-detail-nav__hint">实时资源监控</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="server-detail-nav__link" href="#process-info" data-target="process-info">
+                        <span class="server-detail-nav__label">进程信息</span>
+                        <span class="server-detail-nav__hint">进程信息</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="server-detail-nav__link" href="#app-deployments" data-target="app-deployments">
+                        <span class="server-detail-nav__label">应用情况</span>
+                        <span class="server-detail-nav__hint">部署的应用</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="server-detail-nav__link" href="#user-access" data-target="user-access">
+                        <span class="server-detail-nav__label">用户信息</span>
+                        <span class="server-detail-nav__hint">授权用户列表</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="server-detail-main" data-role="server-detail-main">
+            <header class="server-detail-header">
+                <div class="server-detail-header__meta">
+                    <nav class="server-detail-breadcrumbs">
+                        <span>服务器群组</span>
+                        <span>服务器列表</span>
+                        <span>服务器详情</span>
+                    </nav>
+                    <div class="server-detail-title">
+                        <h1 class="server-detail-title__name" data-role="detail-server-name">prod-core-01</h1>
+                        <p class="server-detail-title__desc">
+                            <span data-role="detail-description">生产核心节点</span>
+                            <span class="server-detail-title__divider">·</span>
+                            <span data-role="detail-address">10.12.88.43</span>
+                            <span class="server-detail-title__divider">·</span>
+                            <span>连接状态：</span>
+                            <span class="server-detail-chip server-detail-chip--ok" data-role="detail-status-chip">在线 · 3 分钟前更新</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="server-detail-header__actions">
+                    <button class="btn btn-secondary" type="button" data-action="detail-back">返回列表</button>
+                    <button class="btn btn-primary" type="button" data-action="detail-open-ssh">打开 SSH</button>
+                </div>
+            </header>
+
+            <section class="server-detail-card" id="server-overview">
+                <div class="server-detail-card__header">
+                    <h2 class="server-detail-card__title">服务器概览</h2>
+                    <span class="server-detail-card__subtitle" data-role="detail-update-time">最近更新：3 分钟前</span>
+                </div>
+                <div class="server-detail-info-grid">
+                    <div class="server-detail-info-item">
+                        <span class="server-detail-info-label">主机名</span>
+                        <span class="server-detail-info-value" data-role="detail-hostname">prod-core-01</span>
+                    </div>
+                    <div class="server-detail-info-item">
+                        <span class="server-detail-info-label">操作系统</span>
+                        <span class="server-detail-info-value" data-role="detail-os">Ubuntu 22.04.4 LTS</span>
+                    </div>
+                    <div class="server-detail-info-item">
+                        <span class="server-detail-info-label">内核版本</span>
+                        <span class="server-detail-info-value" data-role="detail-kernel">5.15.0-1041-azure</span>
+                    </div>
+                    <div class="server-detail-info-item">
+                        <span class="server-detail-info-label">CPU</span>
+                        <span class="server-detail-info-value" data-role="detail-cpu">Intel Xeon Gold 6338 · 32 核</span>
+                    </div>
+                    <div class="server-detail-info-item">
+                        <span class="server-detail-info-label">内存总量</span>
+                        <span class="server-detail-info-value" data-role="detail-memory">128 GB</span>
+                    </div>
+                    <div class="server-detail-info-item">
+                        <span class="server-detail-info-label">主要磁盘</span>
+                        <span class="server-detail-info-value" data-role="detail-disk">/dev/nvme0n1p1 · 300 GB</span>
+                    </div>
+                    <div class="server-detail-info-item">
+                        <span class="server-detail-info-label">业务网卡</span>
+                        <span class="server-detail-info-value" data-role="detail-nic">eth0 · 10.12.88.43/24</span>
+                    </div>
+                    <div class="server-detail-info-item">
+                        <span class="server-detail-info-label">运行时长</span>
+                        <span class="server-detail-info-value" data-role="detail-uptime">21 天 06 小时</span>
+                    </div>
+                    <div class="server-detail-info-item">
+                        <span class="server-detail-info-label">工作目录</span>
+                        <span class="server-detail-info-value" data-role="detail-workdir">/srv/app/prod</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="server-detail-section" id="realtime-monitor">
+                <div class="server-detail-section__header">
+                    <div>
+                        <h2 class="server-detail-section__title">实时资源监控</h2>
+                        <p class="server-detail-section__subtitle">监控 CPU、内存、磁盘与网络的实时趋势</p>
+                    </div>
+                    <div class="server-detail-section__actions">
+                        <button class="btn btn-ghost" type="button" data-action="detail-toggle-refresh">暂停刷新</button>
+                        <button class="btn btn-ghost" type="button" data-action="detail-toggle-charts" id="serverDetailToggleCharts">收起图表</button>
+                    </div>
+                </div>
+                <div class="server-detail-card server-detail-card--with-grid">
+                    <div class="server-detail-monitor-grid" id="serverDetailMonitorGrid">
+                        <article class="server-detail-subcard" data-metric="cpu">
+                            <span class="server-detail-tag">CPU</span>
+                            <h3 class="server-detail-subcard__title">CPU 使用率</h3>
+                            <div class="server-detail-chart" aria-hidden="false">
+                                <canvas id="serverDetailCpuChart" aria-label="CPU 使用率"></canvas>
+                            </div>
+                            <p class="server-detail-subcard__meta">1 分钟负载 0.32 · 5 分钟 0.41 · 15 分钟 0.48</p>
+                        </article>
+                        <article class="server-detail-subcard" data-metric="memory">
+                            <span class="server-detail-tag">MEMORY</span>
+                            <h3 class="server-detail-subcard__title">内存占用</h3>
+                            <div class="server-detail-chart">
+                                <canvas id="serverDetailMemChart" aria-label="内存占用"></canvas>
+                            </div>
+                            <p class="server-detail-subcard__meta">总计 128 GB · 已用 81 GB · 可用 39 GB</p>
+                        </article>
+                        <article class="server-detail-subcard" data-metric="disk">
+                            <span class="server-detail-tag">DISK</span>
+                            <h3 class="server-detail-subcard__title">磁盘 I/O</h3>
+                            <div class="server-detail-chart">
+                                <canvas id="serverDetailDiskChart" aria-label="磁盘 I/O"></canvas>
+                            </div>
+                            <p class="server-detail-subcard__meta">/data/logs 写入峰值 120 MB/s · 平均 65 MB/s</p>
+                        </article>
+                        <article class="server-detail-subcard" data-metric="network">
+                            <span class="server-detail-tag">NETWORK</span>
+                            <h3 class="server-detail-subcard__title">网络带宽</h3>
+                            <div class="server-detail-chart">
+                                <canvas id="serverDetailNetChart" aria-label="网络带宽"></canvas>
+                            </div>
+                            <p class="server-detail-subcard__meta">当前吞吐 1.6 Gbps · 峰值 2.4 Gbps</p>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section class="server-detail-section" id="process-info">
+                <div class="server-detail-section__header">
+                    <div>
+                        <h2 class="server-detail-section__title">进程信息</h2>
+                        <p class="server-detail-section__subtitle">观测关键进程的实时占用情况</p>
+                    </div>
+                    <div class="server-detail-section__actions">
+                        <button class="btn btn-ghost" type="button" data-action="detail-refresh-process">刷新</button>
+                    </div>
+                </div>
+                <div class="server-detail-card server-detail-card--table">
+                    <div class="server-detail-table-wrapper">
+                        <table class="server-detail-table" aria-describedby="process-info">
+                            <thead>
+                                <tr>
+                                    <th scope="col">PID</th>
+                                    <th scope="col">进程</th>
+                                    <th scope="col">CPU</th>
+                                    <th scope="col">内存</th>
+                                    <th scope="col">状态</th>
+                                    <th scope="col">运行时长</th>
+                                    <th scope="col">命令</th>
+                                </tr>
+                            </thead>
+                            <tbody data-role="detail-process-list">
+                                <tr>
+                                    <td>2486</td>
+                                    <td>java</td>
+                                    <td>42%</td>
+                                    <td>2.8 GB</td>
+                                    <td><span class="server-detail-chip server-detail-chip--ok">运行中</span></td>
+                                    <td>21 天 06:11</td>
+                                    <td>/srv/app/prod/bin/start.sh</td>
+                                </tr>
+                                <tr>
+                                    <td>4120</td>
+                                    <td>node</td>
+                                    <td>8%</td>
+                                    <td>512 MB</td>
+                                    <td><span class="server-detail-chip server-detail-chip--warn">监控中</span></td>
+                                    <td>05 天 04:28</td>
+                                    <td>/srv/app/prod/monitor/dashboard.js</td>
+                                </tr>
+                                <tr>
+                                    <td>5332</td>
+                                    <td>python3</td>
+                                    <td>3%</td>
+                                    <td>168 MB</td>
+                                    <td><span class="server-detail-chip server-detail-chip--info">采集中</span></td>
+                                    <td>00 天 11:05</td>
+                                    <td>python3 metrics_agent.py</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="server-detail-section" id="app-deployments">
+                <div class="server-detail-section__header">
+                    <div>
+                        <h2 class="server-detail-section__title">部署的应用</h2>
+                        <p class="server-detail-section__subtitle">按应用查看版本、负责人与最近部署</p>
+                    </div>
+                    <div class="server-detail-section__actions">
+                        <button class="btn btn-ghost" type="button" data-action="detail-filter-app">筛选</button>
+                    </div>
+                </div>
+                <div class="server-detail-card server-detail-card--table">
+                    <div class="server-detail-table-wrapper">
+                        <table class="server-detail-table" aria-describedby="app-deployments">
+                            <thead>
+                                <tr>
+                                    <th scope="col">应用名称</th>
+                                    <th scope="col">版本</th>
+                                    <th scope="col">负责人</th>
+                                    <th scope="col">运行状态</th>
+                                    <th scope="col">端口</th>
+                                    <th scope="col">最近部署</th>
+                                    <th scope="col">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody data-role="detail-app-list">
+                                <tr>
+                                    <td>
+                                        <strong>order-service</strong>
+                                        <span class="server-detail-caption">订单聚合服务</span>
+                                    </td>
+                                    <td><span class="server-detail-chip server-detail-chip--info">v2.4.1</span></td>
+                                    <td>liu.yuan</td>
+                                    <td><span class="server-detail-chip server-detail-chip--ok">运行中</span></td>
+                                    <td>8080</td>
+                                    <td>2024-05-12 09:18</td>
+                                    <td><button class="btn btn-ghost" type="button">滚动重启</button></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <strong>inventory-api</strong>
+                                        <span class="server-detail-caption">库存同步服务</span>
+                                    </td>
+                                    <td><span class="server-detail-chip server-detail-chip--info">v1.18.6</span></td>
+                                    <td>zhang.xu</td>
+                                    <td><span class="server-detail-chip server-detail-chip--warn">待确认</span></td>
+                                    <td>9107</td>
+                                    <td>2024-05-09 18:30</td>
+                                    <td><button class="btn btn-ghost" type="button">启用</button></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <strong>report-engine</strong>
+                                        <span class="server-detail-caption">报表异步生成</span>
+                                    </td>
+                                    <td><span class="server-detail-chip server-detail-chip--info">v3.0.2</span></td>
+                                    <td>fang.min</td>
+                                    <td><span class="server-detail-chip server-detail-chip--ok">运行中</span></td>
+                                    <td>9208</td>
+                                    <td>2024-05-10 22:54</td>
+                                    <td><button class="btn btn-ghost" type="button">查看日志</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="server-detail-section" id="user-access">
+                <div class="server-detail-section__header">
+                    <div>
+                        <h2 class="server-detail-section__title">授权用户列表</h2>
+                        <p class="server-detail-section__subtitle">按权限审计服务器访问账号</p>
+                    </div>
+                    <div class="server-detail-section__actions">
+                        <button class="btn btn-ghost" type="button" data-action="detail-filter-user">按角色筛选</button>
+                    </div>
+                </div>
+                <div class="server-detail-card server-detail-card--table">
+                    <div class="server-detail-table-wrapper">
+                        <table class="server-detail-table" aria-describedby="user-access">
+                            <thead>
+                                <tr>
+                                    <th scope="col">用户名</th>
+                                    <th scope="col">角色</th>
+                                    <th scope="col">默认服务</th>
+                                    <th scope="col">授权类型</th>
+                                    <th scope="col">最近登录</th>
+                                    <th scope="col">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody data-role="detail-user-list">
+                                <tr>
+                                    <td>
+                                        <strong>li.jing</strong>
+                                        <span class="server-detail-caption">研发负责人</span>
+                                    </td>
+                                    <td><span class="server-detail-chip server-detail-chip--ok">管理员</span></td>
+                                    <td>order-service</td>
+                                    <td>固定授权</td>
+                                    <td>2024-05-12 09:04</td>
+                                    <td><button class="btn btn-ghost" type="button">收回权限</button></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <strong>ops-temp</strong>
+                                        <span class="server-detail-caption">临时运维账号</span>
+                                    </td>
+                                    <td><span class="server-detail-chip server-detail-chip--info">运维</span></td>
+                                    <td>inventory-api</td>
+                                    <td>临时授权 · 剩余 12 小时</td>
+                                    <td>2024-05-12 08:52</td>
+                                    <td><button class="btn btn-ghost" type="button">延长</button></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <strong>zhang.xu</strong>
+                                        <span class="server-detail-caption">BI 分析师</span>
+                                    </td>
+                                    <td><span class="server-detail-chip server-detail-chip--info">开发者</span></td>
+                                    <td>report-engine</td>
+                                    <td>项目授权</td>
+                                    <td>2024-05-11 21:18</td>
+                                    <td><button class="btn btn-ghost" type="button">调整角色</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>

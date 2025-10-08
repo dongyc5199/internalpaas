@@ -2633,6 +2633,23 @@ function initDashboardRealTimeUpdates() {
             let serverGroupManagementInitialized = false;
             let serverGroupAutoRefreshTimer = null;
 
+            // Server detail overlay state
+            let serverDetailOverlay = null;
+            let serverDetailShell = null;
+            let serverDetailBody = null;
+            let serverDetailNavLinks = [];
+            let serverDetailObserver = null;
+            let serverDetailCharts = [];
+            let serverDetailChartTimer = null;
+            let serverDetailChartsPaused = false;
+            let serverDetailToggleRefreshBtn = null;
+            let serverDetailToggleChartsBtn = null;
+            let serverDetailMonitorGrid = null;
+            let serverDetailCurrentServer = null;
+            let serverDetailPreviousFocus = null;
+            let serverDetailTimeFormatter = null;
+            let serverDetailBodyOverflowBackup = '';
+
             function initServerGroupManagement() {
                 if (!document.querySelector('.server-group-management')) {
                     return;
@@ -2648,6 +2665,7 @@ function initDashboardRealTimeUpdates() {
 
                 initServerGroupData();
                 initServerGroupEvents();
+                initServerDetailOverlay();
                 startServerGroupAutoRefresh();
 
                 serverGroupManagementInitialized = true;
@@ -2656,6 +2674,7 @@ function initDashboardRealTimeUpdates() {
 
             function cleanupServerGroupManagement() {
                 stopServerGroupAutoRefresh();
+                teardownServerDetailOverlay();
                 serverGroupManagementInitialized = false;
                 console.log('Server group management cleaned up');
             }
@@ -3542,8 +3561,568 @@ function initDashboardRealTimeUpdates() {
                 pollingIntervals.set(serverId, intervalId);
             };
 
+            const SERVER_DETAIL_UPDATE_INTERVAL = 5000;
+            const SERVER_DETAIL_MAX_POINTS = 36;
+            const SERVER_DETAIL_CHART_DEFINITIONS = [
+                {
+                    id: 'serverDetailCpuChart',
+                    label: 'CPU %',
+                    color: '#3b82f6',
+                    baseData: [32, 41, 35, 38, 40, 42, 38],
+                    min: 10,
+                    max: 95,
+                    variance: 6,
+                    decimals: 1
+                },
+                {
+                    id: 'serverDetailMemChart',
+                    label: currentLanguage === 'en' ? 'Memory %' : '内存使用率 %',
+                    color: '#22d3ee',
+                    baseData: [62, 63, 64, 65, 66, 66, 65],
+                    min: 40,
+                    max: 95,
+                    variance: 2,
+                    decimals: 1
+                },
+                {
+                    id: 'serverDetailDiskChart',
+                    label: currentLanguage === 'en' ? 'Disk IO MB/s' : '写入 MB/s',
+                    color: '#f97316',
+                    baseData: [52, 68, 75, 80, 92, 88, 70],
+                    min: 20,
+                    max: 160,
+                    variance: 12,
+                    decimals: 0
+                },
+                {
+                    id: 'serverDetailNetChart',
+                    label: currentLanguage === 'en' ? 'Network Gbps' : '吞吐 Gbps',
+                    color: '#34d399',
+                    baseData: [1.2, 1.6, 1.4, 1.8, 1.5, 1.7, 1.6],
+                    min: 0.4,
+                    max: 3,
+                    variance: 0.25,
+                    decimals: 2
+                }
+            ];
+
+            function initServerDetailOverlay() {
+                serverDetailOverlay = document.querySelector('[data-role="server-detail-overlay"]');
+
+                if (!serverDetailOverlay) {
+                    serverDetailShell = null;
+                    serverDetailBody = null;
+                    return;
+                }
+
+                serverDetailShell = serverDetailOverlay.querySelector('.server-detail-shell');
+                serverDetailBody = serverDetailOverlay.querySelector('[data-role="server-detail-body"]');
+                serverDetailToggleRefreshBtn = serverDetailOverlay.querySelector('[data-action="detail-toggle-refresh"]');
+                serverDetailToggleChartsBtn = serverDetailOverlay.querySelector('[data-action="detail-toggle-charts"]');
+                serverDetailMonitorGrid = serverDetailOverlay.querySelector('#serverDetailMonitorGrid');
+
+                if (serverDetailOverlay.dataset.initialized === 'true') {
+                    return;
+                }
+
+                serverDetailOverlay.dataset.initialized = 'true';
+
+                const closeElements = serverDetailOverlay.querySelectorAll('[data-action="detail-close"]');
+                closeElements.forEach((element) => {
+                    element.addEventListener('click', () => closeServerDetailOverlay());
+                });
+
+                const sshButtons = serverDetailOverlay.querySelectorAll('[data-action="detail-toolbar-ssh"], [data-action="detail-open-ssh"]');
+                sshButtons.forEach((button) => {
+                    button.addEventListener('click', () => {
+                        if (serverDetailCurrentServer) {
+                            connectToServer(serverDetailCurrentServer.id);
+                        }
+                    });
+                });
+
+                const backButtons = serverDetailOverlay.querySelectorAll('[data-action="detail-back"]');
+                backButtons.forEach((button) => {
+                    button.addEventListener('click', () => closeServerDetailOverlay());
+                });
+
+                const refreshProcessButtons = serverDetailOverlay.querySelectorAll('[data-action="detail-refresh-process"]');
+                refreshProcessButtons.forEach((button) => {
+                    button.addEventListener('click', () => {
+                        console.log('Process list refresh requested');
+                    });
+                });
+
+                const filterButtons = serverDetailOverlay.querySelectorAll('[data-action="detail-filter-app"], [data-action="detail-filter-user"]');
+                filterButtons.forEach((button) => {
+                    button.addEventListener('click', () => {
+                        console.log('Filter action requested:', button.dataset.action);
+                    });
+                });
+
+                if (serverDetailToggleRefreshBtn) {
+                    serverDetailToggleRefreshBtn.addEventListener('click', () => {
+                        serverDetailChartsPaused = !serverDetailChartsPaused;
+                        if (serverDetailChartsPaused) {
+                            stopServerDetailCharts();
+                            serverDetailToggleRefreshBtn.textContent = currentLanguage === 'en' ? 'Resume' : '恢复刷新';
+                        } else {
+                            startServerDetailCharts();
+                            serverDetailToggleRefreshBtn.textContent = currentLanguage === 'en' ? 'Pause' : '暂停刷新';
+                        }
+                    });
+                }
+
+                if (serverDetailToggleChartsBtn && serverDetailMonitorGrid) {
+                    serverDetailToggleChartsBtn.addEventListener('click', () => {
+                        const isCollapsed = serverDetailMonitorGrid.classList.toggle('is-collapsed');
+                        serverDetailToggleChartsBtn.textContent = isCollapsed
+                            ? (currentLanguage === 'en' ? 'Expand charts' : '展开图表')
+                            : (currentLanguage === 'en' ? 'Collapse charts' : '收起图表');
+                        if (!isCollapsed) {
+                            requestAnimationFrame(() => {
+                                serverDetailCharts.forEach((chart) => chart?.resize());
+                            });
+                        }
+                    });
+                }
+
+                const aside = serverDetailOverlay.querySelector('.server-detail-overlay__aside');
+                if (aside) {
+                    aside.addEventListener('click', () => closeServerDetailOverlay());
+                }
+
+                serverDetailOverlay.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape' && serverDetailOverlay.classList.contains('is-open')) {
+                        closeServerDetailOverlay();
+                    }
+                });
+            }
+
+            function teardownServerDetailOverlay() {
+                closeServerDetailOverlay({ skipFocusRestore: true });
+
+                if (serverDetailOverlay) {
+                    delete serverDetailOverlay.dataset.initialized;
+                }
+
+                serverDetailOverlay = null;
+                serverDetailShell = null;
+                serverDetailBody = null;
+                serverDetailToggleRefreshBtn = null;
+                serverDetailToggleChartsBtn = null;
+                serverDetailMonitorGrid = null;
+                serverDetailCurrentServer = null;
+                serverDetailPreviousFocus = null;
+            }
+
+            function openServerDetailOverlay() {
+                if (!serverDetailOverlay) {
+                    return;
+                }
+
+                serverDetailPreviousFocus = document.activeElement;
+                serverDetailBodyOverflowBackup = document.body.style.overflow;
+                document.body.style.overflow = 'hidden';
+
+                serverDetailOverlay.setAttribute('aria-hidden', 'false');
+                serverDetailOverlay.classList.add('is-open');
+
+                if (serverDetailBody) {
+                    serverDetailBody.scrollTop = 0;
+                }
+
+                initServerDetailNavigation();
+                initServerDetailCharts();
+
+                requestAnimationFrame(() => {
+                    serverDetailShell?.focus({ preventScroll: true });
+                });
+            }
+
+            function closeServerDetailOverlay(options = {}) {
+                if (!serverDetailOverlay) {
+                    return;
+                }
+
+                serverDetailOverlay.setAttribute('aria-hidden', 'true');
+                serverDetailOverlay.classList.remove('is-open');
+
+                destroyServerDetailCharts();
+                destroyServerDetailNavigation();
+
+                serverDetailChartsPaused = false;
+                if (serverDetailToggleRefreshBtn) {
+                    serverDetailToggleRefreshBtn.textContent = currentLanguage === 'en' ? 'Pause' : '暂停刷新';
+                }
+
+                if (serverDetailMonitorGrid) {
+                    serverDetailMonitorGrid.classList.remove('is-collapsed');
+                }
+
+                if (serverDetailToggleChartsBtn) {
+                    serverDetailToggleChartsBtn.textContent = currentLanguage === 'en' ? 'Collapse charts' : '收起图表';
+                }
+
+                document.body.style.overflow = serverDetailBodyOverflowBackup || '';
+
+                if (!options.skipFocusRestore && serverDetailPreviousFocus && typeof serverDetailPreviousFocus.focus === 'function') {
+                    serverDetailPreviousFocus.focus();
+                }
+
+                serverDetailPreviousFocus = null;
+            }
+
             function viewServerDetails(serverId) {
-                console.log('Viewing server details:', serverId);
+                if (!serverDetailOverlay || !document.body.contains(serverDetailOverlay)) {
+                    initServerDetailOverlay();
+                }
+
+                if (!serverDetailOverlay) {
+                    console.warn('Server detail overlay is not available');
+                    return;
+                }
+
+                const server = serverGroupListCache.find((item) => String(item.id) === String(serverId));
+                serverDetailCurrentServer = server || null;
+
+                updateServerDetailContent(server);
+                openServerDetailOverlay();
+            }
+
+            function updateServerDetailContent(server) {
+                if (!serverDetailOverlay) {
+                    return;
+                }
+
+                const select = (selector) => serverDetailOverlay.querySelector(selector);
+                const setText = (selector, value, fallback = '--') => {
+                    const element = select(selector);
+                    if (element) {
+                        element.textContent = value && value !== '' ? value : fallback;
+                    }
+                };
+
+                const name = server?.name || (currentLanguage === 'en' ? 'Unknown Server' : '未知服务器');
+                const description = server?.description || (currentLanguage === 'en' ? 'Core node' : '生产核心节点');
+                const addressPart = server?.address ? server.address : '';
+                const portPart = server?.port != null ? `:${server.port}` : '';
+                const addressText = `${addressPart}${portPart}`.replace(/^:/, '') || '--';
+                const subtitle = server
+                    ? [name, addressText !== '--' ? addressText : null].filter(Boolean).join(' · ')
+                    : (currentLanguage === 'en' ? 'No server selected' : '未选择服务器');
+
+                setText('[data-role="detail-server-name"]', name);
+                setText('[data-role="detail-description"]', description);
+                setText('[data-role="detail-address"]', addressText);
+                setText('[data-role="detail-panel-subtitle"]', subtitle, subtitle);
+                setText('[data-role="detail-hostname"]', server?.hostname || name);
+                setText('[data-role="detail-os"]', server?.os || 'Ubuntu 22.04.4 LTS');
+                setText('[data-role="detail-kernel"]', server?.kernel || '5.15.0-1041-azure');
+                setText('[data-role="detail-cpu"]', server?.cpu || 'Intel Xeon Gold 6338 · 32 核');
+                setText('[data-role="detail-memory"]', server?.memory || '128 GB');
+                setText('[data-role="detail-disk"]', server?.disk || '/dev/nvme0n1p1 · 300 GB');
+                setText('[data-role="detail-nic"]', server?.nic || 'eth0 · 10.12.88.43/24');
+                setText('[data-role="detail-uptime"]', server?.uptime || '--');
+                setText('[data-role="detail-workdir"]', server?.workdir || '/srv/app/prod');
+
+                const updateTimeText = server?.lastUpdated
+                    ? `${currentLanguage === 'en' ? 'Last updated' : '最近更新'}：${server.lastUpdated}`
+                    : currentLanguage === 'en' ? 'Last updated: --' : '最近更新：--';
+                setText('[data-role="detail-update-time"]', updateTimeText);
+
+                const statusChip = select('[data-role="detail-status-chip"]');
+                const statusText = getStatusText(server?.status) || (currentLanguage === 'en' ? 'Unknown' : '未知');
+                if (statusChip) {
+                    applyServerDetailStatus(server?.status, statusChip);
+                    const statusSuffix = server?.statusUpdatedAt ? ` · ${server.statusUpdatedAt}` : '';
+                    statusChip.textContent = `${statusText}${statusSuffix}`;
+                }
+            }
+
+            function applyServerDetailStatus(status, element) {
+                if (!element) {
+                    return;
+                }
+
+                const classes = [
+                    'server-detail-chip--ok',
+                    'server-detail-chip--warn',
+                    'server-detail-chip--info',
+                    'server-detail-chip--error',
+                    'server-detail-chip--neutral'
+                ];
+                element.classList.remove(...classes);
+
+                const normalized = (status || '').toString().toLowerCase();
+                let nextClass = 'server-detail-chip--neutral';
+
+                if (normalized === 'online' || normalized === 'running' || normalized === 'ok') {
+                    nextClass = 'server-detail-chip--ok';
+                } else if (normalized === 'warning' || normalized === 'warn') {
+                    nextClass = 'server-detail-chip--warn';
+                } else if (normalized === 'offline' || normalized === 'error' || normalized === 'critical') {
+                    nextClass = 'server-detail-chip--error';
+                } else if (normalized === 'pending' || normalized === 'checking') {
+                    nextClass = 'server-detail-chip--info';
+                }
+
+                element.classList.add(nextClass);
+            }
+
+            function initServerDetailNavigation() {
+                if (!serverDetailOverlay || !serverDetailBody) {
+                    return;
+                }
+
+                destroyServerDetailNavigation();
+
+                const nav = serverDetailOverlay.querySelector('[data-role="server-detail-nav"]');
+                if (!nav) {
+                    return;
+                }
+
+                serverDetailNavLinks = Array.from(nav.querySelectorAll('.server-detail-nav__link'));
+                if (!serverDetailNavLinks.length) {
+                    return;
+                }
+
+                serverDetailObserver = new IntersectionObserver((entries) => {
+                    const visible = entries
+                        .filter((entry) => entry.isIntersecting)
+                        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+                    if (visible.length) {
+                        setServerDetailActiveNav(visible[0].target.id);
+                    }
+                }, {
+                    root: serverDetailBody,
+                    rootMargin: '-45% 0px -45% 0px',
+                    threshold: 0.1
+                });
+
+                serverDetailNavLinks.forEach((link) => {
+                    const targetId = link.dataset.target;
+                    const target = targetId ? document.getElementById(targetId) : null;
+                    if (target) {
+                        serverDetailObserver.observe(target);
+                    }
+                    link.addEventListener('click', handleServerDetailNavClick);
+                });
+
+                const firstTarget = serverDetailNavLinks[0]?.dataset.target;
+                if (firstTarget) {
+                    setServerDetailActiveNav(firstTarget);
+                }
+            }
+
+            function destroyServerDetailNavigation() {
+                if (serverDetailObserver) {
+                    serverDetailObserver.disconnect();
+                    serverDetailObserver = null;
+                }
+
+                serverDetailNavLinks.forEach((link) => {
+                    link.classList.remove('is-active');
+                    link.removeEventListener('click', handleServerDetailNavClick);
+                });
+
+                serverDetailNavLinks = [];
+            }
+
+            function setServerDetailActiveNav(targetId) {
+                if (!targetId) {
+                    return;
+                }
+
+                serverDetailNavLinks.forEach((link) => {
+                    const linkTarget = link.dataset.target;
+                    const isActive = linkTarget === targetId || linkTarget === `#${targetId}`;
+                    link.classList.toggle('is-active', isActive);
+                });
+            }
+
+            function handleServerDetailNavClick(event) {
+                event.preventDefault();
+                const link = event.currentTarget;
+                const targetId = link.dataset.target;
+                if (!targetId) {
+                    return;
+                }
+
+                const target = document.getElementById(targetId);
+                if (target) {
+                    scrollToServerDetailSection(target);
+                }
+
+                setServerDetailActiveNav(targetId);
+            }
+
+            function scrollToServerDetailSection(target) {
+                if (!serverDetailBody) {
+                    return;
+                }
+
+                const containerRect = serverDetailBody.getBoundingClientRect();
+                const targetRect = target.getBoundingClientRect();
+                const offset = targetRect.top - containerRect.top + serverDetailBody.scrollTop - 16;
+                serverDetailBody.scrollTo({ top: offset, behavior: 'smooth' });
+            }
+
+            function initServerDetailCharts() {
+                if (typeof Chart === 'undefined') {
+                    console.warn('Chart.js 未加载，无法初始化服务器详情图表');
+                    return;
+                }
+
+                destroyServerDetailCharts();
+
+                serverDetailTimeFormatter = new Intl.DateTimeFormat(getServerDetailLocale(), {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+
+                serverDetailCharts = SERVER_DETAIL_CHART_DEFINITIONS.map((definition) => {
+                    const canvas = document.getElementById(definition.id);
+                    if (!canvas) {
+                        return null;
+                    }
+
+                    const context = canvas.getContext('2d');
+                    const labels = buildServerDetailLabels(definition.baseData.length);
+                    const chart = new Chart(context, getServerDetailChartConfig(definition, labels));
+                    chart.$definition = definition;
+                    return chart;
+                }).filter(Boolean);
+
+                if (!serverDetailCharts.length) {
+                    return;
+                }
+
+                serverDetailChartsPaused = false;
+                startServerDetailCharts();
+            }
+
+            function destroyServerDetailCharts() {
+                stopServerDetailCharts();
+                serverDetailCharts.forEach((chart) => {
+                    if (chart) {
+                        chart.destroy();
+                    }
+                });
+                serverDetailCharts = [];
+            }
+
+            function startServerDetailCharts() {
+                stopServerDetailCharts();
+
+                if (!serverDetailCharts.length) {
+                    return;
+                }
+
+                serverDetailChartTimer = setInterval(() => {
+                    serverDetailCharts.forEach((chart) => appendServerDetailPoint(chart));
+                }, SERVER_DETAIL_UPDATE_INTERVAL);
+            }
+
+            function stopServerDetailCharts() {
+                if (serverDetailChartTimer) {
+                    clearInterval(serverDetailChartTimer);
+                    serverDetailChartTimer = null;
+                }
+            }
+
+            function appendServerDetailPoint(chart) {
+                if (!chart || !chart.$definition || !serverDetailTimeFormatter) {
+                    return;
+                }
+
+                const dataset = chart.data.datasets[0];
+                const labels = chart.data.labels;
+                const definition = chart.$definition;
+
+                const lastValue = dataset.data[dataset.data.length - 1];
+                const nextValue = getNextServerDetailValue(lastValue, definition);
+
+                dataset.data.push(nextValue);
+                labels.push(serverDetailTimeFormatter.format(new Date()));
+
+                if (dataset.data.length > SERVER_DETAIL_MAX_POINTS) {
+                    dataset.data.shift();
+                }
+
+                if (labels.length > SERVER_DETAIL_MAX_POINTS) {
+                    labels.shift();
+                }
+
+                chart.update('none');
+            }
+
+            function getServerDetailChartConfig(definition, labels) {
+                const datasetColor = definition.color;
+                const backgroundColor = datasetColor.length === 7 ? `${datasetColor}33` : datasetColor;
+
+                return {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: definition.label,
+                            data: definition.baseData.slice(),
+                            borderColor: datasetColor,
+                            backgroundColor,
+                            tension: 0.35,
+                            fill: true,
+                            pointRadius: 0,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 280, easing: 'easeOutQuad' },
+                        interaction: { intersect: false, mode: 'index' },
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: {
+                                    color: '#475569',
+                                    maxRotation: 0,
+                                    maxTicksLimit: 6,
+                                    autoSkip: true
+                                }
+                            },
+                            y: {
+                                grid: { color: 'rgba(148, 163, 184, 0.2)' },
+                                ticks: { color: '#475569' }
+                            }
+                        }
+                    }
+                };
+            }
+
+            function buildServerDetailLabels(count) {
+                const now = Date.now();
+                return Array.from({ length: count }, (_, index) => {
+                    const offset = (count - index - 1) * SERVER_DETAIL_UPDATE_INTERVAL;
+                    return serverDetailTimeFormatter.format(new Date(now - offset));
+                });
+            }
+
+            function getNextServerDetailValue(lastValue, definition) {
+                const fallback = definition.baseData.at(-1) ?? definition.min;
+                const baseline = Number.isFinite(lastValue) ? lastValue : fallback;
+                const delta = (Math.random() * 2 - 1) * definition.variance;
+                const raw = baseline + delta;
+                const clamped = Math.max(definition.min, Math.min(definition.max, raw));
+                const decimals = typeof definition.decimals === 'number' ? definition.decimals : 2;
+                return Number(clamped.toFixed(decimals));
+            }
+
+            function getServerDetailLocale() {
+                return currentLanguage === 'en' ? 'en-US' : 'zh-CN';
             }
 
             async function refreshServer(serverId) {
