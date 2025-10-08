@@ -3092,9 +3092,11 @@ function initDashboardRealTimeUpdates() {
 
                     const statusText = getStatusText(server.status);
                     const viewDetailsTitle = currentLanguage === 'en' ? 'View Details' : '查看详情';
+                    const viewDetailsLabel = currentLanguage === 'en' ? 'Details' : '详情';
                     const sshTitle = currentLanguage === 'en' ? 'Open SSH' : '打开 SSH';
 
                     const refreshTitle = currentLanguage === 'en' ? 'Refresh' : '刷新';
+                    const refreshLabel = currentLanguage === 'en' ? 'Refresh' : '刷新';
 
                     return `
                         <tr data-server-id="${server.id}">
@@ -3164,9 +3166,13 @@ function initDashboardRealTimeUpdates() {
                             <td>${server.uptime || '--'}</td>
                             <td>
                                 <div class="action-buttons">
-                                    <button class="btn-icon" onclick="viewServerDetails(${server.id})" title="${viewDetailsTitle}">详情</button>
+                                    <button class="btn-icon" onclick="viewServerDetails(${server.id})" title="${viewDetailsTitle}">
+                                        <span data-i18n-zh="详情" data-i18n-en="Details">${viewDetailsLabel}</span>
+                                    </button>
                                     <button class="btn-icon" onclick="connectToServer(${server.id})" title="${sshTitle}" aria-label="${sshTitle}">SSH</button>
-                                    <button class="btn-icon" onclick="refreshServer(${server.id})" title="${refreshTitle}">刷新</button>
+                                    <button class="btn-icon" onclick="refreshServer(${server.id})" title="${refreshTitle}">
+                                        <span data-i18n-zh="刷新" data-i18n-en="Refresh">${refreshLabel}</span>
+                                    </button>
                                 </div>
                             </td>
                         </tr>

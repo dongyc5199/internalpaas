@@ -660,15 +660,22 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
+    min-width: 36px;
     height: 32px;
-    padding: 0;
+    padding: 0 10px;
     border: 1px solid var(--border-primary, #e2e8f0);
     border-radius: 6px;
     background: var(--bg-primary, #ffffff);
     color: var(--text-secondary, #475569);
     cursor: pointer;
     transition: all 0.2s ease;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.btn-icon > span {
+    pointer-events: none;
 }
 
 .btn-icon:hover {
