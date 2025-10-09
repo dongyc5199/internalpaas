@@ -2658,6 +2658,12 @@ function initDashboardRealTimeUpdates() {
             let serverDetailActiveSection = '';
             let serverDetailProcessSort = 'cpu';
             let serverDetailProcessSortButtons = [];
+            let serverDetailToolbar = null;
+            let serverDetailToolbarCompact = null;
+            let serverDetailToolbarName = null;
+            let serverDetailToolbarAddress = null;
+            let serverDetailToolbarCompactActive = false;
+            let serverDetailScrollHandler = null;
 
             function safeShowToast(message, type = 'info') {
                 if (typeof showToast === 'function') {
@@ -2698,6 +2704,38 @@ function initDashboardRealTimeUpdates() {
                 const zhText = zh || '暂无数据';
                 const enText = en || 'No data';
                 setLocalizedText(element, zhText, enText);
+            }
+
+            function setServerDetailToolbarCompact(active) {
+                if (!serverDetailToolbar) {
+                    return;
+                }
+                const isActive = !!active;
+                if (serverDetailToolbarCompactActive === isActive) {
+                    return;
+                }
+                serverDetailToolbarCompactActive = isActive;
+                serverDetailToolbar.classList.toggle('server-detail-toolbar--compact', isActive);
+                if (serverDetailToolbarCompact) {
+                    serverDetailToolbarCompact.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+                }
+            }
+
+            function updateServerDetailToolbarInfo(name, address) {
+                if (serverDetailToolbarName) {
+                    serverDetailToolbarName.textContent = name && name !== '' ? name : '--';
+                }
+                if (serverDetailToolbarAddress) {
+                    serverDetailToolbarAddress.textContent = address && address !== '' ? address : '--';
+                }
+            }
+
+            function handleServerDetailScroll() {
+                if (!serverDetailBody) {
+                    return;
+                }
+                const shouldCompact = serverDetailBody.scrollTop > 32;
+                setServerDetailToolbarCompact(shouldCompact);
             }
 
             function initServerGroupManagement() {
@@ -3093,13 +3131,16 @@ function initDashboardRealTimeUpdates() {
                 }
             }
 
-            async function loadServerGroupList() {
+            async function loadServerGroupList(options = {}) {
+                const { silent = false, applyFilter = false } = options;
                 const tableBody = document.getElementById('serverTableBody');
 
                 if (!tableBody) return;
 
-                const loadingText = currentLanguage === 'en' ? 'Loading servers...' : '正在加载服务器...';
-                tableBody.innerHTML = `<tr><td colspan="11" class="empty-state">${loadingText}</td></tr>`;
+                if (!silent) {
+                    const loadingText = currentLanguage === 'en' ? 'Loading servers...' : '正在加载服务器...';
+                    tableBody.innerHTML = `<tr><td colspan="11" class="empty-state">${loadingText}</td></tr>`;
+                }
 
                 try {
                     const response = await fetch('/admin/server-groups/api/list');
@@ -3107,11 +3148,17 @@ function initDashboardRealTimeUpdates() {
 
                     const servers = await response.json();
                     serverGroupListCache = servers;
-                    renderServerGroupList(servers);
+                    if (applyFilter) {
+                        filterServerList();
+                    } else {
+                        renderServerGroupList(servers);
+                    }
                 } catch (error) {
                     console.error('Failed to load server list:', error);
-                    const errorText = currentLanguage === 'en' ? 'Failed to load servers' : '加载服务器失败';
-                    tableBody.innerHTML = `<tr><td colspan="11" class="empty-state">${errorText}</td></tr>`;
+                    if (!silent) {
+                        const errorText = currentLanguage === 'en' ? 'Failed to load servers' : '加载服务器失败';
+                        tableBody.innerHTML = `<tr><td colspan="11" class="empty-state">${errorText}</td></tr>`;
+                    }
                 }
             }
 
@@ -3421,7 +3468,7 @@ function initDashboardRealTimeUpdates() {
 
                     if (response.ok) {
                         showSuccessMessage(`Refreshed ${serverIds.length} servers successfully`);
-                        await loadServerGroupList();
+                        await loadServerGroupList({ applyFilter: true });
                         clearServerSelection();
                     } else {
                         throw new Error('Batch refresh failed');
@@ -3446,7 +3493,7 @@ function initDashboardRealTimeUpdates() {
                     loadHealthTrendChart(),
                     loadLoadDistributionChart(),
                     loadAppDistributionChart(),
-                    loadServerGroupList()
+                    loadServerGroupList({ applyFilter: true })
                 ]);
                 showSuccessMessage('Data refreshed successfully');
             }
@@ -3466,24 +3513,19 @@ function initDashboardRealTimeUpdates() {
                         return;
                     }
 
-                    // 检查是否有服务器
-                    if (!serverGroupListCache || serverGroupListCache.length === 0) {
-                        console.log('No servers available, skipping auto-refresh');
-                        return;
-                    }
+                    console.log('Auto-refreshing server group data...');
 
-                    console.log('Auto-refreshing server group charts...');
-
-                    // 异步刷新3个图表，不阻塞UI
-                    // 使用Promise.allSettled确保即使某个图表失败也不影响其他图表
                     const healthTrendRange = document.getElementById('healthTrendRange');
                     const hours = healthTrendRange ? parseInt(healthTrendRange.value) : 24;
 
-                    const results = await Promise.allSettled([
-                        loadHealthTrendChart(hours),
-                        loadLoadDistributionChart(),
-                        loadAppDistributionChart()
-                    ]);
+                    const tasks = [
+                        { name: 'Server List', promise: loadServerGroupList({ silent: true, applyFilter: true }) },
+                        { name: 'Health Trend', promise: loadHealthTrendChart(hours) },
+                        { name: 'Load Distribution', promise: loadLoadDistributionChart() },
+                        { name: 'App Distribution', promise: loadAppDistributionChart() }
+                    ];
+
+                    const results = await Promise.allSettled(tasks.map((task) => task.promise));
 
                     // 记录刷新结果
                     const successCount = results.filter(r => r.status === 'fulfilled').length;
@@ -3494,8 +3536,7 @@ function initDashboardRealTimeUpdates() {
                     if (failedCount > 0) {
                         results.forEach((result, index) => {
                             if (result.status === 'rejected') {
-                                const chartNames = ['Health Trend', 'Load Distribution', 'App Distribution'];
-                                console.error(`Failed to refresh ${chartNames[index]}:`, result.reason);
+                                console.error(`Failed to refresh ${tasks[index].name}:`, result.reason);
                             }
                         });
                     }
@@ -3551,7 +3592,7 @@ function initDashboardRealTimeUpdates() {
             // Global function to refresh server list (called from server-modal.js)
             window.refreshServerList = async function() {
                 if (typeof loadServerGroupList === 'function') {
-                    await loadServerGroupList();
+                    await loadServerGroupList({ applyFilter: true });
                     updateServerGroupLastUpdateTime();
                     showSuccessMessage(currentLanguage === 'en' ? 'Server list refreshed' : '服务器列表已刷新');
                 }
@@ -3670,10 +3711,22 @@ function initDashboardRealTimeUpdates() {
 
                 serverDetailShell = serverDetailOverlay.querySelector('.server-detail-shell');
                 serverDetailBody = serverDetailOverlay.querySelector('[data-role="server-detail-body"]');
+                serverDetailToolbar = serverDetailOverlay.querySelector('[data-role="server-detail-toolbar"]');
+                serverDetailToolbarCompact = serverDetailOverlay.querySelector('[data-role="detail-toolbar-compact"]');
+                serverDetailToolbarName = serverDetailOverlay.querySelector('[data-role="detail-toolbar-name"]');
+                serverDetailToolbarAddress = serverDetailOverlay.querySelector('[data-role="detail-toolbar-address"]');
                 serverDetailToggleRefreshBtn = serverDetailOverlay.querySelector('[data-action="detail-toggle-refresh"]');
                 serverDetailToggleChartsBtn = serverDetailOverlay.querySelector('[data-action="detail-toggle-charts"]');
                 serverDetailMonitorGrid = serverDetailOverlay.querySelector('#serverDetailMonitorGrid');
                 serverDetailProcessSortButtons = Array.from(serverDetailOverlay.querySelectorAll('[data-role="detail-process-sort"]'));
+
+                if (serverDetailBody && serverDetailScrollHandler) {
+                    serverDetailBody.removeEventListener('scroll', serverDetailScrollHandler);
+                }
+                serverDetailScrollHandler = handleServerDetailScroll;
+                if (serverDetailBody && serverDetailScrollHandler) {
+                    serverDetailBody.addEventListener('scroll', serverDetailScrollHandler, { passive: true });
+                }
 
                 if (serverDetailOverlay.dataset.initialized === 'true') {
                     return;
@@ -3774,6 +3827,16 @@ function initDashboardRealTimeUpdates() {
                     delete serverDetailOverlay.dataset.initialized;
                 }
 
+                if (serverDetailBody && serverDetailScrollHandler) {
+                    serverDetailBody.removeEventListener('scroll', serverDetailScrollHandler);
+                }
+                serverDetailScrollHandler = null;
+                serverDetailToolbar = null;
+                serverDetailToolbarCompact = null;
+                serverDetailToolbarName = null;
+                serverDetailToolbarAddress = null;
+                serverDetailToolbarCompactActive = false;
+
                 serverDetailOverlay = null;
                 serverDetailShell = null;
                 serverDetailBody = null;
@@ -3799,6 +3862,7 @@ function initDashboardRealTimeUpdates() {
                 if (serverDetailBody) {
                     serverDetailBody.scrollTop = 0;
                 }
+                setServerDetailToolbarCompact(false);
 
                 initServerDetailNavigation();
                 initServerDetailCharts();
@@ -3815,6 +3879,8 @@ function initDashboardRealTimeUpdates() {
 
                 serverDetailOverlay.setAttribute('aria-hidden', 'true');
                 serverDetailOverlay.classList.remove('is-open');
+
+                setServerDetailToolbarCompact(false);
 
                 destroyServerDetailCharts();
                 destroyServerDetailNavigation();
@@ -3906,6 +3972,7 @@ function initDashboardRealTimeUpdates() {
                 }
                 const subtitle = subtitleParts.join(' · ');
 
+                updateServerDetailToolbarInfo(name, address);
                 setText('[data-role="detail-server-name"]', name);
                 setText('[data-role="detail-description"]', description);
                 setText('[data-role="detail-address"]', address);

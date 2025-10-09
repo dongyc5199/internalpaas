@@ -291,8 +291,15 @@
     <div class="server-detail-overlay" data-role="server-detail-overlay" id="serverDetailOverlay" aria-hidden="true">
         <div class="server-detail-overlay__aside" data-action="detail-close" aria-hidden="true"></div>
         <div class="server-detail-shell" role="dialog" aria-modal="true" aria-labelledby="serverDetailTitle" tabindex="-1">
-            <header class="server-detail-toolbar">
-                <h2 class="server-detail-toolbar__title" id="serverDetailTitle" data-role="detail-panel-title" data-i18n-zh="服务器详情" data-i18n-en="Server Details">服务器详情</h2>
+            <header class="server-detail-toolbar" data-role="server-detail-toolbar">
+                <div class="server-detail-toolbar__inner">
+                    <h2 class="server-detail-toolbar__title" id="serverDetailTitle" data-role="detail-panel-title" data-i18n-zh="服务器详情" data-i18n-en="Server Details">服务器详情</h2>
+                    <div class="server-detail-toolbar__compact" data-role="detail-toolbar-compact" aria-hidden="true">
+                        <span class="server-detail-toolbar__name" data-role="detail-toolbar-name">prod-core-01</span>
+                        <span class="server-detail-toolbar__divider">·</span>
+                        <span class="server-detail-toolbar__address" data-role="detail-toolbar-address">10.12.88.43</span>
+                    </div>
+                </div>
             </header>
             <div class="server-detail-body" data-role="server-detail-body">
                 <div th:replace="fragments/server-detail-content :: server-detail-content"></div>
