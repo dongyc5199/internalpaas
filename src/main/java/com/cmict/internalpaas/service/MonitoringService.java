@@ -26,12 +26,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 @Service
 public class MonitoringService {
     
     private static final Logger logger = LoggerFactory.getLogger(MonitoringService.class);
     private static final int METRICS_COLLECTION_TIMEOUT = 90000; // 90秒指标收集总超时（从45秒增加）
+    private static final Pattern PID_PATTERN = Pattern.compile("^\\d{1,10}$");
     
     // 专用线程池，用于指标收集的异步任务
     private final ExecutorService metricsExecutor = Executors.newFixedThreadPool(4, r -> {
@@ -640,6 +642,8 @@ public class MonitoringService {
                 info.setStatusKey("running");
                 info.setStatusZh("运行中");
                 info.setStatusEn("Running");
+                info.setKillSupported(true);
+                info.setKilled(false);
 
                 processes.add(info);
                 if (processes.size() >= limit) {
@@ -721,6 +725,93 @@ public class MonitoringService {
         } catch (Exception e) {
             logger.error("获取用户活跃信息失败: {}", server.getHostname(), e);
             return new ArrayList<>();
+        }
+    }
+
+    public boolean killProcess(Server server, String pid) {
+        if (server == null) {
+            throw new IllegalArgumentException("服务器信息不能为空");
+        }
+        if (pid == null || !PID_PATTERN.matcher(pid.trim()).matches()) {
+            throw new IllegalArgumentException("PID 非法: " + pid);
+        }
+
+        String normalizedPid = pid.trim();
+        String killCommand = String.format("sudo -n kill -9 %s || kill -9 %s", normalizedPid, normalizedPid);
+
+        try {
+            if (isLocalhost(server.getHostname())) {
+                return executeLocalKill(killCommand, normalizedPid);
+            }
+
+            SshConnectionService.CommandOptions options = new SshConnectionService.CommandOptions();
+            options.setCaptureErrorOutput(true);
+            options.setIgnoreExitStatus(true);
+            options.setThrowOnError(false);
+
+            SshConnectionService.CommandResult result = sshConnectionService.executeCommand(
+                    server,
+                    killCommand,
+                    15000,
+                    options);
+
+            if (result.getExitStatus() == 0) {
+                logger.info("远程服务器 {} 进程 {} 已成功结束", server.getHostname(), normalizedPid);
+                return true;
+            }
+
+            String combined = (result.getErrorOutput() + "\n" + result.getOutput()).toLowerCase(Locale.ROOT);
+            if (combined.contains("no such process")) {
+                logger.info("远程服务器 {} 进程 {} 已不存在，视为已结束", server.getHostname(), normalizedPid);
+                return true;
+            }
+
+            logger.warn("远程服务器 {} 进程 {} 结束失败，退出码: {}，输出: {}",
+                    server.getHostname(), normalizedPid, result.getExitStatus(), combined.trim());
+            return false;
+        } catch (Exception e) {
+            logger.error("结束服务器 {} 进程 {} 失败", server.getHostname(), normalizedPid, e);
+            return false;
+        }
+    }
+
+    private boolean executeLocalKill(String command, String pid) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder("bash", "-lc", command)
+                .redirectErrorStream(true)
+                .start();
+
+        StringBuilder output = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append('\n');
+            }
+        }
+
+        try {
+            boolean finished = process.waitFor(10, TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                logger.warn("本地结束进程 {} 超时", pid);
+                return false;
+            }
+
+            int exitCode = process.exitValue();
+            String normalizedOutput = output.toString().toLowerCase(Locale.ROOT);
+            if (exitCode == 0) {
+                logger.info("本地进程 {} 已成功结束", pid);
+                return true;
+            }
+
+            if (normalizedOutput.contains("no such process")) {
+                logger.info("本地进程 {} 已不存在，视为已结束", pid);
+                return true;
+            }
+
+            logger.warn("本地结束进程 {} 失败，退出码 {}，输出: {}", pid, exitCode, output.toString().trim());
+            return false;
+        } finally {
+            process.destroy();
         }
     }
 

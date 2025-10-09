@@ -142,4 +142,23 @@ public class ServerGroupController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @PostMapping("/api/{serverId}/processes/{pid}/kill")
+    @ResponseBody
+    public ResponseEntity<ServerProcessKillResponse> killProcess(
+            @PathVariable Long serverId,
+            @PathVariable String pid) {
+        logger.info("API: Kill process {} on server {}", pid, serverId);
+        try {
+            ServerProcessKillResponse response = serverGroupService.killProcess(serverId, pid);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException ex) {
+            logger.warn("Kill process request invalid: {}", ex.getMessage());
+            return ResponseEntity.badRequest().body(new ServerProcessKillResponse(false, ex.getMessage(), pid));
+        } catch (Exception e) {
+            logger.error("Failed to kill process {} on server {}", pid, serverId, e);
+            return ResponseEntity.internalServerError()
+                    .body(new ServerProcessKillResponse(false, "终止进程时发生异常", pid));
+        }
+    }
 }

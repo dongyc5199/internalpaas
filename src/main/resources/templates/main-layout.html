@@ -2659,6 +2659,21 @@ function initDashboardRealTimeUpdates() {
             let serverDetailProcessSort = 'cpu';
             let serverDetailProcessSortButtons = [];
 
+            function safeShowToast(message, type = 'info') {
+                if (typeof showToast === 'function') {
+                    showToast(message, type);
+                    return;
+                }
+                if (window.AppShell && typeof window.AppShell.emit === 'function') {
+                    window.AppShell.emit('notification:show', {
+                        message,
+                        type
+                    });
+                } else {
+                    console.log(`[Toast ${type}] ${message}`);
+                }
+            }
+
             function setLocalizedText(element, zh, en) {
                 if (!element) {
                     return;
@@ -3665,6 +3680,7 @@ function initDashboardRealTimeUpdates() {
                 }
 
                 serverDetailOverlay.dataset.initialized = 'true';
+                serverDetailOverlay.addEventListener('click', handleServerDetailProcessClick);
 
                 const closeElements = serverDetailOverlay.querySelectorAll('[data-action="detail-close"]');
                 closeElements.forEach((element) => {
@@ -4085,6 +4101,25 @@ function initDashboardRealTimeUpdates() {
                 });
             }
 
+            function renderProcessActionCell(process) {
+                const pid = process && process.pid ? String(process.pid) : '';
+                const isKilled = process && process.killed === true;
+                const killSupported = Boolean(pid) && process && process.killSupported !== false && !isKilled;
+
+                if (!killSupported) {
+                    if (isKilled) {
+                        const zh = '已杀死';
+                        const en = 'Terminated';
+                        const text = currentLanguage === 'en' ? en : zh;
+                        return '<span class="server-detail-process-state" data-i18n-zh="' + zh + '" data-i18n-en="' + en + '">' + text + '</span>';
+                    }
+                    return '<span class="server-detail-process-state" data-i18n-zh="--" data-i18n-en="--">--</span>';
+                }
+
+                const pidAttr = escapeHtml(pid);
+                return '<button class="btn btn-link btn-link--danger" type="button" data-action="detail-kill-process" data-pid="' + pidAttr + '" data-i18n-zh="Kill" data-i18n-en="Kill">Kill</button>';
+            }
+
             function renderServerDetailProcesses(detail) {
                 const tbody = serverDetailOverlay?.querySelector('[data-role="detail-process-list"]');
                 if (!tbody) {
@@ -4093,19 +4128,22 @@ function initDashboardRealTimeUpdates() {
 
                 const processes = detail && Array.isArray(detail.processes) ? detail.processes : [];
                 if (!processes.length) {
-                    renderServerDetailEmptyState(tbody, 7, '暂无进程数据', 'No process data available');
+                    renderServerDetailEmptyState(tbody, 8, '暂无进程数据', 'No process data available');
                     return;
                 }
 
                 const rows = processes.map((process) => {
-                    const statusDotClass = mapStatusKeyToDotClass(process.statusKey);
-                    const statusZh = process.statusZh || '--';
-                    const statusEn = process.statusEn || '--';
+                    const isKilled = process.killed === true;
+                    const statusKey = isKilled ? 'terminated' : (process.statusKey || '');
+                    const statusDotClass = mapStatusKeyToDotClass(statusKey);
+                    const statusZh = isKilled ? '已杀死' : (process.statusZh || '--');
+                    const statusEn = isKilled ? 'Terminated' : (process.statusEn || '--');
                     const uptimeZh = process.uptimeZh || '--';
                     const uptimeEn = process.uptimeEn || uptimeZh;
                     const cpuText = formatProcessPercent(process.cpu);
                     const memoryText = formatProcessPercent(process.memory);
                     const commandDisplay = formatProcessCommand(process.command);
+                    const actionCell = renderProcessActionCell(process);
 
                     return (
                         '<tr>' +
@@ -4116,11 +4154,105 @@ function initDashboardRealTimeUpdates() {
                             '<td><span class="server-detail-status-dot ' + statusDotClass + '" title="' + escapeHtml(statusZh) + '" aria-label="' + escapeHtml(statusZh) + '"></span></td>' +
                             '<td><span data-i18n-zh="' + escapeHtml(uptimeZh) + '" data-i18n-en="' + escapeHtml(uptimeEn) + '">' + (currentLanguage === 'en' ? escapeHtml(uptimeEn) : escapeHtml(uptimeZh)) + '</span></td>' +
                             '<td><code class="server-detail-process-command" title="' + escapeHtml(process.command || commandDisplay || '--') + '">' + escapeHtml(commandDisplay || '--') + '</code></td>' +
+                            '<td>' + actionCell + '</td>' +
                         '</tr>'
                     );
                 }).join('');
 
                 tbody.innerHTML = rows;
+            }
+
+            function handleServerDetailProcessClick(event) {
+                const button = event.target.closest('[data-action="detail-kill-process"]');
+                if (!button || !serverDetailOverlay || !serverDetailOverlay.contains(button)) {
+                    return;
+                }
+                event.preventDefault();
+
+                const pid = button.dataset.pid;
+                if (!pid || !serverDetailCurrentServer) {
+                    return;
+                }
+                if (button.disabled || button.dataset.loading === 'true') {
+                    return;
+                }
+
+                killServerProcess(pid, button);
+            }
+
+            async function killServerProcess(pid, button) {
+                const zhLabel = button.getAttribute('data-i18n-zh') || 'Kill';
+                const enLabel = button.getAttribute('data-i18n-en') || 'Kill';
+
+                button.disabled = true;
+                button.dataset.loading = 'true';
+                setLocalizedText(button, '终止中...', 'Killing...');
+
+                try {
+                    const response = await fetch(`/admin/server-groups/api/${serverDetailCurrentServer.id}/processes/${encodeURIComponent(pid)}/kill`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'same-origin'
+                    });
+
+                    let result = null;
+                    try {
+                        result = await response.json();
+                    } catch (jsonError) {
+                        result = null;
+                    }
+
+                    if (response.ok && result && result.success) {
+                        updateProcessKillState(pid);
+                        const successMessage = currentLanguage === 'en'
+                            ? 'Process killed successfully'
+                            : '进程已成功终止';
+                        safeShowToast(successMessage, 'success');
+                        renderServerDetailProcesses(serverDetailCurrentDetail);
+                        applyLanguage(currentLanguage, false);
+                        return;
+                    }
+
+                    const message = result && result.message
+                        ? result.message
+                        : (currentLanguage === 'en' ? 'Failed to kill process' : '终止进程失败');
+                    safeShowToast(message, 'error');
+                } catch (error) {
+                    console.error('Kill process request failed', error);
+                    const errorMessage = currentLanguage === 'en'
+                        ? 'Network error, please retry'
+                        : '网络异常，请稍后重试';
+                    safeShowToast(errorMessage, 'error');
+                } finally {
+                    button.dataset.loading = 'false';
+                    if (button.isConnected) {
+                        button.disabled = false;
+                        setLocalizedText(button, zhLabel, enLabel);
+                    }
+                }
+            }
+
+            function updateProcessKillState(pid) {
+                if (!serverDetailCurrentDetail || !Array.isArray(serverDetailCurrentDetail.processes)) {
+                    return;
+                }
+
+                const target = serverDetailCurrentDetail.processes.find((item) => String(item.pid) === String(pid));
+                if (!target) {
+                    return;
+                }
+
+                target.killed = true;
+                target.killSupported = false;
+                target.statusKey = 'terminated';
+                target.statusZh = '已杀死';
+                target.statusEn = 'Terminated';
+                target.cpu = 0;
+                target.memory = 0;
+                target.uptimeZh = '--';
+                target.uptimeEn = '--';
             }
 
             function renderServerDetailApplications(detail) {
@@ -4235,6 +4367,9 @@ function initDashboardRealTimeUpdates() {
                 if (normalized === 'error' || normalized === 'failed' || normalized === 'offline' || normalized === 'timeout') {
                     return 'server-detail-chip--error';
                 }
+                if (normalized === 'terminated' || normalized === 'killed' || normalized === 'stopped') {
+                    return 'server-detail-chip--neutral';
+                }
                 return 'server-detail-chip--neutral';
             }
 
@@ -4251,6 +4386,9 @@ function initDashboardRealTimeUpdates() {
                 }
                 if (normalized === 'error' || normalized === 'failed' || normalized === 'offline' || normalized === 'timeout') {
                     return 'status-dot--error';
+                }
+                if (normalized === 'terminated' || normalized === 'killed' || normalized === 'stopped') {
+                    return 'status-dot--terminated';
                 }
                 return 'status-dot--neutral';
             }

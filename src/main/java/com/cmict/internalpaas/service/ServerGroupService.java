@@ -463,6 +463,9 @@ public class ServerGroupService {
                         info.setUptimeEn("--");
                     }
 
+                    info.setKillSupported(false);
+                    info.setKilled(false);
+
                     return info;
                 })
                 .collect(Collectors.toList());
@@ -511,6 +514,25 @@ public class ServerGroupService {
                     return info;
                 })
                 .collect(Collectors.toList());
+    }
+
+    public ServerProcessKillResponse killProcess(Long serverId, String pid) {
+        if (serverId == null) {
+            throw new IllegalArgumentException("服务器ID不能为空");
+        }
+        if (pid == null || pid.trim().isEmpty()) {
+            throw new IllegalArgumentException("PID不能为空");
+        }
+
+        Server server = serverService.findById(serverId)
+                .orElseThrow(() -> new IllegalArgumentException("未找到服务器: " + serverId));
+
+        logger.info("尝试终止服务器 {} ({}) 进程 {}", server.getName(), server.getHostname(), pid);
+
+        boolean success = monitoringService.killProcess(server, pid);
+        String message = success ? "进程已成功终止" : "终止进程失败，请检查权限或进程状态";
+
+        return new ServerProcessKillResponse(success, message, pid);
     }
 
     private List<ServerDetailDto.UserAccessInfo> buildUserAccessInfos(Long serverId) {

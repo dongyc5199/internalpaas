@@ -442,6 +442,8 @@ public class ServerDetailDto {
         private String uptimeZh;
         private String uptimeEn;
         private String command;
+        private boolean killSupported;
+        private boolean killed;
 
         public String getPid() {
             return pid;
@@ -521,6 +523,22 @@ public class ServerDetailDto {
 
         public void setCommand(String command) {
             this.command = command;
+        }
+
+        public boolean isKillSupported() {
+            return killSupported;
+        }
+
+        public void setKillSupported(boolean killSupported) {
+            this.killSupported = killSupported;
+        }
+
+        public boolean isKilled() {
+            return killed;
+        }
+
+        public void setKilled(boolean killed) {
+            this.killed = killed;
         }
     }
 
