@@ -43,6 +43,25 @@ public class ServerGroupService {
     @Autowired
     private ServerService serverService;
 
+    public enum ProcessSortOption {
+        CPU,
+        MEMORY;
+
+        public static ProcessSortOption from(String value) {
+            if (value == null) {
+                return CPU;
+            }
+            String normalized = value.trim().toUpperCase();
+            switch (normalized) {
+                case "MEMORY":
+                case "MEM":
+                    return MEMORY;
+                default:
+                    return CPU;
+            }
+        }
+    }
+
     /**
      * Get enhanced server list with monitoring data and health scores
      */
@@ -234,6 +253,10 @@ public class ServerGroupService {
      * 获取指定服务器的详情信息
      */
     public ServerDetailDto getServerDetail(Long serverId) {
+        return getServerDetail(serverId, ProcessSortOption.CPU);
+    }
+
+    public ServerDetailDto getServerDetail(Long serverId, ProcessSortOption processSortOption) {
         Server server = serverRepository.findById(serverId)
                 .orElseThrow(() -> new IllegalArgumentException("服务器不存在: " + serverId));
 
@@ -248,7 +271,7 @@ public class ServerGroupService {
         dto.setMetrics(metrics);
 
         // 进程（使用关联应用的运行状态表示）
-        dto.setProcesses(buildProcessInfos(serverId));
+        dto.setProcesses(buildProcessInfos(server, processSortOption));
 
         // 应用列表
         dto.setApplications(buildApplicationInfos(serverId));
@@ -307,6 +330,23 @@ public class ServerGroupService {
                     "磁盘容量",
                     "Disk",
                     formatBytes(latestMetrics.getDiskTotal())));
+            infoItems.add(new ServerDetailDto.InfoItem("kernel",
+                    "内核版本",
+                    "Kernel",
+                    safeDisplayValue(latestMetrics.getKernelVersion())));
+            infoItems.add(new ServerDetailDto.InfoItem("nic",
+                    "业务网卡",
+                    "NIC",
+                    safeDisplayValue(latestMetrics.getNetworkInterface())));
+        } else {
+            infoItems.add(new ServerDetailDto.InfoItem("kernel",
+                    "内核版本",
+                    "Kernel",
+                    "--"));
+            infoItems.add(new ServerDetailDto.InfoItem("nic",
+                    "业务网卡",
+                    "NIC",
+                    "--"));
         }
 
         overview.setInfoItems(infoItems);
@@ -316,9 +356,12 @@ public class ServerGroupService {
     private ServerDetailDto.Metrics buildMetrics(Long serverId) {
         ServerDetailDto.Metrics metrics = new ServerDetailDto.Metrics();
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime since = now.minusHours(3);
+        LocalDateTime since = now.minusMinutes(1);
 
         List<ServerMetrics> recentMetrics = metricsRepository.findRecentMetrics(serverId, since);
+        if (recentMetrics.isEmpty()) {
+            recentMetrics = metricsRepository.findRecentMetrics(serverId, now.minusHours(3));
+        }
         recentMetrics.sort(Comparator.comparing(ServerMetrics::getTimestamp));
 
         ServerDetailDto.MetricSeries cpuSeries = new ServerDetailDto.MetricSeries();
@@ -339,6 +382,12 @@ public class ServerGroupService {
         diskSeries.setLabelEn("Disk Usage");
         diskSeries.setUnit("%");
 
+        ServerDetailDto.MetricSeries networkSeries = new ServerDetailDto.MetricSeries();
+        networkSeries.setId("network");
+        networkSeries.setLabelZh("网络吞吐");
+        networkSeries.setLabelEn("Network Throughput");
+        networkSeries.setUnit("KB/s");
+
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
         for (ServerMetrics metric : recentMetrics) {
             String timestamp = metric.getTimestamp() != null
@@ -346,25 +395,31 @@ public class ServerGroupService {
                     : now.format(formatter);
 
             cpuSeries.getPoints().add(new ServerDetailDto.MetricPoint(timestamp,
-                    metric.getCpuUsagePercent()));
+                    roundToTwo(metric.getCpuUsagePercent())));
             memorySeries.getPoints().add(new ServerDetailDto.MetricPoint(timestamp,
-                    metric.getMemoryUsagePercent()));
+                    roundToTwo(metric.getMemoryUsagePercent())));
             diskSeries.getPoints().add(new ServerDetailDto.MetricPoint(timestamp,
-                    metric.getDiskUsagePercent()));
+                    roundToTwo(metric.getDiskUsagePercent())));
+
+            double networkIn = metric.getNetworkReceivedRate() != null ? metric.getNetworkReceivedRate() / 1024 : 0.0;
+            double networkOut = metric.getNetworkTransmittedRate() != null ? metric.getNetworkTransmittedRate() / 1024 : 0.0;
+            double throughput = Math.max(0.0, roundToTwo(networkIn + networkOut));
+            networkSeries.getPoints().add(new ServerDetailDto.MetricPoint(timestamp, throughput));
         }
 
         metrics.getSeries().add(cpuSeries);
         metrics.getSeries().add(memorySeries);
         metrics.getSeries().add(diskSeries);
+        metrics.getSeries().add(networkSeries);
 
         ServerMetrics latest = recentMetrics.isEmpty()
                 ? metricsRepository.findTopByServerIdOrderByTimestampDesc(serverId).orElse(null)
                 : recentMetrics.get(recentMetrics.size() - 1);
 
         if (latest != null) {
-            metrics.setCurrentCpu(latest.getCpuUsagePercent());
-            metrics.setCurrentMemory(latest.getMemoryUsagePercent());
-            metrics.setCurrentDisk(latest.getDiskUsagePercent());
+            metrics.setCurrentCpu(roundToTwo(latest.getCpuUsagePercent()));
+            metrics.setCurrentMemory(roundToTwo(latest.getMemoryUsagePercent()));
+            metrics.setCurrentDisk(roundToTwo(latest.getDiskUsagePercent()));
         }
 
         applyMetricsSummaries(metrics, latest);
@@ -372,7 +427,19 @@ public class ServerGroupService {
         return metrics;
     }
 
-    private List<ServerDetailDto.ProcessInfo> buildProcessInfos(Long serverId) {
+    private List<ServerDetailDto.ProcessInfo> buildProcessInfos(Server server, ProcessSortOption sortOption) {
+        try {
+            List<ServerDetailDto.ProcessInfo> realtime = monitoringService.fetchTopProcesses(server, 20, sortOption);
+            if (realtime != null && !realtime.isEmpty()) {
+                return realtime;
+            }
+        } catch (Exception e) {
+            logger.warn("获取服务器 {} 实时进程信息失败: {}", server.getHostname(), e.getMessage());
+        }
+        return buildFallbackProcessInfos(server.getId());
+    }
+
+    private List<ServerDetailDto.ProcessInfo> buildFallbackProcessInfos(Long serverId) {
         List<Application> applications = applicationRepository.findApplicationsBoundToServer(serverId);
         LocalDateTime now = LocalDateTime.now();
 
@@ -548,9 +615,13 @@ public class ServerGroupService {
                     diskTotal, diskUsed, diskAvailable));
         }
 
-        metrics.setNetworkSummaryZh("暂无数据");
-        metrics.setNetworkSummaryEn("Not available");
-        metrics.setNetworkAvailable(Boolean.FALSE);
+        // 设置网络概览信息
+        double networkIn = latest.getNetworkReceivedRate() != null ? latest.getNetworkReceivedRate() / 1024 : 0.0;
+        double networkOut = latest.getNetworkTransmittedRate() != null ? latest.getNetworkTransmittedRate() / 1024 : 0.0;
+        metrics.setNetworkSummaryZh(String.format(Locale.CHINA, "网络：入站 %.2fKB/s · 出站 %.2fKB/s", networkIn, networkOut));
+        metrics.setNetworkSummaryEn(String.format(Locale.US, "Network: In %.2fKB/s · Out %.2fKB/s", networkIn, networkOut));
+        String nic = safeDisplayValue(latest.getNetworkInterface());
+        metrics.setNetworkAvailable(!"--".equals(nic));
     }
 
     private String[] parseLoadAverage(String loadAverageValue) {
@@ -597,6 +668,14 @@ public class ServerGroupService {
         return String.format(Locale.CHINA, "%.1f %s", value, units[index]);
     }
 
+    private String safeDisplayValue(String value) {
+        if (value == null) {
+            return "--";
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? "--" : trimmed;
+    }
+
     private String formatDuration(Duration duration) {
         if (duration == null || duration.isNegative()) {
             return "--";
@@ -621,6 +700,13 @@ public class ServerGroupService {
             return String.format(Locale.ENGLISH, "%d d %02d:%02d", days, hours, minutes);
         }
         return String.format(Locale.ENGLISH, "%02d:%02d", hours, minutes);
+    }
+
+    private double roundToTwo(Double value) {
+        if (value == null) {
+            return 0.0d;
+        }
+        return Math.round(value * 100.0d) / 100.0d;
     }
 
     private int fetchAppCountForServer(Long serverId) {

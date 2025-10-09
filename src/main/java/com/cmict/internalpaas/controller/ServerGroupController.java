@@ -126,10 +126,13 @@ public class ServerGroupController {
      */
     @GetMapping("/api/{serverId}/detail")
     @ResponseBody
-    public ResponseEntity<ServerDetailDto> getServerDetail(@PathVariable Long serverId) {
+    public ResponseEntity<ServerDetailDto> getServerDetail(
+            @PathVariable Long serverId,
+            @RequestParam(value = "processSort", defaultValue = "cpu") String processSort) {
         logger.info("API: Getting server detail for {}", serverId);
         try {
-            ServerDetailDto detail = serverGroupService.getServerDetail(serverId);
+            ServerGroupService.ProcessSortOption sortOption = ServerGroupService.ProcessSortOption.from(processSort);
+            ServerDetailDto detail = serverGroupService.getServerDetail(serverId, sortOption);
             return ResponseEntity.ok(detail);
         } catch (IllegalArgumentException ex) {
             logger.warn("Server detail not found: {}", ex.getMessage());

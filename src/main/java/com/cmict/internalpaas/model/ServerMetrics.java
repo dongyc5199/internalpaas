@@ -54,17 +54,36 @@ public class ServerMetrics {
     
     @Column(name = "disk_usage")
     private Double diskUsage;
-    
+
     // 系统信息
     @Column(name = "uptime")
     private String uptime;
-    
+
     @Column(name = "os_version")
     private String osVersion;
-    
+
+    @Column(name = "kernel_version")
+    private String kernelVersion;
+
+    // 网络信息
+    @Column(name = "network_interface")
+    private String networkInterface;
+
+    @Column(name = "network_received_bytes")
+    private Long networkReceivedBytes;
+
+    @Column(name = "network_transmitted_bytes")
+    private Long networkTransmittedBytes;
+
+    @Column(name = "network_received_rate")
+    private Double networkReceivedRate;
+
+    @Column(name = "network_transmitted_rate")
+    private Double networkTransmittedRate;
+
     @Column(name = "timestamp")
     private LocalDateTime timestamp;
-    
+
     @Column(name = "collection_duration_ms")
     private Long collectionDurationMs;
     
@@ -134,6 +153,24 @@ public class ServerMetrics {
     
     public String getOsVersion() { return osVersion; }
     public void setOsVersion(String osVersion) { this.osVersion = osVersion; }
+
+    public String getKernelVersion() { return kernelVersion; }
+    public void setKernelVersion(String kernelVersion) { this.kernelVersion = kernelVersion; }
+
+    public String getNetworkInterface() { return networkInterface; }
+    public void setNetworkInterface(String networkInterface) { this.networkInterface = networkInterface; }
+
+    public Long getNetworkReceivedBytes() { return networkReceivedBytes; }
+    public void setNetworkReceivedBytes(Long networkReceivedBytes) { this.networkReceivedBytes = networkReceivedBytes; }
+
+    public Long getNetworkTransmittedBytes() { return networkTransmittedBytes; }
+    public void setNetworkTransmittedBytes(Long networkTransmittedBytes) { this.networkTransmittedBytes = networkTransmittedBytes; }
+
+    public Double getNetworkReceivedRate() { return networkReceivedRate; }
+    public void setNetworkReceivedRate(Double networkReceivedRate) { this.networkReceivedRate = networkReceivedRate; }
+
+    public Double getNetworkTransmittedRate() { return networkTransmittedRate; }
+    public void setNetworkTransmittedRate(Double networkTransmittedRate) { this.networkTransmittedRate = networkTransmittedRate; }
     
     // 计算百分比的方法
     public Double getMemoryUsagePercent() {

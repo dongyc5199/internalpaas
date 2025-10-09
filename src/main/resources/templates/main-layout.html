@@ -2656,6 +2656,8 @@ function initDashboardRealTimeUpdates() {
             let serverDetailCurrentDetail = null;
             let serverDetailChartSeriesData = [];
             let serverDetailActiveSection = '';
+            let serverDetailProcessSort = 'cpu';
+            let serverDetailProcessSortButtons = [];
 
             function setLocalizedText(element, zh, en) {
                 if (!element) {
@@ -3616,21 +3618,21 @@ function initDashboardRealTimeUpdates() {
                     labelZh: '内存使用率 %',
                     labelEn: 'Memory %',
                     color: '#22d3ee',
-                    decimals: 1
+                    decimals: 2
                 },
                 {
                     key: 'disk',
                     id: 'serverDetailDiskChart',
-                    labelZh: '写入 MB/s',
-                    labelEn: 'Disk IO MB/s',
+                    labelZh: '磁盘使用率 %',
+                    labelEn: 'Disk Usage %',
                     color: '#f97316',
-                    decimals: 0
+                    decimals: 2
                 },
                 {
                     key: 'network',
                     id: 'serverDetailNetChart',
-                    labelZh: '网络带宽',
-                    labelEn: 'Network Gbps',
+                    labelZh: '网络吞吐 KB/s',
+                    labelEn: 'Network KB/s',
                     color: '#34d399',
                     decimals: 2
                 }
@@ -3656,6 +3658,7 @@ function initDashboardRealTimeUpdates() {
                 serverDetailToggleRefreshBtn = serverDetailOverlay.querySelector('[data-action="detail-toggle-refresh"]');
                 serverDetailToggleChartsBtn = serverDetailOverlay.querySelector('[data-action="detail-toggle-charts"]');
                 serverDetailMonitorGrid = serverDetailOverlay.querySelector('#serverDetailMonitorGrid');
+                serverDetailProcessSortButtons = Array.from(serverDetailOverlay.querySelectorAll('[data-role="detail-process-sort"]'));
 
                 if (serverDetailOverlay.dataset.initialized === 'true') {
                     return;
@@ -3688,6 +3691,20 @@ function initDashboardRealTimeUpdates() {
                         refreshServerDetailData(false);
                     });
                 });
+
+                serverDetailProcessSortButtons.forEach((button) => {
+                    button.addEventListener('click', () => {
+                        const nextSort = (button.dataset.sort || 'cpu').toLowerCase();
+                        if (serverDetailProcessSort === nextSort) {
+                            return;
+                        }
+                        serverDetailProcessSort = nextSort;
+                        updateProcessSortButtons();
+                        refreshServerDetailData(false);
+                    });
+                });
+
+                updateProcessSortButtons();
 
                 const filterButtons = serverDetailOverlay.querySelectorAll('[data-action="detail-filter-app"], [data-action="detail-filter-user"]');
                 filterButtons.forEach((button) => {
@@ -3805,10 +3822,13 @@ function initDashboardRealTimeUpdates() {
                 }
 
                 serverDetailPreviousFocus = null;
+                serverDetailProcessSortButtons = [];
+                serverDetailProcessSort = 'cpu';
             }
 
-            async function fetchServerDetail(serverId) {
-                const response = await fetch(`/admin/server-groups/api/${serverId}/detail`, {
+            async function fetchServerDetail(serverId, processSort = serverDetailProcessSort || 'cpu') {
+                const params = new URLSearchParams({ processSort });
+                const response = await fetch(`/admin/server-groups/api/${serverId}/detail?${params.toString()}`, {
                     headers: { 'Accept': 'application/json' },
                     credentials: 'same-origin'
                 });
@@ -3836,7 +3856,7 @@ function initDashboardRealTimeUpdates() {
                 openServerDetailOverlay();
 
                 try {
-                    const detail = await fetchServerDetail(serverId);
+                    const detail = await fetchServerDetail(serverId, serverDetailProcessSort || 'cpu');
                     serverDetailCurrentDetail = detail;
                     updateServerDetailContent(server, detail);
                 } catch (error) {
@@ -3937,6 +3957,8 @@ function initDashboardRealTimeUpdates() {
                     const collapsed = serverDetailMonitorGrid ? serverDetailMonitorGrid.classList.contains('is-collapsed') : false;
                     updateServerDetailChartsButton(collapsed);
                 }
+
+                updateProcessSortButtons();
 
                 initServerDetailCharts();
             }
@@ -4052,6 +4074,17 @@ function initDashboardRealTimeUpdates() {
                 });
             }
 
+            function updateProcessSortButtons() {
+                if (!Array.isArray(serverDetailProcessSortButtons) || !serverDetailProcessSortButtons.length) {
+                    return;
+                }
+                const activeSort = (serverDetailProcessSort || 'cpu').toLowerCase();
+                serverDetailProcessSortButtons.forEach((button) => {
+                    const buttonSort = (button.dataset.sort || 'cpu').toLowerCase();
+                    button.classList.toggle('is-active', buttonSort === activeSort);
+                });
+            }
+
             function renderServerDetailProcesses(detail) {
                 const tbody = serverDetailOverlay?.querySelector('[data-role="detail-process-list"]');
                 if (!tbody) {
@@ -4065,21 +4098,24 @@ function initDashboardRealTimeUpdates() {
                 }
 
                 const rows = processes.map((process) => {
-                    const statusClass = mapStatusKeyToClass(process.statusKey);
+                    const statusDotClass = mapStatusKeyToDotClass(process.statusKey);
                     const statusZh = process.statusZh || '--';
                     const statusEn = process.statusEn || '--';
                     const uptimeZh = process.uptimeZh || '--';
                     const uptimeEn = process.uptimeEn || uptimeZh;
+                    const cpuText = formatProcessPercent(process.cpu);
+                    const memoryText = formatProcessPercent(process.memory);
+                    const commandDisplay = formatProcessCommand(process.command);
 
                     return (
                         '<tr>' +
-                            '<td>' + escapeHtml(process.pid || '--') + '</td>' +
-                            '<td>' + escapeHtml(process.name || '--') + '</td>' +
-                            '<td>' + (process.cpu != null ? escapeHtml(process.cpu.toFixed(1)) + '%' : '--') + '</td>' +
-                            '<td>' + (process.memory != null ? escapeHtml(process.memory.toFixed(1)) + '%' : '--') + '</td>' +
-                            '<td><span class="server-detail-chip ' + statusClass + '" data-i18n-zh="' + escapeHtml(statusZh) + '" data-i18n-en="' + escapeHtml(statusEn) + '">' + (currentLanguage === 'en' ? escapeHtml(statusEn) : escapeHtml(statusZh)) + '</span></td>' +
+                            '<td class="server-detail-process-pid">' + escapeHtml(process.pid || '--') + '</td>' +
+                            '<td><strong class="server-detail-process-name">' + escapeHtml(process.name || '--') + '</strong></td>' +
+                            '<td>' + escapeHtml(cpuText) + '</td>' +
+                            '<td>' + escapeHtml(memoryText) + '</td>' +
+                            '<td><span class="server-detail-status-dot ' + statusDotClass + '" title="' + escapeHtml(statusZh) + '" aria-label="' + escapeHtml(statusZh) + '"></span></td>' +
                             '<td><span data-i18n-zh="' + escapeHtml(uptimeZh) + '" data-i18n-en="' + escapeHtml(uptimeEn) + '">' + (currentLanguage === 'en' ? escapeHtml(uptimeEn) : escapeHtml(uptimeZh)) + '</span></td>' +
-                            '<td>' + escapeHtml(process.command || '--') + '</td>' +
+                            '<td><code class="server-detail-process-command" title="' + escapeHtml(process.command || commandDisplay || '--') + '">' + escapeHtml(commandDisplay || '--') + '</code></td>' +
                         '</tr>'
                     );
                 }).join('');
@@ -4202,6 +4238,42 @@ function initDashboardRealTimeUpdates() {
                 return 'server-detail-chip--neutral';
             }
 
+            function mapStatusKeyToDotClass(statusKey) {
+                const normalized = (statusKey || '').toString().toLowerCase();
+                if (normalized === 'running' || normalized === 'online' || normalized === 'connected' || normalized === 'ok') {
+                    return 'status-dot--ok';
+                }
+                if (normalized === 'warning' || normalized === 'warn') {
+                    return 'status-dot--warn';
+                }
+                if (normalized === 'info' || normalized === 'monitoring' || normalized === 'pending') {
+                    return 'status-dot--info';
+                }
+                if (normalized === 'error' || normalized === 'failed' || normalized === 'offline' || normalized === 'timeout') {
+                    return 'status-dot--error';
+                }
+                return 'status-dot--neutral';
+            }
+
+            function formatProcessPercent(value) {
+                if (value === null || value === undefined || Number.isNaN(value)) {
+                    return '--';
+                }
+                return Number(value).toFixed(1) + '%';
+            }
+
+            function formatProcessCommand(command) {
+                if (!command) {
+                    return '--';
+                }
+                const trimmed = command.trim();
+                if (trimmed.length === 0) {
+                    return '--';
+                }
+                const firstSegment = trimmed.split(/\s+/)[0];
+                return firstSegment;
+            }
+
             function resolveServerDetailStatus(overview, server) {
                 const status = overview && overview.connectionStatus ? overview.connectionStatus : (server && server.status);
                 const description = overview && overview.connectionStatusDescription ? overview.connectionStatusDescription : '';
@@ -4245,7 +4317,7 @@ function initDashboardRealTimeUpdates() {
                     return;
                 }
                 try {
-                    const detail = await fetchServerDetail(serverDetailCurrentServer.id);
+                    const detail = await fetchServerDetail(serverDetailCurrentServer.id, serverDetailProcessSort || 'cpu');
                     serverDetailCurrentDetail = detail;
                     updateServerDetailContent(serverDetailCurrentServer, detail);
                 } catch (error) {
@@ -4287,8 +4359,9 @@ function initDashboardRealTimeUpdates() {
                 const source = Array.isArray(seriesList) ? seriesList : [];
                 serverDetailChartDefinitions = SERVER_DETAIL_CHART_TEMPLATE.map((template) => {
                     const series = source.find((item) => item && item.id === template.key);
+                    const decimals = typeof template.decimals === 'number' ? template.decimals : 2;
                     const values = series && Array.isArray(series.points)
-                        ? series.points.map((point) => sanitizeMetricValue(point && point.value))
+                        ? series.points.map((point) => roundChartValue(point && point.value, decimals)).filter((value) => value !== null)
                         : [];
                     const labels = series && Array.isArray(series.points)
                         ? series.points.map((point) => (point && point.timestamp) ? point.timestamp : '')
@@ -4312,6 +4385,15 @@ function initDashboardRealTimeUpdates() {
                 }
                 const numeric = Number(value);
                 return Number.isFinite(numeric) ? numeric : null;
+            }
+
+            function roundChartValue(value, decimals) {
+                const numeric = sanitizeMetricValue(value);
+                if (numeric === null) {
+                    return null;
+                }
+                const factor = Math.pow(10, decimals);
+                return Math.round(numeric * factor) / factor;
             }
 
             function initServerDetailCharts() {

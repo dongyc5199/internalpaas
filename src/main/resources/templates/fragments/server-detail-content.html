@@ -111,7 +111,6 @@
                 <div class="server-detail-card server-detail-card--with-grid">
                     <div class="server-detail-monitor-grid" id="serverDetailMonitorGrid">
                         <article class="server-detail-subcard" data-metric="cpu">
-                            <span class="server-detail-tag">CPU</span>
                             <h3 class="server-detail-subcard__title" data-i18n-zh="CPU 使用率" data-i18n-en="CPU Usage">CPU 使用率</h3>
                             <div class="server-detail-chart" aria-hidden="false">
                                 <canvas id="serverDetailCpuChart" aria-label="CPU 使用率"></canvas>
@@ -119,7 +118,6 @@
                             <p class="server-detail-subcard__meta" data-role="detail-metric-summary-cpu" data-i18n-zh="暂无数据" data-i18n-en="No data">暂无数据</p>
                         </article>
                         <article class="server-detail-subcard" data-metric="memory">
-                            <span class="server-detail-tag">MEMORY</span>
                             <h3 class="server-detail-subcard__title" data-i18n-zh="内存占用" data-i18n-en="Memory Usage">内存占用</h3>
                             <div class="server-detail-chart">
                                 <canvas id="serverDetailMemChart" aria-label="内存占用"></canvas>
@@ -127,7 +125,6 @@
                             <p class="server-detail-subcard__meta" data-role="detail-metric-summary-memory" data-i18n-zh="暂无数据" data-i18n-en="No data">暂无数据</p>
                         </article>
                         <article class="server-detail-subcard" data-metric="disk">
-                            <span class="server-detail-tag">DISK</span>
                             <h3 class="server-detail-subcard__title" data-i18n-zh="磁盘 I/O" data-i18n-en="Disk I/O">磁盘 I/O</h3>
                             <div class="server-detail-chart">
                                 <canvas id="serverDetailDiskChart" aria-label="磁盘 I/O"></canvas>
@@ -135,7 +132,6 @@
                             <p class="server-detail-subcard__meta" data-role="detail-metric-summary-disk" data-i18n-zh="暂无数据" data-i18n-en="No data">暂无数据</p>
                         </article>
                         <article class="server-detail-subcard" data-metric="network">
-                            <span class="server-detail-tag">NETWORK</span>
                             <h3 class="server-detail-subcard__title" data-i18n-zh="网络带宽" data-i18n-en="Network Throughput">网络带宽</h3>
                             <div class="server-detail-chart">
                                 <canvas id="serverDetailNetChart" aria-label="网络带宽"></canvas>
@@ -153,12 +149,16 @@
                         <p class="server-detail-section__subtitle" data-i18n-zh="观测关键进程的实时占用情况" data-i18n-en="Monitor real-time usage of critical processes">观测关键进程的实时占用情况</p>
                     </div>
                     <div class="server-detail-section__actions">
+                        <div class="btn-group" data-role="detail-process-sort-group">
+                            <button class="btn btn-ghost is-active" type="button" data-role="detail-process-sort" data-sort="cpu" data-i18n-zh="按 CPU" data-i18n-en="CPU">按 CPU</button>
+                            <button class="btn btn-ghost" type="button" data-role="detail-process-sort" data-sort="memory" data-i18n-zh="按内存" data-i18n-en="Memory">按内存</button>
+                        </div>
                         <button class="btn btn-ghost" type="button" data-action="detail-refresh-process" data-i18n-zh="刷新" data-i18n-en="Refresh">刷新</button>
                     </div>
                 </div>
                 <div class="server-detail-card server-detail-card--table">
                     <div class="server-detail-table-wrapper">
-                        <table class="server-detail-table" aria-describedby="process-info">
+                        <table class="server-detail-table server-detail-table--process" aria-describedby="process-info">
                             <thead>
                                 <tr>
                                     <th scope="col">PID</th>
