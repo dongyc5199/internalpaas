@@ -1,0 +1,38 @@
+/* ================================================================
+ * Dev Debug Platform - 主样式入口
+ * Vite管线统一加载
+ * ================================================================ */
+
+/* 1. 设计令牌系统 */
+@import './tokens/index.css';
+
+/* 2. 基础样式重置 */
+:root {
+    color-scheme: light;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-normal);
+    color: var(--text-primary);
+    background-color: var(--bg-secondary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 3. 开发提示消息样式 */
+[data-dev-shell-message] {
+    display: inline-block;
+    padding: var(--spacing-2) var(--spacing-3);
+    border-radius: var(--radius-md);
+    background: var(--color-info-bg);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+}

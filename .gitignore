@@ -42,3 +42,15 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+# Vite build artifacts
+src/main/resources/static/dist/
+
+### E2E Testing ###
+# Playwright
+playwright-report/
+test-results/
+e2e/.auth/
+screenshots/
+.env.e2e
+# Playwright browsers cache (optional, comment out if you want to cache browsers)
+# .cache/ms-playwright/

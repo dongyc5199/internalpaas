@@ -200,6 +200,57 @@
 				</plugins>
 			</build>
 		</profile>
+
+		<!-- 前端构建集成 -->
+		<profile>
+			<id>frontend</id>
+			<activation>
+				<property>
+					<name>build.frontend</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<version>3.2.0</version>
+						<executions>
+							<execution>
+								<id>npm-ci</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>npm</executable>
+									<workingDirectory>${project.basedir}</workingDirectory>
+									<arguments>
+										<argument>ci</argument>
+									</arguments>
+								</configuration>
+							</execution>
+							<execution>
+								<id>npm-build</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>npm</executable>
+									<workingDirectory>${project.basedir}</workingDirectory>
+									<arguments>
+										<argument>run</argument>
+										<argument>build</argument>
+									</arguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 	</profiles>
 
 </project>
