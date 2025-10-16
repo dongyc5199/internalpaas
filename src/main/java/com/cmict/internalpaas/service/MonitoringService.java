@@ -5,7 +5,7 @@ import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.model.UserActivity;
 import com.cmict.internalpaas.service.ServerGroupService.ProcessSortOption;
-import com.cmict.internalpaas.repository.ServerMetricsRepository;
+// import com.cmict.internalpaas.repository.ServerMetricsRepository; // ❌ 已废弃 (Phase4-Step4)
 import com.cmict.internalpaas.repository.UserActivityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +28,27 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+/**
+ * ⚠️ 监控服务 - 部分功能已废弃
+ * 
+ * 废弃内容 (Phase4: 2025-10-17):
+ * - getServerMetrics() - SSH方式收集监控数据 → 使用 MetricsHubClient
+ * - saveServerMetrics() - 保存到H2数据库 → Hub自动存储到TSDB
+ * - getLatestMetrics() - 从H2查询 → MetricsHubClient.getLatestMetrics()
+ * - cleanupOldData() - 清理H2数据 → Hub自动保留策略
+ * 
+ * 保留功能:
+ * - getUserActivities() - SSH获取用户活跃信息(非监控数据)
+ * - saveUserActivities() - 保存用户活跃信息
+ * - fetchTopProcesses() - 获取进程列表(用于页面展示)
+ * - killProcess() - 结束进程(管理功能)
+ * 
+ * 架构演进:
+ * - 旧: SSH轮询(60s) → MonitoringService解析 → H2存储
+ * - 新: OTLP Agent(10s) → Hub → TSDB存储
+ * 
+ * @deprecated 监控数据收集功能已迁移到Hub,请使用 {@link com.cmict.internalpaas.client.MetricsHubClient}
+ */
 @Service
 public class MonitoringService {
     
@@ -45,15 +66,30 @@ public class MonitoringService {
     @Autowired
     private SshConnectionService sshConnectionService;
     
-    @Autowired
-    private ServerMetricsRepository metricsRepository;
+    // ❌ 已废弃 (Phase4-Step4: 2025-10-17) - 监控数据已迁移到Hub
+    // @Autowired
+    // private ServerMetricsRepository metricsRepository;
     
     @Autowired
     private UserActivityRepository userActivityRepository;
     
     /**
      * 获取完整的服务器监控数据
+     * 
+     * ❌ 已废弃 (Phase4-Step4: 2025-10-17)
+     * 原因: 监控数据收集已迁移到 OTLP Agent + Hub
+     * 
+     * 替代方案:
+     * - 实时数据: MetricsHubClient.getLatestMetrics(serverId)
+     * - 历史数据: MetricsHubClient.queryMetrics(serverId, from, to, step)
+     * 
+     * 数据来源变化:
+     * - 旧: SSH执行命令(top/free/df等) → 解析输出 → ServerMetrics对象
+     * - 新: OTLP Agent收集 → Hub接收 → TSDB存储 → API查询
+     * 
+     * @deprecated 使用 {@link com.cmict.internalpaas.client.MetricsHubClient#getLatestMetrics(Long)}
      */
+    @Deprecated(since = "2025-10-17", forRemoval = true)
     public ServerMetrics getServerMetrics(Server server) {
         long startTime = System.currentTimeMillis();
         logger.info("开始收集服务器指标: {}", server.getHostname());
@@ -828,11 +864,19 @@ public class MonitoringService {
 
     /**
      * 保存服务器指标到数据库
+     * 
+     * ❌ 已废弃 (Phase4-Step4: 2025-10-17)
+     * 原因: H2数据库已移除,监控数据由Hub自动存储到TSDB
+     * 
+     * @deprecated 监控数据由Hub自动存储,无需手动保存
      */
+    @Deprecated(since = "2025-10-17", forRemoval = true)
     public ServerMetrics saveServerMetrics(Server server) {
         try {
             ServerMetrics metrics = getServerMetrics(server);
-            return metricsRepository.save(metrics);
+            // return metricsRepository.save(metrics); // ❌ 已废弃
+            logger.warn("saveServerMetrics已废弃,监控数据应由Hub存储");
+            return metrics; // 仅返回收集的数据,不保存
         } catch (Exception e) {
             logger.error("保存服务器指标失败: {}", server.getHostname(), e);
             return null;
@@ -870,10 +914,21 @@ public class MonitoringService {
     
     /**
      * 获取服务器最新的监控数据
+     * 
+     * ❌ 已废弃 (Phase4-Step4: 2025-10-17)
+     * 原因: H2数据库已移除
+     * 
+     * 替代方案:
+     * - MetricsHubClient.getLatestMetrics(serverId)
+     * 
+     * @deprecated 使用 {@link com.cmict.internalpaas.client.MetricsHubClient#getLatestMetrics(Long)}
      */
+    @Deprecated(since = "2025-10-17", forRemoval = true)
     public ServerMetrics getLatestMetrics(Long serverId) {
-        return metricsRepository.findTopByServerIdOrderByTimestampDesc(serverId)
-                .orElse(null);
+        // return metricsRepository.findTopByServerIdOrderByTimestampDesc(serverId)
+        //         .orElse(null);
+        logger.warn("getLatestMetrics已废弃,请使用MetricsHubClient.getLatestMetrics()");
+        return null;
     }
     
     /**
@@ -885,14 +940,25 @@ public class MonitoringService {
     
     /**
      * 清理过期的监控数据
+     * 
+     * ❌ 已废弃 (Phase4-Step4: 2025-10-17)
+     * 原因: H2数据库已移除
+     * 
+     * Hub自动保留策略:
+     * - Raw数据: 30天
+     * - 5分钟聚合: 90天
+     * - 1小时聚合: 365天
+     * 
+     * @deprecated Hub有自动保留策略,无需手动清理
      */
+    @Deprecated(since = "2025-10-17", forRemoval = true)
     public void cleanupOldData(int daysToKeep) {
         LocalDateTime cutoffTime = LocalDateTime.now().minusDays(daysToKeep);
         
         try {
-            metricsRepository.deleteByTimestampBefore(cutoffTime);
+            // metricsRepository.deleteByTimestampBefore(cutoffTime); // ❌ 已废弃
             userActivityRepository.deleteByCreatedAtBefore(cutoffTime);
-            logger.info("清理了{}天前的监控数据", daysToKeep);
+            logger.info("清理了{}天前的用户活跃数据", daysToKeep);
         } catch (Exception e) {
             logger.error("清理过期数据失败", e);
         }
@@ -900,13 +966,21 @@ public class MonitoringService {
 
     /**
      * T4 API: 查询指定时间范围的监控数据
+     * 
+     * ❌ 已废弃 (Phase4-Step4: 2025-10-17)
+     * 原因: H2数据库已移除
+     * 
+     * 替代方案:
+     * - MetricsHubClient.queryMetrics(serverId, from, to, step)
      *
      * @param serverId 服务器ID
      * @param from 开始时间（Unix毫秒时间戳，可选）
      * @param to 结束时间（Unix毫秒时间戳，可选）
      * @param step 降采样间隔（秒，可选）
      * @return 监控数据列表
+     * @deprecated 使用 {@link com.cmict.internalpaas.client.MetricsHubClient#queryMetrics}
      */
+    @Deprecated(since = "2025-10-17", forRemoval = true)
     public List<ServerMetrics> queryMetrics(Long serverId, Long from, Long to, Integer step) {
         // 默认时间范围：最近1小时
         LocalDateTime fromTime = from != null
@@ -917,20 +991,16 @@ public class MonitoringService {
                 ? LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(to), java.time.ZoneId.systemDefault())
                 : LocalDateTime.now();
 
+        logger.warn("queryMetrics已废弃，请使用MetricsHubClient.queryMetrics()");
         logger.info("查询服务器 {} 的监控数据: from={}, to={}, step={}",
                 serverId, fromTime, toTime, step);
 
         // 从数据库查询时间范围内的数据
-        List<ServerMetrics> metrics = metricsRepository
-                .findByServerIdAndTimestampBetweenOrderByTimestampDesc(serverId, fromTime, toTime);
-
-        // 如果指定了降采样间隔，进行降采样
-        if (step != null && step > 0 && metrics.size() > 1) {
-            metrics = downsampleMetrics(metrics, step);
-        }
-
-        logger.info("查询完成，返回 {} 条记录", metrics.size());
-        return metrics;
+        // List<ServerMetrics> metrics = metricsRepository
+        //         .findByServerIdAndTimestampBetweenOrderByTimestampDesc(serverId, fromTime, toTime);
+        
+        // 返回空列表
+        return new ArrayList<>();
     }
 
     /**

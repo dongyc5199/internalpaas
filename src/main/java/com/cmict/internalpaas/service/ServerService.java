@@ -5,7 +5,7 @@ import com.cmict.internalpaas.event.ServerStatusUpdateEvent;
 import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.repository.ServerRepository;
-import com.cmict.internalpaas.repository.ServerMetricsRepository;
+// import com.cmict.internalpaas.repository.ServerMetricsRepository; // ❌ 已废弃 (Phase4-Step4)
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,8 +45,9 @@ public class ServerService {
     @Autowired
     private MonitoringService monitoringService;
     
-    @Autowired
-    private ServerMetricsRepository metricsRepository;
+    // ❌ 已废弃 (Phase4-Step4: 2025-10-17) - 监控数据已迁移到Hub
+    // @Autowired
+    // private ServerMetricsRepository metricsRepository;
     
     @Autowired
     private ApplicationEventPublisher eventPublisher;
@@ -121,10 +122,13 @@ public class ServerService {
             server.setConnectionStatus(status);
             server.setLastConnectionCheck(LocalDateTime.now());
             
-            // 如果连接成功，获取监控数据
+            // 如果连接成功,获取监控数据
             if (status == Server.ConnectionStatus.CONNECTED) {
-                ServerMetrics metrics = monitoringService.getServerMetrics(server);
-                metricsRepository.save(metrics);
+                // ❌ 已废弃 (Phase4-Step4) - SSH监控数据收集已停用
+                // 监控数据现由 OTLP Agent 上报到 Hub,通过 MetricsHubClient 查询
+                // ServerMetrics metrics = monitoringService.getServerMetrics(server);
+                // metricsRepository.save(metrics);
+                
                 server.setLastMetricsUpdate(LocalDateTime.now());
                 server.setConnectionStatus(Server.ConnectionStatus.MONITORING);
                 
@@ -263,10 +267,12 @@ public class ServerService {
                 savedServer.setConnectionStatus(status);
                 savedServer.setLastConnectionCheck(LocalDateTime.now());
                 
-                // 如果连接成功，立即获取系统状态
+                // 如果连接成功,立即获取系统状态
                 if (status == Server.ConnectionStatus.CONNECTED) {
-                    ServerMetrics metrics = monitoringService.getServerMetrics(savedServer);
-                    metricsRepository.save(metrics);
+                    // ❌ 已废弃 (Phase4-Step4) - SSH监控数据收集已停用
+                    // ServerMetrics metrics = monitoringService.getServerMetrics(savedServer);
+                    // metricsRepository.save(metrics);
+                    
                     savedServer.setLastMetricsUpdate(LocalDateTime.now());
                     savedServer.setConnectionStatus(Server.ConnectionStatus.MONITORING);
                     
@@ -357,20 +363,23 @@ public class ServerService {
     
     /**
      * 删除服务器关联的监控指标
+     * ❌ 已废弃 (Phase4-Step4) - H2监控数据已移除
      */
     @Transactional
     private void deleteServerMetrics(Long serverId) {
         try {
-            if (metricsRepository != null) {
-                List<ServerMetrics> metrics = metricsRepository.findByServerIdOrderByTimestampDesc(serverId);
-                if (!metrics.isEmpty()) {
-                    logger.info("删除服务器 {} 关联的 {} 个监控指标记录", serverId, metrics.size());
-                    metricsRepository.deleteAll(metrics);
-                }
-            }
+            // 监控数据已迁移到 Hub,无需在主应用删除
+            // if (metricsRepository != null) {
+            //     List<ServerMetrics> metrics = metricsRepository.findByServerIdOrderByTimestampDesc(serverId);
+            //     if (!metrics.isEmpty()) {
+            //         logger.info("删除服务器 {} 关联的 {} 个监控指标记录", serverId, metrics.size());
+            //         metricsRepository.deleteAll(metrics);
+            //     }
+            // }
+            logger.debug("跳过H2监控数据删除(已迁移到Hub),服务器ID: {}", serverId);
         } catch (Exception e) {
             logger.error("删除服务器监控指标失败: {}", e.getMessage(), e);
-            // 继续执行，不中断删除流程
+            // 继续执行,不中断删除流程
         }
     }
     
