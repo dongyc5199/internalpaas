@@ -1,0 +1,247 @@
+# ============================================================
+# Metrics Hub Configuration
+# ============================================================
+# OTLP Metrics Ingestion Service
+#
+# This service receives metrics via OTLP protocol (gRPC and HTTP),
+# queues them for processing, and provides monitoring endpoints.
+#
+# Ports:
+# - 8080: Main HTTP API and Actuator
+# - 4317: OTLP gRPC endpoint
+# - 4318: OTLP HTTP endpoint
+# ============================================================
+
+server:
+  port: 8080
+  shutdown: graceful
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+
+spring:
+  application:
+    name: metrics-hub
+
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
+
+  # Redis Configuration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      # password: ${REDIS_PASSWORD:}
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+          max-wait: 2000ms
+
+  # Database Configuration (PostgreSQL/Timescale)
+  datasource:
+    url: jdbc:postgresql://localhost:5432/metrics_hub
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate  # Use Flyway for schema management
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+
+  # Flyway Configuration
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+
+# ============================================================
+# Metrics Hub Ingestion Configuration
+# ============================================================
+metrics-hub:
+  ingest:
+    # Queue Configuration
+    queue:
+      capacity: 10000              # Maximum queue size
+      offer-timeout-ms: 100        # Timeout for enqueue operations (ms)
+
+    # HTTP OTLP Configuration
+    http:
+      port: 4318                   # Configured via separate Tomcat connector
+      max-payload-size: 4194304    # 4MB maximum payload size
+
+    # gRPC OTLP Configuration
+    grpc:
+      port: 4317
+      max-inbound-message-size: 4194304  # 4MB
+      enable-tls: false            # TLS disabled for now (T7 will add TLS support)
+      # tls:
+      #   cert-chain-file: /path/to/cert.pem
+      #   private-key-file: /path/to/key.pem
+      #   trust-cert-collection-file: /path/to/ca.pem
+
+  # Normalizer Configuration
+  normalizer:
+    # Label whitelist - only these labels will be kept after normalization
+    label-whitelist: server.id,region,group,env
+
+    # Log unrecognized metrics (metrics not in RECOGNIZED_METRICS set)
+    log-unrecognized: true
+
+  # Redis Configuration (Hot Data Storage)
+  redis:
+    key-prefix: "metrics:latest:"
+    ttl-seconds: 300  # 5 minutes
+
+  # Write Pipeline Configuration
+  write:
+    async: true  # Enable async dual-write
+
+# ============================================================
+# Actuator Configuration (Health & Metrics)
+# ============================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus,info
+      base-path: /actuator
+
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+      environment: ${ENVIRONMENT:dev}
+
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+
+# ============================================================
+# Logging Configuration
+# ============================================================
+logging:
+  level:
+    root: INFO
+    com.cmict.metricshub: DEBUG
+    io.grpc: INFO
+    org.springframework.web: INFO
+
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+  file:
+    name: logs/metrics-hub.log
+    max-size: 100MB
+    max-history: 30
+    total-size-cap: 1GB
+
+# ============================================================
+# Development Profile
+# ============================================================
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+logging:
+  level:
+    com.cmict.metricshub: DEBUG
+    io.grpc: DEBUG
+
+metrics-hub:
+  ingest:
+    queue:
+      capacity: 1000  # Smaller queue for dev
+
+# ============================================================
+# Production Profile
+# ============================================================
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+logging:
+  level:
+    root: WARN
+    com.cmict.metricshub: INFO
+
+metrics-hub:
+  ingest:
+    queue:
+      capacity: 50000  # Larger queue for prod
+    http:
+      max-payload-size: 10485760  # 10MB for production
+    grpc:
+      max-inbound-message-size: 10485760  # 10MB for production
+
+# ============================================================
+# Test Profile
+# ============================================================
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+
+server:
+  port: 0  # Random port for tests
+
+logging:
+  level:
+    root: ERROR
+    com.cmict.metricshub: DEBUG
+
+metrics-hub:
+  ingest:
+    queue:
+      capacity: 100  # Small queue for testing
+      offer-timeout-ms: 50
+
+    # Use random ports to avoid conflicts in parallel tests
+    http:
+      port: 0  # Random port
+    grpc:
+      port: 0  # Random port

@@ -1,0 +1,41 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    defer-datasource-initialization: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6370  # Different port for test embedded Redis
+
+  flyway:
+    enabled: false  # Disable Flyway for tests using H2
+
+# Actuator configuration for tests
+management:
+  health:
+    redis:
+      enabled: false  # Disable Redis health check in tests
+    defaults:
+      enabled: true
+
+metrics-hub:
+  redis:
+    key-prefix: "test:metrics:latest:"
+    ttl-seconds: 60
+
+  write:
+    async: false  # Synchronous for easier testing
+
+logging:
+  level:
+    root: ERROR
+    com.cmict.metricshub: DEBUG
