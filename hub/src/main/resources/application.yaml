@@ -121,6 +121,24 @@ metrics-hub:
   write:
     async: true  # Enable async dual-write
 
+  # Rollup Configuration (T5: Data Aggregation)
+  rollup:
+    enabled: ${ROLLUP_ENABLED:false}  # Disabled by default, enable in production
+    5m:
+      cron: "0 */5 * * * *"  # Every 5 minutes at :00 seconds
+    1h:
+      cron: "0 0 * * * *"    # Every hour at :00:00
+    refresh-status:
+      cron: "0 */10 * * * *" # Refresh status every 10 minutes
+
+  # Retention Policy Configuration (T5: Data Retention)
+  retention:
+    enabled: ${RETENTION_ENABLED:false}  # Disabled by default, enable in production
+    cron: "0 0 2 * * *"      # Daily at 2:00 AM
+    raw-data-days: 30        # Keep raw data for 30 days
+    5m-rollup-days: 90       # Keep 5-minute rollup for 90 days
+    1h-rollup-days: 365      # Keep 1-hour rollup for 1 year
+
 # ============================================================
 # Actuator Configuration (Health & Metrics)
 # ============================================================
@@ -216,6 +234,12 @@ metrics-hub:
       max-payload-size: 10485760  # 10MB for production
     grpc:
       max-inbound-message-size: 10485760  # 10MB for production
+
+  # Enable rollup and retention in production
+  rollup:
+    enabled: true
+  retention:
+    enabled: true
 
 # ============================================================
 # Test Profile

@@ -1,10 +1,12 @@
 package com.cmict.internalpaas.service;
 
+import com.cmict.internalpaas.client.MetricsHubClient;
 import com.cmict.internalpaas.dto.agent.DeployResult;
 import com.cmict.internalpaas.dto.agent.PreCheckResult;
 import com.cmict.internalpaas.model.AgentDeployment;
 import com.cmict.internalpaas.model.DeploymentStatus;
 import com.cmict.internalpaas.model.Server;
+import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.repository.AgentDeploymentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -45,6 +49,9 @@ public class AgentDeployService {
 
     @Autowired(required = false)
     private SimpMessagingTemplate messagingTemplate;
+
+    @Autowired(required = false)
+    private MetricsHubClient metricsHubClient;
 
     @Value("${agent.auto-deploy.enabled:true}")
     private boolean autoDeployEnabled;
@@ -577,7 +584,24 @@ public class AgentDeployService {
                 Thread.currentThread().interrupt();
             }
 
-            // 5. 检查配置文件是否正确加载
+            // 5. 验证 Hub 数据上报（如果 Hub 已启用）
+            if (metricsHubClient != null && metricsHubClient.isAvailable()) {
+                deployment.appendLog("[健康检查] 验证 Hub 数据上报...");
+                boolean hubDataVerified = verifyHubDataReporting(server, deployment);
+                
+                if (hubDataVerified) {
+                    deployment.appendLog("[健康检查] ✅ Hub 已接收到数据");
+                } else {
+                    deployment.appendLog("[健康检查] ⚠️ Hub 未接收到数据（但Agent可能还在初始化）");
+                    logger.warn("Hub未接收到数据 - serverId: {}", server.getId());
+                    // 不设置 allChecksPassed = false，因为数据可能稍后到达
+                }
+            } else {
+                deployment.appendLog("[健康检查] ⏭️ Hub 未启用，跳过数据验证");
+                logger.debug("Hub未启用，跳过数据验证 - serverId: {}", server.getId());
+            }
+
+            // 6. 检查配置文件是否正确加载
             deployment.appendLog("[健康检查] 验证配置文件...");
             String configCommand = "test -f /opt/metrics-agent/config/otelcol.yaml && echo 'exists'";
             RemoteCommandService.CommandResult configResult = remoteCommandService.executeCommand(server, configCommand);
@@ -607,6 +631,88 @@ public class AgentDeployService {
             deployment.appendLog("[健康检查] 异常: " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * 验证 Hub 数据上报
+     * 
+     * @param server 服务器
+     * @param deployment 部署记录
+     * @return true 如果Hub已接收到数据
+     */
+    private boolean verifyHubDataReporting(Server server, AgentDeployment deployment) {
+        int maxRetries = 6;  // 最多重试6次
+        int retryInterval = 5000;  // 每次间隔5秒
+        
+        deployment.appendLog("[Hub验证] 开始验证数据上报（最多尝试 " + maxRetries + " 次，每次间隔 5 秒）");
+        
+        for (int i = 1; i <= maxRetries; i++) {
+            try {
+                deployment.appendLog("[Hub验证] 第 " + i + " 次尝试...");
+                
+                // 调用 Hub API 获取最新指标
+                ServerMetrics metrics = metricsHubClient.getLatestMetrics(server.getId());
+                
+                if (metrics != null && metrics.getTimestamp() != null) {
+                    // 检查数据时间戳是否为最近60秒内的数据
+                    LocalDateTime now = LocalDateTime.now();
+                    long secondsAgo = ChronoUnit.SECONDS.between(metrics.getTimestamp(), now);
+                    
+                    if (secondsAgo <= 60) {
+                        deployment.appendLog(String.format("[Hub验证] ✅ 发现最新数据！ 数据时间: %s (%d秒前)",
+                                metrics.getTimestamp(), secondsAgo));
+                        deployment.appendLog(String.format("[Hub验证] 数据详情: CPU=%.1f%%, Memory=%.1f%%, Disk=%.1f%%",
+                                metrics.getCpuUsage() != null ? metrics.getCpuUsage() : 0.0,
+                                metrics.getMemoryUsage() != null ? metrics.getMemoryUsage() : 0.0,
+                                metrics.getDiskUsage() != null ? metrics.getDiskUsage() : 0.0));
+                        
+                        logger.info("✅ Hub数据验证通过 - serverId: {}, 数据时间: {}, 延迟: {}秒",
+                                server.getId(), metrics.getTimestamp(), secondsAgo);
+                        return true;
+                    } else {
+                        deployment.appendLog(String.format("[Hub验证] ⚠️ 数据过旧: %s (%d秒前)",
+                                metrics.getTimestamp(), secondsAgo));
+                        logger.debug("Hub数据过旧 - serverId: {}, 数据时间: {}, 延迟: {}秒",
+                                server.getId(), metrics.getTimestamp(), secondsAgo);
+                    }
+                } else {
+                    deployment.appendLog("[Hub验证] ⚠️ 未查询到数据");
+                    logger.debug("Hub未查询到数据 - serverId: {}, 尝试: {}/{}", server.getId(), i, maxRetries);
+                }
+                
+                // 如果不是最后一次尝试，等待后继续
+                if (i < maxRetries) {
+                    deployment.appendLog("[Hub验证] 等待 5 秒后重试...");
+                    Thread.sleep(retryInterval);
+                }
+                
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.warn("Hub数据验证被中断 - serverId: {}", server.getId());
+                deployment.appendLog("[Hub验证] ⚠️ 验证被中断");
+                return false;
+                
+            } catch (Exception e) {
+                logger.error("Hub数据验证异常 - serverId: {}, 尝试: {}/{}, 错误: {}",
+                        server.getId(), i, maxRetries, e.getMessage());
+                deployment.appendLog("[Hub验证] ❌ 第 " + i + " 次尝试异常: " + e.getMessage());
+                
+                // 如果不是最后一次尝试，等待后继续
+                if (i < maxRetries) {
+                    try {
+                        deployment.appendLog("[Hub验证] 等待 5 秒后重试...");
+                        Thread.sleep(retryInterval);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        return false;
+                    }
+                }
+            }
+        }
+        
+        deployment.appendLog("[Hub验证] ⚠️ 所有尝试均未成功，但不影响部署状态");
+        logger.warn("Hub数据验证失败（所有尝试均未成功）- serverId: {}", server.getId());
+        return false;
     }
 
     /**

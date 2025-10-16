@@ -80,12 +80,19 @@ public class MonitoringController {
     }
     
     /**
-     * 获取服务器最新监控数据（智能路由版本：Hub优先，SSH降级）
-     *
-     * 数据源选择策略:
-     * 1. 优先尝试从Metrics Hub读取（准实时，10-15秒延迟）
-     * 2. Hub不可用时降级到SSH轮询（传统方式，1-5分钟延迟）
-     * 3. 对用户完全透明，无需前端改动
+     * 获取服务器最新监控数据 (仅使用 Metrics Hub)
+     * 
+     * ⚠️ 阶段4迁移: SSH降级逻辑已移除
+     * 
+     * 数据源: Metrics Hub (OTLP Agent → Hub API)
+     * - 采样间隔: 10秒
+     * - 延迟: < 30秒
+     * - 协议: gRPC/HTTP + Protobuf
+     * 
+     * 如需恢复SSH降级,请参考: doc/阶段4-数据存储迁移实施方案.md
+     * 
+     * @param id 服务器ID
+     * @return 监控数据 (Hub数据源) 或 503/404 错误
      */
     @GetMapping("/server/{id}/metrics")
     @ResponseBody
@@ -93,65 +100,46 @@ public class MonitoringController {
         try {
             logger.debug("请求监控数据 - 服务器ID: {}", id);
 
-            // 首先检查服务器是否存在
+            // 检查服务器是否存在
             if (!serverService.findById(id).isPresent()) {
                 logger.warn("服务器不存在 - ID: {}", id);
-                Map<String, String> error = new HashMap<>();
+                Map<String, Object> error = new HashMap<>();
                 error.put("error", "服务器不存在");
-                error.put("serverId", String.valueOf(id));
+                error.put("serverId", id);
+                error.put("hint", "请检查服务器ID是否正确");
                 return ResponseEntity.status(404).body(error);
             }
 
-            // ========== 第一优先级: 尝试从Metrics Hub读取 ==========
-            if (metricsHubClient != null && metricsHubClient.isAvailable()) {
-                try {
-                    logger.debug("尝试从Metrics Hub读取数据 - serverId: {}", id);
-                    ServerMetrics hubMetrics = metricsHubClient.getLatestMetrics(id);
-
-                    if (hubMetrics != null) {
-                        logger.info("✅ 数据来源: Metrics Hub (准实时) - serverId: {}", id);
-
-                        // 添加数据源标记
-                        Map<String, Object> response = new HashMap<>();
-                        response.put("dataSource", "hub");
-                        response.put("metrics", hubMetrics);
-                        response.put("timestamp", System.currentTimeMillis());
-
-                        return ResponseEntity.ok(response);
-                    } else {
-                        logger.warn("Hub返回空数据，降级到SSH - serverId: {}", id);
-                    }
-
-                } catch (Exception e) {
-                    logger.warn("Hub查询失败，降级到SSH - serverId: {}, error: {}", id, e.getMessage());
-                }
-            } else {
-                logger.debug("Metrics Hub不可用或未配置，使用SSH监控 - serverId: {}", id);
+            // 检查 Hub 是否可用
+            if (metricsHubClient == null || !metricsHubClient.isAvailable()) {
+                logger.error("❌ Metrics Hub 不可用 - serverId: {}", id);
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "监控服务暂时不可用");
+                error.put("hint", "请确保 Metrics Hub 服务正常运行");
+                error.put("serverId", id);
+                error.put("helpUrl", "/doc/阶段4-数据存储迁移实施方案.md");
+                return ResponseEntity.status(503).body(error);
             }
 
-            // ========== 第二优先级: 降级到SSH轮询（现有逻辑） ==========
-            logger.info("⚠️ 数据来源: SSH轮询（降级） - serverId: {}", id);
-
-            ServerMetrics metrics = serverService.getServerLatestMetrics(id);
-            logger.debug("SSH监控数据结果 - metrics: {}", (metrics != null ? "有数据" : "无数据"));
+            // 从 Hub 读取数据
+            logger.debug("从 Metrics Hub 读取数据 - serverId: {}", id);
+            ServerMetrics metrics = metricsHubClient.getLatestMetrics(id);
 
             if (metrics == null) {
-                // 如果没有数据，尝试刷新
-                logger.debug("尝试刷新SSH监控数据 - serverId: {}", id);
-                metrics = serverService.refreshServerMetrics(id);
-            }
-
-            if (metrics == null) {
-                logger.warn("SSH监控数据为空 - serverId: {}", id);
-                Map<String, String> error = new HashMap<>();
-                error.put("error", "监控数据不可用");
-                error.put("serverId", String.valueOf(id));
+                logger.warn("Hub 返回空数据 - serverId: {}", id);
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "暂无监控数据");
+                error.put("hint", "请确保 OTLP Agent 已部署并正常运行");
+                error.put("serverId", id);
+                error.put("deploymentGuide", "/admin/servers (自动部署Agent)");
                 return ResponseEntity.status(404).body(error);
             }
 
-            // 添加数据源标记
+            logger.info("✅ 数据来源: Metrics Hub - serverId: {}", id);
+
+            // 返回数据
             Map<String, Object> response = new HashMap<>();
-            response.put("dataSource", "ssh");
+            response.put("dataSource", "hub");
             response.put("metrics", metrics);
             response.put("timestamp", System.currentTimeMillis());
 
@@ -159,9 +147,9 @@ public class MonitoringController {
 
         } catch (Exception e) {
             logger.error("获取监控数据异常 - serverId: {}, error: {}", id, e.getMessage(), e);
-            Map<String, String> error = new HashMap<>();
+            Map<String, Object> error = new HashMap<>();
             error.put("error", e.getMessage());
-            error.put("serverId", String.valueOf(id));
+            error.put("serverId", id);
             return ResponseEntity.internalServerError().body(error);
         }
     }
@@ -240,7 +228,11 @@ public class MonitoringController {
     }
     
     /**
-     * 获取所有服务器指标（智能路由版本：Hub优先，SSH降级）
+     * 获取所有服务器指标 (仅使用 Metrics Hub)
+     * 
+     * ⚠️ 阶段4迁移: SSH降级逻辑已移除
+     * 
+     * @return 所有服务器的监控数据 (Hub数据源)
      */
     @GetMapping("/servers/metrics")
     @ResponseBody
@@ -249,61 +241,59 @@ public class MonitoringController {
             List<Server> servers = serverService.getActiveServers();
             Map<String, ServerMetrics> metricsMap = new HashMap<>();
             int hubCount = 0;
-            int sshCount = 0;
+            int errorCount = 0;
 
+            // 检查 Hub 是否可用
+            boolean hubAvailable = metricsHubClient != null && metricsHubClient.isAvailable();
+
+            if (!hubAvailable) {
+                logger.warn("⚠️ Metrics Hub 不可用，无法获取服务器指标");
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "监控服务暂时不可用");
+                error.put("hint", "请检查 Metrics Hub 服务状态");
+                error.put("hubStatus", "unavailable");
+                return ResponseEntity.status(503).body(error);
+            }
+
+            // 从 Hub 批量获取所有服务器数据
             for (Server server : servers) {
                 try {
-                    ServerMetrics metrics = null;
-
-                    // 尝试从Hub获取
-                    if (metricsHubClient != null && metricsHubClient.isAvailable()) {
-                        try {
-                            metrics = metricsHubClient.getLatestMetrics(server.getId());
-                            if (metrics != null) {
-                                hubCount++;
-                                logger.debug("服务器 {} 数据来源: Hub", server.getName());
-                            }
-                        } catch (Exception e) {
-                            logger.debug("服务器 {} Hub查询失败: {}", server.getName(), e.getMessage());
-                        }
-                    }
-
-                    // 降级到SSH
-                    if (metrics == null) {
-                        metrics = serverService.getServerLatestMetrics(server.getId());
-                        if (metrics != null) {
-                            sshCount++;
-                            logger.debug("服务器 {} 数据来源: SSH", server.getName());
-                        }
-                    }
-
+                    ServerMetrics metrics = metricsHubClient.getLatestMetrics(server.getId());
                     if (metrics != null) {
                         metricsMap.put(server.getName(), metrics);
+                        hubCount++;
+                        logger.debug("服务器 {} 数据来源: Hub ✅", server.getName());
+                    } else {
+                        errorCount++;
+                        logger.debug("服务器 {} 暂无 Hub 数据 ⚠️", server.getName());
                     }
-
                 } catch (Exception e) {
-                    // 单个服务器失败不影响其他服务器
-                    logger.error("获取服务器 {} 监控数据失败", server.getName(), e);
+                    errorCount++;
+                    logger.error("获取服务器 {} Hub数据失败: {}", server.getName(), e.getMessage());
                 }
             }
 
-            // 添加数据源统计
+            logger.info("批量获取指标完成 - Hub成功: {}, 错误: {}, 总数: {}", 
+                hubCount, errorCount, servers.size());
+
+            // 返回数据
             Map<String, Object> response = new HashMap<>();
             response.put("metrics", metricsMap);
-            response.put("dataSourceStats", Map.of(
-                    "hub", hubCount,
-                    "ssh", sshCount,
-                    "total", metricsMap.size()
-            ));
+            response.put("dataSource", "hub");
             response.put("timestamp", System.currentTimeMillis());
-
-            logger.info("批量查询完成 - Hub: {}, SSH: {}, 总计: {}", hubCount, sshCount, metricsMap.size());
+            response.put("statistics", Map.of(
+                "total", servers.size(),
+                "hubCount", hubCount,
+                "errorCount", errorCount
+            ));
 
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            logger.error("批量获取监控数据异常", e);
-            return ResponseEntity.internalServerError().build();
+            logger.error("批量获取监控数据异常: {}", e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.internalServerError().body(error);
         }
     }
 

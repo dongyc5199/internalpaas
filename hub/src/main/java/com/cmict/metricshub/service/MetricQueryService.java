@@ -47,6 +47,8 @@ public class MetricQueryService {
 
     private Counter redisQueryCounter;
     private Counter tsdbQueryCounter;
+    private Counter rollup5mQueryCounter;
+    private Counter rollup1hQueryCounter;
     private Timer queryTimer;
 
     /**
@@ -60,6 +62,14 @@ public class MetricQueryService {
 
             tsdbQueryCounter = Counter.builder("metric.query.tsdb")
                     .description("Number of queries served by TSDB")
+                    .register(meterRegistry);
+
+            rollup5mQueryCounter = Counter.builder("metric.query.rollup_5m")
+                    .description("Number of queries served by 5m rollup")
+                    .register(meterRegistry);
+
+            rollup1hQueryCounter = Counter.builder("metric.query.rollup_1h")
+                    .description("Number of queries served by 1h rollup")
                     .register(meterRegistry);
 
             queryTimer = Timer.builder("metric.query.duration")
@@ -100,12 +110,31 @@ public class MetricQueryService {
 
             List<MetricSample> samples;
 
-            if (dataSource == MetricDataSourceSelector.DataSource.REDIS) {
-                samples = queryFromRedis(serverId, from, to, step, fieldSet);
-                if (redisQueryCounter != null) redisQueryCounter.increment();
-            } else {
-                samples = queryFromTsdb(serverId, from, to, step, fieldSet);
-                if (tsdbQueryCounter != null) tsdbQueryCounter.increment();
+            switch (dataSource) {
+                case REDIS:
+                    samples = queryFromRedis(serverId, from, to, step, fieldSet);
+                    if (redisQueryCounter != null) redisQueryCounter.increment();
+                    break;
+
+                case TSDB_RAW:
+                    samples = queryFromTsdb(serverId, from, to, step, fieldSet);
+                    if (tsdbQueryCounter != null) tsdbQueryCounter.increment();
+                    break;
+
+                case ROLLUP_5M:
+                    samples = queryFrom5mRollup(serverId, from, to, step, fieldSet);
+                    if (rollup5mQueryCounter != null) rollup5mQueryCounter.increment();
+                    break;
+
+                case ROLLUP_1H:
+                    samples = queryFrom1hRollup(serverId, from, to, step, fieldSet);
+                    if (rollup1hQueryCounter != null) rollup1hQueryCounter.increment();
+                    break;
+
+                default:
+                    logger.warn("Unknown data source: {}, falling back to TSDB", dataSource);
+                    samples = queryFromTsdb(serverId, from, to, step, fieldSet);
+                    if (tsdbQueryCounter != null) tsdbQueryCounter.increment();
             }
 
             logger.info("✅ Query completed: {} samples returned from {}",
@@ -196,6 +225,36 @@ public class MetricQueryService {
             Set<String> fields) {
 
         return tsdbReader.queryMetrics(serverId, from, to, step, fields);
+    }
+
+    /**
+     * Query metrics from 5-minute rollup table.
+     */
+    private List<MetricSample> queryFrom5mRollup(
+            String serverId,
+            Instant from,
+            Instant to,
+            Duration step,
+            Set<String> fields) {
+
+        // Note: step parameter is ignored for rollup queries
+        // as they already have fixed 5-minute granularity
+        return tsdbReader.query5mRollup(serverId, from, to, fields);
+    }
+
+    /**
+     * Query metrics from 1-hour rollup table.
+     */
+    private List<MetricSample> queryFrom1hRollup(
+            String serverId,
+            Instant from,
+            Instant to,
+            Duration step,
+            Set<String> fields) {
+
+        // Note: step parameter is ignored for rollup queries
+        // as they already have fixed 1-hour granularity
+        return tsdbReader.query1hRollup(serverId, from, to, fields);
     }
 
     /**

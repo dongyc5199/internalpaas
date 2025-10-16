@@ -8,8 +8,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -34,6 +36,9 @@ public class TsdbReader {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     /**
      * Query metrics for a server within a time range.
@@ -340,5 +345,171 @@ public class TsdbReader {
                 .build();
 
         return aggregated;
+    }
+
+    /**
+     * Query metrics from 5-minute rollup table.
+     *
+     * Returns aggregated data (AVG, MAX, MIN) for better performance on medium-term queries.
+     *
+     * @param serverId Server identifier
+     * @param from Start time (inclusive)
+     * @param to End time (inclusive)
+     * @param fields Metric name filter (optional)
+     * @return List of aggregated metric samples
+     */
+    public List<MetricSample> query5mRollup(
+            String serverId,
+            Instant from,
+            Instant to,
+            Set<String> fields) {
+
+        if (serverId == null || serverId.isEmpty()) {
+            logger.warn("Cannot query 5m rollup: missing serverId");
+            return Collections.emptyList();
+        }
+
+        // Default time range
+        if (from == null) {
+            from = Instant.now().minus(Duration.ofDays(1));
+        }
+        if (to == null) {
+            to = Instant.now();
+        }
+
+        try {
+            String sql = "SELECT server_id, metric_name, time_bucket, avg_value, max_value, min_value, sample_count " +
+                    "FROM server_metric_samples_5m " +
+                    "WHERE server_id = ? AND time_bucket >= ? AND time_bucket <= ? " +
+                    "ORDER BY time_bucket DESC";
+
+            List<MetricSample> samples = jdbcTemplate.query(
+                    sql,
+                    (rs, rowNum) -> {
+                        String metricName = rs.getString("metric_name");
+                        Timestamp timeBucket = rs.getTimestamp("time_bucket");
+                        double avgValue = rs.getDouble("avg_value");
+
+                        MetricSample sample = MetricSample.builder()
+                                .name(metricName)
+                                .type(MetricSample.MetricType.GAUGE)  // Rollup data is treated as gauge
+                                .value(avgValue)
+                                .timestamp(timeBucket.toInstant())
+                                .build();
+
+                        // Add server.id label
+                        sample.addLabel("server.id", serverId);
+                        sample.addLabel("rollup", "5m");
+                        sample.addLabel("max", String.valueOf(rs.getDouble("max_value")));
+                        sample.addLabel("min", String.valueOf(rs.getDouble("min_value")));
+                        sample.addLabel("sample_count", String.valueOf(rs.getInt("sample_count")));
+
+                        return sample;
+                    },
+                    serverId,
+                    Timestamp.from(from),
+                    Timestamp.from(to)
+            );
+
+            logger.debug("5m rollup query returned {} samples for server {} in range [{}, {}]",
+                    samples.size(), serverId, from, to);
+
+            // Filter by fields if specified
+            if (fields != null && !fields.isEmpty()) {
+                samples = samples.stream()
+                        .filter(s -> fields.contains(s.getName()))
+                        .collect(Collectors.toList());
+            }
+
+            logger.info("✅ 5m rollup read completed: {} samples returned", samples.size());
+            return samples;
+
+        } catch (Exception e) {
+            logger.error("Failed to query 5m rollup from TSDB: {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Query metrics from 1-hour rollup table.
+     *
+     * Returns aggregated data (AVG, MAX, MIN) for optimal performance on long-term queries.
+     *
+     * @param serverId Server identifier
+     * @param from Start time (inclusive)
+     * @param to End time (inclusive)
+     * @param fields Metric name filter (optional)
+     * @return List of aggregated metric samples
+     */
+    public List<MetricSample> query1hRollup(
+            String serverId,
+            Instant from,
+            Instant to,
+            Set<String> fields) {
+
+        if (serverId == null || serverId.isEmpty()) {
+            logger.warn("Cannot query 1h rollup: missing serverId");
+            return Collections.emptyList();
+        }
+
+        // Default time range
+        if (from == null) {
+            from = Instant.now().minus(Duration.ofDays(7));
+        }
+        if (to == null) {
+            to = Instant.now();
+        }
+
+        try {
+            String sql = "SELECT server_id, metric_name, time_bucket, avg_value, max_value, min_value, sample_count " +
+                    "FROM server_metric_samples_1h " +
+                    "WHERE server_id = ? AND time_bucket >= ? AND time_bucket <= ? " +
+                    "ORDER BY time_bucket DESC";
+
+            List<MetricSample> samples = jdbcTemplate.query(
+                    sql,
+                    (rs, rowNum) -> {
+                        String metricName = rs.getString("metric_name");
+                        Timestamp timeBucket = rs.getTimestamp("time_bucket");
+                        double avgValue = rs.getDouble("avg_value");
+
+                        MetricSample sample = MetricSample.builder()
+                                .name(metricName)
+                                .type(MetricSample.MetricType.GAUGE)  // Rollup data is treated as gauge
+                                .value(avgValue)
+                                .timestamp(timeBucket.toInstant())
+                                .build();
+
+                        // Add server.id label
+                        sample.addLabel("server.id", serverId);
+                        sample.addLabel("rollup", "1h");
+                        sample.addLabel("max", String.valueOf(rs.getDouble("max_value")));
+                        sample.addLabel("min", String.valueOf(rs.getDouble("min_value")));
+                        sample.addLabel("sample_count", String.valueOf(rs.getInt("sample_count")));
+
+                        return sample;
+                    },
+                    serverId,
+                    Timestamp.from(from),
+                    Timestamp.from(to)
+            );
+
+            logger.debug("1h rollup query returned {} samples for server {} in range [{}, {}]",
+                    samples.size(), serverId, from, to);
+
+            // Filter by fields if specified
+            if (fields != null && !fields.isEmpty()) {
+                samples = samples.stream()
+                        .filter(s -> fields.contains(s.getName()))
+                        .collect(Collectors.toList());
+            }
+
+            logger.info("✅ 1h rollup read completed: {} samples returned", samples.size());
+            return samples;
+
+        } catch (Exception e) {
+            logger.error("Failed to query 1h rollup from TSDB: {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
     }
 }

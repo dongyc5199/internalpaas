@@ -1,8 +1,10 @@
 package com.cmict.internalpaas.service;
 
+import com.cmict.internalpaas.client.MetricsHubClient;
 import com.cmict.internalpaas.dto.agent.PreCheckResult;
 import com.cmict.internalpaas.model.AgentDeployment;
 import com.cmict.internalpaas.model.Server;
+import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.repository.AgentDeploymentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +14,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -38,6 +42,9 @@ class AgentDeployServiceTest {
 
     @Mock
     private SimpMessagingTemplate messagingTemplate;
+
+    @Mock
+    private MetricsHubClient metricsHubClient;
 
     @InjectMocks
     private AgentDeployService agentDeployService;
