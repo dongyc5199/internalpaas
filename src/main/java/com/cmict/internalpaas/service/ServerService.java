@@ -1,5 +1,6 @@
 package com.cmict.internalpaas.service;
 
+import com.cmict.internalpaas.event.ServerCreatedEvent;
 import com.cmict.internalpaas.event.ServerStatusUpdateEvent;
 import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerMetrics;
@@ -153,6 +154,9 @@ public class ServerService {
     
     @Transactional
     public Server saveServer(Server server) {
+        // 判断是新建还是更新
+        boolean isNew = (server.getId() == null);
+
         // 设置默认值
         if (server.getSshPort() == null) {
             server.setSshPort(22);
@@ -166,13 +170,22 @@ public class ServerService {
         if (server.getMonitorIntervalSeconds() == null) {
             server.setMonitorIntervalSeconds(60);
         }
-        
+
         // 确保设置密码加密服务
         server.setPasswordEncryptionService(passwordEncryptionService);
-        
+
         // 验证必填字段完整性
         validateServerBeforeSave(server);
-        return serverRepository.save(server);
+        Server savedServer = serverRepository.save(server);
+
+        // 如果是新建服务器，发布ServerCreatedEvent
+        if (isNew && eventPublisher != null) {
+            logger.info("发布ServerCreatedEvent - serverId: {}, serverName: {}",
+                    savedServer.getId(), savedServer.getName());
+            eventPublisher.publishEvent(new ServerCreatedEvent(this, savedServer));
+        }
+
+        return savedServer;
     }
     
     /**

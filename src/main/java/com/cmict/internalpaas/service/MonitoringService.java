@@ -897,7 +897,196 @@ public class MonitoringService {
             logger.error("清理过期数据失败", e);
         }
     }
-    
+
+    /**
+     * T4 API: 查询指定时间范围的监控数据
+     *
+     * @param serverId 服务器ID
+     * @param from 开始时间（Unix毫秒时间戳，可选）
+     * @param to 结束时间（Unix毫秒时间戳，可选）
+     * @param step 降采样间隔（秒，可选）
+     * @return 监控数据列表
+     */
+    public List<ServerMetrics> queryMetrics(Long serverId, Long from, Long to, Integer step) {
+        // 默认时间范围：最近1小时
+        LocalDateTime fromTime = from != null
+                ? LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(from), java.time.ZoneId.systemDefault())
+                : LocalDateTime.now().minusHours(1);
+
+        LocalDateTime toTime = to != null
+                ? LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(to), java.time.ZoneId.systemDefault())
+                : LocalDateTime.now();
+
+        logger.info("查询服务器 {} 的监控数据: from={}, to={}, step={}",
+                serverId, fromTime, toTime, step);
+
+        // 从数据库查询时间范围内的数据
+        List<ServerMetrics> metrics = metricsRepository
+                .findByServerIdAndTimestampBetweenOrderByTimestampDesc(serverId, fromTime, toTime);
+
+        // 如果指定了降采样间隔，进行降采样
+        if (step != null && step > 0 && metrics.size() > 1) {
+            metrics = downsampleMetrics(metrics, step);
+        }
+
+        logger.info("查询完成，返回 {} 条记录", metrics.size());
+        return metrics;
+    }
+
+    /**
+     * 对监控数据进行降采样（按时间间隔聚合）
+     *
+     * @param metrics 原始监控数据（按时间戳降序排列）
+     * @param stepSeconds 降采样间隔（秒）
+     * @return 降采样后的数据
+     */
+    private List<ServerMetrics> downsampleMetrics(List<ServerMetrics> metrics, int stepSeconds) {
+        if (metrics.isEmpty()) {
+            return metrics;
+        }
+
+        // 按时间桶分组
+        Map<Long, List<ServerMetrics>> buckets = new LinkedHashMap<>();
+
+        for (ServerMetrics metric : metrics) {
+            long timestamp = metric.getTimestamp()
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toEpochSecond();
+            long bucketId = timestamp / stepSeconds;
+
+            buckets.computeIfAbsent(bucketId, k -> new ArrayList<>()).add(metric);
+        }
+
+        // 对每个桶内的数据进行聚合（取平均值）
+        List<ServerMetrics> downsampled = new ArrayList<>();
+
+        for (List<ServerMetrics> bucket : buckets.values()) {
+            if (bucket.isEmpty()) {
+                continue;
+            }
+
+            // 使用第一个样本作为基础，平均其他字段
+            ServerMetrics aggregated = bucket.get(0);
+
+            if (bucket.size() > 1) {
+                // 计算平均值
+                double avgCpuUsage = bucket.stream()
+                        .filter(m -> m.getCpuUsage() != null)
+                        .mapToDouble(ServerMetrics::getCpuUsage)
+                        .average()
+                        .orElse(0.0);
+
+                double avgMemoryUsage = bucket.stream()
+                        .filter(m -> m.getMemoryUsage() != null)
+                        .mapToDouble(ServerMetrics::getMemoryUsage)
+                        .average()
+                        .orElse(0.0);
+
+                double avgDiskUsage = bucket.stream()
+                        .filter(m -> m.getDiskUsage() != null)
+                        .mapToDouble(ServerMetrics::getDiskUsage)
+                        .average()
+                        .orElse(0.0);
+
+                // 创建新的聚合对象
+                ServerMetrics avg = new ServerMetrics();
+                avg.setId(aggregated.getId());
+                avg.setServerId(aggregated.getServerId());
+                avg.setServerName(aggregated.getServerName());
+                avg.setHostname(aggregated.getHostname());
+                avg.setCpuUsage(avgCpuUsage);
+                avg.setMemoryUsage(avgMemoryUsage);
+                avg.setDiskUsage(avgDiskUsage);
+                avg.setTimestamp(aggregated.getTimestamp());
+                avg.setCpuCores(aggregated.getCpuCores());
+                avg.setMemoryTotal(aggregated.getMemoryTotal());
+                avg.setDiskTotal(aggregated.getDiskTotal());
+
+                downsampled.add(avg);
+            } else {
+                downsampled.add(aggregated);
+            }
+        }
+
+        logger.debug("降采样: {} -> {} 条记录 (间隔: {}秒)",
+                metrics.size(), downsampled.size(), stepSeconds);
+
+        return downsampled;
+    }
+
+    /**
+     * T4 API: 根据字段列表过滤监控数据
+     *
+     * @param metrics 原始监控数据列表
+     * @param fields 字段列表（逗号分隔，如: cpu,memory,disk）
+     * @return 过滤后的监控数据列表
+     */
+    public List<ServerMetrics> filterMetricsByFields(List<ServerMetrics> metrics, String fields) {
+        if (fields == null || fields.trim().isEmpty()) {
+            return metrics;
+        }
+
+        Set<String> fieldSet = new HashSet<>(Arrays.asList(fields.toLowerCase().split(",")));
+        fieldSet = fieldSet.stream()
+                .map(String::trim)
+                .collect(java.util.stream.Collectors.toSet());
+
+        logger.debug("应用字段过滤: {}", fieldSet);
+
+        // 为每个监控数据创建过滤后的副本
+        List<ServerMetrics> filtered = new ArrayList<>();
+
+        for (ServerMetrics metric : metrics) {
+            ServerMetrics filteredMetric = new ServerMetrics();
+
+            // 始终保留基本信息
+            filteredMetric.setId(metric.getId());
+            filteredMetric.setServerId(metric.getServerId());
+            filteredMetric.setServerName(metric.getServerName());
+            filteredMetric.setHostname(metric.getHostname());
+            filteredMetric.setTimestamp(metric.getTimestamp());
+
+            // 根据字段选择性复制数据
+            if (fieldSet.contains("cpu")) {
+                filteredMetric.setCpuUsage(metric.getCpuUsage());
+                filteredMetric.setCpuCores(metric.getCpuCores());
+                filteredMetric.setLoadAverage(metric.getLoadAverage());
+            }
+
+            if (fieldSet.contains("memory") || fieldSet.contains("mem")) {
+                filteredMetric.setMemoryUsage(metric.getMemoryUsage());
+                filteredMetric.setMemoryTotal(metric.getMemoryTotal());
+                filteredMetric.setMemoryUsed(metric.getMemoryUsed());
+                filteredMetric.setMemoryAvailable(metric.getMemoryAvailable());
+            }
+
+            if (fieldSet.contains("disk")) {
+                filteredMetric.setDiskUsage(metric.getDiskUsage());
+                filteredMetric.setDiskTotal(metric.getDiskTotal());
+                filteredMetric.setDiskUsed(metric.getDiskUsed());
+                filteredMetric.setDiskAvailable(metric.getDiskAvailable());
+            }
+
+            if (fieldSet.contains("network") || fieldSet.contains("net")) {
+                filteredMetric.setNetworkInterface(metric.getNetworkInterface());
+                filteredMetric.setNetworkReceivedBytes(metric.getNetworkReceivedBytes());
+                filteredMetric.setNetworkTransmittedBytes(metric.getNetworkTransmittedBytes());
+                filteredMetric.setNetworkReceivedRate(metric.getNetworkReceivedRate());
+                filteredMetric.setNetworkTransmittedRate(metric.getNetworkTransmittedRate());
+            }
+
+            if (fieldSet.contains("system") || fieldSet.contains("os")) {
+                filteredMetric.setUptime(metric.getUptime());
+                filteredMetric.setOsVersion(metric.getOsVersion());
+                filteredMetric.setKernelVersion(metric.getKernelVersion());
+            }
+
+            filtered.add(filteredMetric);
+        }
+
+        return filtered;
+    }
+
     /**
      * 在应用关闭时清理线程池
      */

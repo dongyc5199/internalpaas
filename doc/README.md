@@ -32,8 +32,15 @@
 17. [服务器状态标签设计](./server-status-tags-design.md) - 服务器状态标签功能设计
 18. [用户服务器账户同步](./user-server-account-sync.md) - 用户与服务器账户同步机制
 
+### Metrics Hub 与 Agent 部署文档
+19. [Hub集成快速开始指南](./Hub集成快速开始指南.md) - Hub模块集成快速参考和使用指南
+20. [Hub模块集成完成报告](./Hub模块集成完成报告.md) - 阶段1 Hub API集成的完整实施报告
+21. [Agent自动部署架构设计](./Agent自动部署架构设计.md) - ⭐ **重要**: Agent自动部署系统架构、流程设计、技术实现
+22. [Agent部署阶段2完成报告](./Agent部署阶段2完成报告.md) - Agent自动部署功能实现完成报告
+23. [Agent部署测试指南](./Agent部署测试指南.md) - Agent部署功能的完整测试指南（单元测试、集成测试、端到端测试）
+
 ### 故障排查文档
-19. [SPA架构JavaScript事件失效问题](./troubleshooting/spa-javascript-events-not-working.md) - ⚠️ **重要排查指南**: SPA动态片段中JavaScript事件不工作的完整解决方案
+24. [SPA架构JavaScript事件失效问题](./troubleshooting/spa-javascript-events-not-working.md) - ⚠️ **重要排查指南**: SPA动态片段中JavaScript事件不工作的完整解决方案
 
 ---
-*最后更新 2025-09-18*
+*最后更新 2025-10-16*
