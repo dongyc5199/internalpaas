@@ -67,11 +67,25 @@
 			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
+		<!-- 
+		❌ H2 Database Dependency Removed (Phase4-Step3: 2025-10-17)
+		
+		原因: 监控数据存储已迁移到 Metrics Hub (PostgreSQL/TimescaleDB)
+		
+		替代方案: 使用 MetricsHubClient 查询监控数据
+		
+		如需临时恢复H2:
+		1. 取消注释下方依赖
+		2. 恢复 application.properties 中的 H2 配置
+		3. 取消注释 ServerMetricsRepository 的 @Repository
+		4. 重启应用
+		
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		-->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

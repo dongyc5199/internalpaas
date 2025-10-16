@@ -4,13 +4,45 @@ import com.cmict.internalpaas.model.ServerMetrics;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+// import org.springframework.stereotype.Repository; // ❌ 已废弃 - @Repository注解已停用
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-@Repository
+/**
+ * ⚠️ 已废弃: ServerMetrics JPA 仓库
+ * 
+ * 原因: 监控数据存储已迁移到 Metrics Hub (PostgreSQL/TimescaleDB)
+ * 迁移日期: 2025-10-17 (Phase4-Step3)
+ * 
+ * 架构演进:
+ * - 旧: SSH轮询 → H2数据库 → ServerMetricsRepository
+ * - 新: OTLP Agent → Hub → MetricsHubClient
+ * 
+ * 替代方案:
+ * - 实时数据查询: {@link com.cmict.internalpaas.client.MetricsHubClient#getLatestMetrics(Long)}
+ * - 历史数据查询: {@link com.cmict.internalpaas.client.MetricsHubClient#queryMetrics(...)}
+ * - 时间范围查询: Hub API支持from/to参数
+ * - 聚合数据查询: Hub提供5分钟/1小时Rollup表
+ * 
+ * Hub数据存储优势:
+ * - ✅ 4级智能路由: Redis(5min) → Raw(30d) → 5m(90d) → 1h(365d)
+ * - ✅ 自动聚合: 5分钟和1小时Rollup表
+ * - ✅ 自动保留策略: 30/90/365天分级存储
+ * - ✅ 高性能查询: TimescaleDB时序数据库优化
+ * - ✅ 扩展性强: 支持1000+ 服务器
+ * 
+ * 如需临时恢复H2存储:
+ * 1. 恢复 pom.xml 中的 H2 依赖
+ * 2. 恢复 application.properties 中的 H2 配置
+ * 3. 取消注释下方 @Repository 注解
+ * 4. 重启应用
+ * 
+ * @deprecated 使用 {@link com.cmict.internalpaas.client.MetricsHubClient} 替代
+ */
+@Deprecated(since = "2025-10-17", forRemoval = true)
+// @Repository // ❌ 已停用 (2025-10-17) - 取消注释可恢复H2存储
 public interface ServerMetricsRepository extends JpaRepository<ServerMetrics, Long> {
     
     /**
