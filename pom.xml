@@ -101,14 +101,39 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<!-- H2 Database for Testing Only (Phase4-Step4: 2025-10-17)
-		     用途: 为测试环境提供内存数据库,支持非监控实体 (User, Server, Application, AgentDeployment)
-		     注意: scope=test,不会包含在生产部署中
-		     生产环境: 使用 PostgreSQL + Metrics Hub -->
+		<!-- H2 Database (轻量级数据库 - 三种模式支持)
+		
+		用途: 为主应用提供轻量级数据库,存储非监控实体 
+		      (User, Server, Application, AgentDeployment, SSHSession等)
+		
+		注意: 监控数据存储已迁移到 Metrics Hub (PostgreSQL/TimescaleDB)
+		      ServerMetrics实体已转换为DTO,不再使用JPA持久化
+		      迁移日期: 2025-10-17
+		
+		三种部署模式 (轻量级优先原则):
+		┌──────────────┬─────────────┬─────────────┬──────────────┐
+		│ 模式         │ Profile     │ 数据持久化  │ 适用场景     │
+		├──────────────┼─────────────┼─────────────┼──────────────┤
+		│ H2内存模式   │ 默认(无)    │ ❌ 重启丢失 │ 开发/Demo    │
+		│ H2文件模式   │ persistent  │ ✅ 文件存储 │ 小团队生产   │
+		│ PostgreSQL   │ enterprise  │ ✅ 数据库   │ 大型团队     │
+		└──────────────┴─────────────┴─────────────┴──────────────┘
+		
+		轻量级特性:
+		✅ 零外部依赖 (H2内嵌,无需安装数据库)
+		✅ 快速启动 (< 5秒)
+		✅ 低资源占用 (~200MB内存)
+		✅ 一条命令启动
+		
+		如需切换到PostgreSQL (企业级场景):
+		1. 添加PostgreSQL依赖
+		2. 配置 application-enterprise.properties
+		3. 启动: ./mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=enterprise
+		-->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-			<scope>test</scope>
+			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.jcraft</groupId>
