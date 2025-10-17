@@ -1,6 +1,23 @@
 # 🚀 快速启动指南
 
-## ⚡ 一键启动（推荐）
+## 📊 数据库模式选择 (重要)
+
+平台提供**三种数据库模式**,默认使用H2内存模式(零配置):
+
+| 模式 | 命令 | 数据持久化 | 适用场景 |
+|------|------|-----------|---------|
+| **H2内存** (默认) | `mvn spring-boot:run` | ❌ 重启丢失 | 开发/Demo |
+| **H2文件** (推荐生产) | `-Dspring-boot.run.profiles=persistent` | ✅ 文件存储 | 小团队 |
+| **PostgreSQL** (可选) | `-Dspring.profiles.active=enterprise` | ✅ 数据库 | 大型团队 |
+
+**快速选择**:
+- 🔵 **快速体验/开发**: 继续往下看,使用默认模式
+- 🟢 **小团队生产**: 跳到 [H2持久化模式](#h2持久化模式生产推荐)
+- 🟡 **大型团队**: 查看 [部署文档](doc/deployment-guide.md)
+
+---
+
+## ⚡ 一键启动（推荐 - H2内存模式）
 
 ```bash
 # 在项目根目录执行
@@ -161,6 +178,66 @@ mvn clean install -DskipTests
 - [完整演示指南](./DEMO_PAGES.md) - 所有可访问页面
 - [详细启动说明](./upgrade/doc/demo-guide.md) - 深入的启动步骤
 - [优化总结报告](./upgrade/doc/optimization-summary.md) - 重构成果
+- [部署文档](./doc/deployment-guide.md) - 完整部署指南
+
+---
+
+## 🟢 H2持久化模式 (生产推荐)
+
+### 特点
+- ✅ 数据持久化,重启保留
+- ✅ 零外部依赖 (轻量级)
+- ✅ 适合小团队生产 (5-20人)
+- 📁 数据保存在 `./data/` 目录
+
+### 启动命令
+
+```bash
+# Maven方式 (推荐)
+mvn spring-boot:run -Dspring-boot.run.profiles=persistent
+
+# JAR方式
+java -jar -Dspring.profiles.active=persistent target/internalpaas-0.0.1-SNAPSHOT.jar
+
+# 环境变量方式
+set SPRING_PROFILES_ACTIVE=persistent
+java -jar target/internalpaas-0.0.1-SNAPSHOT.jar
+```
+
+### 首次启动验证
+
+```bash
+# 1. 启动应用
+mvn spring-boot:run -Dspring-boot.run.profiles=persistent
+
+# 2. 确认数据目录创建
+dir data\
+# 应该看到: internalpaas.mv.db
+
+# 3. 访问应用
+# http://localhost:9090
+```
+
+### 数据备份
+
+```bash
+# 备份数据目录
+tar -czf backup-$(date +%Y%m%d).tar.gz data/
+
+# Windows
+7z a backup.zip data\
+```
+
+### 数据恢复
+
+```bash
+# 1. 停止应用
+# 2. 解压备份文件到data目录
+tar -xzf backup-20251017.tar.gz
+
+# 3. 重启应用
+mvn spring-boot:run -Dspring-boot.run.profiles=persistent
+```
 
 ---
 

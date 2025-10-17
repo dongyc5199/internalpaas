@@ -101,9 +101,125 @@ ls -la target/internalpaas-*.jar
 
 ## ⚙️ 配置说明
 
-### 1. 应用配置文件
+### 1. 数据库模式选择 ⭐ (重要)
 
-#### 1.1 开发环境配置 (`application-dev.yml`)
+平台提供三种数据库部署模式,请根据实际场景选择:
+
+#### 📊 模式对比表
+
+| 模式 | Profile | 数据持久化 | 外部依赖 | 适用场景 | 推荐度 |
+|------|---------|-----------|---------|---------|--------|
+| **H2内存模式** | 默认(无) | ❌ 重启丢失 | ✅ 零依赖 | 开发/Demo/快速体验 | ⭐⭐⭐⭐⭐ |
+| **H2文件模式** | persistent | ✅ 文件存储 | ✅ 零依赖 | **小团队生产**(5-20人) | ⭐⭐⭐⭐⭐ |
+| **PostgreSQL** | enterprise | ✅ 数据库 | ❌ 需要PG | 大型团队(50+人) | ⭐⭐⭐ |
+
+#### 1️⃣ 模式1: H2内存模式 (默认 - 开发/Demo)
+
+**特点**:
+- ✅ 零配置,开箱即用
+- ✅ 快速启动 (< 5秒)
+- ✅ 自动清理,无残留
+- ❌ 重启后数据丢失
+
+**启动命令**:
+```bash
+# Maven方式
+./mvnw.cmd spring-boot:run
+
+# JAR方式
+java -jar target/internalpaas-0.0.1-SNAPSHOT.jar
+```
+
+**适用场景**: 开发调试、功能演示、快速体验
+
+---
+
+#### 2️⃣ 模式2: H2文件持久化 (推荐 - 小团队生产)
+
+**特点**:
+- ✅ 数据持久化,重启保留
+- ✅ 零外部依赖 (轻量级)
+- ✅ 支持备份恢复
+- ✅ 适合 5-20人团队
+- ⚠️ 单机部署,数据量 < 10GB
+
+**启动命令**:
+```bash
+# Maven方式
+./mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=persistent
+
+# JAR方式
+java -jar -Dspring.profiles.active=persistent target/internalpaas-0.0.1-SNAPSHOT.jar
+
+# 环境变量方式 (推荐)
+set SPRING_PROFILES_ACTIVE=persistent
+java -jar target/internalpaas-0.0.1-SNAPSHOT.jar
+```
+
+**数据文件位置**:
+```
+./data/internalpaas.mv.db    # 主数据文件
+./data/internalpaas.trace.db # 追踪文件(仅错误时生成)
+```
+
+**备份与恢复**:
+```bash
+# 备份数据
+tar -czf backup-$(date +%Y%m%d).tar.gz data/
+
+# 恢复数据 (停止应用后)
+tar -xzf backup-20251017.tar.gz
+```
+
+**适用场景**: 小团队生产环境、需要数据持久化、保持轻量级
+
+---
+
+#### 3️⃣ 模式3: PostgreSQL (可选 - 大型团队)
+
+**特点**:
+- ✅ 支持大数据量 (TB级)
+- ✅ 高可用/主从复制
+- ✅ 完整的企业特性
+- ❌ 需要外部PostgreSQL数据库
+- ❌ 部署复杂度增加
+
+**前置条件**:
+```bash
+# 1. 安装PostgreSQL 12+
+sudo apt install postgresql-12
+
+# 2. 创建数据库
+sudo -u postgres psql
+CREATE DATABASE internalpaas;
+CREATE USER internalpaas_user WITH PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE internalpaas TO internalpaas_user;
+\q
+
+# 3. 配置环境变量
+export DB_HOST=localhost
+export DB_PORT=5432
+export DB_NAME=internalpaas
+export DB_USER=internalpaas_user
+export DB_PASSWORD=your_password
+```
+
+**启动命令**:
+```bash
+# 设置Profile和数据库连接
+java -jar -Dspring.profiles.active=enterprise \
+     -Ddb.host=localhost \
+     -Ddb.port=5432 \
+     target/internalpaas-0.0.1-SNAPSHOT.jar
+```
+
+**适用场景**: 大型团队(50+人)、高可用需求、数据量 > 10GB
+
+---
+
+### 2. 应用配置文件
+
+#### 2.1 开发环境配置 (`application-dev.yml`)
 ```yaml
 server:
   port: 8080
@@ -226,7 +342,154 @@ chmod 600 .env
 
 ## 🔧 启动应用
 
-### 1. 开发模式启动
+### 1. 快速启动 (H2内存模式 - 默认)
+
+```bash
+# Maven方式 (开发推荐)
+./mvnw.cmd spring-boot:run
+
+# JAR方式
+mvn clean package -DskipTests
+java -jar target/internalpaas-0.0.1-SNAPSHOT.jar
+```
+
+访问: http://localhost:9090
+
+---
+
+### 2. 生产模式启动 (H2文件持久化 - 推荐)
+
+```bash
+# 方式1: 启动参数
+./mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=persistent
+
+# 方式2: 环境变量 (推荐)
+set SPRING_PROFILES_ACTIVE=persistent
+java -jar target/internalpaas-0.0.1-SNAPSHOT.jar
+
+# 方式3: JAR启动参数
+java -jar -Dspring.profiles.active=persistent target/internalpaas-0.0.1-SNAPSHOT.jar
+```
+
+**首次启动检查**:
+```bash
+# 确认数据目录创建
+ls -la data/
+
+# 应该看到:
+# data/internalpaas.mv.db (数据文件)
+```
+
+---
+
+### 3. 企业级启动 (PostgreSQL)
+
+```bash
+# 1. 设置环境变量
+export DB_HOST=localhost
+export DB_PORT=5432
+export DB_NAME=internalpaas
+export DB_USER=internalpaas_user
+export DB_PASSWORD=your_secure_password
+export SPRING_PROFILES_ACTIVE=enterprise
+
+# 2. 启动应用
+java -jar target/internalpaas-0.0.1-SNAPSHOT.jar
+```
+
+---
+
+### 4. 后台运行 (Linux/macOS)
+
+#### 使用systemd (推荐)
+
+创建服务文件 `/etc/systemd/system/internalpaas.service`:
+
+```ini
+[Unit]
+Description=Internal PaaS Platform
+After=network.target
+
+[Service]
+Type=simple
+User=internalpaas
+WorkingDirectory=/opt/internalpaas
+Environment="SPRING_PROFILES_ACTIVE=persistent"
+ExecStart=/usr/bin/java -jar -Xms512m -Xmx2g /opt/internalpaas/internalpaas.jar
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+启动服务:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable internalpaas
+sudo systemctl start internalpaas
+sudo systemctl status internalpaas
+```
+
+#### 使用nohup
+
+```bash
+# 后台启动
+nohup java -jar -Dspring.profiles.active=persistent \
+     target/internalpaas-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+
+# 查看日志
+tail -f app.log
+```
+
+---
+
+### 5. Windows服务部署
+
+使用 [WinSW](https://github.com/winsw/winsw) 将应用注册为Windows服务:
+
+1. 下载 `WinSW.exe`
+2. 创建 `internalpaas-service.xml`:
+
+```xml
+<service>
+  <id>internalpaas</id>
+  <name>Internal PaaS Platform</name>
+  <description>Lightweight debug platform</description>
+  <executable>java</executable>
+  <arguments>-jar -Dspring.profiles.active=persistent internalpaas.jar</arguments>
+  <workingdirectory>C:\internalpaas</workingdirectory>
+  <log mode="roll"></log>
+</service>
+```
+
+3. 安装并启动服务:
+```cmd
+WinSW.exe install internalpaas-service.xml
+WinSW.exe start
+```
+
+---
+
+### 6. Docker部署 (可选)
+
+```bash
+# 构建镜像
+docker build -t internalpaas:latest .
+
+# H2内存模式
+docker run -d -p 9090:9090 --name internalpaas internalpaas:latest
+
+# H2文件持久化模式 (挂载数据卷)
+docker run -d -p 9090:9090 \
+  -v $(pwd)/data:/app/data \
+  -e SPRING_PROFILES_ACTIVE=persistent \
+  --name internalpaas internalpaas:latest
+```
+
+---
+
+### 7. 开发模式启动 (旧版)
 
 ```bash
 # 使用Maven插件启动
