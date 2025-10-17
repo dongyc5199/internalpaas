@@ -139,6 +139,35 @@ metrics-hub:
     5m-rollup-days: 90       # Keep 5-minute rollup for 90 days
     1h-rollup-days: 365      # Keep 1-hour rollup for 1 year
 
+  # Security Configuration (T7: Security Hardening)
+  security:
+    # TLS/mTLS Configuration
+    tls:
+      enabled: ${TLS_ENABLED:false}  # Enable TLS (disabled by default for dev)
+      mtls: ${MTLS_ENABLED:false}    # Require client certificates (mTLS)
+      keystore:
+        path: ${KEYSTORE_PATH:/path/to/keystore.p12}
+        password: ${KEYSTORE_PASSWORD:changeit}
+        type: PKCS12
+      truststore:
+        path: ${TRUSTSTORE_PATH:/path/to/truststore.p12}
+        password: ${TRUSTSTORE_PASSWORD:changeit}
+        type: PKCS12
+      cert-rotation:
+        check-interval-hours: 24    # Check certificate expiry every 24 hours
+        warn-days-before-expiry: 30 # Warn when cert expires in 30 days
+
+    # JWT/JWKS Authentication
+    jwt:
+      enabled: ${JWT_ENABLED:false}  # Enable JWT authentication
+      jwks-url: ${JWKS_URL:https://auth.example.com/.well-known/jwks.json}
+      issuer: ${JWT_ISSUER:https://auth.example.com}
+      audience: ${JWT_AUDIENCE:metrics-hub}
+      rate-limit:
+        enabled: true
+        requests-per-minute: 120  # Per agent
+        burst-capacity: 10
+
 # ============================================================
 # Actuator Configuration (Health & Metrics)
 # ============================================================
