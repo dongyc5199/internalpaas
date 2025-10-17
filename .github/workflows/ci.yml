@@ -145,6 +145,9 @@ jobs:
           node-version: '20.x'
           cache: 'npm'
 
+      - name: Make mvnw executable
+        run: chmod +x ./mvnw
+
       - name: Build with Maven
         run: ./mvnw clean verify -Dbuild.frontend=true
 
