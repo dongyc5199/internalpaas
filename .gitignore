@@ -59,3 +59,4 @@ screenshots/
 /.stylelintrc.cjs
 /.windsurfrules
 nul
+infra/perf/otlp_load_gen.sh
