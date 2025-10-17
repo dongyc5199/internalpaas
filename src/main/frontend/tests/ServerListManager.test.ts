@@ -24,36 +24,39 @@ const mockServers: Server[] = [
         name: "Server 1",
         host: "192.168.1.1",
         port: 22,
+        username: "admin",
         status: "online",
         cpuUsage: 45,
         memoryUsage: 60,
         diskUsage: 70,
         uptime: 86400,
-        lastCheck: new Date().toISOString()
+        lastChecked: new Date().toISOString()
     },
     {
         id: 2,
         name: "Server 2",
         host: "192.168.1.2",
         port: 22,
+        username: "admin",
         status: "offline",
         cpuUsage: 0,
         memoryUsage: 0,
         diskUsage: 0,
         uptime: 0,
-        lastCheck: new Date().toISOString()
+        lastChecked: new Date().toISOString()
     },
     {
         id: 3,
         name: "Database Server",
         host: "192.168.1.3",
         port: 22,
+        username: "root",
         status: "online",
-        cpuUsage: 75,
+        cpuUsage: 30,
         memoryUsage: 80,
-        diskUsage: 85,
+        diskUsage: 50,
         uptime: 172800,
-        lastCheck: new Date().toISOString()
+        lastChecked: new Date().toISOString()
     }
 ];
 
@@ -63,14 +66,8 @@ function createMockDependencies(): ServerListDependencies {
         formatBytes: vi.fn((bytes: number) => `${bytes} B`),
         formatUptime: vi.fn((seconds: number) => `${seconds}s`),
         formatPercentage: vi.fn((value: number) => `${value}%`),
-        formatDateTime: vi.fn((date: Date | string) => "2025-10-12"),
         showSuccess: vi.fn(),
         showError: vi.fn(),
-        getUsageClass: vi.fn((value: number) => {
-            if (value < 50) return "normal";
-            if (value < 80) return "warning";
-            return "danger";
-        }),
         viewServerDetails: vi.fn(),
         connectToServer: vi.fn(),
         getCurrentLanguage: vi.fn(() => "zh"),

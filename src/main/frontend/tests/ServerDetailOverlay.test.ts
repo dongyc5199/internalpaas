@@ -20,7 +20,7 @@ const mockServerDetail: ServerDetail = {
     networkIn: 1024000,
     networkOut: 512000,
     uptime: 86400,
-    lastCheck: new Date().toISOString(),
+    lastChecked: new Date().toISOString(),
     cpuHistory: [40, 42, 45, 43, 45],
     memoryHistory: [58, 59, 60, 61, 60],
     diskHistory: [70, 70, 71, 70, 71],
@@ -28,11 +28,11 @@ const mockServerDetail: ServerDetail = {
     networkOutHistory: [500000, 510000, 512000, 508000, 512000],
     timestamps: ["10:00", "10:01", "10:02", "10:03", "10:04"],
     processes: [
-        { pid: 1234, user: "root", cpu: 25.5, mem: 10.2, command: "nginx" },
-        { pid: 5678, user: "www", cpu: 15.3, mem: 8.5, command: "node app.js" }
+        { pid: 1234, name: "nginx", user: "root", cpuUsage: 25.5, memoryUsage: 10.2, status: "running", command: "nginx" },
+        { pid: 5678, name: "node", user: "www", cpuUsage: 15.3, memoryUsage: 8.5, status: "running", command: "node app.js" }
     ],
-    applications: [{ id: 1, name: "Web App", status: "running", port: 8080, pid: 9999 }],
-    users: [{ username: "admin", loginTime: "2025-10-13 10:00", from: "192.168.1.100" }]
+    applications: [{ id: 1, name: "Web App", status: "running", port: 8080 }],
+    users: [{ username: "admin", terminal: "pts/0", loginTime: "2025-10-13 10:00", from: "192.168.1.100" }]
 };
 
 // Mock DOM环境
@@ -73,12 +73,12 @@ function createMockDependencies(): ServerDetailDependencies {
         formatBytes: vi.fn((bytes: number) => `${bytes} B`),
         formatUptime: vi.fn((seconds: number) => `${seconds}s`),
         formatPercentage: vi.fn((value: number) => `${value}%`),
-        formatDateTime: vi.fn((date: Date | string) => "2025-10-13"),
+        formatDateTime: vi.fn(() => "2025-10-13"),
         showSuccess: vi.fn(),
         showError: vi.fn(),
-        getCurrentLanguage: vi.fn(() => "zh"),
-        initCharts: vi.fn(),
-        destroyCharts: vi.fn()
+        Chart: vi.fn(),
+        t: vi.fn((key: string) => key),
+        getCurrentLanguage: vi.fn(() => "zh")
     };
 }
 

@@ -5,8 +5,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
     StorageManager,
-    localStorage as localStorageManager,
-    sessionStorage as sessionStorageManager
+    localStorageManager,
+    sessionStorageManager
 } from "../utils/storage";
 
 describe("StorageManager", () => {

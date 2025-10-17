@@ -3,7 +3,7 @@
  * 提供亮色/暗色主题切换功能
  */
 
-import { localStorage, eventBus } from "@/utils";
+import { localStorageManager, eventBus } from "@/utils";
 
 type Theme = "light" | "dark";
 
@@ -29,7 +29,7 @@ class ThemeManager {
      * 应用保存的主题
      */
     private applySavedTheme(): void {
-        const savedTheme = localStorage.get<Theme>(this.STORAGE_KEY, "light");
+        const savedTheme = localStorageManager.get<Theme>(this.STORAGE_KEY, "light");
 
         if (savedTheme === "dark") {
             this.applyDarkTheme(false);
@@ -88,7 +88,7 @@ class ThemeManager {
 
         // 保存主题设置
         const theme: Theme = isDark ? "dark" : "light";
-        localStorage.set(this.STORAGE_KEY, theme);
+        localStorageManager.set(this.STORAGE_KEY, theme);
 
         // 触发主题变化事件
         eventBus.emit("theme:changed", { theme });

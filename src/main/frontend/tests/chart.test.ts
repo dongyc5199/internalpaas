@@ -2,7 +2,7 @@
  * chart工具模块测试
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
     CHART_COLORS,
     DEFAULT_COLORS,

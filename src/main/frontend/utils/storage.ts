@@ -155,8 +155,8 @@ class StorageManager {
 }
 
 // 创建localStorage和sessionStorage实例
-export const localStorage = new StorageManager(window.localStorage);
-export const sessionStorage = new StorageManager(window.sessionStorage);
+export const localStorageManager = new StorageManager(window.localStorage);
+export const sessionStorageManager = new StorageManager(window.sessionStorage);
 
 // 也导出类,允许创建自定义实例
 export { StorageManager };
