@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务器综合管理面板 - Internal PaaS</title>
+    
+    <!-- External Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="server_dashboard_theme.css">
+    
+    <style>
+        /* Additional custom styles */
+        .metric-chart {
+            height: 60px;
+            margin-top: 1rem;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online { background: var(--success); }
+        .status-warning { background: var(--warning); }
+        .status-offline { background: var(--danger); }
+        
+        .server-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        
+        .server-metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+        
+        .metric-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: var(--space-md);
+            box-shadow: var(--shadow-xl);
+            transform: translateX(400px);
+            transition: transform var(--transition-base);
+            z-index: 1000;
+            max-width: 300px;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: var(--space-sm);
+            margin-top: var(--space-lg);
+        }
+    </style>
+</head>
+<body class="server-dashboard">
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <div class="flex items-center gap-3">
+            <div class="w-4 h-4 rounded-full bg-green-500"></div>
+            <div>
+                <div class="font-medium text-sm">服务器状态更新</div>
+                <div class="text-xs text-gray-500 mt-1">Server-01 已恢复正常运行</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <!-- Dashboard Header -->
+        <header class="dashboard-header">
+            <div>
+                <h1 class="dashboard-title">服务器综合管理面板</h1>
+                <p class="dashboard-subtitle">实时监控 · 操作日志 · 性能分析</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <button class="btn btn-secondary btn-icon" title="刷新数据">
+                    <i data-lucide="refresh-cw"></i>
+                </button>
+                <button class="btn btn-secondary btn-icon" title="设置">
+                    <i data-lucide="settings"></i>
+                </button>
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <i data-lucide="clock" class="w-4 h-4"></i>
+                    <span id="lastUpdated">刚刚更新</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Status Cards -->
+        <div class="status-cards">
+            <div class="status-card success loading">
+                <div class="status-card-header">
+                    <h3 class="status-card-title">服务器状态</h3>
+                    <div class="status-card-icon">
+                        <i data-lucide="server"></i>
+                    </div>
+                </div>
+                <div class="status-card-value">3/4</div>
+                <p class="status-card-description">在线服务器</p>
+                <div class="progress">
+                    <div class="progress-bar" style="width: 75%"></div>
+                </div>
+            </div>
+
+            <div class="status-card info loading" style="animation-delay: 100ms">
+                <div class="status-card-header">
+                    <h3 class="status-card-title">平均CPU使用率</h3>
+                    <div class="status-card-icon">
+                        <i data-lucide="cpu"></i>
+                    </div>
+                </div>
+                <div class="status-card-value">68%</div>
+                <p class="status-card-description">相较昨日 +12%</p>
+                <canvas class="metric-chart" id="cpuChart"></canvas>
+            </div>
+
+            <div class="status-card warning loading" style="animation-delay: 200ms">
+                <div class="status-card-header">
+                    <h3 class="status-card-title">内存使用</h3>
+                    <div class="status-card-icon">
+                        <i data-lucide="hard-drive"></i>
+                    </div>
+                </div>
+                <div class="status-card-value">24.8GB</div>
+                <p class="status-card-description">总共 32GB</p>
+                <div class="progress">
+                    <div class="progress-bar" style="width: 77.5%"></div>
+                </div>
+            </div>
+
+            <div class="status-card success loading" style="animation-delay: 300ms">
+                <div class="status-card-header">
+                    <h3 class="status-card-title">活跃用户</h3>
+                    <div class="status-card-icon">
+                        <i data-lucide="users"></i>
+                    </div>
+                </div>
+                <div class="status-card-value">12</div>
+                <p class="status-card-description">当前在线</p>
+                <div class="flex gap-1 mt-2">
+                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                    <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="content-left">
+            <div class="dashboard-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">
+                        <i data-lucide="server" class="w-5 h-5"></i>
+                        服务器列表
+                    </h2>
+                </div>
+                <div class="panel-content">
+                    <div class="server-list">
+                        <!-- Server Item 1 -->
+                        <div class="server-item">
+                            <div class="server-info">
+                                <div class="server-status online"></div>
+                                <div>
+                                    <h4 class="server-name">Production-Server-01</h4>
+                                    <p class="server-ip">192.168.1.100:22</p>
+                                    <div class="flex gap-4 mt-2">
+                                        <div class="server-metric">
+                                            <span class="metric-label">CPU:</span>
+                                            <span class="metric-value">45%</span>
+                                        </div>
+                                        <div class="server-metric">
+                                            <span class="metric-label">内存:</span>
+                                            <span class="metric-value">6.2GB</span>
+                                        </div>
+                                        <div class="server-metric">
+                                            <span class="metric-label">应用:</span>
+                                            <span class="metric-value">3个</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="server-actions">
+                                <button class="btn btn-primary btn-icon" title="查看详情">
+                                    <i data-lucide="eye"></i>
+                                </button>
+                                <button class="btn btn-secondary btn-icon" title="SSH连接">
+                                    <i data-lucide="terminal"></i>
+                                </button>
+                                <button class="btn btn-secondary btn-icon" title="重启">
+                                    <i data-lucide="refresh-cw"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Server Item 2 -->
+                        <div class="server-item">
+                            <div class="server-info">
+                                <div class="server-status warning"></div>
+                                <div>
+                                    <h4 class="server-name">Development-Server-02</h4>
+                                    <p class="server-ip">192.168.1.101:22</p>
+                                    <div class="flex gap-4 mt-2">
+                                        <div class="server-metric">
+                                            <span class="metric-label">CPU:</span>
+                                            <span class="metric-value">82%</span>
+                                        </div>
+                                        <div class="server-metric">
+                                            <span class="metric-label">内存:</span>
+                                            <span class="metric-value">7.8GB</span>
+                                        </div>
+                                        <div class="server-metric">
+                                            <span class="metric-label">应用:</span>
+                                            <span class="metric-value">5个</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="server-actions">
+                                <button class="btn btn-primary btn-icon" title="查看详情">
+                                    <i data-lucide="eye"></i>
+                                </button>
+                                <button class="btn btn-secondary btn-icon" title="SSH连接">
+                                    <i data-lucide="terminal"></i>
+                                </button>
+                                <button class="btn btn-secondary btn-icon" title="重启">
+                                    <i data-lucide="refresh-cw"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Server Item 3 -->
+                        <div class="server-item">
+                            <div class="server-info">
+                                <div class="server-status online"></div>
+                                <div>
+                                    <h4 class="server-name">Testing-Server-03</h4>
+                                    <p class="server-ip">192.168.1.102:22</p>
+                                    <div class="flex gap-4 mt-2">
+                                        <div class="server-metric">
+                                            <span class="metric-label">CPU:</span>
+                                            <span class="metric-value">23%</span>
+                                        </div>
+                                        <div class="server-metric">
+                                            <span class="metric-label">内存:</span>
+                                            <span class="metric-value">3.1GB</span>
+                                        </div>
+                                        <div class="server-metric">
+                                            <span class="metric-label">应用:</span>
+                                            <span class="metric-value">2个</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="server-actions">
+                                <button class="btn btn-primary btn-icon" title="查看详情">
+                                    <i data-lucide="eye"></i>
+                                </button>
+                                <button class="btn btn-secondary btn-icon" title="SSH连接">
+                                    <i data-lucide="terminal"></i>
+                                </button>
+                                <button class="btn btn-secondary btn-icon" title="重启">
+                                    <i data-lucide="refresh-cw"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Server Item 4 -->
+                        <div class="server-item">
+                            <div class="server-info">
+                                <div class="server-status offline"></div>
+                                <div>
+                                    <h4 class="server-name">Backup-Server-04</h4>
+                                    <p class="server-ip">192.168.1.103:22</p>
+                                    <div class="flex gap-4 mt-2">
+                                        <div class="server-metric">
+                                            <span class="metric-label">状态:</span>
+                                            <span class="metric-value text-red-500">离线</span>
+                                        </div>
+                                        <div class="server-metric">
+                                            <span class="metric-label">最后在线:</span>
+                                            <span class="metric-value">2小时前</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="server-actions">
+                                <button class="btn btn-secondary btn-icon" title="诊断" disabled>
+                                    <i data-lucide="alert-triangle"></i>
+                                </button>
+                                <button class="btn btn-primary btn-icon" title="重新连接">
+                                    <i data-lucide="power"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline Panel -->
+        <div class="content-right">
+            <div class="dashboard-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">
+                        <i data-lucide="activity" class="w-5 h-5"></i>
+                        操作时间轴
+                    </h2>
+                </div>
+                <div class="panel-content">
+                    <div class="timeline">
+                        <!-- Timeline Item 1 -->
+                        <div class="timeline-item">
+                            <div class="timeline-time">14:32</div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">应用部署成功</h4>
+                                <p class="timeline-description">用户 张三 在 Production-Server-01 上成功部署了 UserService v2.1.0</p>
+                                <div class="timeline-user">@zhangsan</div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Item 2 -->
+                        <div class="timeline-item">
+                            <div class="timeline-time">14:15</div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">服务器重启</h4>
+                                <p class="timeline-description">Development-Server-02 因内存使用率过高自动重启</p>
+                                <div class="timeline-user">系统自动</div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Item 3 -->
+                        <div class="timeline-item">
+                            <div class="timeline-time">13:45</div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">配置更新</h4>
+                                <p class="timeline-description">李四 更新了 API Gateway 的负载均衡配置</p>
+                                <div class="timeline-user">@lisi</div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Item 4 -->
+                        <div class="timeline-item">
+                            <div class="timeline-time">13:30</div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">数据库备份</h4>
+                                <p class="timeline-description">定时任务完成生产环境数据库备份，大小 2.3GB</p>
+                                <div class="timeline-user">系统自动</div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Item 5 -->
+                        <div class="timeline-item">
+                            <div class="timeline-time">13:18</div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">SSL证书更新</h4>
+                                <p class="timeline-description">王五 为 api.internal.com 域名更新了SSL证书</p>
+                                <div class="timeline-user">@wangwu</div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Item 6 -->
+                        <div class="timeline-item">
+                            <div class="timeline-time">12:55</div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">磁盘清理</h4>
+                                <p class="timeline-description">Testing-Server-03 自动清理了过期日志文件，释放 1.2GB 空间</p>
+                                <div class="timeline-user">系统自动</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" style="width: 100%;">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            加载更多记录
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="dashboard-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                        性能监控图表
+                    </h2>
+                </div>
+                <div class="panel-content">
+                    <div class="charts-grid">
+                        <!-- CPU Usage Chart -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3 class="chart-title">CPU使用率趋势</h3>
+                                <span class="chart-value">68%</span>
+                            </div>
+                            <canvas id="cpuTrendChart" class="chart-placeholder"></canvas>
+                        </div>
+
+                        <!-- Memory Usage Chart -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3 class="chart-title">内存使用趋势</h3>
+                                <span class="chart-value">24.8GB</span>
+                            </div>
+                            <canvas id="memoryTrendChart" class="chart-placeholder"></canvas>
+                        </div>
+
+                        <!-- Network Traffic Chart -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3 class="chart-title">网络流量</h3>
+                                <span class="chart-value">45MB/s</span>
+                            </div>
+                            <canvas id="networkChart" class="chart-placeholder"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Show toast notification on load
+        setTimeout(() => {
+            document.getElementById('toast').classList.add('show');
+            setTimeout(() => {
+                document.getElementById('toast').classList.remove('show');
+            }, 3000);
+        }, 2000);
+
+        // Update timestamp
+        function updateTimestamp() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('zh-CN', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            document.getElementById('lastUpdated').textContent = `最后更新: ${timeString}`;
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        display: false
+                    },
+                    y: {
+                        display: false
+                    }
+                },
+                elements: {
+                    line: {
+                        tension: 0.4
+                    },
+                    point: {
+                        radius: 0
+                    }
+                }
+            };
+
+            // CPU Chart (small)
+            const cpuCtx = document.getElementById('cpuChart');
+            if (cpuCtx) {
+                new Chart(cpuCtx, {
+                    type: 'line',
+                    data: {
+                        labels: Array(20).fill(''),
+                        datasets: [{
+                            data: [45, 52, 48, 61, 58, 65, 72, 68, 62, 70, 
+                                   75, 73, 78, 82, 79, 85, 88, 84, 81, 68],
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            fill: true
+                        }]
+                    },
+                    options: chartOptions
+                });
+            }
+
+            // CPU Trend Chart
+            const cpuTrendCtx = document.getElementById('cpuTrendChart');
+            if (cpuTrendCtx) {
+                new Chart(cpuTrendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                        datasets: [{
+                            label: 'CPU使用率',
+                            data: [45, 38, 52, 68, 75, 62],
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Memory Trend Chart
+            const memoryTrendCtx = document.getElementById('memoryTrendChart');
+            if (memoryTrendCtx) {
+                new Chart(memoryTrendCtx, {
+                    type: 'area',
+                    data: {
+                        labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                        datasets: [{
+                            label: '内存使用',
+                            data: [18.2, 16.8, 22.1, 24.8, 26.3, 23.5],
+                            borderColor: '#ffc107',
+                            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Network Chart
+            const networkCtx = document.getElementById('networkChart');
+            if (networkCtx) {
+                new Chart(networkCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                        datasets: [{
+                            label: '网络流量',
+                            data: [25, 15, 35, 45, 52, 38],
+                            backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                            borderColor: '#198754',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Refresh data function
+        function refreshData() {
+            // Simulate data refresh
+            const refreshBtn = document.querySelector('[title="刷新数据"]');
+            refreshBtn.classList.add('animate-spin');
+            
+            setTimeout(() => {
+                refreshBtn.classList.remove('animate-spin');
+                updateTimestamp();
+                
+                // Show refresh notification
+                const toast = document.getElementById('toast');
+                toast.querySelector('.font-medium').textContent = '数据已刷新';
+                toast.querySelector('.text-xs').textContent = '所有服务器状态已更新';
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 2000);
+            }, 1500);
+        }
+
+        // Add event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTimestamp();
+            initializeCharts();
+            
+            // Refresh button
+            document.querySelector('[title="刷新数据"]').addEventListener('click', refreshData);
+            
+            // Auto refresh every 30 seconds
+            setInterval(updateTimestamp, 30000);
+        });
+
+        // Add hover effects to server items
+        document.querySelectorAll('.server-item').forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Add click effects to buttons
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                // Create ripple effect
+                const ripple = document.createElement('span');
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+                
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = x + 'px';
+                ripple.style.top = y + 'px';
+                ripple.classList.add('ripple');
+                
+                this.appendChild(ripple);
+                
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            });
+        });
+    </script>
+
+    <style>
+        /* Additional animation styles */
+        @keyframes ripple {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+        
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+        
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</body>
+</html>

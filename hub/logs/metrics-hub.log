@@ -1,0 +1,502 @@
+2025-10-16 23:48:44.072 [main] INFO  c.c.metricshub.OtlpHttpEndpointTest - Starting OtlpHttpEndpointTest using Java 17.0.2 with PID 28316 (started by dongy in E:\work\code\internalpaas\hub)
+2025-10-16 23:48:44.087 [main] DEBUG c.c.metricshub.OtlpHttpEndpointTest - Running with Spring Boot v3.2.0, Spring v6.1.1
+2025-10-16 23:48:44.088 [main] INFO  c.c.metricshub.OtlpHttpEndpointTest - The following 1 profile is active: "test"
+2025-10-16 23:48:59.692 [main] INFO  c.c.metricshub.ingest.IngestQueue - ? IngestQueue initialized with capacity: 100, offerTimeout: 50ms
+2025-10-16 23:48:59.714 [main] INFO  c.c.m.ingest.OtlpMetricsServiceImpl - ? OTLP gRPC service metrics initialized
+2025-10-16 23:49:00.723 [main] INFO  c.c.metricshub.ingest.OtlpGrpcServer - ? OTLP gRPC server started on port 0 (max message size: 4194304 bytes)
+2025-10-16 23:49:00.833 [main] INFO  c.c.m.ingest.OtlpHttpController - ? OTLP HTTP endpoint initialized at /v1/metrics (max payload: 4194304 bytes)
+2025-10-16 23:49:00.861 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:06.869 [main] INFO  c.c.metricshub.storage.WritePipeline - ? WritePipeline initialized (async=false)
+2025-10-16 23:49:07.501 [main] INFO  c.c.m.config.EmbeddedRedisConfig - ? Embedded Redis started on port 6370
+2025-10-16 23:49:12.809 [main] INFO  c.c.metricshub.OtlpHttpEndpointTest - Started OtlpHttpEndpointTest in 30.439 seconds (process running for 38.157)
+2025-10-16 23:49:12.916 [main] INFO  c.c.m.processing.ProcessingService - ? Starting Processing Service...
+2025-10-16 23:49:12.919 [main] INFO  c.c.m.processing.ProcessingService - ? Processing Service started with 4 processor threads
+2025-10-16 23:49:13.233 [pool-5-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 started
+2025-10-16 23:49:13.233 [pool-5-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 started
+2025-10-16 23:49:13.236 [pool-5-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 started
+2025-10-16 23:49:13.238 [pool-5-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 started
+2025-10-16 23:49:14.975 [main] DEBUG c.c.m.ingest.OtlpHttpController - Received HTTP OTLP metrics: 17 bytes, content-type: application/x-protobuf;charset=UTF-8
+2025-10-16 23:49:14.976 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from http, queue depth: 1
+2025-10-16 23:49:14.976 [main] DEBUG c.c.m.ingest.OtlpHttpController - ? HTTP OTLP metrics enqueued successfully
+2025-10-16 23:49:14.976 [pool-5-thread-3] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from http (timeout: 1SECONDS), remaining: 0
+2025-10-16 23:49:14.982 [pool-5-thread-3] DEBUG c.c.m.processing.ProcessingService - Processor-2 processing payload from http (17 bytes, age: 6ms)
+2025-10-16 23:49:15.015 [pool-5-thread-3] ERROR c.c.m.processing.OtlpDecoder - Failed to decode OTLP payload: While parsing a protocol message, the input ended unexpectedly in the middle of a field.  This could mean either that the input has been truncated or that an embedded message misreported its own length.
+com.google.protobuf.InvalidProtocolBufferException: While parsing a protocol message, the input ended unexpectedly in the middle of a field.  This could mean either that the input has been truncated or that an embedded message misreported its own length.
+	at com.google.protobuf.InvalidProtocolBufferException.truncatedMessage(InvalidProtocolBufferException.java:92)
+	at com.google.protobuf.CodedInputStream$ArrayDecoder.pushLimit(CodedInputStream.java:1167)
+	at com.google.protobuf.CodedInputStream$ArrayDecoder.readMessage(CodedInputStream.java:858)
+	at io.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest$Builder.mergeFrom(ExportMetricsServiceRequest.java:478)
+	at io.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest$1.parsePartialFrom(ExportMetricsServiceRequest.java:924)
+	at io.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest$1.parsePartialFrom(ExportMetricsServiceRequest.java:916)
+	at com.google.protobuf.AbstractParser.parsePartialFrom(AbstractParser.java:135)
+	at com.google.protobuf.AbstractParser.parseFrom(AbstractParser.java:168)
+	at com.google.protobuf.AbstractParser.parseFrom(AbstractParser.java:180)
+	at com.google.protobuf.AbstractParser.parseFrom(AbstractParser.java:185)
+	at com.google.protobuf.AbstractParser.parseFrom(AbstractParser.java:25)
+	at io.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest.parseFrom(ExportMetricsServiceRequest.java:219)
+	at com.cmict.metricshub.processing.OtlpDecoder.decode(OtlpDecoder.java:51)
+	at com.cmict.metricshub.processing.ProcessingService.lambda$processPayload$1(ProcessingService.java:172)
+	at io.micrometer.core.instrument.AbstractTimer.record(AbstractTimer.java:247)
+	at com.cmict.metricshub.processing.ProcessingService.processPayload(ProcessingService.java:166)
+	at com.cmict.metricshub.processing.ProcessingService.processorLoop(ProcessingService.java:149)
+	at com.cmict.metricshub.processing.ProcessingService.lambda$start$0(ProcessingService.java:105)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+2025-10-16 23:49:15.021 [pool-5-thread-3] ERROR c.c.m.processing.ProcessingService - Processor-2 failed to decode payload: Failed to decode OTLP payload
+2025-10-16 23:49:15.200 [main] DEBUG c.c.m.ingest.OtlpHttpController - Received HTTP OTLP metrics: 5242880 bytes, content-type: application/x-protobuf;charset=UTF-8
+2025-10-16 23:49:15.200 [main] WARN  c.c.m.ingest.OtlpHttpController - ?? Rejected oversized payload: 5242880 bytes (max: 4194304)
+2025-10-16 23:49:15.404 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.427 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.439 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.440 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.442 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.442 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 3 samples (3 input, 3 output)
+2025-10-16 23:49:15.444 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.445 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 3 samples (3 input, 2 output)
+2025-10-16 23:49:15.448 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.449 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.451 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.452 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.455 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.455 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.494 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.496 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.500 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.502 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.503 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.505 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.506 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.509 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.509 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 0 output)
+2025-10-16 23:49:15.511 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.512 [main] DEBUG c.c.metricshub.processing.Normalizer - Filtered labels for metric system.memory.usage: 3 ¡ú 2 labels
+2025-10-16 23:49:15.512 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.519 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.520 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.522 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.523 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.526 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.526 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.529 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.530 [main] DEBUG c.c.metricshub.processing.Normalizer - Filtered labels for metric system.cpu.usage: 6 ¡ú 4 labels
+2025-10-16 23:49:15.531 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.533 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.565 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.574 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.577 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.583 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.589 [main] DEBUG c.c.metricshub.processing.Normalizer - Filtered labels for metric system.memory.usage: 3 ¡ú 1 labels
+2025-10-16 23:49:15.591 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.596 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.603 [main] WARN  c.c.metricshub.processing.Normalizer - Invalid value for metric system.cpu.usage: Infinity, setting to 0
+2025-10-16 23:49:15.604 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.606 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.606 [main] WARN  c.c.metricshub.processing.Normalizer - Invalid value for metric system.cpu.usage: NaN, setting to 0
+2025-10-16 23:49:15.607 [main] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:15.652 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 0 resource metrics
+2025-10-16 23:49:15.652 [main] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 0 metric samples
+2025-10-16 23:49:15.682 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:15.699 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=unsupported.metric, unit=1, type=DATA_NOT_SET
+2025-10-16 23:49:15.704 [main] DEBUG c.c.m.processing.OtlpDecoder - Unsupported metric type: DATA_NOT_SET for metric unsupported.metric
+2025-10-16 23:49:15.704 [main] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 0 metric samples
+2025-10-16 23:49:15.729 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:15.729 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.network.io.bytes, unit=bytes, type=SUM
+2025-10-16 23:49:15.730 [main] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:15.756 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:15.756 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:15.756 [main] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:15.771 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:15.772 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:15.773 [main] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:15.785 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:15.786 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:15.786 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.memory.usage, unit=bytes, type=GAUGE
+2025-10-16 23:49:15.787 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.network.io.bytes, unit=bytes, type=SUM
+2025-10-16 23:49:15.788 [main] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 3 metric samples
+2025-10-16 23:49:15.790 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:15.791 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:15.791 [main] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:15.794 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:15.794 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=, type=GAUGE
+2025-10-16 23:49:15.794 [main] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:15.800 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:15.801 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=process.threads, unit=count, type=GAUGE
+2025-10-16 23:49:15.801 [main] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:15.803 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:15.804 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:15.804 [main] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:15.820 [main] ERROR c.c.m.processing.OtlpDecoder - Failed to decode OTLP payload: While parsing a protocol message, the input ended unexpectedly in the middle of a field.  This could mean either that the input has been truncated or that an embedded message misreported its own length.
+com.google.protobuf.InvalidProtocolBufferException: While parsing a protocol message, the input ended unexpectedly in the middle of a field.  This could mean either that the input has been truncated or that an embedded message misreported its own length.
+	at com.google.protobuf.InvalidProtocolBufferException.truncatedMessage(InvalidProtocolBufferException.java:92)
+	at com.google.protobuf.CodedInputStream$ArrayDecoder.readRawBytes(CodedInputStream.java:1236)
+	at com.google.protobuf.CodedInputStream$ArrayDecoder.readBytes(CodedInputStream.java:887)
+	at com.google.protobuf.UnknownFieldSet$Builder.mergeFieldFrom(UnknownFieldSet.java:490)
+	at com.google.protobuf.GeneratedMessageV3$Builder.parseUnknownField(GeneratedMessageV3.java:864)
+	at io.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest$Builder.mergeFrom(ExportMetricsServiceRequest.java:490)
+	at io.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest$1.parsePartialFrom(ExportMetricsServiceRequest.java:924)
+	at io.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest$1.parsePartialFrom(ExportMetricsServiceRequest.java:916)
+	at com.google.protobuf.AbstractParser.parsePartialFrom(AbstractParser.java:135)
+	at com.google.protobuf.AbstractParser.parseFrom(AbstractParser.java:168)
+	at com.google.protobuf.AbstractParser.parseFrom(AbstractParser.java:180)
+	at com.google.protobuf.AbstractParser.parseFrom(AbstractParser.java:185)
+	at com.google.protobuf.AbstractParser.parseFrom(AbstractParser.java:25)
+	at io.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest.parseFrom(ExportMetricsServiceRequest.java:219)
+	at com.cmict.metricshub.processing.OtlpDecoder.decode(OtlpDecoder.java:51)
+	at com.cmict.metricshub.processing.OtlpDecoderTest.lambda$testDecodeInvalidPayload$0(OtlpDecoderTest.java:531)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:53)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3115)
+	at com.cmict.metricshub.processing.OtlpDecoderTest.testDecodeInvalidPayload(OtlpDecoderTest.java:530)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:728)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:86)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$7(TestMethodTestDescriptor.java:218)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:214)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:139)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:69)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:151)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:155)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:141)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:139)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:138)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:95)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141)
+	at org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:85)
+	at org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:47)
+	at org.apache.maven.surefire.junitplatform.LazyLauncher.execute(LazyLauncher.java:56)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.execute(JUnitPlatformProvider.java:184)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invokeAllTests(JUnitPlatformProvider.java:148)
+	at org.apache.maven.surefire.junitplatform.JUnitPlatformProvider.invoke(JUnitPlatformProvider.java:122)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:385)
+	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
+	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+2025-10-16 23:49:15.824 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:15.825 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:15.825 [main] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:15.829 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:15.829 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:15.829 [main] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 2 metric samples
+2025-10-16 23:49:15.833 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:15.833 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=test.metric, unit=1, type=GAUGE
+2025-10-16 23:49:15.834 [main] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:15.849 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:15.849 [main] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=http.server.duration, unit=ms, type=HISTOGRAM
+2025-10-16 23:49:15.849 [main] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:15.861 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:15.862 [main] INFO  c.c.metricshub.ingest.IngestQueue - ? IngestQueue initialized with capacity: 100, offerTimeout: 50ms
+2025-10-16 23:49:15.863 [main] INFO  c.c.m.processing.ProcessingService - ? Starting Processing Service...
+2025-10-16 23:49:15.868 [main] INFO  c.c.m.processing.ProcessingService - ? Processing Service started with 4 processor threads
+2025-10-16 23:49:15.869 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from test, queue depth: 1
+2025-10-16 23:49:15.904 [pool-6-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 started
+2025-10-16 23:49:15.904 [pool-6-thread-1] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from test (timeout: 1SECONDS), remaining: 0
+2025-10-16 23:49:15.907 [pool-6-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:15.907 [pool-6-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:15.908 [pool-6-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=unknown.weird.metric, unit=count, type=GAUGE
+2025-10-16 23:49:15.908 [pool-6-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 2 metric samples
+2025-10-16 23:49:15.908 [pool-6-thread-1] DEBUG c.c.metricshub.processing.Normalizer - Normalized 2 samples (2 input, 1 output)
+2025-10-16 23:49:15.911 [pool-6-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 started
+2025-10-16 23:49:15.912 [pool-6-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 started
+2025-10-16 23:49:15.914 [pool-6-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 started
+2025-10-16 23:49:15.922 [main] INFO  c.c.m.processing.ProcessingService - ?? Stopping Processing Service...
+2025-10-16 23:49:16.920 [pool-6-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 stopped
+2025-10-16 23:49:16.921 [pool-6-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 stopped
+2025-10-16 23:49:16.922 [pool-6-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 stopped
+2025-10-16 23:49:16.921 [pool-6-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 stopped
+2025-10-16 23:49:16.922 [main] INFO  c.c.m.processing.ProcessingService - ? Processing Service stopped
+2025-10-16 23:49:16.925 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:16.926 [main] INFO  c.c.metricshub.ingest.IngestQueue - ? IngestQueue initialized with capacity: 100, offerTimeout: 50ms
+2025-10-16 23:49:16.926 [main] INFO  c.c.m.processing.ProcessingService - ? Starting Processing Service...
+2025-10-16 23:49:16.927 [pool-7-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 started
+2025-10-16 23:49:16.927 [main] INFO  c.c.m.processing.ProcessingService - ? Processing Service started with 4 processor threads
+2025-10-16 23:49:16.927 [pool-7-thread-1] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from test (timeout: 1SECONDS), remaining: 0
+2025-10-16 23:49:16.927 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from test, queue depth: 1
+2025-10-16 23:49:16.928 [pool-7-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:16.928 [pool-7-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 started
+2025-10-16 23:49:16.928 [pool-7-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:16.929 [pool-7-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:16.929 [pool-7-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 started
+2025-10-16 23:49:16.929 [pool-7-thread-1] DEBUG c.c.metricshub.processing.Normalizer - Filtered labels for metric system.cpu.usage: 4 ¡ú 2 labels
+2025-10-16 23:49:16.930 [pool-7-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 started
+2025-10-16 23:49:16.930 [pool-7-thread-1] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:16.984 [main] INFO  c.c.m.processing.ProcessingService - ?? Stopping Processing Service...
+2025-10-16 23:49:17.936 [pool-7-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 stopped
+2025-10-16 23:49:17.936 [pool-7-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 stopped
+2025-10-16 23:49:17.937 [pool-7-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 stopped
+2025-10-16 23:49:17.937 [pool-7-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 stopped
+2025-10-16 23:49:17.938 [main] INFO  c.c.m.processing.ProcessingService - ? Processing Service stopped
+2025-10-16 23:49:17.940 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:17.940 [main] INFO  c.c.metricshub.ingest.IngestQueue - ? IngestQueue initialized with capacity: 100, offerTimeout: 50ms
+2025-10-16 23:49:17.945 [main] INFO  c.c.m.processing.ProcessingService - ? Starting Processing Service...
+2025-10-16 23:49:17.945 [pool-8-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 started
+2025-10-16 23:49:17.946 [main] INFO  c.c.m.processing.ProcessingService - ? Processing Service started with 4 processor threads
+2025-10-16 23:49:17.946 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from test-0, queue depth: 1
+2025-10-16 23:49:17.946 [pool-8-thread-1] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from test-0 (timeout: 1SECONDS), remaining: 0
+2025-10-16 23:49:17.946 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from test-1, queue depth: 1
+2025-10-16 23:49:17.947 [pool-8-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:17.947 [pool-8-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:17.947 [pool-8-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:17.947 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from test-2, queue depth: 2
+2025-10-16 23:49:17.946 [pool-8-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 started
+2025-10-16 23:49:17.947 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from test-3, queue depth: 3
+2025-10-16 23:49:17.947 [pool-8-thread-1] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:17.948 [pool-8-thread-3] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from test-1 (timeout: 1SECONDS), remaining: 2
+2025-10-16 23:49:17.948 [pool-8-thread-1] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from test-2 (timeout: 1SECONDS), remaining: 2
+2025-10-16 23:49:17.948 [pool-8-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 started
+2025-10-16 23:49:17.948 [pool-8-thread-4] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from test-3 (timeout: 1SECONDS), remaining: 1
+2025-10-16 23:49:17.948 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from test-4, queue depth: 3
+2025-10-16 23:49:17.948 [pool-8-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:17.948 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from test-5, queue depth: 2
+2025-10-16 23:49:17.948 [pool-8-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:17.948 [pool-8-thread-4] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:17.948 [pool-8-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:17.948 [pool-8-thread-4] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:17.948 [pool-8-thread-1] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:17.948 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from test-6, queue depth: 3
+2025-10-16 23:49:17.948 [pool-8-thread-1] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from test-4 (timeout: 1SECONDS), remaining: 2
+2025-10-16 23:49:17.948 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from test-7, queue depth: 3
+2025-10-16 23:49:17.949 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from test-8, queue depth: 4
+2025-10-16 23:49:17.948 [pool-8-thread-3] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:17.949 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from test-9, queue depth: 5
+2025-10-16 23:49:17.948 [pool-8-thread-4] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:17.949 [pool-8-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:17.949 [pool-8-thread-4] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:17.949 [pool-8-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:17.949 [pool-8-thread-4] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from test-5 (timeout: 1SECONDS), remaining: 4
+2025-10-16 23:49:17.949 [pool-8-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:17.949 [pool-8-thread-1] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:17.949 [pool-8-thread-4] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:17.949 [pool-8-thread-1] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from test-6 (timeout: 1SECONDS), remaining: 3
+2025-10-16 23:49:17.949 [pool-8-thread-3] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:17.949 [pool-8-thread-4] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:17.949 [pool-8-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:17.949 [pool-8-thread-3] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:17.949 [pool-8-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:17.949 [pool-8-thread-3] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:17.949 [pool-8-thread-4] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:17.950 [pool-8-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:17.950 [pool-8-thread-3] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from test-7 (timeout: 1SECONDS), remaining: 2
+2025-10-16 23:49:17.950 [pool-8-thread-1] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:17.950 [pool-8-thread-1] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from test-8 (timeout: 1SECONDS), remaining: 1
+2025-10-16 23:49:17.950 [pool-8-thread-3] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:17.950 [pool-8-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:17.950 [pool-8-thread-3] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:17.950 [pool-8-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:17.950 [pool-8-thread-3] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:17.950 [pool-8-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:17.950 [pool-8-thread-3] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:17.950 [pool-8-thread-1] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:17.950 [pool-8-thread-3] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from test-9 (timeout: 1SECONDS), remaining: 0
+2025-10-16 23:49:17.950 [pool-8-thread-4] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:17.950 [pool-8-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 started
+2025-10-16 23:49:17.951 [pool-8-thread-3] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:17.951 [pool-8-thread-3] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:17.951 [pool-8-thread-3] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:17.951 [pool-8-thread-3] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:18.000 [main] INFO  c.c.m.processing.ProcessingService - ?? Stopping Processing Service...
+2025-10-16 23:49:18.964 [pool-8-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 stopped
+2025-10-16 23:49:18.964 [pool-8-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 stopped
+2025-10-16 23:49:18.965 [pool-8-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 stopped
+2025-10-16 23:49:18.965 [pool-8-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 stopped
+2025-10-16 23:49:18.965 [main] INFO  c.c.m.processing.ProcessingService - ? Processing Service stopped
+2025-10-16 23:49:18.969 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:18.969 [main] INFO  c.c.metricshub.ingest.IngestQueue - ? IngestQueue initialized with capacity: 100, offerTimeout: 50ms
+2025-10-16 23:49:18.970 [main] INFO  c.c.m.processing.ProcessingService - ? Starting Processing Service...
+2025-10-16 23:49:18.972 [main] INFO  c.c.m.processing.ProcessingService - ? Processing Service started with 4 processor threads
+2025-10-16 23:49:18.972 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from test, queue depth: 1
+2025-10-16 23:49:18.973 [pool-9-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 started
+2025-10-16 23:49:18.973 [pool-9-thread-1] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from test (timeout: 1SECONDS), remaining: 0
+2025-10-16 23:49:18.974 [pool-9-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:18.974 [pool-9-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 started
+2025-10-16 23:49:18.974 [pool-9-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:18.974 [pool-9-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.memory.usage, unit=mb, type=GAUGE
+2025-10-16 23:49:18.974 [pool-9-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 started
+2025-10-16 23:49:18.974 [pool-9-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.network.io.bytes, unit=kb, type=SUM
+2025-10-16 23:49:18.974 [pool-9-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 3 metric samples
+2025-10-16 23:49:18.974 [pool-9-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 started
+2025-10-16 23:49:18.974 [pool-9-thread-1] DEBUG c.c.metricshub.processing.Normalizer - Normalized 3 samples (3 input, 3 output)
+2025-10-16 23:49:19.024 [main] INFO  c.c.m.processing.ProcessingService - ?? Stopping Processing Service...
+2025-10-16 23:49:19.987 [pool-9-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 stopped
+2025-10-16 23:49:19.987 [pool-9-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 stopped
+2025-10-16 23:49:19.987 [pool-9-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 stopped
+2025-10-16 23:49:19.988 [pool-9-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 stopped
+2025-10-16 23:49:19.988 [main] INFO  c.c.m.processing.ProcessingService - ? Processing Service stopped
+2025-10-16 23:49:19.991 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:19.993 [main] INFO  c.c.metricshub.ingest.IngestQueue - ? IngestQueue initialized with capacity: 100, offerTimeout: 50ms
+2025-10-16 23:49:19.995 [main] INFO  c.c.m.processing.ProcessingService - ? Starting Processing Service...
+2025-10-16 23:49:19.997 [main] INFO  c.c.m.processing.ProcessingService - ? Processing Service started with 4 processor threads
+2025-10-16 23:49:19.997 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from test, queue depth: 1
+2025-10-16 23:49:20.006 [pool-10-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 started
+2025-10-16 23:49:20.006 [pool-10-thread-1] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from test (timeout: 1SECONDS), remaining: 0
+2025-10-16 23:49:20.007 [pool-10-thread-1] ERROR c.c.m.processing.OtlpDecoder - Failed to decode OTLP payload: Protocol message end-group tag did not match expected tag.
+com.google.protobuf.InvalidProtocolBufferException: Protocol message end-group tag did not match expected tag.
+	at com.google.protobuf.InvalidProtocolBufferException.invalidEndTag(InvalidProtocolBufferException.java:114)
+	at com.google.protobuf.CodedInputStream$ArrayDecoder.checkLastTagWas(CodedInputStream.java:615)
+	at com.google.protobuf.AbstractParser.parsePartialFrom(AbstractParser.java:137)
+	at com.google.protobuf.AbstractParser.parseFrom(AbstractParser.java:168)
+	at com.google.protobuf.AbstractParser.parseFrom(AbstractParser.java:180)
+	at com.google.protobuf.AbstractParser.parseFrom(AbstractParser.java:185)
+	at com.google.protobuf.AbstractParser.parseFrom(AbstractParser.java:25)
+	at io.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest.parseFrom(ExportMetricsServiceRequest.java:219)
+	at com.cmict.metricshub.processing.OtlpDecoder.decode(OtlpDecoder.java:51)
+	at com.cmict.metricshub.processing.ProcessingIntegrationTest$TestProcessingService.processPayload(ProcessingIntegrationTest.java:462)
+	at com.cmict.metricshub.processing.ProcessingService.processorLoop(ProcessingService.java:149)
+	at com.cmict.metricshub.processing.ProcessingService.lambda$start$0(ProcessingService.java:105)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+2025-10-16 23:49:20.010 [pool-10-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 started
+2025-10-16 23:49:20.011 [pool-10-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 started
+2025-10-16 23:49:20.011 [pool-10-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 started
+2025-10-16 23:49:20.501 [main] INFO  c.c.m.processing.ProcessingService - ?? Stopping Processing Service...
+2025-10-16 23:49:21.023 [pool-10-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 stopped
+2025-10-16 23:49:21.024 [pool-10-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 stopped
+2025-10-16 23:49:21.024 [pool-10-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 stopped
+2025-10-16 23:49:21.024 [pool-10-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 stopped
+2025-10-16 23:49:21.024 [main] INFO  c.c.m.processing.ProcessingService - ? Processing Service stopped
+2025-10-16 23:49:21.026 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:21.027 [main] INFO  c.c.metricshub.ingest.IngestQueue - ? IngestQueue initialized with capacity: 100, offerTimeout: 50ms
+2025-10-16 23:49:21.028 [main] INFO  c.c.m.processing.ProcessingService - ? Starting Processing Service...
+2025-10-16 23:49:21.030 [main] INFO  c.c.m.processing.ProcessingService - ? Processing Service started with 4 processor threads
+2025-10-16 23:49:21.030 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from test, queue depth: 1
+2025-10-16 23:49:21.036 [pool-11-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 started
+2025-10-16 23:49:21.036 [pool-11-thread-1] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from test (timeout: 1SECONDS), remaining: 0
+2025-10-16 23:49:21.037 [pool-11-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:21.037 [pool-11-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:21.037 [pool-11-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:21.037 [pool-11-thread-1] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:21.043 [pool-11-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 started
+2025-10-16 23:49:21.043 [pool-11-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 started
+2025-10-16 23:49:21.044 [pool-11-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 started
+2025-10-16 23:49:21.105 [main] INFO  c.c.m.processing.ProcessingService - ?? Stopping Processing Service...
+2025-10-16 23:49:22.055 [pool-11-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 stopped
+2025-10-16 23:49:22.055 [pool-11-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 stopped
+2025-10-16 23:49:22.056 [pool-11-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 stopped
+2025-10-16 23:49:22.056 [pool-11-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 stopped
+2025-10-16 23:49:22.056 [main] INFO  c.c.m.processing.ProcessingService - ? Processing Service stopped
+2025-10-16 23:49:22.059 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:22.061 [main] INFO  c.c.metricshub.ingest.IngestQueue - ? IngestQueue initialized with capacity: 100, offerTimeout: 50ms
+2025-10-16 23:49:22.063 [main] INFO  c.c.m.processing.ProcessingService - ? Starting Processing Service...
+2025-10-16 23:49:22.065 [main] INFO  c.c.m.processing.ProcessingService - ? Processing Service started with 4 processor threads
+2025-10-16 23:49:22.065 [main] DEBUG c.c.metricshub.ingest.IngestQueue - Enqueued payload from test, queue depth: 1
+2025-10-16 23:49:22.065 [pool-12-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 started
+2025-10-16 23:49:22.065 [pool-12-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 started
+2025-10-16 23:49:22.065 [pool-12-thread-1] DEBUG c.c.metricshub.ingest.IngestQueue - Dequeued payload from test (timeout: 1SECONDS), remaining: 0
+2025-10-16 23:49:22.066 [pool-12-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 started
+2025-10-16 23:49:22.066 [pool-12-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding OTLP request with 1 resource metrics
+2025-10-16 23:49:22.066 [pool-12-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Decoding metric: name=system.cpu.usage, unit=1, type=GAUGE
+2025-10-16 23:49:22.066 [pool-12-thread-1] DEBUG c.c.m.processing.OtlpDecoder - Successfully decoded 1 metric samples
+2025-10-16 23:49:22.066 [pool-12-thread-1] DEBUG c.c.metricshub.processing.Normalizer - Normalized 1 samples (1 input, 1 output)
+2025-10-16 23:49:22.066 [pool-12-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 started
+2025-10-16 23:49:22.117 [main] INFO  c.c.m.processing.ProcessingService - ?? Stopping Processing Service...
+2025-10-16 23:49:23.079 [pool-12-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 stopped
+2025-10-16 23:49:23.080 [pool-12-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 stopped
+2025-10-16 23:49:23.079 [pool-12-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 stopped
+2025-10-16 23:49:23.080 [pool-12-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 stopped
+2025-10-16 23:49:23.080 [main] INFO  c.c.m.processing.ProcessingService - ? Processing Service stopped
+2025-10-16 23:49:23.269 [main] INFO  c.c.m.s.WritePipelineIntegrationTest - Starting WritePipelineIntegrationTest using Java 17.0.2 with PID 28316 (started by dongy in E:\work\code\internalpaas\hub)
+2025-10-16 23:49:23.270 [main] DEBUG c.c.m.s.WritePipelineIntegrationTest - Running with Spring Boot v3.2.0, Spring v6.1.1
+2025-10-16 23:49:23.270 [main] INFO  c.c.m.s.WritePipelineIntegrationTest - The following 1 profile is active: "test"
+2025-10-16 23:49:25.589 [main] INFO  c.c.metricshub.ingest.IngestQueue - ? IngestQueue initialized with capacity: 100, offerTimeout: 50ms
+2025-10-16 23:49:25.593 [main] INFO  c.c.m.ingest.OtlpMetricsServiceImpl - ? OTLP gRPC service metrics initialized
+2025-10-16 23:49:25.599 [main] INFO  c.c.metricshub.ingest.OtlpGrpcServer - ? OTLP gRPC server started on port 0 (max message size: 4194304 bytes)
+2025-10-16 23:49:25.620 [main] INFO  c.c.m.ingest.OtlpHttpController - ? OTLP HTTP endpoint initialized at /v1/metrics (max payload: 4194304 bytes)
+2025-10-16 23:49:25.624 [main] INFO  c.c.metricshub.processing.Normalizer - ? Normalizer initialized with label whitelist: [server.id, region, env, group]
+2025-10-16 23:49:26.445 [main] INFO  c.c.metricshub.storage.WritePipeline - ? WritePipeline initialized (async=false)
+2025-10-16 23:49:26.879 [main] WARN  c.c.m.config.EmbeddedRedisConfig - ?? Embedded Redis may already be running or failed to start: IOException - Failed to start Redis service
+2025-10-16 23:49:29.323 [main] INFO  c.c.m.s.WritePipelineIntegrationTest - Started WritePipelineIntegrationTest in 6.153 seconds (process running for 54.671)
+2025-10-16 23:49:29.325 [main] INFO  c.c.m.processing.ProcessingService - ? Starting Processing Service...
+2025-10-16 23:49:29.329 [main] INFO  c.c.m.processing.ProcessingService - ? Processing Service started with 4 processor threads
+2025-10-16 23:49:29.388 [pool-13-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 started
+2025-10-16 23:49:29.397 [pool-13-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 started
+2025-10-16 23:49:29.397 [pool-13-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 started
+2025-10-16 23:49:29.398 [pool-13-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 started
+2025-10-16 23:49:30.856 [main] INFO  c.c.metricshub.storage.TsdbWriter - ? TSDB write completed: 10 samples written
+2025-10-16 23:49:31.296 [main] DEBUG c.c.metricshub.storage.RedisWriter - Wrote 1 metrics to Redis for server server-002
+2025-10-16 23:49:31.300 [main] DEBUG c.c.metricshub.storage.RedisWriter - Wrote 2 metrics to Redis for server server-000
+2025-10-16 23:49:31.307 [main] DEBUG c.c.metricshub.storage.RedisWriter - Wrote 2 metrics to Redis for server server-001
+2025-10-16 23:49:31.307 [main] INFO  c.c.metricshub.storage.RedisWriter - ? Redis write completed: 5 samples written
+2025-10-16 23:49:31.326 [main] INFO  c.c.metricshub.storage.WritePipeline - ? Writing batch of 5 samples
+2025-10-16 23:49:31.329 [main] DEBUG c.c.metricshub.storage.RedisWriter - Wrote 1 metrics to Redis for server server-002
+2025-10-16 23:49:31.331 [main] DEBUG c.c.metricshub.storage.RedisWriter - Wrote 2 metrics to Redis for server server-000
+2025-10-16 23:49:31.349 [main] DEBUG c.c.metricshub.storage.RedisWriter - Wrote 2 metrics to Redis for server server-001
+2025-10-16 23:49:31.349 [main] INFO  c.c.metricshub.storage.RedisWriter - ? Redis write completed: 5 samples written
+2025-10-16 23:49:31.349 [main] DEBUG c.c.metricshub.storage.WritePipeline - Redis write: 5 samples in 22ms
+2025-10-16 23:49:31.386 [main] INFO  c.c.metricshub.storage.TsdbWriter - ? TSDB write completed: 5 samples written
+2025-10-16 23:49:31.389 [main] DEBUG c.c.metricshub.storage.WritePipeline - TSDB write: 5 samples in 40ms
+2025-10-16 23:49:31.390 [main] INFO  c.c.metricshub.storage.WritePipeline - ? Batch write completed: 5 samples (Redis: 5, TSDB: 5, errors: 0)
+2025-10-16 23:49:31.510 [Thread-11] INFO  c.c.metricshub.ingest.OtlpGrpcServer - Shutting down gRPC server via shutdown hook...
+2025-10-16 23:49:31.510 [Thread-11] INFO  c.c.metricshub.ingest.OtlpGrpcServer - Stopping gRPC server...
+2025-10-16 23:49:31.516 [Thread-13] INFO  c.c.metricshub.ingest.OtlpGrpcServer - Shutting down gRPC server via shutdown hook...
+2025-10-16 23:49:31.516 [Thread-13] INFO  c.c.metricshub.ingest.OtlpGrpcServer - Stopping gRPC server...
+2025-10-16 23:49:31.531 [Thread-11] INFO  c.c.metricshub.ingest.OtlpGrpcServer - ? gRPC server stopped
+2025-10-16 23:49:31.533 [Thread-13] INFO  c.c.metricshub.ingest.OtlpGrpcServer - ? gRPC server stopped
+2025-10-16 23:49:32.110 [SpringApplicationShutdownHook] INFO  c.c.m.config.EmbeddedRedisConfig - ? Embedded Redis stopped
+2025-10-16 23:49:32.126 [SpringApplicationShutdownHook] INFO  c.c.m.processing.ProcessingService - ?? Stopping Processing Service...
+2025-10-16 23:49:32.463 [pool-5-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 stopped
+2025-10-16 23:49:32.667 [pool-5-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 stopped
+2025-10-16 23:49:32.698 [pool-5-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 stopped
+2025-10-16 23:49:32.698 [pool-5-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 stopped
+2025-10-16 23:49:32.699 [SpringApplicationShutdownHook] INFO  c.c.m.processing.ProcessingService - ? Processing Service stopped
+2025-10-16 23:49:32.699 [SpringApplicationShutdownHook] INFO  c.c.metricshub.ingest.OtlpGrpcServer - Stopping gRPC server...
+2025-10-16 23:49:32.699 [SpringApplicationShutdownHook] INFO  c.c.metricshub.ingest.OtlpGrpcServer - ? gRPC server stopped
+2025-10-16 23:49:32.727 [SpringApplicationShutdownHook] INFO  c.c.m.processing.ProcessingService - ?? Stopping Processing Service...
+2025-10-16 23:49:33.448 [pool-13-thread-2] INFO  c.c.m.processing.ProcessingService - Processor-1 stopped
+2025-10-16 23:49:33.448 [pool-13-thread-4] INFO  c.c.m.processing.ProcessingService - Processor-3 stopped
+2025-10-16 23:49:33.448 [pool-13-thread-3] INFO  c.c.m.processing.ProcessingService - Processor-2 stopped
+2025-10-16 23:49:33.449 [pool-13-thread-1] INFO  c.c.m.processing.ProcessingService - Processor-0 stopped
+2025-10-16 23:49:33.449 [SpringApplicationShutdownHook] INFO  c.c.m.processing.ProcessingService - ? Processing Service stopped
+2025-10-16 23:49:33.449 [SpringApplicationShutdownHook] INFO  c.c.metricshub.ingest.OtlpGrpcServer - Stopping gRPC server...
+2025-10-16 23:49:33.449 [SpringApplicationShutdownHook] INFO  c.c.metricshub.ingest.OtlpGrpcServer - ? gRPC server stopped

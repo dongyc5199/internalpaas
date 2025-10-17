@@ -1,0 +1,2481 @@
+import Chart from "chart.js/auto";
+
+declare let currentLanguage: string;
+declare function applyLanguage(language: string, persist?: boolean, emitEvent?: boolean): void;
+declare function showSuccessMessage(message: string): void;
+declare function showErrorMessage(message: string): void;
+declare function on(
+    name: string,
+    handler: (detail: unknown, event?: CustomEvent<unknown>) => void
+): () => void;
+declare function t(key: string, category?: string): string;
+declare global {
+    interface Window {
+        showToast?: (message: string, type?: string) => void;
+        dashboard?: { showNotification?: (message: string, type?: string) => void };
+        ServerGroupModule?: {
+            init: () => void;
+            cleanup: () => void;
+            onLanguageChange: () => void;
+            viewServerDetails: (serverId: number | string) => void;
+            refreshServer: (serverId: number | string) => void;
+            isDetailOpen: () => boolean;
+        };
+    }
+}
+
+(() => {
+    let unsubscribeLanguageChange: (() => void) | null = null;
+
+    // Server Group Management Functions
+    let serverGroupManagementInitialized = false;
+    let serverGroupAutoRefreshTimer = null;
+
+    // Server detail overlay state
+    let serverDetailOverlay = null;
+    let serverDetailShell = null;
+    let serverDetailBody = null;
+    let serverDetailNavLinks = [];
+    let serverDetailObserver = null;
+    let serverDetailCharts = [];
+    let serverDetailChartTimer = null;
+    let serverDetailChartsPaused = false;
+    let serverDetailToggleRefreshBtn = null;
+    let serverDetailToggleChartsBtn = null;
+    let serverDetailMonitorGrid = null;
+    let serverDetailCurrentServer = null;
+    let serverDetailPreviousFocus = null;
+    let serverDetailTimeFormatter = null;
+    let serverDetailBodyOverflowBackup = "";
+    let serverDetailCurrentDetail = null;
+    let serverDetailChartSeriesData = [];
+    let serverDetailActiveSection = "";
+    let serverDetailProcessSort = "cpu";
+    let serverDetailProcessSortButtons = [];
+    let serverDetailToolbar = null;
+    let serverDetailToolbarCompact = null;
+    let serverDetailToolbarName = null;
+    let serverDetailToolbarAddress = null;
+    let serverDetailToolbarCompactActive = false;
+    let serverDetailScrollHandler = null;
+
+    function safeShowToast(message, type = "info") {
+        if (typeof showToast === "function") {
+            showToast(message, type);
+            return;
+        }
+        if (window.AppShell && typeof window.AppShell.emit === "function") {
+            window.AppShell.emit("notification:show", {
+                message,
+                type
+            });
+        } else {
+            console.log(`[Toast ${type}] ${message}`);
+        }
+    }
+
+    function setLocalizedText(element, zh, en) {
+        if (!element) {
+            return;
+        }
+        const zhValue = zh || "";
+        const enValue = en || "";
+        element.setAttribute("data-i18n-zh", zhValue);
+        element.setAttribute("data-i18n-en", enValue);
+        element.textContent =
+            currentLanguage === "en" ? enValue || zhValue || "--" : zhValue || enValue || "--";
+    }
+
+    function updateMetricSummaryText(selector, zh, en) {
+        if (!serverDetailOverlay) {
+            return;
+        }
+        const element = serverDetailOverlay.querySelector(selector);
+        if (!element) {
+            return;
+        }
+        const zhText = zh || "暂无数据";
+        const enText = en || "No data";
+        setLocalizedText(element, zhText, enText);
+    }
+
+    function setServerDetailToolbarCompact(active) {
+        if (!serverDetailToolbar) {
+            return;
+        }
+        const isActive = !!active;
+        if (serverDetailToolbarCompactActive === isActive) {
+            return;
+        }
+        serverDetailToolbarCompactActive = isActive;
+        serverDetailToolbar.classList.toggle("server-detail-toolbar--compact", isActive);
+        if (serverDetailToolbarCompact) {
+            serverDetailToolbarCompact.setAttribute("aria-hidden", isActive ? "false" : "true");
+        }
+    }
+
+    function updateServerDetailToolbarInfo(name, address) {
+        if (serverDetailToolbarName) {
+            serverDetailToolbarName.textContent = name && name !== "" ? name : "--";
+        }
+        if (serverDetailToolbarAddress) {
+            serverDetailToolbarAddress.textContent = address && address !== "" ? address : "--";
+        }
+    }
+
+    function handleServerDetailScroll() {
+        if (!serverDetailBody) {
+            return;
+        }
+        const shouldCompact = serverDetailBody.scrollTop > 32;
+        setServerDetailToolbarCompact(shouldCompact);
+    }
+
+    function initServerGroupManagement() {
+        if (!unsubscribeLanguageChange) {
+            unsubscribeLanguageChange = on("language:changed", () => handleLanguageChange());
+        }
+        if (!document.querySelector(".server-group-management")) {
+            return;
+        }
+
+        // 防止重复初始化
+        if (serverGroupManagementInitialized) {
+            console.log("Server group management already initialized, skipping...");
+            return;
+        }
+
+        console.log("Initializing server group management...");
+
+        initServerGroupData();
+        initServerGroupEvents();
+        initServerDetailOverlay();
+        startServerGroupAutoRefresh();
+
+        serverGroupManagementInitialized = true;
+        console.log("Server group management initialized");
+    }
+
+    function cleanupServerGroupManagement() {
+        if (unsubscribeLanguageChange) {
+            unsubscribeLanguageChange();
+            unsubscribeLanguageChange = null;
+        }
+        stopServerGroupAutoRefresh();
+        teardownServerDetailOverlay();
+        serverGroupManagementInitialized = false;
+        console.log("Server group management cleaned up");
+    }
+
+    function initServerGroupData() {
+        console.log("Loading server group data...");
+        loadHealthTrendChart();
+        loadLoadDistributionChart();
+        loadAppDistributionChart();
+        loadServerGroupList();
+        updateServerGroupLastUpdateTime();
+    }
+
+    function initServerGroupEvents() {
+        const refreshBtn = document.getElementById("refreshServerGroupBtn");
+        if (refreshBtn) {
+            refreshBtn.addEventListener("click", () => {
+                refreshAllServerGroupData();
+            });
+        }
+
+        const exportBtn = document.getElementById("exportServerGroupBtn");
+        if (exportBtn) {
+            exportBtn.addEventListener("click", () => {
+                exportServerGroupReport();
+            });
+        }
+
+        const addServerBtn = document.getElementById("addServerBtn");
+        if (addServerBtn) {
+            addServerBtn.addEventListener("click", () => {
+                addNewServer();
+            });
+        }
+
+        const healthTrendRange = document.getElementById("healthTrendRange");
+        if (healthTrendRange) {
+            healthTrendRange.addEventListener("change", (e) => {
+                loadHealthTrendChart(parseInt(e.target.value));
+            });
+        }
+
+        const searchInput = document.getElementById("serverSearchInput");
+        if (searchInput) {
+            let searchTimeout;
+            searchInput.addEventListener("input", () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = window.setTimeout(() => {
+                    filterServerList();
+                }, 300);
+            });
+        }
+
+        const statusFilter = document.getElementById("serverStatusFilter");
+        if (statusFilter) {
+            statusFilter.addEventListener("change", filterServerList);
+        }
+
+        const healthFilter = document.getElementById("serverHealthFilter");
+        if (healthFilter) {
+            healthFilter.addEventListener("change", filterServerList);
+        }
+
+        const tableViewBtn = document.getElementById("serverTableViewBtn");
+        if (tableViewBtn) {
+            tableViewBtn.addEventListener("click", () => {
+                switchServerView("table");
+            });
+        }
+
+        const cardViewBtn = document.getElementById("serverCardViewBtn");
+        if (cardViewBtn) {
+            cardViewBtn.addEventListener("click", () => {
+                switchServerView("card");
+            });
+        }
+
+        const selectAllCheckbox = document.getElementById("selectAllServers");
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener("change", (e) => {
+                toggleSelectAllServers(e.target.checked);
+            });
+        }
+
+        const batchRefreshBtn = document.getElementById("batchRefreshBtn");
+        if (batchRefreshBtn) {
+            batchRefreshBtn.addEventListener("click", () => {
+                batchRefreshServers();
+            });
+        }
+
+        const clearSelectionBtn = document.getElementById("clearSelectionBtn");
+        if (clearSelectionBtn) {
+            clearSelectionBtn.addEventListener("click", () => {
+                clearServerSelection();
+            });
+        }
+
+        // Listen for language change events and reload charts
+    }
+
+    function handleLanguageChange() {
+        if (!document.querySelector(".server-group-management")) {
+            return;
+        }
+        const healthTrendRange = document.getElementById(
+            "healthTrendRange"
+        ) as HTMLSelectElement | null;
+        const hours = healthTrendRange ? parseInt(healthTrendRange.value, 10) : 24;
+        loadHealthTrendChart(hours);
+        loadLoadDistributionChart();
+        loadAppDistributionChart();
+        renderServerGroupList(serverGroupListCache);
+        updateServerGroupLastUpdateTime();
+        if (isServerDetailOpen()) {
+            updateServerDetailLocale();
+            syncServerDetailChartsFromSeries(serverDetailChartSeriesData);
+            initServerDetailCharts();
+        }
+    }
+
+    let serverGroupListCache = [];
+    let healthTrendChart = null;
+    let loadDistributionChart = null;
+    let appDistributionChart = null;
+    let healthTrendLoading = false;
+
+    async function loadHealthTrendChart(hours = 24) {
+        const container = document.getElementById("healthTrendChartContainer");
+        const placeholder = document.getElementById("healthTrendPlaceholder");
+        const canvas = document.getElementById("healthTrendChart");
+
+        if (!container || !canvas) return;
+
+        // 防止并发调用
+        if (healthTrendLoading) {
+            console.log("Health trend chart is already loading, skipping...");
+            return;
+        }
+
+        healthTrendLoading = true;
+
+        try {
+            console.log(`Loading health trend chart (${hours} hours)...`);
+            const response = await fetch(`/admin/server-groups/api/health-trend?hours=${hours}`);
+            if (!response.ok) throw new Error("Failed to load health trend");
+
+            const data = await response.json();
+
+            if (placeholder) placeholder.classList.add("hidden");
+            container.classList.add("active");
+
+            if (healthTrendChart) {
+                healthTrendChart.destroy();
+            }
+
+            const ctx = canvas.getContext("2d");
+            healthTrendChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: data.timePoints || [],
+                    datasets: (data.servers || []).map((server, index) => ({
+                        label: server.serverName,
+                        data: server.healthScores,
+                        borderColor: getChartColor(index),
+                        backgroundColor: getChartColor(index, 0.1),
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: "bottom"
+                        },
+                        tooltip: {
+                            mode: "index",
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: t("healthScore", "chart")
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: t("time", "chart")
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error("Failed to load health trend chart:", error);
+            if (placeholder) {
+                placeholder.textContent =
+                    currentLanguage === "en" ? "Failed to load chart data" : "加载图表数据失败";
+                placeholder.classList.remove("hidden");
+            }
+        } finally {
+            healthTrendLoading = false;
+        }
+    }
+
+    let loadDistributionLoading = false;
+
+    async function loadLoadDistributionChart() {
+        const container = document.getElementById("loadDistributionChartContainer");
+        const placeholder = document.getElementById("loadDistributionPlaceholder");
+        const canvas = document.getElementById("loadDistributionChart");
+
+        if (!container || !canvas) return;
+
+        // 防止并发调用
+        if (loadDistributionLoading) {
+            console.log("Load distribution chart is already loading, skipping...");
+            return;
+        }
+
+        loadDistributionLoading = true;
+
+        try {
+            console.log("Loading load distribution chart...");
+            const response = await fetch("/admin/server-groups/api/load-distribution");
+            if (!response.ok) throw new Error("Failed to load distribution");
+
+            const data = await response.json();
+
+            updateLoadStatistics(data.statistics);
+
+            if (placeholder) placeholder.classList.add("hidden");
+            container.classList.add("active");
+
+            if (loadDistributionChart) {
+                loadDistributionChart.destroy();
+            }
+
+            const ctx = canvas.getContext("2d");
+            const datasets = (data.metrics || []).map((metric, index) => ({
+                label: t(metric.label, "chart"), // 使用国际化函数翻译标签
+                data: metric.servers.map((s) => s.value),
+                backgroundColor: getChartColor(index, 0.8),
+                borderColor: getChartColor(index),
+                borderWidth: 1
+            }));
+
+            const labels = ((data.metrics && data.metrics[0]?.servers) || []).map((_, i) =>
+                currentLanguage === "en" ? `Server ${i + 1}` : `服务器 ${i + 1}`
+            );
+
+            loadDistributionChart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: "bottom"
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: t("usagePercent", "chart")
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error("Failed to load load distribution chart:", error);
+            if (placeholder) {
+                placeholder.textContent =
+                    currentLanguage === "en" ? "Failed to load chart data" : "加载图表数据失败";
+                placeholder.classList.remove("hidden");
+            }
+        } finally {
+            loadDistributionLoading = false;
+        }
+    }
+
+    let appDistributionLoading = false;
+
+    async function loadAppDistributionChart() {
+        const container = document.getElementById("appDistributionChartContainer");
+        const placeholder = document.getElementById("appDistributionPlaceholder");
+        const canvas = document.getElementById("appDistributionChart");
+
+        if (!container || !canvas) return;
+
+        // 防止并发调用
+        if (appDistributionLoading) {
+            console.log("App distribution chart is already loading, skipping...");
+            return;
+        }
+
+        appDistributionLoading = true;
+
+        try {
+            console.log("Loading app distribution chart...");
+            const response = await fetch("/admin/server-groups/api/app-distribution");
+            if (!response.ok) throw new Error("Failed to load app distribution");
+
+            const data = await response.json();
+
+            if (placeholder) placeholder.classList.add("hidden");
+            container.classList.add("active");
+
+            if (appDistributionChart) {
+                appDistributionChart.destroy();
+            }
+
+            const ctx = canvas.getContext("2d");
+            const datasets = (data.appTypes || []).map((appType) => ({
+                label: t(appType.label, "chart"), // 使用国际化函数翻译标签
+                data: appType.data,
+                backgroundColor: appType.color || "#6366f1",
+                borderColor: "#ffffff",
+                borderWidth: 2
+            }));
+
+            appDistributionChart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: data.servers || [],
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: "bottom"
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: t("applicationCount", "chart")
+                            },
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error("Failed to load app distribution chart:", error);
+            if (placeholder) {
+                placeholder.textContent =
+                    currentLanguage === "en" ? "Failed to load chart data" : "加载图表数据失败";
+                placeholder.classList.remove("hidden");
+            }
+        } finally {
+            appDistributionLoading = false;
+        }
+    }
+
+    async function loadServerGroupList(options = {}) {
+        const { silent = false, applyFilter = false } = options;
+        const tableBody = document.getElementById("serverTableBody");
+
+        if (!tableBody) return;
+
+        if (!silent) {
+            const loadingText =
+                currentLanguage === "en" ? "Loading servers..." : "正在加载服务器...";
+            tableBody.innerHTML = `<tr><td colspan="11" class="empty-state">${loadingText}</td></tr>`;
+        }
+
+        try {
+            const response = await fetch("/admin/server-groups/api/list");
+            if (!response.ok) throw new Error("Failed to load server list");
+
+            const servers = await response.json();
+            serverGroupListCache = servers;
+            if (applyFilter) {
+                filterServerList();
+            } else {
+                renderServerGroupList(servers);
+            }
+        } catch (error) {
+            console.error("Failed to load server list:", error);
+            if (!silent) {
+                const errorText =
+                    currentLanguage === "en" ? "Failed to load servers" : "加载服务器失败";
+                tableBody.innerHTML = `<tr><td colspan="11" class="empty-state">${errorText}</td></tr>`;
+            }
+        }
+    }
+
+    function renderServerGroupList(servers) {
+        const tableBody = document.getElementById("serverTableBody");
+        const cardGrid = document.getElementById("serverCardGrid");
+
+        if (!tableBody) return;
+
+        if (!servers || servers.length === 0) {
+            const emptyText = currentLanguage === "en" ? "No servers found" : "未找到服务器";
+            tableBody.innerHTML = `<tr><td colspan="11" class="empty-state">${emptyText}</td></tr>`;
+            if (cardGrid) {
+                cardGrid.innerHTML = `<div class="empty-state">${emptyText}</div>`;
+            }
+            return;
+        }
+
+        const tableRows = servers
+            .map((server) => {
+                const statusClass =
+                    server.status === "online"
+                        ? "status-badge--online"
+                        : server.status === "warning"
+                          ? "status-badge--warning"
+                          : "status-badge--offline";
+
+                const healthClass =
+                    server.healthScore >= 90
+                        ? "health-score--excellent"
+                        : server.healthScore >= 75
+                          ? "health-score--good"
+                          : server.healthScore >= 60
+                            ? "health-score--fair"
+                            : "health-score--poor";
+
+                const statusText = getStatusText(server.status);
+                const viewDetailsTitle = currentLanguage === "en" ? "View Details" : "查看详情";
+                const viewDetailsLabel = currentLanguage === "en" ? "Details" : "详情";
+                const sshTitle = currentLanguage === "en" ? "Open SSH" : "打开 SSH";
+
+                const refreshTitle = currentLanguage === "en" ? "Refresh" : "刷新";
+                const refreshLabel = currentLanguage === "en" ? "Refresh" : "刷新";
+
+                return `
+                            <tr data-server-id="${server.id}">
+                                <td><input type="checkbox" class="server-checkbox" value="${server.id}"></td>
+                                <td>
+                                    <div><strong>${server.name}</strong></div>
+                                    <div style="font-size: 0.75rem; color: var(--text-tertiary);">${server.address}:${server.port}</div>
+                                </td>
+                                <td>
+                                    <span class="status-badge ${statusClass}">
+                                        <span class="status-indicator"></span>
+                                        ${statusText}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="health-score ${healthClass}">
+                                        <span class="health-score-value">${server.healthScore}</span>
+                                        <div class="health-score-bar">
+                                            <div class="health-score-fill" style="width: ${server.healthScore}%; background: currentColor;"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="usage-metric">
+                                        ${
+                                            server.cpuUsage != null
+                                                ? `
+                                            <span class="usage-value">${server.cpuUsage.toFixed(1)}%</span>
+                                            <div class="usage-bar">
+                                                <div class="usage-fill ${getUsageClass(server.cpuUsage)}" style="width: ${server.cpuUsage}%"></div>
+                                            </div>
+                                        `
+                                                : `
+                                            <span class="metrics-loading">
+                                                <i class="fas fa-spinner fa-spin"></i>
+                                            </span>
+                                        `
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="usage-metric">
+                                        ${
+                                            server.memoryUsage != null
+                                                ? `
+                                            <span class="usage-value">${server.memoryUsage.toFixed(1)}%</span>
+                                            <div class="usage-bar">
+                                                <div class="usage-fill ${getUsageClass(server.memoryUsage)}" style="width: ${server.memoryUsage}%"></div>
+                                            </div>
+                                        `
+                                                : `
+                                            <span class="metrics-loading">
+                                                <i class="fas fa-spinner fa-spin"></i>
+                                            </span>
+                                        `
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="usage-metric">
+                                        ${
+                                            server.diskUsage != null
+                                                ? `
+                                            <span class="usage-value">${server.diskUsage.toFixed(1)}%</span>
+                                            <div class="usage-bar">
+                                                <div class="usage-fill ${getUsageClass(server.diskUsage)}" style="width: ${server.diskUsage}%"></div>
+                                            </div>
+                                        `
+                                                : `
+                                            <span class="metrics-loading">
+                                                <i class="fas fa-spinner fa-spin"></i>
+                                            </span>
+                                        `
+                                        }
+                                    </div>
+                                </td>
+                                <td>${server.apps || 0}</td>
+                                <td>${server.users || 0}</td>
+                                <td>${server.uptime || "--"}</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-icon" onclick="viewServerDetails(${server.id})" title="${viewDetailsTitle}">
+                                            <span data-i18n-zh="详情" data-i18n-en="Details">${viewDetailsLabel}</span>
+                                        </button>
+                                        <button class="btn-icon" onclick="connectToServer(${server.id})" title="${sshTitle}" aria-label="${sshTitle}">SSH</button>
+                                        <button class="btn-icon" onclick="refreshServer(${server.id})" title="${refreshTitle}">
+                                            <span data-i18n-zh="刷新" data-i18n-en="Refresh">${refreshLabel}</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+            })
+            .join("");
+
+        tableBody.innerHTML = tableRows;
+
+        if (cardGrid) {
+            const cardHtml = servers
+                .map((server) => {
+                    const statusClass =
+                        server.status === "online"
+                            ? "status-badge--online"
+                            : server.status === "warning"
+                              ? "status-badge--warning"
+                              : "status-badge--offline";
+
+                    const statusText = getStatusText(server.status);
+                    const memoryLabel = currentLanguage === "en" ? "Memory" : "内存";
+                    const healthLabel = currentLanguage === "en" ? "Health" : "健康度";
+                    const appsLabel = currentLanguage === "en" ? "Apps" : "应用";
+                    const usersLabel = currentLanguage === "en" ? "Users" : "用户";
+                    const sshTitle = currentLanguage === "en" ? "Open SSH" : "打开 SSH";
+
+                    return `
+                                <div class="server-card" data-server-id="${server.id}">
+                                    <div class="server-card__header">
+                                        <div>
+                                            <h3 class="server-card__title">${server.name}</h3>
+                                            <p class="server-card__address">${server.address}:${server.port}</p>
+                                        </div>
+                                        <span class="status-badge ${statusClass}">
+                                            <span class="status-indicator"></span>
+                                            ${statusText}
+                                        </span>
+                                    </div>
+                                    <div class="server-card__metrics">
+                                        <div class="metric-item">
+                                            <div class="metric-label">CPU</div>
+                                            <div class="metric-value">${(server.cpuUsage || 0).toFixed(1)}%</div>
+                                        </div>
+                                        <div class="metric-item">
+                                            <div class="metric-label">${memoryLabel}</div>
+                                            <div class="metric-value">${(server.memoryUsage || 0).toFixed(1)}%</div>
+                                        </div>
+                                        <div class="metric-item">
+                                            <div class="metric-label">${healthLabel}</div>
+                                            <div class="metric-value">${server.healthScore}</div>
+                                        </div>
+                                    </div>
+                                    <div class="server-card__footer">
+                                        <div class="server-card__stats">
+                                            <span>📦 ${server.apps || 0} ${appsLabel}</span>
+                                            <span>👥 ${server.users || 0} ${usersLabel}</span>
+                                        </div>
+                                        <div class="action-buttons">
+                                            <button class="btn-icon" onclick="viewServerDetails(${server.id})">👁️</button>
+                                            <button class="btn-icon" onclick="connectToServer(${server.id})" title="${sshTitle}" aria-label="${sshTitle}">SSH</button>
+                                            <button class="btn-icon" onclick="refreshServer(${server.id})">🔄</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                })
+                .join("");
+            cardGrid.innerHTML = cardHtml;
+        }
+
+        attachServerCheckboxEvents();
+        // 不触发language:changed事件，避免无限递归
+        applyLanguage(currentLanguage, false, false);
+    }
+
+    function getUsageClass(value) {
+        if (!value) return "usage-fill--low";
+        if (value < 50) return "usage-fill--low";
+        if (value < 70) return "usage-fill--medium";
+        if (value < 85) return "usage-fill--high";
+        return "usage-fill--critical";
+    }
+
+    function getChartColor(index, alpha = 1) {
+        const colors = [
+            [99, 102, 241],
+            [16, 185, 129],
+            [245, 158, 11],
+            [239, 68, 68],
+            [59, 130, 246],
+            [139, 92, 246]
+        ];
+        const color = colors[index % colors.length];
+        return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
+    }
+
+    function updateLoadStatistics(stats) {
+        if (!stats) return;
+        updateElement("loadExcellent", stats.excellent || 0);
+        updateElement("loadGood", stats.good || 0);
+        updateElement("loadWarning", stats.warning || 0);
+        updateElement("loadCritical", stats.critical || 0);
+    }
+
+    function filterServerList() {
+        const searchValue = document.getElementById("serverSearchInput")?.value.toLowerCase() || "";
+        const statusValue = document.getElementById("serverStatusFilter")?.value || "all";
+        const healthValue = document.getElementById("serverHealthFilter")?.value || "all";
+
+        const filtered = serverGroupListCache.filter((server) => {
+            const matchSearch =
+                !searchValue ||
+                server.name.toLowerCase().includes(searchValue) ||
+                server.address.toLowerCase().includes(searchValue);
+
+            const matchStatus = statusValue === "all" || server.status === statusValue;
+
+            let matchHealth = true;
+            if (healthValue !== "all") {
+                const score = server.healthScore;
+                matchHealth =
+                    (healthValue === "excellent" && score >= 90) ||
+                    (healthValue === "good" && score >= 75 && score < 90) ||
+                    (healthValue === "fair" && score >= 60 && score < 75) ||
+                    (healthValue === "poor" && score < 60);
+            }
+
+            return matchSearch && matchStatus && matchHealth;
+        });
+
+        renderServerGroupList(filtered);
+    }
+
+    function switchServerView(viewMode) {
+        const tableView = document.getElementById("serverTableView");
+        const cardView = document.getElementById("serverCardView");
+        const tableBtn = document.getElementById("serverTableViewBtn");
+        const cardBtn = document.getElementById("serverCardViewBtn");
+
+        if (viewMode === "table") {
+            tableView?.style.setProperty("display", "block");
+            cardView?.style.setProperty("display", "none");
+            tableBtn?.classList.add("active");
+            cardBtn?.classList.remove("active");
+        } else {
+            tableView?.style.setProperty("display", "none");
+            cardView?.style.setProperty("display", "block");
+            tableBtn?.classList.remove("active");
+            cardBtn?.classList.add("active");
+        }
+    }
+
+    function attachServerCheckboxEvents() {
+        const checkboxes = document.querySelectorAll(".server-checkbox");
+        checkboxes.forEach((checkbox) => {
+            checkbox.addEventListener("change", () => {
+                updateBatchActionBar();
+            });
+        });
+    }
+
+    function toggleSelectAllServers(checked) {
+        const checkboxes = document.querySelectorAll(".server-checkbox");
+        checkboxes.forEach((checkbox) => {
+            checkbox.checked = checked;
+        });
+        updateBatchActionBar();
+    }
+
+    function updateBatchActionBar() {
+        const checkboxes = document.querySelectorAll(".server-checkbox:checked");
+        const count = checkboxes.length;
+        const batchBar = document.getElementById("batchActionBar");
+        const countElement = document.getElementById("selectedCount");
+
+        if (batchBar) {
+            batchBar.style.display = count > 0 ? "flex" : "none";
+        }
+        if (countElement) {
+            countElement.textContent = count;
+        }
+
+        const selectAll = document.getElementById("selectAllServers");
+        if (selectAll) {
+            const allCheckboxes = document.querySelectorAll(".server-checkbox");
+            selectAll.checked = count > 0 && count === allCheckboxes.length;
+        }
+    }
+
+    async function batchRefreshServers() {
+        const checkboxes = document.querySelectorAll(".server-checkbox:checked");
+        const serverIds = Array.from(checkboxes).map((cb) => parseInt(cb.value));
+
+        if (serverIds.length === 0) return;
+
+        try {
+            const response = await fetch("/admin/server-groups/api/batch-refresh", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ serverIds })
+            });
+
+            if (response.ok) {
+                showSuccessMessage(`Refreshed ${serverIds.length} servers successfully`);
+                await loadServerGroupList({ applyFilter: true });
+                clearServerSelection();
+            } else {
+                throw new Error("Batch refresh failed");
+            }
+        } catch (error) {
+            console.error("Batch refresh failed:", error);
+            showErrorMessage("Batch refresh failed. Please try again.");
+        }
+    }
+
+    function clearServerSelection() {
+        const checkboxes = document.querySelectorAll(".server-checkbox");
+        checkboxes.forEach((cb) => (cb.checked = false));
+        const selectAll = document.getElementById("selectAllServers");
+        if (selectAll) selectAll.checked = false;
+        updateBatchActionBar();
+    }
+
+    async function refreshAllServerGroupData() {
+        updateServerGroupLastUpdateTime();
+        await Promise.all([
+            loadHealthTrendChart(),
+            loadLoadDistributionChart(),
+            loadAppDistributionChart(),
+            loadServerGroupList({ applyFilter: true })
+        ]);
+        showSuccessMessage("Data refreshed successfully");
+    }
+
+    // 自动刷新图表功能
+    function startServerGroupAutoRefresh() {
+        // 清除已存在的定时器
+        stopServerGroupAutoRefresh();
+
+        console.log("Starting server group auto-refresh (10s interval)...");
+
+        serverGroupAutoRefreshTimer = setInterval(async () => {
+            // 检查是否还在服务器群组管理页面
+            if (!document.querySelector(".server-group-management")) {
+                console.log("Not on server group page, stopping auto-refresh");
+                stopServerGroupAutoRefresh();
+                return;
+            }
+
+            console.log("Auto-refreshing server group data...");
+
+            const healthTrendRange = document.getElementById("healthTrendRange");
+            const hours = healthTrendRange ? parseInt(healthTrendRange.value) : 24;
+
+            const tasks = [
+                {
+                    name: "Server List",
+                    promise: loadServerGroupList({ silent: true, applyFilter: true })
+                },
+                { name: "Health Trend", promise: loadHealthTrendChart(hours) },
+                { name: "Load Distribution", promise: loadLoadDistributionChart() },
+                { name: "App Distribution", promise: loadAppDistributionChart() }
+            ];
+
+            const results = await Promise.allSettled(tasks.map((task) => task.promise));
+
+            // 记录刷新结果
+            const successCount = results.filter((r) => r.status === "fulfilled").length;
+            const failedCount = results.filter((r) => r.status === "rejected").length;
+
+            console.log(`Auto-refresh completed: ${successCount} succeeded, ${failedCount} failed`);
+
+            if (failedCount > 0) {
+                results.forEach((result, index) => {
+                    if (result.status === "rejected") {
+                        console.error(`Failed to refresh ${tasks[index].name}:`, result.reason);
+                    }
+                });
+            }
+
+            // 更新最后刷新时间
+            updateServerGroupLastUpdateTime();
+        }, 10000); // 10秒间隔
+    }
+
+    function stopServerGroupAutoRefresh() {
+        if (serverGroupAutoRefreshTimer) {
+            console.log("Stopping server group auto-refresh...");
+            clearInterval(serverGroupAutoRefreshTimer);
+            serverGroupAutoRefreshTimer = null;
+        }
+    }
+
+    function updateServerGroupLastUpdateTime() {
+        const timeElement = document.getElementById("serverGroupUpdateTime");
+        if (timeElement) {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString(
+                currentLanguage === "en" ? "en-US" : "zh-CN",
+                {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit"
+                }
+            );
+            const label = currentLanguage === "en" ? "Last updated" : "最后更新";
+            timeElement.textContent = `${label}: ${timeString}`;
+        }
+    }
+
+    function exportServerGroupReport() {
+        console.log("Exporting server group report...");
+        showSuccessMessage("Export feature coming soon");
+    }
+
+    function addNewServer() {
+        console.log("addNewServer called");
+        console.log("window.openServerModal exists:", typeof window.openServerModal);
+        console.log("window.serverModal exists:", !!window.serverModal);
+
+        // Open the server modal to add a new server
+        if (typeof window.openServerModal === "function") {
+            console.log("Calling window.openServerModal()");
+            window.openServerModal();
+        } else {
+            console.error("Server modal not available");
+            console.error(
+                "window object keys:",
+                Object.keys(window).filter((k) => k.includes("server") || k.includes("modal"))
+            );
+            alert("无法打开服务器添加弹窗，请刷新页面后重试");
+        }
+    }
+
+    // Global function to refresh server list (called from server-modal.js)
+    window.refreshServerList = async function () {
+        if (typeof loadServerGroupList === "function") {
+            await loadServerGroupList({ applyFilter: true });
+            updateServerGroupLastUpdateTime();
+            showSuccessMessage(
+                currentLanguage === "en" ? "Server list refreshed" : "服务器列表已刷新"
+            );
+        }
+    };
+
+    // 轮询检查服务器指标是否收集完成
+    const pollingIntervals = new Map();
+    let isPolling = false; // 防止并发轮询
+
+    window.startServerMetricsPolling = function (serverId) {
+        console.log("Starting metrics polling for server:", serverId);
+
+        // 如果已有该服务器的轮询，先清除
+        if (pollingIntervals.has(serverId)) {
+            clearInterval(pollingIntervals.get(serverId));
+        }
+
+        let attemptCount = 0;
+        const maxAttempts = 15; // 最多轮询15次（约45秒）
+
+        const intervalId = setInterval(async () => {
+            // 防止并发请求
+            if (isPolling) {
+                console.log("Skipping poll - previous request still in progress");
+                return;
+            }
+
+            attemptCount++;
+            console.log(`Polling attempt ${attemptCount} for server ${serverId}`);
+            isPolling = true;
+
+            try {
+                // 只获取服务器列表数据，不触发其他API调用
+                const response = await fetch("/admin/server-groups/api/list");
+                if (!response.ok) throw new Error("Failed to fetch server list");
+
+                const servers = await response.json();
+                serverGroupListCache = servers;
+
+                // 静默更新列表（不显示加载状态）
+                renderServerGroupList(servers);
+
+                // 检查该服务器的指标是否已有数据
+                const server = servers.find((s) => s.id === serverId);
+                if (
+                    server &&
+                    server.cpuUsage != null &&
+                    server.memoryUsage != null &&
+                    server.diskUsage != null
+                ) {
+                    console.log("Metrics collected for server:", serverId);
+                    clearInterval(intervalId);
+                    pollingIntervals.delete(serverId);
+                    showSuccessMessage(
+                        currentLanguage === "en" ? "Server metrics loaded" : "服务器监控数据已加载"
+                    );
+                } else if (attemptCount >= maxAttempts) {
+                    console.warn("Metrics polling timeout for server:", serverId);
+                    clearInterval(intervalId);
+                    pollingIntervals.delete(serverId);
+                    showWarningMessage(
+                        currentLanguage === "en" ? "Metrics collection timeout" : "监控数据收集超时"
+                    );
+                }
+            } catch (error) {
+                console.error("Error during metrics polling:", error);
+            } finally {
+                isPolling = false;
+            }
+        }, 3000); // 每3秒轮询一次（降低频率）
+
+        pollingIntervals.set(serverId, intervalId);
+    };
+
+    const SERVER_DETAIL_UPDATE_INTERVAL = 20000;
+    const SERVER_DETAIL_CHART_TEMPLATE = [
+        {
+            key: "cpu",
+            id: "serverDetailCpuChart",
+            labelZh: "CPU 使用率",
+            labelEn: "CPU Usage",
+            color: "#3b82f6",
+            decimals: 1
+        },
+        {
+            key: "memory",
+            id: "serverDetailMemChart",
+            labelZh: "内存使用率 %",
+            labelEn: "Memory %",
+            color: "#22d3ee",
+            decimals: 2
+        },
+        {
+            key: "disk",
+            id: "serverDetailDiskChart",
+            labelZh: "磁盘使用率 %",
+            labelEn: "Disk Usage %",
+            color: "#f97316",
+            decimals: 2
+        },
+        {
+            key: "network",
+            id: "serverDetailNetChart",
+            labelZh: "网络吞吐 KB/s",
+            labelEn: "Network KB/s",
+            color: "#34d399",
+            decimals: 2
+        }
+    ];
+    let serverDetailChartDefinitions = SERVER_DETAIL_CHART_TEMPLATE.map((template) => ({
+        ...template,
+        label: currentLanguage === "en" ? template.labelEn : template.labelZh,
+        baseData: [],
+        labels: []
+    }));
+
+    function initServerDetailOverlay() {
+        serverDetailOverlay = document.querySelector('[data-role="server-detail-overlay"]');
+
+        if (!serverDetailOverlay) {
+            serverDetailShell = null;
+            serverDetailBody = null;
+            return;
+        }
+
+        serverDetailShell = serverDetailOverlay.querySelector(".server-detail-shell");
+        serverDetailBody = serverDetailOverlay.querySelector('[data-role="server-detail-body"]');
+        serverDetailToolbar = serverDetailOverlay.querySelector(
+            '[data-role="server-detail-toolbar"]'
+        );
+        serverDetailToolbarCompact = serverDetailOverlay.querySelector(
+            '[data-role="detail-toolbar-compact"]'
+        );
+        serverDetailToolbarName = serverDetailOverlay.querySelector(
+            '[data-role="detail-toolbar-name"]'
+        );
+        serverDetailToolbarAddress = serverDetailOverlay.querySelector(
+            '[data-role="detail-toolbar-address"]'
+        );
+        serverDetailToggleRefreshBtn = serverDetailOverlay.querySelector(
+            '[data-action="detail-toggle-refresh"]'
+        );
+        serverDetailToggleChartsBtn = serverDetailOverlay.querySelector(
+            '[data-action="detail-toggle-charts"]'
+        );
+        serverDetailMonitorGrid = serverDetailOverlay.querySelector("#serverDetailMonitorGrid");
+        serverDetailProcessSortButtons = Array.from(
+            serverDetailOverlay.querySelectorAll('[data-role="detail-process-sort"]')
+        );
+
+        if (serverDetailBody && serverDetailScrollHandler) {
+            serverDetailBody.removeEventListener("scroll", serverDetailScrollHandler);
+        }
+        serverDetailScrollHandler = handleServerDetailScroll;
+        if (serverDetailBody && serverDetailScrollHandler) {
+            serverDetailBody.addEventListener("scroll", serverDetailScrollHandler, {
+                passive: true
+            });
+        }
+
+        if (serverDetailOverlay.dataset.initialized === "true") {
+            return;
+        }
+
+        serverDetailOverlay.dataset.initialized = "true";
+        serverDetailOverlay.addEventListener("click", handleServerDetailProcessClick);
+
+        const closeElements = serverDetailOverlay.querySelectorAll('[data-action="detail-close"]');
+        closeElements.forEach((element) => {
+            element.addEventListener("click", () => closeServerDetailOverlay());
+        });
+
+        const sshButtons = serverDetailOverlay.querySelectorAll(
+            '[data-action="detail-toolbar-ssh"], [data-action="detail-open-ssh"]'
+        );
+        sshButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                if (serverDetailCurrentServer) {
+                    connectToServer(serverDetailCurrentServer.id);
+                }
+            });
+        });
+
+        const backButtons = serverDetailOverlay.querySelectorAll('[data-action="detail-back"]');
+        backButtons.forEach((button) => {
+            button.addEventListener("click", () => closeServerDetailOverlay());
+        });
+
+        const refreshProcessButtons = serverDetailOverlay.querySelectorAll(
+            '[data-action="detail-refresh-process"]'
+        );
+        refreshProcessButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                refreshServerDetailData(false);
+            });
+        });
+
+        serverDetailProcessSortButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                const nextSort = (button.dataset.sort || "cpu").toLowerCase();
+                if (serverDetailProcessSort === nextSort) {
+                    return;
+                }
+                serverDetailProcessSort = nextSort;
+                updateProcessSortButtons();
+                refreshServerDetailData(false);
+            });
+        });
+
+        updateProcessSortButtons();
+
+        const filterButtons = serverDetailOverlay.querySelectorAll(
+            '[data-action="detail-filter-app"], [data-action="detail-filter-user"]'
+        );
+        filterButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                console.log("Filter action requested:", button.dataset.action);
+            });
+        });
+
+        if (serverDetailToggleRefreshBtn) {
+            serverDetailToggleRefreshBtn.addEventListener("click", () => {
+                serverDetailChartsPaused = !serverDetailChartsPaused;
+                if (serverDetailChartsPaused) {
+                    stopServerDetailCharts();
+                    updateServerDetailRefreshButton(true);
+                } else {
+                    startServerDetailCharts();
+                    refreshServerDetailData(false);
+                    updateServerDetailRefreshButton(false);
+                }
+            });
+        }
+
+        if (serverDetailToggleChartsBtn && serverDetailMonitorGrid) {
+            serverDetailToggleChartsBtn.addEventListener("click", () => {
+                const isCollapsed = serverDetailMonitorGrid.classList.toggle("is-collapsed");
+                updateServerDetailChartsButton(isCollapsed);
+                if (!isCollapsed) {
+                    requestAnimationFrame(() => {
+                        serverDetailCharts.forEach((chart) => chart?.resize());
+                    });
+                }
+            });
+        }
+
+        const aside = serverDetailOverlay.querySelector(".server-detail-overlay__aside");
+        if (aside) {
+            aside.addEventListener("click", () => closeServerDetailOverlay());
+        }
+
+        serverDetailOverlay.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && serverDetailOverlay.classList.contains("is-open")) {
+                closeServerDetailOverlay();
+            }
+        });
+    }
+
+    function teardownServerDetailOverlay() {
+        closeServerDetailOverlay({ skipFocusRestore: true });
+
+        if (serverDetailOverlay) {
+            delete serverDetailOverlay.dataset.initialized;
+        }
+
+        if (serverDetailBody && serverDetailScrollHandler) {
+            serverDetailBody.removeEventListener("scroll", serverDetailScrollHandler);
+        }
+        serverDetailScrollHandler = null;
+        serverDetailToolbar = null;
+        serverDetailToolbarCompact = null;
+        serverDetailToolbarName = null;
+        serverDetailToolbarAddress = null;
+        serverDetailToolbarCompactActive = false;
+
+        serverDetailOverlay = null;
+        serverDetailShell = null;
+        serverDetailBody = null;
+        serverDetailToggleRefreshBtn = null;
+        serverDetailToggleChartsBtn = null;
+        serverDetailMonitorGrid = null;
+        serverDetailCurrentServer = null;
+        serverDetailPreviousFocus = null;
+    }
+
+    function openServerDetailOverlay() {
+        if (!serverDetailOverlay) {
+            return;
+        }
+
+        serverDetailPreviousFocus = document.activeElement;
+        serverDetailBodyOverflowBackup = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+
+        serverDetailOverlay.setAttribute("aria-hidden", "false");
+        serverDetailOverlay.classList.add("is-open");
+
+        if (serverDetailBody) {
+            serverDetailBody.scrollTop = 0;
+        }
+        setServerDetailToolbarCompact(false);
+
+        initServerDetailNavigation();
+        initServerDetailCharts();
+
+        requestAnimationFrame(() => {
+            serverDetailShell?.focus({ preventScroll: true });
+        });
+    }
+
+    function closeServerDetailOverlay(options = {}) {
+        if (!serverDetailOverlay) {
+            return;
+        }
+
+        serverDetailOverlay.setAttribute("aria-hidden", "true");
+        serverDetailOverlay.classList.remove("is-open");
+
+        setServerDetailToolbarCompact(false);
+
+        destroyServerDetailCharts();
+        destroyServerDetailNavigation();
+
+        serverDetailCurrentDetail = null;
+        serverDetailChartSeriesData = [];
+
+        serverDetailChartsPaused = false;
+        updateServerDetailRefreshButton(false);
+
+        if (serverDetailMonitorGrid) {
+            serverDetailMonitorGrid.classList.remove("is-collapsed");
+        }
+
+        updateServerDetailChartsButton(false);
+
+        document.body.style.overflow = serverDetailBodyOverflowBackup || "";
+
+        if (
+            !options.skipFocusRestore &&
+            serverDetailPreviousFocus &&
+            typeof serverDetailPreviousFocus.focus === "function"
+        ) {
+            serverDetailPreviousFocus.focus();
+        }
+
+        serverDetailPreviousFocus = null;
+        serverDetailProcessSortButtons = [];
+        serverDetailProcessSort = "cpu";
+    }
+
+    async function fetchServerDetail(serverId, processSort = serverDetailProcessSort || "cpu") {
+        const params = new URLSearchParams({ processSort });
+        const response = await fetch(
+            `/admin/server-groups/api/${serverId}/detail?${params.toString()}`,
+            {
+                headers: { Accept: "application/json" },
+                credentials: "same-origin"
+            }
+        );
+        if (!response.ok) {
+            throw new Error(`Failed to load server detail (${response.status})`);
+        }
+        return response.json();
+    }
+
+    async function viewServerDetails(serverId) {
+        if (!serverDetailOverlay || !document.body.contains(serverDetailOverlay)) {
+            initServerDetailOverlay();
+        }
+
+        if (!serverDetailOverlay) {
+            console.warn("Server detail overlay is not available");
+            return;
+        }
+
+        const server =
+            serverGroupListCache.find((item) => String(item.id) === String(serverId)) || null;
+        serverDetailCurrentServer = server || { id: serverId };
+        serverDetailCurrentDetail = null;
+
+        updateServerDetailContent(server, null);
+        openServerDetailOverlay();
+
+        try {
+            const detail = await fetchServerDetail(serverId, serverDetailProcessSort || "cpu");
+            serverDetailCurrentDetail = detail;
+            updateServerDetailContent(server, detail);
+        } catch (error) {
+            console.error("Failed to load server detail:", error);
+            showErrorMessage(
+                currentLanguage === "en" ? "Failed to load server detail" : "加载服务器详情失败"
+            );
+        }
+    }
+
+    function updateServerDetailContent(server, detail) {
+        if (!serverDetailOverlay) {
+            return;
+        }
+
+        const overview = detail && detail.overview ? detail.overview : null;
+        const select = (selector) => serverDetailOverlay.querySelector(selector);
+        const setText = (selector, value, fallback = "--") => {
+            const element = select(selector);
+            if (element) {
+                element.textContent = value && value !== "" ? value : fallback;
+            }
+        };
+
+        const name =
+            (overview && overview.name) ||
+            (server && server.name) ||
+            (currentLanguage === "en" ? "Unknown Server" : "未知服务器");
+        const description =
+            (overview && overview.description) || (server && server.description) || "--";
+        const hostname =
+            (overview && overview.hostname) ||
+            (server && (server.hostname || server.address)) ||
+            "--";
+        const port = overview && overview.port != null ? overview.port : server && server.port;
+        const address = port != null ? hostname + ":" + port : hostname;
+        const subtitleParts = [name];
+        if (address && address !== "--") {
+            subtitleParts.push(address);
+        }
+        const subtitle = subtitleParts.join(" · ");
+
+        updateServerDetailToolbarInfo(name, address);
+        setText('[data-role="detail-server-name"]', name);
+        setText('[data-role="detail-description"]', description);
+        setText('[data-role="detail-address"]', address);
+        setText('[data-role="detail-panel-subtitle"]', subtitle);
+
+        const infoItems = overview && Array.isArray(overview.infoItems) ? overview.infoItems : [];
+        const getInfoValue = (key) => {
+            const item = infoItems.find((info) => info.key === key);
+            return item && item.value ? item.value : null;
+        };
+
+        setText('[data-role="detail-hostname"]', hostname);
+        setText(
+            '[data-role="detail-os"]',
+            overview && overview.osVersion ? overview.osVersion : "--"
+        );
+        setText('[data-role="detail-kernel"]', getInfoValue("kernel") || "--");
+        setText('[data-role="detail-cpu"]', getInfoValue("cpu") || "--");
+        setText('[data-role="detail-memory"]', getInfoValue("memory") || "--");
+        setText('[data-role="detail-disk"]', getInfoValue("disk") || "--");
+        setText('[data-role="detail-nic"]', getInfoValue("nic") || "--");
+        setText(
+            '[data-role="detail-uptime"]',
+            overview && overview.uptime ? overview.uptime : "--"
+        );
+        setText(
+            '[data-role="detail-workdir"]',
+            getInfoValue("workdir") || (server && server.baseWorkDirectory) || "--"
+        );
+
+        const updateTimeElement = select('[data-role="detail-update-time"]');
+        if (updateTimeElement) {
+            const formatted = formatServerDetailDateTime(overview && overview.lastMetricsTime);
+            setLocalizedText(
+                updateTimeElement,
+                "最近更新：" + formatted.zh,
+                "Last updated: " + formatted.en
+            );
+        }
+
+        const statusChip = select('[data-role="detail-status-chip"]');
+        if (statusChip) {
+            const statusInfo = resolveServerDetailStatus(overview, server);
+            setLocalizedText(statusChip, statusInfo.zh, statusInfo.en);
+            applyServerDetailStatus(statusInfo.key, statusChip);
+        }
+
+        const metrics = detail && detail.metrics ? detail.metrics : null;
+        updateMetricSummaryText(
+            '[data-role="detail-metric-summary-cpu"]',
+            metrics?.cpuSummaryZh,
+            metrics?.cpuSummaryEn
+        );
+        updateMetricSummaryText(
+            '[data-role="detail-metric-summary-memory"]',
+            metrics?.memorySummaryZh,
+            metrics?.memorySummaryEn
+        );
+        updateMetricSummaryText(
+            '[data-role="detail-metric-summary-disk"]',
+            metrics?.diskSummaryZh,
+            metrics?.diskSummaryEn
+        );
+        updateMetricSummaryText(
+            '[data-role="detail-metric-summary-network"]',
+            metrics?.networkSummaryZh,
+            metrics?.networkSummaryEn
+        );
+
+        if (metrics && Array.isArray(metrics.series)) {
+            serverDetailChartSeriesData = metrics.series;
+        } else {
+            serverDetailChartSeriesData = [];
+        }
+        syncServerDetailChartsFromSeries(serverDetailChartSeriesData);
+
+        renderServerDetailProcesses(detail);
+        renderServerDetailApplications(detail);
+        renderServerDetailUsers(detail);
+
+        if (typeof applyLanguage === "function") {
+            applyLanguage(currentLanguage, false);
+        }
+
+        if (serverDetailToggleRefreshBtn) {
+            setLocalizedText(
+                serverDetailToggleRefreshBtn,
+                serverDetailChartsPaused ? "恢复刷新" : "暂停刷新",
+                serverDetailChartsPaused ? "Resume" : "Pause"
+            );
+        }
+        if (serverDetailToggleChartsBtn) {
+            const collapsed = serverDetailMonitorGrid
+                ? serverDetailMonitorGrid.classList.contains("is-collapsed")
+                : false;
+            updateServerDetailChartsButton(collapsed);
+        }
+
+        updateProcessSortButtons();
+
+        initServerDetailCharts();
+    }
+
+    function applyServerDetailStatus(status, element) {
+        if (!element) {
+            return;
+        }
+
+        const classes = [
+            "server-detail-chip--ok",
+            "server-detail-chip--warn",
+            "server-detail-chip--info",
+            "server-detail-chip--error",
+            "server-detail-chip--neutral"
+        ];
+        element.classList.remove(...classes);
+
+        const normalized = (status || "").toString().toLowerCase();
+        let nextClass = "server-detail-chip--neutral";
+
+        if (normalized === "online" || normalized === "running" || normalized === "ok") {
+            nextClass = "server-detail-chip--ok";
+        } else if (normalized === "warning" || normalized === "warn") {
+            nextClass = "server-detail-chip--warn";
+        } else if (
+            normalized === "offline" ||
+            normalized === "error" ||
+            normalized === "critical"
+        ) {
+            nextClass = "server-detail-chip--error";
+        } else if (normalized === "pending" || normalized === "checking" || normalized === "info") {
+            nextClass = "server-detail-chip--info";
+        }
+
+        element.classList.add(nextClass);
+    }
+
+    function initServerDetailNavigation() {
+        if (!serverDetailOverlay || !serverDetailBody) {
+            return;
+        }
+
+        destroyServerDetailNavigation();
+
+        const nav = serverDetailOverlay.querySelector('[data-role="server-detail-nav"]');
+        if (!nav) {
+            return;
+        }
+
+        serverDetailNavLinks = Array.from(nav.querySelectorAll(".server-detail-nav__link"));
+        if (!serverDetailNavLinks.length) {
+            return;
+        }
+
+        serverDetailObserver = new IntersectionObserver(
+            (entries) => {
+                const visible = entries
+                    .filter((entry) => entry.isIntersecting)
+                    .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+                if (visible.length) {
+                    const next = visible[0].target.id;
+                    if (next && next !== serverDetailActiveSection) {
+                        setServerDetailActiveNav(next);
+                    }
+                }
+            },
+            {
+                root: serverDetailBody,
+                rootMargin: "-35% 0px -35% 0px",
+                threshold: 0.25
+            }
+        );
+
+        serverDetailNavLinks.forEach((link) => {
+            const targetId = link.dataset.target;
+            const target = targetId ? document.getElementById(targetId) : null;
+            if (target) {
+                serverDetailObserver.observe(target);
+            }
+            link.addEventListener("click", handleServerDetailNavClick);
+        });
+
+        const firstTarget = serverDetailNavLinks[0]?.dataset.target;
+        if (firstTarget) {
+            setServerDetailActiveNav(firstTarget);
+        }
+    }
+
+    function destroyServerDetailNavigation() {
+        if (serverDetailObserver) {
+            serverDetailObserver.disconnect();
+            serverDetailObserver = null;
+        }
+
+        serverDetailNavLinks.forEach((link) => {
+            link.classList.remove("is-active");
+            link.removeEventListener("click", handleServerDetailNavClick);
+        });
+
+        serverDetailNavLinks = [];
+        serverDetailActiveSection = "";
+    }
+
+    function setServerDetailActiveNav(targetId) {
+        if (!targetId) {
+            return;
+        }
+
+        if (serverDetailActiveSection === targetId) {
+            return;
+        }
+
+        serverDetailActiveSection = targetId;
+
+        serverDetailNavLinks.forEach((link) => {
+            const linkTarget = link.dataset.target;
+            const isActive = linkTarget === targetId || linkTarget === `#${targetId}`;
+            link.classList.toggle("is-active", isActive);
+        });
+    }
+
+    function updateProcessSortButtons() {
+        if (
+            !Array.isArray(serverDetailProcessSortButtons) ||
+            !serverDetailProcessSortButtons.length
+        ) {
+            return;
+        }
+        const activeSort = (serverDetailProcessSort || "cpu").toLowerCase();
+        serverDetailProcessSortButtons.forEach((button) => {
+            const buttonSort = (button.dataset.sort || "cpu").toLowerCase();
+            button.classList.toggle("is-active", buttonSort === activeSort);
+        });
+    }
+
+    function renderProcessActionCell(process) {
+        const pid = process && process.pid ? String(process.pid) : "";
+        const isKilled = process && process.killed === true;
+        const killSupported =
+            Boolean(pid) && process && process.killSupported !== false && !isKilled;
+
+        if (!killSupported) {
+            if (isKilled) {
+                const zh = "已杀死";
+                const en = "Terminated";
+                const text = currentLanguage === "en" ? en : zh;
+                return (
+                    '<span class="server-detail-process-state" data-i18n-zh="' +
+                    zh +
+                    '" data-i18n-en="' +
+                    en +
+                    '">' +
+                    text +
+                    "</span>"
+                );
+            }
+            return '<span class="server-detail-process-state" data-i18n-zh="--" data-i18n-en="--">--</span>';
+        }
+
+        const pidAttr = escapeHtml(pid);
+        return (
+            '<button class="btn btn-link btn-link--danger" type="button" data-action="detail-kill-process" data-pid="' +
+            pidAttr +
+            '" data-i18n-zh="Kill" data-i18n-en="Kill">Kill</button>'
+        );
+    }
+
+    function renderServerDetailProcesses(detail) {
+        const tbody = serverDetailOverlay?.querySelector('[data-role="detail-process-list"]');
+        if (!tbody) {
+            return;
+        }
+
+        const processes = detail && Array.isArray(detail.processes) ? detail.processes : [];
+        if (!processes.length) {
+            renderServerDetailEmptyState(tbody, 8, "暂无进程数据", "No process data available");
+            return;
+        }
+
+        const rows = processes
+            .map((process) => {
+                const isKilled = process.killed === true;
+                const statusKey = isKilled ? "terminated" : process.statusKey || "";
+                const statusDotClass = mapStatusKeyToDotClass(statusKey);
+                const statusZh = isKilled ? "已杀死" : process.statusZh || "--";
+                const statusEn = isKilled ? "Terminated" : process.statusEn || "--";
+                const uptimeZh = process.uptimeZh || "--";
+                const uptimeEn = process.uptimeEn || uptimeZh;
+                const cpuText = formatProcessPercent(process.cpu);
+                const memoryText = formatProcessPercent(process.memory);
+                const commandDisplay = formatProcessCommand(process.command);
+                const actionCell = renderProcessActionCell(process);
+
+                return (
+                    "<tr>" +
+                    '<td class="server-detail-process-pid">' +
+                    escapeHtml(process.pid || "--") +
+                    "</td>" +
+                    '<td><strong class="server-detail-process-name">' +
+                    escapeHtml(process.name || "--") +
+                    "</strong></td>" +
+                    "<td>" +
+                    escapeHtml(cpuText) +
+                    "</td>" +
+                    "<td>" +
+                    escapeHtml(memoryText) +
+                    "</td>" +
+                    '<td><span class="server-detail-status-dot ' +
+                    statusDotClass +
+                    '" data-i18n-zh="' +
+                    escapeHtml(statusZh) +
+                    '" data-i18n-en="' +
+                    escapeHtml(statusEn) +
+                    '" title="' +
+                    escapeHtml(currentLanguage === "en" ? statusEn : statusZh) +
+                    '" aria-label="' +
+                    escapeHtml(currentLanguage === "en" ? statusEn : statusZh) +
+                    '"></span></td>' +
+                    '<td><span data-i18n-zh="' +
+                    escapeHtml(uptimeZh) +
+                    '" data-i18n-en="' +
+                    escapeHtml(uptimeEn) +
+                    '">' +
+                    (currentLanguage === "en" ? escapeHtml(uptimeEn) : escapeHtml(uptimeZh)) +
+                    "</span></td>" +
+                    '<td><code class="server-detail-process-command" title="' +
+                    escapeHtml(process.command || commandDisplay || "--") +
+                    '">' +
+                    escapeHtml(commandDisplay || "--") +
+                    "</code></td>" +
+                    "<td>" +
+                    actionCell +
+                    "</td>" +
+                    "</tr>"
+                );
+            })
+            .join("");
+
+        tbody.innerHTML = rows;
+    }
+
+    function handleServerDetailProcessClick(event) {
+        const button = event.target.closest('[data-action="detail-kill-process"]');
+        if (!button || !serverDetailOverlay || !serverDetailOverlay.contains(button)) {
+            return;
+        }
+        event.preventDefault();
+
+        const pid = button.dataset.pid;
+        if (!pid || !serverDetailCurrentServer) {
+            return;
+        }
+        if (button.disabled || button.dataset.loading === "true") {
+            return;
+        }
+
+        killServerProcess(pid, button);
+    }
+
+    async function killServerProcess(pid, button) {
+        const zhLabel = button.getAttribute("data-i18n-zh") || "Kill";
+        const enLabel = button.getAttribute("data-i18n-en") || "Kill";
+
+        button.disabled = true;
+        button.dataset.loading = "true";
+        setLocalizedText(button, "终止中...", "Killing...");
+
+        try {
+            const response = await fetch(
+                `/admin/server-groups/api/${serverDetailCurrentServer.id}/processes/${encodeURIComponent(pid)}/kill`,
+                {
+                    method: "POST",
+                    headers: {
+                        Accept: "application/json"
+                    },
+                    credentials: "same-origin"
+                }
+            );
+
+            let result = null;
+            try {
+                result = await response.json();
+            } catch (jsonError) {
+                result = null;
+            }
+
+            if (response.ok && result && result.success) {
+                updateProcessKillState(pid);
+                const successMessage =
+                    currentLanguage === "en" ? "Process killed successfully" : "进程已成功终止";
+                safeShowToast(successMessage, "success");
+                renderServerDetailProcesses(serverDetailCurrentDetail);
+                applyLanguage(currentLanguage, false);
+                return;
+            }
+
+            const message =
+                result && result.message
+                    ? result.message
+                    : currentLanguage === "en"
+                      ? "Failed to kill process"
+                      : "终止进程失败";
+            safeShowToast(message, "error");
+        } catch (error) {
+            console.error("Kill process request failed", error);
+            const errorMessage =
+                currentLanguage === "en" ? "Network error, please retry" : "网络异常，请稍后重试";
+            safeShowToast(errorMessage, "error");
+        } finally {
+            button.dataset.loading = "false";
+            if (button.isConnected) {
+                button.disabled = false;
+                setLocalizedText(button, zhLabel, enLabel);
+            }
+        }
+    }
+
+    function updateProcessKillState(pid) {
+        if (!serverDetailCurrentDetail || !Array.isArray(serverDetailCurrentDetail.processes)) {
+            return;
+        }
+
+        const target = serverDetailCurrentDetail.processes.find(
+            (item) => String(item.pid) === String(pid)
+        );
+        if (!target) {
+            return;
+        }
+
+        target.killed = true;
+        target.killSupported = false;
+        target.statusKey = "terminated";
+        target.statusZh = "已杀死";
+        target.statusEn = "Terminated";
+        target.cpu = 0;
+        target.memory = 0;
+        target.uptimeZh = "--";
+        target.uptimeEn = "--";
+    }
+
+    function renderServerDetailApplications(detail) {
+        const tbody = serverDetailOverlay?.querySelector('[data-role="detail-app-list"]');
+        if (!tbody) {
+            return;
+        }
+
+        const applications =
+            detail && Array.isArray(detail.applications) ? detail.applications : [];
+        if (!applications.length) {
+            renderServerDetailEmptyState(tbody, 7, "暂无应用数据", "No application data available");
+            return;
+        }
+
+        const rows = applications
+            .map((app) => {
+                const statusClass = mapStatusKeyToClass(app.statusKey);
+                const statusZh = app.statusZh || "--";
+                const statusEn = app.statusEn || "--";
+                const ownerDisplay = app.ownerDisplay || app.owner || "--";
+                const lastDeploy = formatServerDetailDateTime(app.lastStartedAt);
+                const version = app.version || "--";
+
+                return (
+                    "<tr>" +
+                    "<td><strong>" +
+                    escapeHtml(app.name || "--") +
+                    '</strong><span class="server-detail-caption">' +
+                    escapeHtml(version) +
+                    "</span></td>" +
+                    "<td>" +
+                    escapeHtml(version) +
+                    "</td>" +
+                    "<td>" +
+                    escapeHtml(ownerDisplay) +
+                    "</td>" +
+                    '<td><span class="server-detail-chip ' +
+                    statusClass +
+                    '" data-i18n-zh="' +
+                    escapeHtml(statusZh) +
+                    '" data-i18n-en="' +
+                    escapeHtml(statusEn) +
+                    '">' +
+                    (currentLanguage === "en" ? escapeHtml(statusEn) : escapeHtml(statusZh)) +
+                    "</span></td>" +
+                    "<td>" +
+                    (app.port != null ? escapeHtml(String(app.port)) : "--") +
+                    "</td>" +
+                    '<td data-i18n-zh="' +
+                    lastDeploy.zh +
+                    '" data-i18n-en="' +
+                    lastDeploy.en +
+                    '">' +
+                    (currentLanguage === "en" ? lastDeploy.en : lastDeploy.zh) +
+                    "</td>" +
+                    "<td>" +
+                    escapeHtml(app.remarks || "--") +
+                    "</td>" +
+                    "</tr>"
+                );
+            })
+            .join("");
+
+        tbody.innerHTML = rows;
+    }
+
+    function renderServerDetailUsers(detail) {
+        const tbody = serverDetailOverlay?.querySelector('[data-role="detail-user-list"]');
+        if (!tbody) {
+            return;
+        }
+
+        const users = detail && Array.isArray(detail.users) ? detail.users : [];
+        if (!users.length) {
+            renderServerDetailEmptyState(tbody, 6, "暂无用户数据", "No user data available");
+            return;
+        }
+
+        const currentServerName =
+            serverDetailCurrentDetail &&
+            serverDetailCurrentDetail.overview &&
+            serverDetailCurrentDetail.overview.name
+                ? serverDetailCurrentDetail.overview.name
+                : (serverDetailCurrentServer && serverDetailCurrentServer.name) || "--";
+
+        const rows = users
+            .map((user) => {
+                const roleClass = mapStatusKeyToClass(user.roleKey);
+                const lastLogin = formatServerDetailDateTime(user.lastLoginTime);
+                const displayName =
+                    user.fullName && user.fullName.trim().length > 0
+                        ? user.fullName
+                        : user.username;
+                const accessZh = user.accessTypeZh || "--";
+                const accessEn = user.accessTypeEn || "--";
+                const defaultServerDisplay =
+                    user.accessTypeKey === "default" ? currentServerName : "--";
+
+                return (
+                    "<tr>" +
+                    "<td><strong>" +
+                    escapeHtml(displayName || "--") +
+                    '</strong><span class="server-detail-caption">' +
+                    escapeHtml(user.email || "") +
+                    "</span></td>" +
+                    '<td><span class="server-detail-chip ' +
+                    roleClass +
+                    '" data-i18n-zh="' +
+                    escapeHtml(user.roleZh || "--") +
+                    '" data-i18n-en="' +
+                    escapeHtml(user.roleEn || "--") +
+                    '">' +
+                    (currentLanguage === "en"
+                        ? escapeHtml(user.roleEn || "--")
+                        : escapeHtml(user.roleZh || "--")) +
+                    "</span></td>" +
+                    "<td>" +
+                    escapeHtml(defaultServerDisplay) +
+                    "</td>" +
+                    '<td><span data-i18n-zh="' +
+                    escapeHtml(accessZh) +
+                    '" data-i18n-en="' +
+                    escapeHtml(accessEn) +
+                    '">' +
+                    (currentLanguage === "en" ? escapeHtml(accessEn) : escapeHtml(accessZh)) +
+                    "</span></td>" +
+                    '<td data-i18n-zh="' +
+                    lastLogin.zh +
+                    '" data-i18n-en="' +
+                    lastLogin.en +
+                    '">' +
+                    (currentLanguage === "en" ? lastLogin.en : lastLogin.zh) +
+                    "</td>" +
+                    "<td>--</td>" +
+                    "</tr>"
+                );
+            })
+            .join("");
+
+        tbody.innerHTML = rows;
+    }
+
+    function renderServerDetailEmptyState(tbody, colspan, messageZh, messageEn) {
+        if (!tbody) {
+            return;
+        }
+        tbody.innerHTML =
+            '<tr><td colspan="' +
+            colspan +
+            '" class="empty-state" data-i18n-zh="' +
+            messageZh +
+            '" data-i18n-en="' +
+            messageEn +
+            '">' +
+            (currentLanguage === "en" ? messageEn : messageZh) +
+            "</td></tr>";
+    }
+
+    function updateServerDetailRefreshButton(paused) {
+        if (serverDetailToggleRefreshBtn) {
+            setLocalizedText(
+                serverDetailToggleRefreshBtn,
+                paused ? "恢复刷新" : "暂停刷新",
+                paused ? "Resume" : "Pause"
+            );
+        }
+    }
+
+    function updateServerDetailChartsButton(collapsed) {
+        if (serverDetailToggleChartsBtn) {
+            setLocalizedText(
+                serverDetailToggleChartsBtn,
+                collapsed ? "展开图表" : "收起图表",
+                collapsed ? "Expand charts" : "Collapse charts"
+            );
+        }
+    }
+
+    function mapStatusKeyToClass(statusKey) {
+        const normalized = (statusKey || "").toString().toLowerCase();
+        if (
+            normalized === "running" ||
+            normalized === "online" ||
+            normalized === "connected" ||
+            normalized === "ok"
+        ) {
+            return "server-detail-chip--ok";
+        }
+        if (normalized === "warning" || normalized === "warn") {
+            return "server-detail-chip--warn";
+        }
+        if (normalized === "info" || normalized === "monitoring" || normalized === "pending") {
+            return "server-detail-chip--info";
+        }
+        if (
+            normalized === "error" ||
+            normalized === "failed" ||
+            normalized === "offline" ||
+            normalized === "timeout"
+        ) {
+            return "server-detail-chip--error";
+        }
+        if (normalized === "terminated" || normalized === "killed" || normalized === "stopped") {
+            return "server-detail-chip--neutral";
+        }
+        return "server-detail-chip--neutral";
+    }
+
+    function mapStatusKeyToDotClass(statusKey) {
+        const normalized = (statusKey || "").toString().toLowerCase();
+        if (
+            normalized === "running" ||
+            normalized === "online" ||
+            normalized === "connected" ||
+            normalized === "ok"
+        ) {
+            return "status-dot--ok";
+        }
+        if (normalized === "warning" || normalized === "warn") {
+            return "status-dot--warn";
+        }
+        if (normalized === "info" || normalized === "monitoring" || normalized === "pending") {
+            return "status-dot--info";
+        }
+        if (
+            normalized === "error" ||
+            normalized === "failed" ||
+            normalized === "offline" ||
+            normalized === "timeout"
+        ) {
+            return "status-dot--error";
+        }
+        if (normalized === "terminated" || normalized === "killed" || normalized === "stopped") {
+            return "status-dot--terminated";
+        }
+        return "status-dot--neutral";
+    }
+
+    function formatProcessPercent(value) {
+        if (value === null || value === undefined || Number.isNaN(value)) {
+            return "--";
+        }
+        return Number(value).toFixed(1) + "%";
+    }
+
+    function formatProcessCommand(command) {
+        if (!command) {
+            return "--";
+        }
+        const trimmed = command.trim();
+        if (trimmed.length === 0) {
+            return "--";
+        }
+        const firstSegment = trimmed.split(/\s+/)[0];
+        return firstSegment;
+    }
+
+    function resolveServerDetailStatus(overview, server) {
+        const status =
+            overview && overview.connectionStatus
+                ? overview.connectionStatus
+                : server && server.status;
+        const description =
+            overview && overview.connectionStatusDescription
+                ? overview.connectionStatusDescription
+                : "";
+        const normalized = (status || "").toString().toUpperCase();
+        switch (normalized) {
+            case "CONNECTED":
+            case "ONLINE":
+            case "RUNNING":
+                return { key: "online", zh: description || "连接正常", en: "Connected" };
+            case "MONITORING":
+            case "INFO":
+                return { key: "info", zh: description || "监控中", en: "Monitoring" };
+            case "FAILED":
+            case "TIMEOUT":
+            case "AUTH_FAILED":
+            case "OFFLINE":
+            case "ERROR":
+                return { key: "error", zh: description || "连接异常", en: "Connection issue" };
+            default:
+                return { key: "neutral", zh: description || "未知状态", en: "Unknown" };
+        }
+    }
+
+    function formatServerDetailDateTime(value) {
+        if (!value) {
+            return { zh: "--", en: "--" };
+        }
+        const isoString = typeof value === "string" ? value.replace(" ", "T") : value;
+        const date = new Date(isoString);
+        if (Number.isNaN(date.getTime())) {
+            return { zh: "--", en: "--" };
+        }
+        return {
+            zh: date.toLocaleString("zh-CN", { hour12: false }),
+            en: date.toLocaleString("en-US", { hour12: false })
+        };
+    }
+
+    async function refreshServerDetailData(isAuto = true) {
+        if (!serverDetailCurrentServer) {
+            return;
+        }
+        try {
+            const detail = await fetchServerDetail(
+                serverDetailCurrentServer.id,
+                serverDetailProcessSort || "cpu"
+            );
+            serverDetailCurrentDetail = detail;
+            updateServerDetailContent(serverDetailCurrentServer, detail);
+        } catch (error) {
+            if (!isAuto) {
+                showErrorMessage(
+                    currentLanguage === "en"
+                        ? "Failed to refresh server detail"
+                        : "刷新服务器详情失败"
+                );
+            }
+            console.error("Failed to refresh server detail:", error);
+        }
+    }
+
+    function handleServerDetailNavClick(event) {
+        event.preventDefault();
+        const link = event.currentTarget;
+        const targetId = link.dataset.target;
+        if (!targetId) {
+            return;
+        }
+
+        const target = document.getElementById(targetId);
+        if (target) {
+            scrollToServerDetailSection(target);
+        }
+
+        setServerDetailActiveNav(targetId);
+    }
+
+    function scrollToServerDetailSection(target) {
+        if (!serverDetailBody) {
+            return;
+        }
+
+        const containerRect = serverDetailBody.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        const offset = targetRect.top - containerRect.top + serverDetailBody.scrollTop - 16;
+        serverDetailBody.scrollTo({ top: offset, behavior: "smooth" });
+    }
+
+    function syncServerDetailChartsFromSeries(seriesList) {
+        const source = Array.isArray(seriesList) ? seriesList : [];
+        serverDetailChartDefinitions = SERVER_DETAIL_CHART_TEMPLATE.map((template) => {
+            const series = source.find((item) => item && item.id === template.key);
+            const decimals = typeof template.decimals === "number" ? template.decimals : 2;
+            const values =
+                series && Array.isArray(series.points)
+                    ? series.points
+                          .map((point) => roundChartValue(point && point.value, decimals))
+                          .filter((value) => value !== null)
+                    : [];
+            const labels =
+                series && Array.isArray(series.points)
+                    ? series.points.map((point) =>
+                          point && point.timestamp ? point.timestamp : ""
+                      )
+                    : [];
+            const labelZh = series && series.labelZh ? series.labelZh : template.labelZh;
+            const labelEn = series && series.labelEn ? series.labelEn : template.labelEn;
+            return {
+                ...template,
+                baseData: values,
+                labels,
+                labelZh,
+                labelEn,
+                label: currentLanguage === "en" ? labelEn : labelZh
+            };
+        });
+    }
+
+    function sanitizeMetricValue(value) {
+        if (value === null || value === undefined) {
+            return null;
+        }
+        const numeric = Number(value);
+        return Number.isFinite(numeric) ? numeric : null;
+    }
+
+    function roundChartValue(value, decimals) {
+        const numeric = sanitizeMetricValue(value);
+        if (numeric === null) {
+            return null;
+        }
+        const factor = Math.pow(10, decimals);
+        return Math.round(numeric * factor) / factor;
+    }
+
+    function initServerDetailCharts() {
+        if (typeof Chart === "undefined") {
+            console.warn("Chart.js 未加载，无法初始化服务器详情图表");
+            return;
+        }
+
+        destroyServerDetailCharts();
+
+        serverDetailTimeFormatter = new Intl.DateTimeFormat(getServerDetailLocale(), {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false
+        });
+
+        serverDetailCharts = serverDetailChartDefinitions
+            .map((definition) => {
+                const canvas = document.getElementById(definition.id);
+                if (!canvas) {
+                    return null;
+                }
+
+                const context = canvas.getContext("2d");
+                const labels = buildServerDetailLabels(definition);
+                const chart = new Chart(context, getServerDetailChartConfig(definition, labels));
+                chart.$definition = definition;
+                return chart;
+            })
+            .filter(Boolean);
+
+        if (!serverDetailCharts.length) {
+            return;
+        }
+
+        if (!serverDetailChartsPaused) {
+            startServerDetailCharts();
+        }
+    }
+
+    function destroyServerDetailCharts() {
+        stopServerDetailCharts();
+        serverDetailCharts.forEach((chart) => {
+            if (chart) {
+                chart.destroy();
+            }
+        });
+        serverDetailCharts = [];
+    }
+
+    function startServerDetailCharts() {
+        stopServerDetailCharts();
+
+        if (!serverDetailCurrentServer || !serverDetailCharts.length) {
+            return;
+        }
+
+        serverDetailChartTimer = setInterval(() => {
+            refreshServerDetailData(true);
+        }, SERVER_DETAIL_UPDATE_INTERVAL);
+    }
+
+    function stopServerDetailCharts() {
+        if (serverDetailChartTimer) {
+            clearInterval(serverDetailChartTimer);
+            serverDetailChartTimer = null;
+        }
+    }
+
+    function getServerDetailChartConfig(definition, labels) {
+        const datasetColor = definition.color;
+        const backgroundColor = datasetColor.length === 7 ? `${datasetColor}33` : datasetColor;
+
+        return {
+            type: "line",
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: definition.label,
+                        data: definition.baseData.slice(),
+                        borderColor: datasetColor,
+                        backgroundColor,
+                        tension: 0.35,
+                        fill: true,
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 280, easing: "easeOutQuad" },
+                interaction: { intersect: false, mode: "index" },
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            color: "#475569",
+                            maxRotation: 0,
+                            maxTicksLimit: 6,
+                            autoSkip: true
+                        }
+                    },
+                    y: {
+                        grid: { color: "rgba(148, 163, 184, 0.2)" },
+                        ticks: { color: "#475569" }
+                    }
+                }
+            }
+        };
+    }
+
+    function buildServerDetailLabels(definition) {
+        if (definition && Array.isArray(definition.labels) && definition.labels.length) {
+            return definition.labels;
+        }
+
+        const count =
+            definition && Array.isArray(definition.baseData) ? definition.baseData.length : 0;
+
+        const now = Date.now();
+        return Array.from({ length: count }, (_, index) => {
+            const offset = (count - index - 1) * SERVER_DETAIL_UPDATE_INTERVAL;
+            return serverDetailTimeFormatter.format(new Date(now - offset));
+        });
+    }
+
+    function getServerDetailLocale() {
+        return currentLanguage === "en" ? "en-US" : "zh-CN";
+    }
+
+    function isServerDetailOpen() {
+        return !!(serverDetailOverlay && serverDetailOverlay.classList.contains("is-open"));
+    }
+
+    async function refreshServer(serverId) {
+        try {
+            const response = await fetch(`/admin/server-groups/api/batch-refresh`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ serverIds: [serverId] })
+            });
+
+            if (response.ok) {
+                showSuccessMessage("Server refreshed successfully");
+                await loadServerGroupList();
+            } else {
+                throw new Error("Refresh failed");
+            }
+        } catch (error) {
+            console.error("Server refresh failed:", error);
+            showErrorMessage("Refresh failed. Please try again.");
+        }
+    }
+
+    // 曝露服务器操作函数供模板调用
+
+    window.ServerGroupModule = {
+        init: initServerGroupManagement,
+        cleanup: cleanupServerGroupManagement,
+        onLanguageChange: handleLanguageChange,
+        viewServerDetails,
+        refreshServer,
+        isDetailOpen: isServerDetailOpen
+    };
+})();
+
+export {};
