@@ -298,6 +298,186 @@ public class MonitoringController {
     }
 
     /**
+     * Step 5: 统一Hub查询端点 (优化版)
+     * 直接代理Hub API,减少数据转换开销
+     * 
+     * 用途: 前端直接查询服务器的历史监控数据
+     * 优势: 
+     * - 减少一层Service调用
+     * - 无数据模型转换开销
+     * - 支持Hub完整查询能力 (时间范围、降采样、字段过滤)
+     * 
+     * @param id 服务器ID
+     * @param from 起始时间戳(毫秒,可选)
+     * @param to 结束时间戳(毫秒,可选)
+     * @param step 降采样间隔(秒,可选)
+     * @param fields 字段过滤(逗号分隔,如:cpu,memory,可选)
+     * @return Hub原始响应
+     */
+    @GetMapping("/api/server/{id}/hub/query")
+    @ResponseBody
+    public ResponseEntity<?> proxyHubQuery(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long from,
+            @RequestParam(required = false) Long to,
+            @RequestParam(required = false) Integer step,
+            @RequestParam(required = false) String fields) {
+        
+        try {
+            // 1. 权限检查: 验证服务器是否存在
+            Optional<Server> serverOpt = serverService.getServerById(id);
+            if (serverOpt.isEmpty()) {
+                logger.warn("服务器 {} 不存在", id);
+                return ResponseEntity.status(404).body(Map.of(
+                    "error", "服务器不存在",
+                    "code", "SERVER_NOT_FOUND",
+                    "serverId", id
+                ));
+            }
+            
+            Server server = serverOpt.get();
+            
+            // 2. Hub可用性检查
+            if (metricsHubClient == null || !metricsHubClient.isAvailable()) {
+                logger.warn("Hub服务不可用,无法查询服务器 {} 的监控数据", id);
+                return ResponseEntity.status(503).body(Map.of(
+                    "error", "Hub服务不可用,请稍后重试",
+                    "code", "HUB_UNAVAILABLE",
+                    "serverId", id
+                ));
+            }
+            
+            // 3. 直接调用Hub查询 (使用queryMetricsRaw方法)
+            logger.debug("代理Hub查询: serverId={}, from={}, to={}, step={}, fields={}", 
+                id, from, to, step, fields);
+            
+            // 使用 queryMetricsRaw() 直接返回Hub响应
+            ResponseEntity<Map<String, Object>> hubResponse = 
+                    metricsHubClient.queryMetricsRaw(id, from, to, step, fields);
+            
+            // 直接返回Hub的响应,不做任何转换
+            return hubResponse;
+            
+        } catch (Exception e) {
+            logger.error("Hub查询失败: serverId={}, error={}", id, e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of(
+                "error", "Hub查询失败: " + e.getMessage(),
+                "code", "HUB_QUERY_FAILED",
+                "serverId", id
+            ));
+        }
+    }
+
+    /**
+     * Step 5: 批量服务器Hub查询 (优化版)
+     * 并发查询多台服务器的监控数据
+     * 
+     * @param request 请求体,包含: serverIds(必须), from(可选), to(可选)
+     * @return 所有服务器的监控数据
+     */
+    @PostMapping("/api/servers/hub/batch-query")
+    @ResponseBody
+    public ResponseEntity<?> proxyHubBatchQuery(@RequestBody Map<String, Object> request) {
+        try {
+            // 1. 解析请求参数
+            @SuppressWarnings("unchecked")
+            List<Number> serverIdNumbers = (List<Number>) request.get("serverIds");
+            if (serverIdNumbers == null || serverIdNumbers.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "serverIds参数必须提供",
+                    "code", "INVALID_REQUEST"
+                ));
+            }
+            
+            List<Long> serverIds = new ArrayList<>();
+            for (Number num : serverIdNumbers) {
+                serverIds.add(num.longValue());
+            }
+            
+            // 2. 批量权限检查 - 验证所有服务器是否存在
+            List<Server> servers = new ArrayList<>();
+            for (Long serverId : serverIds) {
+                Optional<Server> serverOpt = serverService.getServerById(serverId);
+                if (serverOpt.isPresent()) {
+                    servers.add(serverOpt.get());
+                } else {
+                    logger.warn("服务器 {} 不存在", serverId);
+                }
+            }
+            
+            if (servers.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "所有服务器均不存在或无权限访问",
+                    "code", "NO_VALID_SERVERS"
+                ));
+            }
+            
+            if (servers.size() != serverIds.size()) {
+                logger.warn("部分服务器不存在或无权限访问,请求数量:{}, 有效数量:{}", 
+                    serverIds.size(), servers.size());
+            }
+            
+            // 3. Hub可用性检查
+            if (metricsHubClient == null || !metricsHubClient.isAvailable()) {
+                logger.warn("Hub服务不可用,无法批量查询监控数据");
+                return ResponseEntity.status(503).body(Map.of(
+                    "error", "Hub服务不可用,请稍后重试",
+                    "code", "HUB_UNAVAILABLE"
+                ));
+            }
+            
+            // 4. 并发查询Hub (使用现有方法)
+            Map<Long, Object> results = new LinkedHashMap<>();
+            int successCount = 0;
+            int failureCount = 0;
+            
+            for (Server server : servers) {
+                try {
+                    ServerMetrics metrics = metricsHubClient.getLatestMetrics(server.getId());
+                    if (metrics != null) {
+                        results.put(server.getId(), metrics);
+                        successCount++;
+                    } else {
+                        results.put(server.getId(), Map.of(
+                            "error", "暂无数据",
+                            "code", "NO_DATA"
+                        ));
+                        failureCount++;
+                    }
+                } catch (Exception e) {
+                    logger.error("服务器 {} 查询失败: {}", server.getId(), e.getMessage());
+                    results.put(server.getId(), Map.of(
+                        "error", e.getMessage(),
+                        "code", "QUERY_FAILED"
+                    ));
+                    failureCount++;
+                }
+            }
+            
+            logger.info("批量Hub查询完成: 总数={}, 成功={}, 失败={}", 
+                servers.size(), successCount, failureCount);
+            
+            // 5. 返回结果
+            return ResponseEntity.ok(Map.of(
+                "data", results,
+                "timestamp", System.currentTimeMillis(),
+                "statistics", Map.of(
+                    "total", servers.size(),
+                    "success", successCount,
+                    "failure", failureCount
+                )
+            ));
+            
+        } catch (Exception e) {
+            logger.error("批量Hub查询异常: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "error", "批量查询失败: " + e.getMessage(),
+                "code", "BATCH_QUERY_FAILED"
+            ));
+        }
+    }
+
+    /**
      * T4 API: 批量获取所有服务器的监控数据（支持字段选择）
      *
      * @param fields 字段列表（逗号分隔，如: cpu,memory,disk，可选）

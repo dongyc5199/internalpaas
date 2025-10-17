@@ -1,90 +1,55 @@
 package com.cmict.internalpaas.model;
 
-import javax.persistence.*;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "server_metrics")
+/**
+ * 服务器监控指标数据传输对象
+ * <p>
+ * 注意: 该类不再是JPA实体,仅作为DTO使用。
+ * 实际的监控数据存储在Hub模块的TimescaleDB中,该类用于:
+ * 1. MetricsHubClient从Hub API获取数据后转换
+ * 2. Controller层返回给前端
+ * 3. Service层业务逻辑处理
+ * </p>
+ * 
+ * @see com.cmict.internalpaas.client.MetricsHubClient#convertToServerMetrics
+ */
 public class ServerMetrics {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
-    @Column(name = "server_id")
     private Long serverId;
-    
-    @Column(name = "server_name")
     private String serverName;
-    
-    @Column(name = "hostname")
     private String hostname;
     
     // CPU信息
-    @Column(name = "cpu_usage")
     private Double cpuUsage;
-    
-    @Column(name = "cpu_cores")
     private Integer cpuCores;
-    
-    @Column(name = "load_average")
     private String loadAverage;
     
     // 内存信息
-    @Column(name = "memory_total")
     private Long memoryTotal;
-    
-    @Column(name = "memory_used")
     private Long memoryUsed;
-    
-    @Column(name = "memory_available")
     private Long memoryAvailable;
-    
-    @Column(name = "memory_usage")
     private Double memoryUsage;
     
     // 磁盘信息
-    @Column(name = "disk_total")
     private Long diskTotal;
-    
-    @Column(name = "disk_used")
     private Long diskUsed;
-    
-    @Column(name = "disk_available")
     private Long diskAvailable;
-    
-    @Column(name = "disk_usage")
     private Double diskUsage;
 
     // 系统信息
-    @Column(name = "uptime")
     private String uptime;
-
-    @Column(name = "os_version")
     private String osVersion;
-
-    @Column(name = "kernel_version")
     private String kernelVersion;
 
     // 网络信息
-    @Column(name = "network_interface")
     private String networkInterface;
-
-    @Column(name = "network_received_bytes")
     private Long networkReceivedBytes;
-
-    @Column(name = "network_transmitted_bytes")
     private Long networkTransmittedBytes;
-
-    @Column(name = "network_received_rate")
     private Double networkReceivedRate;
-
-    @Column(name = "network_transmitted_rate")
     private Double networkTransmittedRate;
 
-    @Column(name = "timestamp")
     private LocalDateTime timestamp;
-
-    @Column(name = "collection_duration_ms")
     private Long collectionDurationMs;
     
     public ServerMetrics() {

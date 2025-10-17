@@ -148,6 +148,64 @@ public class MetricsHubClient {
     }
 
     /**
+     * Step 5.2: 查询监控数据 (原始响应版本)
+     * 直接返回Hub的响应,不做模型转换,减少开销
+     * 
+     * 用途: 前端直接调用时使用,避免ServerMetrics模型转换
+     * 
+     * @param serverId 服务器ID
+     * @param from 起始时间戳(毫秒,可选)
+     * @param to 结束时间戳(毫秒,可选)
+     * @param step 降采样间隔(秒,可选)
+     * @param fields 字段过滤(逗号分隔,可选)
+     * @return ResponseEntity 包含Hub原始响应
+     */
+    public ResponseEntity<Map<String, Object>> queryMetricsRaw(
+            Long serverId,
+            Long from,
+            Long to,
+            Integer step,
+            String fields) {
+        
+        try {
+            // 构建Hub API URL
+            UriComponentsBuilder builder = UriComponentsBuilder
+                    .fromHttpUrl(baseUrl + "/monitoring/server/" + serverId + "/metrics/query");
+
+            if (from != null) builder.queryParam("from", from);
+            if (to != null) builder.queryParam("to", to);
+            if (step != null) builder.queryParam("step", step);
+            if (fields != null && !fields.trim().isEmpty()) builder.queryParam("fields", fields);
+
+            String url = builder.toUriString();
+            logger.debug("📊 Query Hub API (raw): {}", url);
+
+            // 直接调用Hub并返回原始响应
+            @SuppressWarnings("unchecked")
+            ResponseEntity<Map<String, Object>> response = 
+                    (ResponseEntity<Map<String, Object>>) (ResponseEntity<?>) 
+                    restTemplate.getForEntity(url, Map.class);
+
+            logger.info("✅ Hub raw query success: serverId={}, status={}", 
+                    serverId, response.getStatusCode());
+
+            return response;
+
+        } catch (Exception e) {
+            logger.error("❌ Hub raw query failed: serverId={}, error={}", 
+                    serverId, e.getMessage());
+            
+            // 返回500错误
+            return ResponseEntity.internalServerError()
+                    .body(Map.of(
+                        "error", "Hub查询失败: " + e.getMessage(),
+                        "code", "HUB_QUERY_FAILED",
+                        "serverId", serverId
+                    ));
+        }
+    }
+
+    /**
      * 数据模型转换: MetricSample → ServerMetrics
      */
     private ServerMetrics convertToServerMetrics(Long serverId, List<MetricSampleDto> samples) {
