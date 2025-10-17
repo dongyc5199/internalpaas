@@ -5,7 +5,6 @@ import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.model.UserActivity;
 import com.cmict.internalpaas.service.MonitoringSchedulerService;
-import com.cmict.internalpaas.service.MonitoringService;
 import com.cmict.internalpaas.service.ServerService;
 import com.cmict.internalpaas.service.UserActivityService;
 import org.slf4j.Logger;
@@ -32,9 +31,6 @@ public class MonitoringController {
 
     @Autowired
     private MonitoringSchedulerService schedulerService;
-
-    @Autowired
-    private MonitoringService monitoringService;
 
     /**
      * Metrics Hub客户端（可选依赖，Hub未启动时不报错）
@@ -156,13 +152,15 @@ public class MonitoringController {
 
     /**
      * T4 API: 获取服务器监控数据（支持时间范围查询和字段选择）
-     *
+     * 
+     * ⚠️ Phase4 迁移: 已切换到 Hub 数据源
+     * 
      * @param id 服务器ID
      * @param from 开始时间（Unix毫秒时间戳，可选）
      * @param to 结束时间（Unix毫秒时间戳，可选）
      * @param step 降采样间隔（秒，可选）
      * @param fields 字段列表（逗号分隔，如: cpu,memory,disk，可选）
-     * @return 监控数据列表
+     * @return 监控数据列表（Hub 数据源）
      */
     @GetMapping("/server/{id}/metrics/query")
     @ResponseBody
@@ -175,34 +173,35 @@ public class MonitoringController {
         try {
             // 检查服务器是否存在
             if (!serverService.findById(id).isPresent()) {
+                logger.warn("服务器不存在 - ID: {}", id);
                 Map<String, String> error = new HashMap<>();
                 error.put("error", "服务器不存在");
                 error.put("serverId", String.valueOf(id));
                 return ResponseEntity.status(404).body(error);
             }
 
-            // 获取监控数据（使用新的查询服务）
-            List<ServerMetrics> metrics = monitoringService.queryMetrics(id, from, to, step);
-
-            // 应用字段过滤
-            if (fields != null && !fields.trim().isEmpty()) {
-                metrics = monitoringService.filterMetricsByFields(metrics, fields);
+            // 检查 Hub 是否可用
+            if (metricsHubClient == null || !metricsHubClient.isAvailable()) {
+                logger.error("❌ Metrics Hub 不可用 - serverId: {}", id);
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "监控服务暂时不可用");
+                error.put("hint", "请确保 Metrics Hub 服务正常运行");
+                error.put("serverId", id);
+                return ResponseEntity.status(503).body(error);
             }
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("serverId", id);
-            response.put("from", from);
-            response.put("to", to);
-            response.put("step", step);
-            response.put("fields", fields);
-            response.put("count", metrics.size());
-            response.put("data", metrics);
+            // 使用 Hub 查询监控数据
+            logger.debug("从 Hub 查询监控数据: serverId={}, from={}, to={}, step={}, fields={}", 
+                id, from, to, step, fields);
+            
+            ResponseEntity<Map<String, Object>> hubResponse = 
+                    metricsHubClient.queryMetricsRaw(id, from, to, step, fields);
 
-            return ResponseEntity.ok(response);
+            // 直接返回 Hub 的响应
+            return hubResponse;
 
         } catch (Exception e) {
-            System.err.println("查询监控数据异常 - ID: " + id + ", 错误: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("查询监控数据异常 - serverId: {}, error: {}", id, e.getMessage(), e);
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             error.put("serverId", String.valueOf(id));
@@ -334,8 +333,6 @@ public class MonitoringController {
                     "serverId", id
                 ));
             }
-            
-            Server server = serverOpt.get();
             
             // 2. Hub可用性检查
             if (metricsHubClient == null || !metricsHubClient.isAvailable()) {
@@ -479,32 +476,40 @@ public class MonitoringController {
 
     /**
      * T4 API: 批量获取所有服务器的监控数据（支持字段选择）
+     * 
+     * ⚠️ Phase4 迁移: 已切换到 Hub 数据源，字段过滤由 Hub 处理
+     * 
+     * 注意: 如需字段过滤，Hub 支持在查询时指定 fields 参数
+     * 本端点已简化为批量获取最新完整监控数据
      *
-     * @param fields 字段列表（逗号分隔，如: cpu,memory,disk，可选）
-     * @return 所有服务器的最新监控数据
+     * @param fields 字段列表（逗号分隔，如: cpu,memory,disk，可选）- 暂不支持，由 Hub 处理
+     * @return 所有服务器的最新监控数据（Hub 数据源）
      */
     @GetMapping("/servers/metrics/query")
     @ResponseBody
     public ResponseEntity<?> queryAllServersMetrics(@RequestParam(required = false) String fields) {
         try {
+            // 检查 Hub 是否可用
+            if (metricsHubClient == null || !metricsHubClient.isAvailable()) {
+                logger.warn("⚠️ Metrics Hub 不可用，无法批量查询服务器指标");
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "监控服务暂时不可用");
+                error.put("hint", "请检查 Metrics Hub 服务状态");
+                error.put("hubStatus", "unavailable");
+                return ResponseEntity.status(503).body(error);
+            }
+
             List<Server> servers = serverService.getActiveServers();
-            Map<String, Object> results = new LinkedHashMap<>();
             List<Map<String, Object>> serverMetrics = new ArrayList<>();
+            int successCount = 0;
+            int failureCount = 0;
 
             for (Server server : servers) {
                 try {
-                    ServerMetrics metrics = serverService.getServerLatestMetrics(server.getId());
+                    // 从 Hub 获取最新监控数据
+                    ServerMetrics metrics = metricsHubClient.getLatestMetrics(server.getId());
 
                     if (metrics != null) {
-                        // 应用字段过滤
-                        if (fields != null && !fields.trim().isEmpty()) {
-                            List<ServerMetrics> metricsList = Collections.singletonList(metrics);
-                            metricsList = monitoringService.filterMetricsByFields(metricsList, fields);
-                            if (!metricsList.isEmpty()) {
-                                metrics = metricsList.get(0);
-                            }
-                        }
-
                         Map<String, Object> serverData = new HashMap<>();
                         serverData.put("serverId", server.getId());
                         serverData.put("serverName", server.getName());
@@ -512,20 +517,39 @@ public class MonitoringController {
                         serverData.put("metrics", metrics);
 
                         serverMetrics.add(serverData);
+                        successCount++;
+                    } else {
+                        failureCount++;
+                        logger.debug("服务器 {} 暂无 Hub 数据", server.getId());
                     }
                 } catch (Exception e) {
-                    // 单个服务器失败不影响其他服务器
-                    logger.error("获取服务器 {} 监控数据失败: {}", server.getId(), e.getMessage());
+                    failureCount++;
+                    logger.error("获取服务器 {} Hub数据失败: {}", server.getId(), e.getMessage());
                 }
             }
 
+            logger.info("批量查询完成 - 总数: {}, 成功: {}, 失败: {}", 
+                servers.size(), successCount, failureCount);
+
+            Map<String, Object> results = new LinkedHashMap<>();
             results.put("count", serverMetrics.size());
-            results.put("fields", fields);
+            results.put("dataSource", "hub");
             results.put("servers", serverMetrics);
+            results.put("statistics", Map.of(
+                "total", servers.size(),
+                "success", successCount,
+                "failure", failureCount
+            ));
+
+            // 字段过滤提示
+            if (fields != null && !fields.trim().isEmpty()) {
+                results.put("hint", "字段过滤功能请使用 Hub API: /monitoring/api/server/{id}/hub/query?fields=" + fields);
+            }
 
             return ResponseEntity.ok(results);
 
         } catch (Exception e) {
+            logger.error("批量查询监控数据异常: {}", e.getMessage(), e);
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.internalServerError().body(error);
