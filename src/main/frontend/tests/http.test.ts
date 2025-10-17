@@ -300,9 +300,7 @@ describe("HTTP Client", () => {
                 statusText: "Not Found"
             });
 
-            await expect(http.get("/api/notfound")).rejects.toThrow(
-                "HTTP Error 404"
-            );
+            await expect(http.get("/api/notfound")).rejects.toThrow("HTTP Error 404");
         });
 
         it("应该处理401未授权错误", async () => {
@@ -326,13 +324,9 @@ describe("HTTP Client", () => {
         });
 
         it("应该处理网络错误", async () => {
-            (global.fetch as any).mockRejectedValueOnce(
-                new Error("Network error")
-            );
+            (global.fetch as any).mockRejectedValueOnce(new Error("Network error"));
 
-            await expect(http.get("/api/test")).rejects.toThrow(
-                "Network error"
-            );
+            await expect(http.get("/api/test")).rejects.toThrow("Network error");
         });
 
         it("应该处理超时错误", async () => {
@@ -343,9 +337,7 @@ describe("HTTP Client", () => {
                 })
             );
 
-            await expect(http.get("/api/slow", { timeout: 1000 })).rejects.toThrow(
-                "请求超时"
-            );
+            await expect(http.get("/api/slow", { timeout: 1000 })).rejects.toThrow("请求超时");
         });
     });
 

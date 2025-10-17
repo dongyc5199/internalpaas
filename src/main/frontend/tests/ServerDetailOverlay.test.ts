@@ -31,12 +31,8 @@ const mockServerDetail: ServerDetail = {
         { pid: 1234, user: "root", cpu: 25.5, mem: 10.2, command: "nginx" },
         { pid: 5678, user: "www", cpu: 15.3, mem: 8.5, command: "node app.js" }
     ],
-    applications: [
-        { id: 1, name: "Web App", status: "running", port: 8080, pid: 9999 }
-    ],
-    users: [
-        { username: "admin", loginTime: "2025-10-13 10:00", from: "192.168.1.100" }
-    ]
+    applications: [{ id: 1, name: "Web App", status: "running", port: 8080, pid: 9999 }],
+    users: [{ username: "admin", loginTime: "2025-10-13 10:00", from: "192.168.1.100" }]
 };
 
 // Mock DOM环境
@@ -120,9 +116,7 @@ describe("ServerDetailOverlay", () => {
 
             overlay.init();
 
-            expect(consoleLog).toHaveBeenCalledWith(
-                "[ServerDetailOverlay] Initialized"
-            );
+            expect(consoleLog).toHaveBeenCalledWith("[ServerDetailOverlay] Initialized");
 
             consoleLog.mockRestore();
         });
@@ -133,9 +127,7 @@ describe("ServerDetailOverlay", () => {
 
             overlay.init();
 
-            expect(consoleWarn).toHaveBeenCalledWith(
-                "ServerDetailOverlay element not found"
-            );
+            expect(consoleWarn).toHaveBeenCalledWith("ServerDetailOverlay element not found");
 
             consoleWarn.mockRestore();
         });
@@ -206,9 +198,7 @@ describe("ServerDetailOverlay", () => {
             overlay.init();
             await overlay.view(1);
 
-            expect(mockDeps.showError).toHaveBeenCalledWith(
-                "Failed to load server details"
-            );
+            expect(mockDeps.showError).toHaveBeenCalledWith("Failed to load server details");
         });
     });
 
@@ -502,9 +492,7 @@ describe("ServerDetailOverlay", () => {
             overlay.init();
             await overlay.view(1);
 
-            const nameEl = document.querySelector(
-                ".server-detail-toolbar-compact .server-name"
-            );
+            const nameEl = document.querySelector(".server-detail-toolbar-compact .server-name");
             const addressEl = document.querySelector(
                 ".server-detail-toolbar-compact .server-address"
             );

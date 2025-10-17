@@ -109,9 +109,7 @@ describe("ServerListManager", () => {
 
             await manager.init();
 
-            expect(global.fetch).toHaveBeenCalledWith(
-                "/admin/server-groups/api/list"
-            );
+            expect(global.fetch).toHaveBeenCalledWith("/admin/server-groups/api/list");
         });
 
         it("应该正确清理资源", () => {
@@ -131,16 +129,12 @@ describe("ServerListManager", () => {
 
             await manager.load();
 
-            expect(global.fetch).toHaveBeenCalledWith(
-                "/admin/server-groups/api/list"
-            );
+            expect(global.fetch).toHaveBeenCalledWith("/admin/server-groups/api/list");
             expect(mockDeps.loadCharts).toHaveBeenCalled();
         });
 
         it("应该处理加载失败的情况", async () => {
-            (global.fetch as any).mockRejectedValueOnce(
-                new Error("Network error")
-            );
+            (global.fetch as any).mockRejectedValueOnce(new Error("Network error"));
 
             await manager.load();
 
@@ -182,8 +176,7 @@ describe("ServerListManager", () => {
         });
 
         it("应该切换到卡片视图", () => {
-            const initialHTML = document.getElementById("serverTableBody")
-                ?.innerHTML;
+            const initialHTML = document.getElementById("serverTableBody")?.innerHTML;
 
             manager.switchView("card");
 
@@ -199,13 +192,11 @@ describe("ServerListManager", () => {
         });
 
         it("应该在相同模式时不重复渲染", () => {
-            const initialHTML = document.getElementById("serverTableBody")
-                ?.innerHTML;
+            const initialHTML = document.getElementById("serverTableBody")?.innerHTML;
 
             manager.switchView("table");
 
-            const afterHTML = document.getElementById("serverTableBody")
-                ?.innerHTML;
+            const afterHTML = document.getElementById("serverTableBody")?.innerHTML;
             expect(initialHTML).toBe(afterHTML);
         });
     });
@@ -449,9 +440,7 @@ describe("ServerListManager", () => {
         it("应该根据语言显示正确的文本（中文）", async () => {
             (mockDeps.getCurrentLanguage as any).mockReturnValue("zh");
 
-            (global.fetch as any).mockRejectedValueOnce(
-                new Error("Network error")
-            );
+            (global.fetch as any).mockRejectedValueOnce(new Error("Network error"));
 
             await manager.load();
 
@@ -462,9 +451,7 @@ describe("ServerListManager", () => {
         it("应该根据语言显示正确的文本（英文）", async () => {
             (mockDeps.getCurrentLanguage as any).mockReturnValue("en");
 
-            (global.fetch as any).mockRejectedValueOnce(
-                new Error("Network error")
-            );
+            (global.fetch as any).mockRejectedValueOnce(new Error("Network error"));
 
             await manager.load();
 

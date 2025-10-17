@@ -3,7 +3,11 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { StorageManager, localStorage as localStorageManager, sessionStorage as sessionStorageManager } from "../utils/storage";
+import {
+    StorageManager,
+    localStorage as localStorageManager,
+    sessionStorage as sessionStorageManager
+} from "../utils/storage";
 
 describe("StorageManager", () => {
     let storage: StorageManager;

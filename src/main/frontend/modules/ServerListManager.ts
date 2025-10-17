@@ -78,7 +78,7 @@ export class ServerListManager implements ServerListManagerAPI {
 
             const data = await response.json();
             // 后端直接返回数组，不是 { servers: [...] } 格式
-            this.servers = Array.isArray(data) ? data : (data.servers || []);
+            this.servers = Array.isArray(data) ? data : data.servers || [];
 
             if (applyFilter) {
                 this.applyFilter();
