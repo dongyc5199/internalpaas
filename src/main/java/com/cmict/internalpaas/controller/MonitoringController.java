@@ -87,9 +87,9 @@ public class MonitoringController {
      * 数据源: Metrics Hub (OTLP Agent → Hub API)
      * - 采样间隔: 10秒
      * - 延迟: < 30秒
-     * - 协议: gRPC/HTTP + Protobuf
+     * 协议: gRPC/HTTP + Protobuf
      * 
-     * 如需恢复SSH降级,请参考: doc/阶段4-数据存储迁移实施方案.md
+     * 如需恢复SSH降级,请参考: docs/archives/2024-phase4/数据存储迁移实施方案.md
      * 
      * @param id 服务器ID
      * @return 监控数据 (Hub数据源) 或 503/404 错误
@@ -117,7 +117,7 @@ public class MonitoringController {
                 error.put("error", "监控服务暂时不可用");
                 error.put("hint", "请确保 Metrics Hub 服务正常运行");
                 error.put("serverId", id);
-                error.put("helpUrl", "/doc/阶段4-数据存储迁移实施方案.md");
+                error.put("helpUrl", "/docs/archives/2024-phase4/数据存储迁移实施方案.md");
                 return ResponseEntity.status(503).body(error);
             }
 

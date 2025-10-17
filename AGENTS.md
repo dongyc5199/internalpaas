@@ -3,7 +3,7 @@
 ## Project Structure & Module Organization
 - Java services live in `src/main/java/com/cmict/internalpaas`, grouped by feature packages such as `controller`, `service`, and `config`; shared DTOs and events stay under `dto` and `event`.
 - Thymeleaf views are stored in `src/main/resources/templates`, while static assets (JS, CSS, images) belong in `src/main/resources/static`.
-- Database change sets reside in `src/main/resources/db/migration`; operational scripts are in `scripts/`, documentation in `doc/`, and sample datasets in `data/`.
+- Database change sets reside in `src/main/resources/db/migration`; operational scripts are in `scripts/`, documentation in `docs/`, and sample datasets in `data/`.
 - Keep generated artifacts inside `target/` and out of version control.
 
 ## Build, Test, and Development Commands

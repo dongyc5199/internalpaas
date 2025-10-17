@@ -106,7 +106,7 @@
 4. 编写组件级 Jest/Playwright 测试，覆盖状态色渲染与可访问性属性。
 
 ## 12. Demo 说明
-- Demo 文件：`doc/prototypes/admin-stat-cards-demo.html`。
+- Demo 文件：`docs/design/prototypes/admin-stat-cards-demo.html`。
 - 演示在线服务器、活跃用户、未处理告警、系统健康度四张卡片，覆盖 Warning、Success、Critical、Offline 等状态。集成时需将样式迁移至正式样式库，并替换为真实数据。
 
 ## 13. 任务列表

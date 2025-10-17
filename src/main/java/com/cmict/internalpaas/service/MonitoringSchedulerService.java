@@ -76,7 +76,7 @@ public class MonitoringSchedulerService {
     public void checkServerConnectionsAndMetrics() {
         logger.warn("⚠️ SSH监控定时任务已停用,请使用 Metrics Hub + OTLP Agent");
         logger.warn("提示: 监控数据现在通过 OTLP Agent 自动上报到 Hub (10秒间隔)");
-        logger.warn("文档: doc/阶段4-数据存储迁移实施方案.md");
+        logger.warn("文档: docs/archives/2024-phase4/数据存储迁移实施方案.md");
         
         /* 原SSH监控逻辑已注释,保留以便回滚
         

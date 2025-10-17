@@ -1,4 +1,4 @@
-# 🚀 Metrics Hub 集成快速开始
+﻿# 🚀 Metrics Hub 集成快速开始
 
 ## 📌 目标
 
@@ -14,10 +14,10 @@
 你已经有以下文档可供参考：
 
 1. **集成指南** (详细方案)
-   📄 `doc/METRICS_HUB_INTEGRATION_GUIDE.md`
+   📄 `docs/guides/metrics-hub-integration-guide.md`
 
 2. **可视化对比** (前后对比)
-   📄 `doc/integration-visual-comparison.md`
+   📄 `docs/guides/hub-integration-visual-comparison.md`
 
 3. **完整技术方案** (2400行详解)
    📄 `issues/集成方案.md`
@@ -334,8 +334,8 @@ metrics.hub.enabled=false
    ```
 
 3. **参考完整文档**:
-   - `doc/METRICS_HUB_INTEGRATION_GUIDE.md`
-   - `doc/integration-visual-comparison.md`
+   - `docs/guides/metrics-hub-integration-guide.md`
+   - `docs/guides/hub-integration-visual-comparison.md`
 
 ---
 

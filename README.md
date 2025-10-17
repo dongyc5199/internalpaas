@@ -1,4 +1,4 @@
-# Internal PaaS Platform
+﻿# Internal PaaS Platform
 
 **轻量级内部 PaaS 平台 - 企业级服务器管理与监控解决方案**
 
@@ -27,19 +27,19 @@ Internal PaaS Platform 是一个轻量级的企业内部 PaaS 管理平台,提�
 - [运维手册](docs/guides/operations-guide.md) - 日常运维操作
 
 ### 技术文档
-- [项目架构概览](doc/project-overview.md)
-- [前端架构设计](doc/frontend-architecture.md)
+- [项目架构概览](docs/architecture/overview.md)
+- [前端架构设计](docs/architecture/frontend-architecture.md)
 - [数据库策略优化](doc/轻量级平台数据库策略优化方案.md)
 
 ### Hub模块
-- [Metrics Hub集成指南](doc/METRICS_HUB_INTEGRATION_GUIDE.md)
+- [Metrics Hub集成指南](docs/guides/metrics-hub-integration-guide.md)
 - [安全加固文档](hub/docs/Security.md) - TLS/mTLS, JWT/JWKS
 - [性能优化文档](hub/docs/Perf.md) - 负载测试与调优
 
 ### 开发文档
 - [AI Agent协作指南](AGENTS.md)
-- [开发路线图](doc/development-roadmap.md)
-- [Lombok IDE配置](doc/lombok-ide-setup.md)
+- [开发路线图](docs/development/roadmap.md)
+- [Lombok IDE配置](docs/development/lombok-ide-setup.md)
 
 ### 完整文档索引
 📖 **[文档中心](docs/README.md)** - 浏览所有文档

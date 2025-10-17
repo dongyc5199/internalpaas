@@ -1,4 +1,4 @@
-# CI/CD系统快速开始
+﻿# CI/CD系统快速开始
 
 ## 🚀 快速开始
 
@@ -154,14 +154,14 @@ npm run ci:check
 
 ## 🎯 质量标准
 
-详见: [质量标准文档](./upgrade/doc/quality-standards.md)
+详见: [质量标准文档](./docs/archives/frontend-upgrade/quality-standards.md)
 
 ---
 
 ## 📚 更多文档
 
-- [CI/CD配置指南](./upgrade/doc/ci-cd-guide.md)
-- [前端开发指南](./doc/frontend-architecture.md)
+- [CI/CD配置指南](./docs/archives/frontend-upgrade/ci-cd-guide.md)
+- [前端开发指南](./docs/architecture/frontend-architecture.md)
 - [项目概述](./CLAUDE.md)
 
 ---

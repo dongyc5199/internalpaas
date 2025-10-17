@@ -1,4 +1,4 @@
-# 🚀 快速启动指南
+﻿# 🚀 快速启动指南
 
 ## 📊 数据库模式选择 (重要)
 
@@ -13,7 +13,7 @@
 **快速选择**:
 - 🔵 **快速体验/开发**: 继续往下看,使用默认模式
 - 🟢 **小团队生产**: 跳到 [H2持久化模式](#h2持久化模式生产推荐)
-- 🟡 **大型团队**: 查看 [部署文档](doc/deployment-guide.md)
+- 🟡 **大型团队**: 查看 [部署文档](docs/guides/deployment-guide.md)
 
 ---
 
@@ -178,7 +178,7 @@ mvn clean install -DskipTests
 - [完整演示指南](./DEMO_PAGES.md) - 所有可访问页面
 - [详细启动说明](./upgrade/doc/demo-guide.md) - 深入的启动步骤
 - [优化总结报告](./upgrade/doc/optimization-summary.md) - 重构成果
-- [部署文档](./doc/deployment-guide.md) - 完整部署指南
+- [部署文档](./docs/guides/deployment-guide.md) - 完整部署指南
 
 ---
 

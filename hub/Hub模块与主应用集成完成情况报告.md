@@ -357,8 +357,8 @@ HubDataVerificationTest: 7/7 通过
 - 🔄 **Step 7: 测试和验证** (待实施)
 
 #### 详细文档
-- 📄 实施方案: `doc/阶段4-数据存储迁移实施方案.md` (9天计划)
-- 📄 Step 1报告: `doc/阶段4-Step1完成报告.md` (性能提升33-95%)
+- 📄 实施方案: `docs/archives/2024-phase4/数据存储迁移实施方案.md` (9天计划)
+- 📄 Step 1报告: `docs/archives/2024-phase4/Step1完成报告.md` (性能提升33-95%)
 
 **说明**:
 - Step 1 已移除 SSH 降级,所有查询仅使用 Hub

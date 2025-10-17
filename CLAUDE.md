@@ -1,4 +1,4 @@
-# Dev Debug Platform - Claude AI 开发助手指南
+﻿# Dev Debug Platform - Claude AI 开发助手指南
 
 ## 项目概述
 
@@ -343,9 +343,9 @@ app.debug.port.range.end=5999
 **如果动态加载页面中的按钮点击无响应**:
 1. 检查是否将JavaScript写在了片段文件中（片段中的JS不会执行）
 2. 确保事件处理逻辑在`main-layout.html`的`handleContentEvents`函数中
-3. 参考完整排查指南：[SPA架构JavaScript事件失效问题](./doc/troubleshooting/spa-javascript-events-not-working.md)
+3. 参考完整排查指南：[SPA架构JavaScript事件失效问题](./docs/archives/troubleshooting/spa-javascript-events-not-working.md)
 
-**详细说明请参考: [前端架构指南](./doc/frontend-architecture.md)**
+**详细说明请参考: [前端架构指南](./docs/architecture/frontend-architecture.md)**
 
 ## 开发指南
 

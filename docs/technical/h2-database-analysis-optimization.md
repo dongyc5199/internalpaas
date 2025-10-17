@@ -1,4 +1,4 @@
-# H2数据库使用分析与优化建议
+﻿# H2数据库使用分析与优化建议
 
 **文档编号**: DB-Analysis-H2-PostgreSQL  
 **创建时间**: 2025-10-17  
@@ -445,7 +445,7 @@ git commit -m "refactor(phase4): remove deprecated ServerMetrics entity and repo
 | 生产 | PostgreSQL | `--spring.profiles.active=prod` |
 
 ### 9.3 PostgreSQL安装指南
-见: `doc/postgresql-setup-guide.md`
+见: `docs/technical/postgresql-setup-guide.md`
 ```
 
 #### 阶段2: 中期执行 (1-2天)

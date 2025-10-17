@@ -1,4 +1,4 @@
-# E2E测试指南
+﻿# E2E测试指南
 
 ## 📋 目录
 
@@ -640,7 +640,7 @@ test.afterEach(async () => {
 - [Playwright最佳实践](https://playwright.dev/docs/best-practices)
 
 ### 项目文档
-- [前端架构指南](../doc/frontend-architecture.md)
+- [前端架构指南](../docs/architecture/frontend-architecture.md)
 - [任务5.1完成报告](../upgrade/doc/task5.1-module-migration-completion.md)
 - [Claude AI开发助手指南](../CLAUDE.md)
 

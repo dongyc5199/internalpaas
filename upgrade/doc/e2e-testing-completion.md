@@ -1,4 +1,4 @@
-# E2E测试实施完成报告
+﻿# E2E测试实施完成报告
 
 **日期**: 2025-10-13
 **状态**: ✅ **E2E测试框架实施完成**
@@ -549,7 +549,7 @@ CI/CD自动化      → 持续质量保障
 - [任务5.1模块迁移完成报告](./task5.1-module-migration-completion.md) - 单元测试完成情况
 - [E2E测试完整指南](../e2e/README.md) - 详细使用文档
 - [E2E快速上手](../E2E_QUICKSTART.md) - 快速开始指南
-- [前端架构指南](../doc/frontend-architecture.md) - 前端架构说明
+- [前端架构指南](../docs/architecture/frontend-architecture.md) - 前端架构说明
 - [Claude AI开发助手指南](../CLAUDE.md) - 项目开发指南
 
 ---

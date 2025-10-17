@@ -43,7 +43,7 @@
 - 保证颜色对比度 >= 4.5:1，所有图标提供 `aria-label`，用户中心下拉可通过 Escape 关闭。
 
 ### 3.5 静态原型与交互示例
-- 原型文件：`doc/prototypes/header-prototype.html`，覆盖管理员/开发者在默认、滚动、暗色等状态下的标题栏。
+- 原型文件：`docs/design/prototypes/header-prototype.html`，覆盖管理员/开发者在默认、滚动、暗色等状态下的标题栏。
 - Search/Theme/通知等控件通过 `data-theme`、`data-state` 属性模拟 Hover、Focus、Active、Error 状态，可直接在 Inspector 中切换。
 - 原型包含响应式说明卡片，描述 <1280px 和 <992px 的折叠策略与“更多”按钮交互。
 - 支持 `prefers-reduced-motion` 检测，动效可在无动画场景下自动关闭，方便无障碍验证。
@@ -56,7 +56,7 @@
 ### 4.1 静态原型说明
 - 原型覆盖默认、Hover、未读、焦点、按压五种状态，并区分管理员与开发者配色，确保对齐尺寸与阴影规范。
 - 通过数据属性模拟未读徽章与悬浮态，方便日后在组件实现中直接复用。
-- 静态页面位于 `doc/prototypes/notification-theme-toggle.html`，可在浏览器打开进行视觉校验。
+- 静态页面位于 `docs/design/prototypes/notification-theme-toggle.html`，可在浏览器打开进行视觉校验。
 
 ### 4.2 动效规范
 - Hover：0.28s 上浮与描边增强，图标轻抬 1px，突出交互焦点。
@@ -72,7 +72,7 @@
 ### 5.1 静态原型说明
 - 原型展示浅色、Hover、暗色、焦点与按压状态，匹配渐变滑块与背景透明度的设计要求。
 - Admin/Dev 两套主题同时呈现，验证不同渐变与焦点环配色。
-- 与通知按钮共享原型页面 `doc/prototypes/notification-theme-toggle.html`，文件内附状态说明与辅助文字。
+- 与通知按钮共享原型页面 `docs/design/prototypes/notification-theme-toggle.html`，文件内附状态说明与辅助文字。
 
 ### 5.2 动效规范
 - Hover：外框提亮并叠加 0 16px 36px 阴影，滑块出现额外光晕。
@@ -103,7 +103,7 @@
 - Avatar 按钮、操作项与快捷链接均支持键盘 `Tab` 聚焦，焦点态添加 3px 渐变描边。
 - 面板主体采用 `role="menu"/"menuitem"` 或 `role="switch"` 的语义；快捷键提示使用 11px 字号以保证可读性。
 - 深浅主题遵循相同层级与动效逻辑，暗色版文字不低于 4.5:1，可通过变量灵活调整。
-- 原型文件：`doc/prototypes/user-center-dropdown.html`，通过 `data-role`、`data-state` 属性模拟不同角色与状态。
+- 原型文件：`docs/design/prototypes/user-center-dropdown.html`，通过 `data-role`、`data-state` 属性模拟不同角色与状态。
 ## 7. 管理员导航栏
 - 顶部用户信息卡片，展示头像、姓名与角色。
 - 菜单项：控制台概览、服务器管理、用户权限、审计记录、告警配置、系统配置。
@@ -117,7 +117,7 @@
 - 管理员图标：OV(控制台概览)、SV(服务器管理)、UP(用户权限)、AU(审计记录)、AL(告警配置)、SC(系统配置)、?(帮助/反馈)。
 - 开发者图标：WB(工作台概览)、AP(应用管理)、DP(部署任务)、PS(个人设置)、!(问题反馈)。
 - 图标主题跟随角色主色（管理员蓝绿、开发者紫蓝），与徽章、指示条保持一致；新图标需在组件库集中登记。
-- 相关原型示意：`doc/prototypes/navigation-prototype.html` 顶部新增“导航图标图例”，作为后续开发映射参考。
+- 相关原型示意：`docs/design/prototypes/navigation-prototype.html` 顶部新增“导航图标图例”，作为后续开发映射参考。
 
 - 导航展开宽 240px，结构顺序为用户信息卡 → 主菜单 → 底部辅助区；头像卡片使用 40px 圆角矩形，展示姓名与角色描述。
 - 管理员菜单按照运维视角排序：控制台概览、服务器管理、用户权限、审计记录、告警配置、系统配置。
@@ -133,7 +133,7 @@
 - 管理员：主色蓝绿渐变，菜单聚焦运维与权限控制，底部展示环境与帮助链接。
 - 开发者：主色紫蓝渐变，菜单精简为工作台概览、应用管理、部署任务、个人设置；底部聚合 API 文档、问题反馈、CI 状态。
 - 收起态指示条、徽章与 Hover 浮层颜色随角色主题变化，确保区分度。
-- 原型文件：`doc/prototypes/navigation-prototype.html`，包含展开/收起态及角色差异状态示意。
+- 原型文件：`docs/design/prototypes/navigation-prototype.html`，包含展开/收起态及角色差异状态示意。
 
 ## 8. 开发者导航栏
 - 顶部团队信息卡片，显示所属项目或小组。
@@ -155,7 +155,7 @@
 5. 每项工作完成后，在本文件“进度记录”章节新增完成报告（日期 + 阶段 + 主要产出）。
 
 ## 13. 布局整合原型
-- 原型文件：`doc/prototypes/layout-integrated.html`，展示管理员/开发者场景下标题栏与导航栏的组合布局。
+- 原型文件：`docs/design/prototypes/layout-integrated.html`，展示管理员/开发者场景下标题栏与导航栏的组合布局。
 - 含导航展开/收起两种视图，示例主内容区用于验证间距与卡片视觉层级。
 - 标题栏滚动、暗色、徽章提示等状态与导航指示条统一主色，确保视觉节奏一致。
 - 支持 `prefers-reduced-motion` 检测，方便验证动效在低动场景下的表现。
