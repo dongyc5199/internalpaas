@@ -14,9 +14,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.security.web.AuthenticationEntryPoint;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.AuthenticationException;
 import java.io.IOException;
 
@@ -28,10 +28,10 @@ public class SecurityConfig {
             throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
-                .antMatchers("/css/**", "/js/**", "/register", "/debug/**", "/h2-console/**", "/ws/**", "/test/**").permitAll() // 允许访问静态资源、注册页面、H2控制台、WebSocket端点和测试页面
-                .antMatchers("/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN") // 管理员和超级管理员才能访问管理页面
-                .antMatchers("/developer/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN") // 开发者、管理员和超级管理员都能访问研发工作台
-                .antMatchers("/terminal/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN") // 所有认证用户都能访问SSH终端
+                .requestMatchers("/css/**", "/js/**", "/register", "/debug/**", "/h2-console/**", "/ws/**", "/test/**").permitAll() // 允许访问静态资源、注册页面、H2控制台、WebSocket端点和测试页面
+                .requestMatchers("/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN") // 管理员和超级管理员才能访问管理页面
+                .requestMatchers("/developer/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN") // 开发者、管理员和超级管理员都能访问研发工作台
+                .requestMatchers("/terminal/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN") // 所有认证用户都能访问SSH终端
                 .anyRequest().authenticated() // 其他所有请求都需要认证
             )
             .formLogin(form -> form
@@ -45,7 +45,7 @@ public class SecurityConfig {
                 .permitAll()
             )
             .csrf(csrf -> csrf
-                .ignoringAntMatchers("/h2-console/**", "/ws/**", "/test/**", 
+                .ignoringRequestMatchers("/h2-console/**", "/ws/**", "/test/**", 
                     "/monitoring/server/*/refresh", "/monitoring/trigger-health-check",
                     "/monitoring/history/api/**", "/monitoring/thresholds/api/**",
                     "/api/server-user-groups/**", "/api/permission-test/**",
@@ -53,7 +53,7 @@ public class SecurityConfig {
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // 使用Cookie存储CSRF token
             )
             .headers(headers -> headers
-                .frameOptions().disable() // 禁用frame限制，允许H2控制台在iframe中运行
+                .frameOptions(frameOptions -> frameOptions.disable()) // 禁用frame限制，允许H2控制台在iframe中运行
             )
             .sessionManagement(session -> session
                 .maximumSessions(10) // 允许每个用户最多10个并发会话
@@ -116,7 +116,7 @@ public class SecurityConfig {
                 
                 // 检查Cookie中的JSESSIONID
                 if (request.getCookies() != null) {
-                    for (javax.servlet.http.Cookie cookie : request.getCookies()) {
+                    for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
                         if ("JSESSIONID".equals(cookie.getName())) {
                             sessionId = cookie.getValue();
                             break;
@@ -124,9 +124,9 @@ public class SecurityConfig {
                     }
                 }
                 
-                // 如果有sessionId但session已失效，则认为是过期
+                // 如果有sessionId但session已失效,则认为是过期
                 if (sessionId != null) {
-                    javax.servlet.http.HttpSession session = request.getSession(false);
+                    jakarta.servlet.http.HttpSession session = request.getSession(false);
                     isSessionExpired = (session == null || !sessionId.equals(session.getId()));
                 }
                 

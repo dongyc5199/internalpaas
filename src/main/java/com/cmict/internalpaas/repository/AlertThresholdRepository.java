@@ -58,9 +58,9 @@ public interface AlertThresholdRepository extends JpaRepository<AlertThreshold, 
     Optional<AlertThreshold> findDefaultThresholdByMetricType(@Param("metricType") AlertThreshold.MetricType metricType);
     
     /**
-     * 查找需要清理的旧阈值配置（超过指定天数未更新）
+     * 查找需要清理的旧阈值配置(超过指定天数未更新)
      */
-    @Query("SELECT t FROM AlertThreshold t WHERE t.updatedAt < DATEADD('DAY', -:days, CURRENT_TIMESTAMP)")
+    @Query("SELECT t FROM AlertThreshold t WHERE t.updatedAt < CURRENT_TIMESTAMP - :days DAY")
     List<AlertThreshold> findOldThresholds(@Param("days") int days);
     
     /**

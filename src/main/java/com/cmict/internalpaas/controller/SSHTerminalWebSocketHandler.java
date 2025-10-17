@@ -266,8 +266,8 @@ public class SSHTerminalWebSocketHandler implements WebSocketHandler {
         // 方式4：从HTTP会话中获取
         try {
             Object httpSessionObj = session.getAttributes().get("HTTP_SESSION");
-            if (httpSessionObj instanceof javax.servlet.http.HttpSession) {
-                javax.servlet.http.HttpSession httpSession = (javax.servlet.http.HttpSession) httpSessionObj;
+            if (httpSessionObj instanceof jakarta.servlet.http.HttpSession) {
+                jakarta.servlet.http.HttpSession httpSession = (jakarta.servlet.http.HttpSession) httpSessionObj;
                 Object authObj = httpSession.getAttribute("SPRING_SECURITY_CONTEXT");
                 if (authObj instanceof SecurityContext) {
                     SecurityContext ctx = (SecurityContext) authObj;
