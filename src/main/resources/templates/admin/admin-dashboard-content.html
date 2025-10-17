@@ -335,7 +335,61 @@
      </article>
     </section>
     <!-- 工作区主面板 -->
-    <section class="main-content-section">
+    <section class="main-content-section" data-dashboard-charts>
+     <!-- 图表可视化区域 -->
+     <section aria-label="Dashboard charts" class="charts-section">
+      <div class="charts-grid">
+       <!-- 服务器状态饼图 -->
+       <div class="chart-container">
+        <div class="chart-header">
+         <h3 class="chart-title">
+          <i aria-hidden="true">📊</i>
+          <span data-i18n-en="Server Status Distribution" data-i18n-zh="服务器状态分布">服务器状态分布</span>
+         </h3>
+        </div>
+        <div class="chart-body">
+         <canvas id="server-status-chart" aria-label="Server status distribution pie chart"></canvas>
+        </div>
+       </div>
+       
+       <!-- 资源使用率柱状图 -->
+       <div class="chart-container">
+        <div class="chart-header">
+         <h3 class="chart-title">
+          <i aria-hidden="true">📈</i>
+          <span data-i18n-en="System Resource Usage" data-i18n-zh="系统资源使用率">系统资源使用率</span>
+         </h3>
+        </div>
+        <div class="chart-body">
+         <canvas id="resource-usage-chart" aria-label="System resource usage bar chart"></canvas>
+        </div>
+       </div>
+       
+       <!-- 实时监控折线图 -->
+       <div class="chart-container chart-container--wide">
+        <div class="chart-header">
+         <h3 class="chart-title">
+          <i aria-hidden="true">📉</i>
+          <span data-i18n-en="Real-time Resource Monitor" data-i18n-zh="实时资源监控">实时资源监控</span>
+         </h3>
+         <div class="chart-legend">
+          <span class="legend-item">
+           <span class="legend-dot" style="background-color: rgb(54, 162, 235);"></span>
+           <span data-i18n-en="CPU Usage" data-i18n-zh="CPU使用率">CPU使用率</span>
+          </span>
+          <span class="legend-item">
+           <span class="legend-dot" style="background-color: rgb(255, 99, 132);"></span>
+           <span data-i18n-en="Memory Usage" data-i18n-zh="内存使用率">内存使用率</span>
+          </span>
+         </div>
+        </div>
+        <div class="chart-body">
+         <canvas id="realtime-monitor-chart" aria-label="Real-time resource monitoring line chart"></canvas>
+        </div>
+       </div>
+      </div>
+     </section>
+     
      <div class="main-content-area main-content-area--two-columns">
       <section aria-label="Server monitoring" class="content-panel server-panel">
        <header class="section-header">

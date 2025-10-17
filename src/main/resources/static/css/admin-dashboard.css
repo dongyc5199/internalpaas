@@ -849,3 +849,135 @@ html[lang="en" i] .admin-dashboard .hint-icon::after {
         padding: 16px;
     }
 }
+
+/* ==============================================
+   图表可视化区域样式
+   ============================================== */
+
+/* 图表区域容器 */
+.charts-section {
+    background: var(--bg-primary, #ffffff);
+    border-radius: var(--border-radius-xl, 16px);
+    padding: 24px;
+    margin-bottom: var(--spacing-md, 16px);
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.1));
+}
+
+/* 图表网格布局 */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+/* 图表容器 */
+.chart-container {
+    background: var(--bg-secondary, #f8f9fa);
+    border-radius: var(--border-radius-lg, 12px);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: box-shadow var(--transition-fast, 0.2s);
+}
+
+.chart-container:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* 宽图表容器 (占满整行) */
+.chart-container--wide {
+    grid-column: 1 / -1;
+}
+
+/* 图表头部 */
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color, #e1e8ed);
+}
+
+.chart-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary, #1a1a1a);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-title i {
+    font-size: 20px;
+}
+
+/* 图表图例 */
+.chart-legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary, #666);
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* 图表主体 */
+.chart-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-height: 220px;
+}
+
+.chart-body canvas {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* 响应式布局 */
+@media (max-width: 1200px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-container--wide {
+        grid-column: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .charts-section {
+        padding: 16px;
+    }
+    
+    .charts-grid {
+        gap: 16px;
+    }
+    
+    .chart-container {
+        padding: 16px;
+        min-height: 250px;
+    }
+    
+    .chart-title {
+        font-size: 14px;
+    }
+}
