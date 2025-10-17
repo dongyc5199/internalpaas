@@ -10,9 +10,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import io.github.bucket4j.Bucket;
-import io.github.bucket4j.Bucket4j;
-import io.github.bucket4j.Refill;
-import io.github.bucket4j.local.LocalBucketBuilder;
+import io.github.bucket4j.Bandwidth;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -20,10 +18,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URL;
 import java.time.Duration;
@@ -235,11 +233,12 @@ public class TokenAuthFilter extends OncePerRequestFilter {
     private boolean checkRateLimit(String agentId) {
         Bucket bucket = rateLimiters.computeIfAbsent(agentId, id -> {
             // Create rate limiter: X requests per minute with burst capacity
-            LocalBucketBuilder builder = Bucket4j.builder();
-            return builder
-                .addLimit(limit -> limit
-                    .capacity(requestsPerMinute + burstCapacity)
-                    .refillGreedy(requestsPerMinute, Duration.ofMinutes(1)))
+            Bandwidth limit = Bandwidth.builder()
+                .capacity(requestsPerMinute + burstCapacity)
+                .refillGreedy(requestsPerMinute, Duration.ofMinutes(1))
+                .build();
+            return Bucket.builder()
+                .addLimit(limit)
                 .build();
         });
 
