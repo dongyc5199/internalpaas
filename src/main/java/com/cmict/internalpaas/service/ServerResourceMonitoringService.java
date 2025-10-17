@@ -1,5 +1,6 @@
 package com.cmict.internalpaas.service;
 
+import com.cmict.internalpaas.client.MetricsHubClient;
 import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.model.ServerResourceThreshold;
 import com.cmict.internalpaas.model.ServerResourceThreshold.ResourceType;
@@ -25,8 +26,11 @@ public class ServerResourceMonitoringService {
     
     private static final Logger logger = LoggerFactory.getLogger(ServerResourceMonitoringService.class);
     
-    @Autowired
-    private MonitoringService monitoringService;
+    /**
+     * Metrics Hub客户端 (Phase4迁移: 从Hub获取监控数据)
+     */
+    @Autowired(required = false)
+    private MetricsHubClient metricsHubClient;
     
     @Autowired
     private ServerResourceThresholdRepository thresholdRepository;
@@ -36,15 +40,23 @@ public class ServerResourceMonitoringService {
     
     /**
      * 检查服务器资源状态并生成相应的状态标签
+     * 
+     * Phase4迁移: 从 Hub 获取监控数据
      */
     public List<ServerStatusTag> checkResourceStatuses(Long serverId) {
         List<ServerStatusTag> resourceTags = new ArrayList<>();
         
         try {
-            // 获取最新的服务器指标
-            ServerMetrics latestMetrics = monitoringService.getLatestMetrics(serverId);
+            // 检查 Hub 是否可用
+            if (metricsHubClient == null || !metricsHubClient.isAvailable()) {
+                logger.warn("⚠️ Hub服务不可用，无法检查服务器 {} 的资源状态", serverId);
+                return Collections.singletonList(createUnknownResourceTag(serverId));
+            }
+            
+            // 从 Hub 获取最新的服务器指标
+            ServerMetrics latestMetrics = metricsHubClient.getLatestMetrics(serverId);
             if (latestMetrics == null) {
-                logger.warn("服务器 {} 无法获取最新指标数据", serverId);
+                logger.warn("服务器 {} 无法从Hub获取最新指标数据", serverId);
                 return Collections.singletonList(createUnknownResourceTag(serverId));
             }
             
@@ -76,12 +88,22 @@ public class ServerResourceMonitoringService {
 
     /**
      * 专门检查内存使用率 - 重点实现80%阈值告警
+     * 
+     * Phase4迁移: 从 Hub 获取监控数据
      */
     public ServerStatusTag checkMemoryUsage(Long serverId) {
         try {
-            ServerMetrics latestMetrics = monitoringService.getLatestMetrics(serverId);
+            // 检查 Hub 是否可用
+            if (metricsHubClient == null || !metricsHubClient.isAvailable()) {
+                logger.warn("⚠️ Hub服务不可用，无法检查服务器 {} 的内存使用率", serverId);
+                return createTag(serverId, TagType.MEMORY_USAGE, TagStatus.UNKNOWN, 
+                    "内存状态未知", "secondary", null, "Hub服务不可用");
+            }
+            
+            // 从 Hub 获取最新监控数据
+            ServerMetrics latestMetrics = metricsHubClient.getLatestMetrics(serverId);
             if (latestMetrics == null) {
-                logger.warn("服务器 {} 无法获取内存使用数据", serverId);
+                logger.warn("服务器 {} 无法从Hub获取内存使用数据", serverId);
                 return createTag(serverId, TagType.MEMORY_USAGE, TagStatus.UNKNOWN, 
                     "内存状态未知", "secondary", null, "无法获取内存数据");
             }
@@ -147,10 +169,19 @@ public class ServerResourceMonitoringService {
 
     /**
      * 检查CPU使用率
+     * 
+     * Phase4迁移: 从 Hub 获取监控数据
      */
     public ServerStatusTag checkCpuUsage(Long serverId) {
         try {
-            ServerMetrics latestMetrics = monitoringService.getLatestMetrics(serverId);
+            // 检查 Hub 是否可用
+            if (metricsHubClient == null || !metricsHubClient.isAvailable()) {
+                logger.debug("Hub服务不可用，无法检查服务器 {} 的CPU使用率", serverId);
+                return null; // CPU正常时不显示标签
+            }
+            
+            // 从 Hub 获取最新监控数据
+            ServerMetrics latestMetrics = metricsHubClient.getLatestMetrics(serverId);
             if (latestMetrics == null) {
                 return null; // CPU正常时不显示标签
             }
@@ -168,10 +199,19 @@ public class ServerResourceMonitoringService {
 
     /**
      * 检查磁盘使用率
+     * 
+     * Phase4迁移: 从 Hub 获取监控数据
      */
     public ServerStatusTag checkDiskUsage(Long serverId) {
         try {
-            ServerMetrics latestMetrics = monitoringService.getLatestMetrics(serverId);
+            // 检查 Hub 是否可用
+            if (metricsHubClient == null || !metricsHubClient.isAvailable()) {
+                logger.debug("Hub服务不可用，无法检查服务器 {} 的磁盘使用率", serverId);
+                return null;
+            }
+            
+            // 从 Hub 获取最新监控数据
+            ServerMetrics latestMetrics = metricsHubClient.getLatestMetrics(serverId);
             if (latestMetrics == null) {
                 return null;
             }

@@ -1,5 +1,6 @@
 package com.cmict.internalpaas.service;
 
+import com.cmict.internalpaas.client.MetricsHubClient;
 import com.cmict.internalpaas.event.ServerCreatedEvent;
 import com.cmict.internalpaas.event.ServerStatusUpdateEvent;
 import com.cmict.internalpaas.model.Server;
@@ -24,6 +25,11 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PreDestroy;
 
+/**
+ * 服务器管理服务
+ * 
+ * Phase4迁移: 监控数据从 Hub 获取
+ */
 @Service
 public class ServerService {
     
@@ -42,8 +48,18 @@ public class ServerService {
     @Autowired
     private SshConnectionService sshConnectionService;
     
+    /**
+     * MonitoringService - 保留用于用户活动监控
+     * 注意: 监控数据收集功能已废弃，仅保留用户活动相关功能
+     */
     @Autowired
     private MonitoringService monitoringService;
+    
+    /**
+     * Metrics Hub客户端 (Phase4迁移: 从Hub获取监控数据)
+     */
+    @Autowired(required = false)
+    private MetricsHubClient metricsHubClient;
     
     // ❌ 已废弃 (Phase4-Step4: 2025-10-17) - 监控数据已迁移到Hub
     // @Autowired
@@ -497,13 +513,26 @@ public class ServerService {
     
     /**
      * 获取服务器最新的监控数据
+     * Phase4迁移: 从Hub获取监控数据
      */
     public ServerMetrics getServerLatestMetrics(Long serverId) {
-        return monitoringService.getLatestMetrics(serverId);
+        // Phase4: 优先从Hub获取
+        if (metricsHubClient != null && metricsHubClient.isAvailable()) {
+            try {
+                return metricsHubClient.getLatestMetrics(serverId);
+            } catch (Exception e) {
+                logger.warn("从Hub获取服务器{}监控数据失败: {}", serverId, e.getMessage());
+            }
+        }
+        
+        // 降级: Hub不可用时返回空
+        logger.debug("Hub不可用,服务器{}暂无监控数据", serverId);
+        return null;
     }
     
     /**
      * 强制刷新服务器监控数据
+     * Phase4迁移: Hub自动收集监控数据,此方法仅更新用户活动
      */
     @Transactional
     public ServerMetrics refreshServerMetrics(Long id) {
@@ -512,16 +541,16 @@ public class ServerService {
         if (server.getConnectionStatus() == Server.ConnectionStatus.CONNECTED || 
             server.getConnectionStatus() == Server.ConnectionStatus.MONITORING) {
             try {
-                ServerMetrics metrics = monitoringService.saveServerMetrics(server);
+                // Phase4: Hub自动收集监控数据,无需手动保存
+                // 仅更新用户活跃信息(保留非监控功能)
+                monitoringService.saveUserActivities(server);
+                
                 server.setLastMetricsUpdate(LocalDateTime.now());
-                // 验证必填字段完整性
                 validateServerBeforeSave(server);
                 serverRepository.save(server);
                 
-                // 更新用户活跃信息
-                monitoringService.saveUserActivities(server);
-                
-                return metrics;
+                // 从Hub获取最新监控数据并返回
+                return getServerLatestMetrics(id);
             } catch (Exception e) {
                 logger.error("刷新服务器监控数据失败: {}", server.getName(), e);
             }

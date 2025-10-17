@@ -1,5 +1,6 @@
 package com.cmict.internalpaas.service;
 
+import com.cmict.internalpaas.client.MetricsHubClient;
 import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerStatusTag;
 import com.cmict.internalpaas.model.ServerStatusTag.TagType;
@@ -37,8 +38,11 @@ public class ServerStatusTagService {
     @Autowired
     private RemoteCommandService remoteCommandService;
     
-    @Autowired
-    private MonitoringService monitoringService;
+    /**
+     * Metrics Hub客户端 (Phase4迁移: 从Hub获取监控数据)
+     */
+    @Autowired(required = false)
+    private MetricsHubClient metricsHubClient;
 
     /**
      * 获取服务器的所有状态标签，按优先级排序
@@ -346,13 +350,21 @@ public class ServerStatusTagService {
     
     /**
      * 获取服务器最新监控指标
+     * 
+     * Phase4迁移: 从 Hub 获取监控数据
      */
     private ServerMetrics getLatestServerMetrics(Long serverId) {
         try {
-            // 调用监控服务获取最新监控数据
-            return monitoringService.getLatestMetrics(serverId);
+            // 检查 Hub 是否可用
+            if (metricsHubClient == null || !metricsHubClient.isAvailable()) {
+                logger.debug("Hub服务不可用，无法获取服务器 {} 的监控指标", serverId);
+                return null;
+            }
+            
+            // 从 Hub 获取最新监控数据
+            return metricsHubClient.getLatestMetrics(serverId);
         } catch (Exception e) {
-            logger.error("获取服务器 {} 监控指标失败: {}", serverId, e.getMessage());
+            logger.error("从Hub获取服务器 {} 监控指标失败: {}", serverId, e.getMessage());
             return null;
         }
     }

@@ -1,5 +1,6 @@
 package com.cmict.internalpaas.service;
 
+import com.cmict.internalpaas.client.MetricsHubClient;
 import com.cmict.internalpaas.dto.AggregatedServerMetrics;
 import com.cmict.internalpaas.model.AlertThreshold;
 import com.cmict.internalpaas.model.Application;
@@ -18,6 +19,8 @@ import java.util.Optional;
 /**
  * 系统健康度计算服务
  * 根据服务器状态、应用状态、告警情况计算整体系统健康度
+ * 
+ * Phase4迁移: 从 Hub 获取监控数据
  */
 @Service
 public class SystemHealthService {
@@ -25,8 +28,11 @@ public class SystemHealthService {
     @Autowired
     private ServerService serverService;
 
-    @Autowired
-    private MonitoringService monitoringService;
+    /**
+     * Metrics Hub客户端 (Phase4迁移: 从Hub获取监控数据)
+     */
+    @Autowired(required = false)
+    private MetricsHubClient metricsHubClient;
 
     @Autowired
     private ApplicationRepository applicationRepository;
@@ -76,6 +82,8 @@ public class SystemHealthService {
 
     /**
      * 计算服务器健康度 (0-100)
+     * 
+     * Phase4迁移: 从 Hub 获取监控数据
      */
     private double calculateServerHealthScore() {
         try {
@@ -84,19 +92,19 @@ public class SystemHealthService {
                 return 100.0; // 无服务器时认为健康
             }
 
+            // 检查 Hub 是否可用
+            if (metricsHubClient == null || !metricsHubClient.isAvailable()) {
+                return 50.0; // Hub 不可用时返回中等分数
+            }
+
             int totalServers = servers.size();
             int healthyServers = 0;
 
             for (Server server : servers) {
                 try {
-                    // 获取服务器最新监控指标
-                    ServerMetrics metrics = null;
-                    try {
-                        // 尝试获取监控数据来判断服务器是否正常
-                        metrics = monitoringService.getServerMetrics(server);
-                    } catch (Exception e) {
-                        continue; // 无法获取监控数据的服务器不计入健康
-                    }
+                    // 从 Hub 获取服务器最新监控指标
+                    ServerMetrics metrics = metricsHubClient.getLatestMetrics(server.getId());
+                    
                     if (metrics == null) {
                         continue; // 无监控数据的服务器不计入健康
                     }
@@ -214,6 +222,8 @@ public class SystemHealthService {
 
     /**
      * 检查告警是否被触发
+     * 
+     * Phase4迁移: 从 Hub 获取监控数据
      */
     private boolean isAlertTriggered(AlertThreshold threshold) {
         try {
@@ -225,7 +235,14 @@ public class SystemHealthService {
             if (server == null) {
                 return false;
             }
-            ServerMetrics metrics = monitoringService.getServerMetrics(server);
+            
+            // 检查 Hub 是否可用
+            if (metricsHubClient == null || !metricsHubClient.isAvailable()) {
+                return false; // Hub 不可用时无法判断告警
+            }
+            
+            // 从 Hub 获取最新监控数据
+            ServerMetrics metrics = metricsHubClient.getLatestMetrics(server.getId());
             if (metrics == null) {
                 return false;
             }
@@ -314,12 +331,19 @@ public class SystemHealthService {
 
     /**
      * 计算聚合的服务器监控指标
+     * 
+     * Phase4迁移: 从 Hub 获取监控数据
      */
     private AggregatedServerMetrics calculateAggregatedMetrics() {
         try {
             List<Server> servers = serverRepository.findAll();
             if (servers.isEmpty()) {
                 return null;
+            }
+
+            // 检查 Hub 是否可用
+            if (metricsHubClient == null || !metricsHubClient.isAvailable()) {
+                return null; // Hub 不可用时无法计算聚合指标
             }
 
             double totalCpu = 0.0;
@@ -329,7 +353,8 @@ public class SystemHealthService {
 
             for (Server server : servers) {
                 try {
-                    ServerMetrics metrics = monitoringService.getLatestMetrics(server.getId());
+                    // 从 Hub 获取最新监控数据
+                    ServerMetrics metrics = metricsHubClient.getLatestMetrics(server.getId());
                     if (metrics != null) {
                         if (metrics.getCpuUsage() != null) {
                             totalCpu += metrics.getCpuUsage();
