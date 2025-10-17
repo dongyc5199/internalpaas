@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -37,14 +36,8 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private ServerResourceThresholdRepository thresholdRepository;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
     @Override
     public void run(String... args) throws Exception {
-        // 0. 应用数据库补丁
-        applySchemaPatches();
-
         // 1. 创建root超级管理员
         initializeRootAdmin();
         
@@ -146,19 +139,4 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
-    /**
-     * 确保新增的监控字段存在
-     */
-    private void applySchemaPatches() {
-        try {
-            jdbcTemplate.execute("ALTER TABLE server_metrics ADD COLUMN IF NOT EXISTS kernel_version VARCHAR(255)");
-            jdbcTemplate.execute("ALTER TABLE server_metrics ADD COLUMN IF NOT EXISTS network_interface VARCHAR(255)");
-            jdbcTemplate.execute("ALTER TABLE server_metrics ADD COLUMN IF NOT EXISTS network_received_bytes BIGINT");
-            jdbcTemplate.execute("ALTER TABLE server_metrics ADD COLUMN IF NOT EXISTS network_transmitted_bytes BIGINT");
-            jdbcTemplate.execute("ALTER TABLE server_metrics ADD COLUMN IF NOT EXISTS network_received_rate DOUBLE");
-            jdbcTemplate.execute("ALTER TABLE server_metrics ADD COLUMN IF NOT EXISTS network_transmitted_rate DOUBLE");
-        } catch (Exception e) {
-            logger.error("初始化数据库结构失败: {}", e.getMessage(), e);
-        }
-    }
 }
