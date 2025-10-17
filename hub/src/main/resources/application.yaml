@@ -32,7 +32,7 @@ spring:
       write-dates-as-timestamps: false
     time-zone: UTC
 
-  # Redis Configuration
+  # Redis Configuration (T8 Performance Optimized)
   data:
     redis:
       host: localhost
@@ -41,23 +41,26 @@ spring:
       timeout: 3000ms
       lettuce:
         pool:
-          max-active: 20
-          max-idle: 10
-          min-idle: 5
+          max-active: 50  # Increased from 20 to 50 (T8)
+          max-idle: 20    # Increased from 10 to 20 (T8)
+          min-idle: 10    # Increased from 5 to 10 (T8)
           max-wait: 2000ms
 
-  # Database Configuration (PostgreSQL/Timescale)
+  # Database Configuration (PostgreSQL/Timescale) (T8 Performance Optimized)
   datasource:
     url: jdbc:postgresql://localhost:5432/metrics_hub
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
+      maximum-pool-size: 50  # Increased from 20 to 50 (T8)
+      minimum-idle: 10       # Increased from 5 to 10 (T8)
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
+      # T8 Performance Tuning
+      leak-detection-threshold: 60000
+      connection-test-query: SELECT 1
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -68,9 +71,14 @@ spring:
       hibernate:
         format_sql: true
         jdbc:
-          batch_size: 50
+          batch_size: 500  # Increased from 50 to 500 (T8)
+          fetch_size: 100  # Added for better query performance (T8)
         order_inserts: true
         order_updates: true
+        # T8 Performance Tuning
+        batch_versioned_data: true
+        connection:
+          provider_disables_autocommit: true
 
   # Flyway Configuration
   flyway:
@@ -84,21 +92,24 @@ spring:
 # ============================================================
 metrics-hub:
   ingest:
-    # Queue Configuration
+    # Queue Configuration (T8 Performance Optimized)
     queue:
-      capacity: 10000              # Maximum queue size
+      capacity: 100000             # Increased from 10000 to 100000 (T8)
       offer-timeout-ms: 100        # Timeout for enqueue operations (ms)
+      flush-interval-ms: 500       # Added batch flush interval (T8)
 
     # HTTP OTLP Configuration
     http:
       port: 4318                   # Configured via separate Tomcat connector
       max-payload-size: 4194304    # 4MB maximum payload size
+      max-connections: 500         # Added max concurrent connections (T8)
 
-    # gRPC OTLP Configuration
+    # gRPC OTLP Configuration (T8 Performance Optimized)
     grpc:
       port: 4317
       max-inbound-message-size: 4194304  # 4MB
-      enable-tls: false            # TLS disabled for now (T7 will add TLS support)
+      max-concurrent-calls: 500    # Added max concurrent streams (T8)
+      enable-tls: false            # TLS disabled for now (T7 added TLS support)
       # tls:
       #   cert-chain-file: /path/to/cert.pem
       #   private-key-file: /path/to/key.pem
@@ -138,6 +149,35 @@ metrics-hub:
     raw-data-days: 30        # Keep raw data for 30 days
     5m-rollup-days: 90       # Keep 5-minute rollup for 90 days
     1h-rollup-days: 365      # Keep 1-hour rollup for 1 year
+
+  # Security Configuration (T7: Security Hardening)
+  security:
+    # TLS/mTLS Configuration
+    tls:
+      enabled: ${TLS_ENABLED:false}  # Enable TLS (disabled by default for dev)
+      mtls: ${MTLS_ENABLED:false}    # Require client certificates (mTLS)
+      keystore:
+        path: ${KEYSTORE_PATH:/path/to/keystore.p12}
+        password: ${KEYSTORE_PASSWORD:changeit}
+        type: PKCS12
+      truststore:
+        path: ${TRUSTSTORE_PATH:/path/to/truststore.p12}
+        password: ${TRUSTSTORE_PASSWORD:changeit}
+        type: PKCS12
+      cert-rotation:
+        check-interval-hours: 24    # Check certificate expiry every 24 hours
+        warn-days-before-expiry: 30 # Warn when cert expires in 30 days
+
+    # JWT/JWKS Authentication
+    jwt:
+      enabled: ${JWT_ENABLED:false}  # Enable JWT authentication
+      jwks-url: ${JWKS_URL:https://auth.example.com/.well-known/jwks.json}
+      issuer: ${JWT_ISSUER:https://auth.example.com}
+      audience: ${JWT_AUDIENCE:metrics-hub}
+      rate-limit:
+        enabled: true
+        requests-per-minute: 120  # Per agent
+        burst-capacity: 10
 
 # ============================================================
 # Actuator Configuration (Health & Metrics)
