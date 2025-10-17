@@ -593,14 +593,15 @@ class Dashboard {
             case "stats_update":
                 // 统计数据更新
                 if (message.data) {
-                    this.updateStats(message.data);
+                    this.updateStatCards(message.data);
+                    this.updateCharts(message.data);
                 }
                 break;
 
             case "realtime_metrics":
                 // 实时指标数据
                 if (message.data) {
-                    this.updateRealtimeChart(message.data);
+                    this.updateRealtimeMonitorChart(message.data);
                 }
                 break;
 
