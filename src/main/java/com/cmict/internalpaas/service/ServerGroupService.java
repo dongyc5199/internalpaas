@@ -6,8 +6,9 @@ import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.model.User;
 import com.cmict.internalpaas.repository.ApplicationRepository;
-import com.cmict.internalpaas.repository.ServerMetricsRepository;
+// import com.cmict.internalpaas.repository.ServerMetricsRepository; // ❌ 已废弃 (Phase4-Step4)
 import com.cmict.internalpaas.repository.ServerRepository;
+import com.cmict.internalpaas.client.MetricsHubClient;
 import com.cmict.internalpaas.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,8 +29,12 @@ public class ServerGroupService {
     @Autowired
     private ServerRepository serverRepository;
 
-    @Autowired
-    private ServerMetricsRepository metricsRepository;
+    @Autowired(required = false)
+    private MetricsHubClient metricsHubClient;
+
+    // ❌ 已废弃 (Phase4-Step4: 2025-10-17) - 监控数据已迁移到Hub
+    // @Autowired
+    // private ServerMetricsRepository metricsRepository;
 
     @Autowired
     private ApplicationRepository applicationRepository;
@@ -78,8 +83,16 @@ public class ServerGroupService {
             dto.setAddress(server.getHostname());
             dto.setPort(server.getPort());
 
-            // Get latest metrics
-            ServerMetrics metrics = metricsRepository.findTopByServerIdOrderByTimestampDesc(server.getId()).orElse(null);
+            // Get latest metrics (migrated to Metrics Hub)
+            ServerMetrics metrics = null;
+            if (metricsHubClient != null && metricsHubClient.isAvailable()) {
+                try {
+                    metrics = metricsHubClient.getLatestMetrics(server.getId());
+                } catch (Exception ex) {
+                    logger.warn("Failed to query Metrics Hub for server {}: {}", server.getId(), ex.getMessage());
+                }
+            }
+            
             if (metrics != null) {
                 dto.setCpuUsage(metrics.getCpuUsagePercent());
                 dto.setMemoryUsage(metrics.getMemoryUsagePercent());
@@ -134,12 +147,16 @@ public class ServerGroupService {
         List<HealthTrendDto.ServerHealthTrend> serverTrends = new ArrayList<>();
         for (Server server : servers) {
             LocalDateTime endTime = LocalDateTime.now();
-            List<ServerMetrics> metricsList = metricsRepository.findByServerIdAndTimestampBetweenOrderByTimestampAsc(
-                    server.getId(), startTime, endTime);
+            // 历史数据由 Metrics Hub 提供；此处保守返回空列表以保证兼容性
+            List<ServerMetrics> metricsList = Collections.emptyList();
+            if (metricsHubClient != null && metricsHubClient.isAvailable()) {
+                logger.debug("MetricsHub available - historical queries should use queryMetrics(); returning empty list here for safety");
+            } else {
+                logger.warn("MetricsHub not available - returning empty health trend data");
+            }
 
             List<Integer> healthScores = new ArrayList<>();
             for (String timePoint : timePoints) {
-                // Find closest metrics for this time point
                 Integer score = findHealthScoreForTimePoint(metricsList, timePoint);
                 healthScores.add(score);
             }
@@ -295,9 +312,14 @@ public class ServerGroupService {
         overview.setAutoMonitorEnabled(server.getAutoMonitorEnabled());
         overview.setMonitorInterval(server.getMonitorIntervalSeconds());
 
-        ServerMetrics latestMetrics = metricsRepository
-                .findTopByServerIdOrderByTimestampDesc(server.getId())
-                .orElse(null);
+        ServerMetrics latestMetrics = null;
+        if (metricsHubClient != null && metricsHubClient.isAvailable()) {
+            try {
+                latestMetrics = metricsHubClient.getLatestMetrics(server.getId());
+            } catch (Exception ex) {
+                logger.warn("Failed to query Metrics Hub for latest metrics: {}", ex.getMessage());
+            }
+        }
 
         if (latestMetrics != null) {
             overview.setOsVersion(latestMetrics.getOsVersion());
@@ -358,11 +380,10 @@ public class ServerGroupService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime since = now.minusMinutes(1);
 
-        List<ServerMetrics> recentMetrics = metricsRepository.findRecentMetrics(serverId, since);
-        if (recentMetrics.isEmpty()) {
-            recentMetrics = metricsRepository.findRecentMetrics(serverId, now.minusHours(3));
+        List<ServerMetrics> recentMetrics = Collections.emptyList();
+        if (metricsHubClient != null && metricsHubClient.isAvailable()) {
+            logger.debug("MetricsHub available - series queries should use queryMetrics(), currently returning empty recent series");
         }
-        recentMetrics.sort(Comparator.comparing(ServerMetrics::getTimestamp));
 
         ServerDetailDto.MetricSeries cpuSeries = new ServerDetailDto.MetricSeries();
         cpuSeries.setId("cpu");
@@ -412,9 +433,16 @@ public class ServerGroupService {
         metrics.getSeries().add(diskSeries);
         metrics.getSeries().add(networkSeries);
 
-        ServerMetrics latest = recentMetrics.isEmpty()
-                ? metricsRepository.findTopByServerIdOrderByTimestampDesc(serverId).orElse(null)
-                : recentMetrics.get(recentMetrics.size() - 1);
+        ServerMetrics latest = null;
+        if (!recentMetrics.isEmpty()) {
+            latest = recentMetrics.get(recentMetrics.size() - 1);
+        } else if (metricsHubClient != null && metricsHubClient.isAvailable()) {
+            try {
+                latest = metricsHubClient.getLatestMetrics(serverId);
+            } catch (Exception ex) {
+                logger.warn("Failed to query latest metrics from Hub for server {}: {}", serverId, ex.getMessage());
+            }
+        }
 
         if (latest != null) {
             metrics.setCurrentCpu(roundToTwo(latest.getCpuUsagePercent()));
@@ -803,7 +831,14 @@ public class ServerGroupService {
         int count = 0;
 
         for (Server server : servers) {
-            ServerMetrics metrics = metricsRepository.findTopByServerIdOrderByTimestampDesc(server.getId()).orElse(null);
+            ServerMetrics metrics = null;
+            if (metricsHubClient != null && metricsHubClient.isAvailable()) {
+                try {
+                    metrics = metricsHubClient.getLatestMetrics(server.getId());
+                } catch (Exception ex) {
+                    logger.warn("Failed to query Metrics Hub for server {}: {}", server.getId(), ex.getMessage());
+                }
+            }
             if (metrics != null) {
                 Double value = getMetricValue(type, metrics);
                 if (value != null) {

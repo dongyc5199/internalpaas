@@ -1,7 +1,7 @@
 package com.cmict.internalpaas.controller;
 
 import com.cmict.internalpaas.repository.UserRepository;
-import com.cmict.internalpaas.repository.ServerMetricsRepository;
+// import com.cmict.internalpaas.repository.ServerMetricsRepository; // ❌ 已废弃 (Phase4-Step4)
 import com.cmict.internalpaas.service.MonitoringHistoryService;
 import com.cmict.internalpaas.service.UserService;
 import com.cmict.internalpaas.service.ServerService;
@@ -11,6 +11,8 @@ import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.User;
 import com.cmict.internalpaas.test.N1QueryOptimizationTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,14 +25,19 @@ import java.util.Map;
 @RestController
 public class DebugController {
 
+    private static final Logger logger = LoggerFactory.getLogger(DebugController.class);
+
     @Autowired
     private UserRepository userRepository;
     
     @Autowired
     private PasswordEncoder passwordEncoder;
     
-    @Autowired
-    private ServerMetricsRepository metricsRepository;
+    // ❌ 已废弃 (Phase4-Step4: 2025-10-17)
+    // @Autowired
+    // private ServerMetricsRepository metricsRepository;
+    @Autowired(required = false)
+    private com.cmict.internalpaas.client.MetricsHubClient metricsHubClient;
     
     @Autowired
     private MonitoringHistoryService monitoringHistoryService;
@@ -62,72 +69,13 @@ public class DebugController {
     
     @GetMapping("/debug/test-aggregated-metrics")
     public String testAggregatedMetrics() {
-        try {
-            LocalDateTime endTime = LocalDateTime.now();
-            LocalDateTime startTime = endTime.minusHours(24);
-            
-            Object[] hourlyData = metricsRepository.findHourlyAggregatedMetrics(1L, startTime, endTime);
-            Object[] dailyData = metricsRepository.findDailyAggregatedMetrics(1L, startTime, endTime);
-            
-            StringBuilder result = new StringBuilder();
-            result.append("测试时间范围: ").append(startTime).append(" 到 ").append(endTime).append("\n\n");
-            
-            result.append("每小时聚合数据:\n");
-            if (hourlyData != null) {
-                result.append("外层数组长度: ").append(hourlyData.length).append("\n");
-                result.append("类型: ").append(hourlyData.getClass().getSimpleName()).append("\n");
-                
-                if (hourlyData.length > 0) {
-                    result.append("第一个元素类型: ").append(hourlyData[0].getClass().getSimpleName()).append("\n");
-                    
-                    // 如果第一个元素是数组，展开显示
-                    if (hourlyData[0] instanceof Object[]) {
-                        Object[] innerArray = (Object[]) hourlyData[0];
-                        result.append("内层数组长度: ").append(innerArray.length).append("\n");
-                        for (int i = 0; i < innerArray.length && i < 15; i++) {
-                            result.append("    内层[").append(i).append("]: ").append(innerArray[i]).append("\n");
-                        }
-                    } else {
-                        // 如果不是数组，直接显示各个元素
-                        for (int i = 0; i < hourlyData.length && i < 15; i++) {
-                            result.append("  [").append(i).append("]: ").append(hourlyData[i]).append("\n");
-                        }
-                    }
-                }
-            } else {
-                result.append("null\n");
-            }
-            
-            result.append("\n每日聚合数据:\n");
-            if (dailyData != null) {
-                result.append("外层数组长度: ").append(dailyData.length).append("\n");
-                result.append("类型: ").append(dailyData.getClass().getSimpleName()).append("\n");
-                
-                if (dailyData.length > 0) {
-                    result.append("第一个元素类型: ").append(dailyData[0].getClass().getSimpleName()).append("\n");
-                    
-                    // 如果第一个元素是数组，展开显示
-                    if (dailyData[0] instanceof Object[]) {
-                        Object[] innerArray = (Object[]) dailyData[0];
-                        result.append("内层数组长度: ").append(innerArray.length).append("\n");
-                        for (int i = 0; i < innerArray.length && i < 15; i++) {
-                            result.append("    内层[").append(i).append("]: ").append(innerArray[i]).append("\n");
-                        }
-                    } else {
-                        // 如果不是数组，直接显示各个元素
-                        for (int i = 0; i < dailyData.length && i < 15; i++) {
-                            result.append("  [").append(i).append("]: ").append(dailyData[i]).append("\n");
-                        }
-                    }
-                }
-            } else {
-                result.append("null\n");
-            }
-            
-            return result.toString();
-        } catch (Exception e) {
-            return "错误: " + e.getMessage() + "\n堆栈: " + Arrays.toString(e.getStackTrace());
+        logger.warn("testAggregatedMetrics已废弃,H2监控数据已移除");
+        if (metricsHubClient != null && metricsHubClient.isAvailable()) {
+            return "Metrics Hub available - use Hub API to query aggregated metrics.";
         }
+        return "❌ 此调试端点已废弃 (Phase4-Step4)\n" +
+               "原因: H2数据库已移除,监控数据由Hub存储\n" +
+               "替代: 使用Hub的API端点查询监控数据";
     }
     
     @GetMapping("/debug/test-monitoring-service")

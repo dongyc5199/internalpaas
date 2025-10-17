@@ -21,6 +21,10 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * 事务边界测试
  * 验证Service层方法的事务配置是否正确
+ * 
+ * Phase4-Step4 更新 (2025-10-17):
+ * - 使用 H2 内存数据库 (scope=test) 支持测试
+ * - 测试 User/Server/Application 实体的事务边界
  */
 @SpringBootTest
 @ActiveProfiles("test")

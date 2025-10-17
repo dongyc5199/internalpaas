@@ -12,6 +12,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * 密码加密解密修复验证测试
  * 验证Server实体JSON序列化不会触发密码解密异常
+ * 
+ * Phase4-Step4 更新 (2025-10-17):
+ * - 使用 H2 内存数据库 (scope=test) 支持测试
  */
 @SpringBootTest
 @ActiveProfiles("test")

@@ -2,11 +2,12 @@ package com.cmict.internalpaas.service;
 
 import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerMetrics;
-import com.cmict.internalpaas.repository.ServerMetricsRepository;
+// import com.cmict.internalpaas.repository.ServerMetricsRepository; // ❌ 已废弃 (Phase4-Step4)
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.cmict.internalpaas.client.MetricsHubClient;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -22,37 +23,73 @@ import java.util.stream.Collectors;
 /**
  * 历史监控数据服务
  * 提供历史数据查询、聚合、分析和导出功能
+ * 
+ * ⚠️ 已废弃 (Phase4-Step4: 2025-10-17)
+ * 原因: H2数据库已移除,监控数据由Hub存储
+ * 
+ * 替代方案:
+ * - MetricsHubClient.queryMetrics(serverId, from, to, step)
+ * - Hub提供历史数据查询、聚合、导出功能
+ * 
+ * @deprecated 使用 {@link com.cmict.internalpaas.client.MetricsHubClient}
  */
+@Deprecated(since = "2025-10-17", forRemoval = true)
 @Service
 public class MonitoringHistoryService {
     
     private static final Logger logger = LoggerFactory.getLogger(MonitoringHistoryService.class);
     
-    @Autowired
-    private ServerMetricsRepository metricsRepository;
+    // ❌ 已废弃 (Phase4-Step4: 2025-10-17)
+    // @Autowired
+    // private ServerMetricsRepository metricsRepository;
+    @Autowired(required = false)
+    private MetricsHubClient metricsHubClient;
     
     @Autowired
     private ServerService serverService;
     
     /**
      * 获取服务器历史数据
+     * 
+     * ❌ 已废弃 (Phase4-Step4)
+     * @deprecated 使用 MetricsHubClient.queryMetrics()
      */
+    @Deprecated
     public Map<String, Object> getServerHistoryData(Long serverId, LocalDateTime startTime, 
                                                    LocalDateTime endTime, boolean aggregated, 
                                                    String aggregationType) {
+        logger.warn("getServerHistoryData已废弃,请使用MetricsHubClient.queryMetrics()");
+        
         try {
             Map<String, Object> response = new HashMap<>();
-            
+            // 如果 Metrics Hub 可用，尝试通过 Hub 拉取数据（最小实现：将 Hub 返回的单点封装为时间序列）
+            List<ServerMetrics> rawData = Collections.emptyList();
+            if (metricsHubClient != null && metricsHubClient.isAvailable()) {
+                try {
+                    Long fromMillis = startTime != null ? startTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() : null;
+                    Long toMillis = endTime != null ? endTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() : null;
+                    // step: 如果需要降采样，这里简单设为null（Hub 决定）或可传入秒数
+                    ServerMetrics sample = metricsHubClient.queryMetrics(serverId, fromMillis, toMillis, null, null);
+                    if (sample != null) {
+                        rawData = List.of(sample);
+                    }
+                } catch (Exception ex) {
+                    logger.warn("MetricsHub query failed for history data: {}", ex.getMessage());
+                }
+            } else {
+                logger.debug("MetricsHub not available - returning empty history data");
+            }
+
             if (aggregated) {
-                // 返回聚合数据
-                List<Object[]> aggregatedData = getAggregatedData(serverId, startTime, endTime, aggregationType);
-                response.put("data", convertAggregatedToChartData(aggregatedData, aggregationType));
+                // minimal: 当 Hub 返回单点时，将其视为聚合点；否则返回空聚合
+                if (rawData.isEmpty()) {
+                    response.put("data", new ArrayList<>());
+                } else {
+                    response.put("data", convertAggregatedToChartData(getAggregatedData(serverId, startTime, endTime, aggregationType), aggregationType));
+                }
                 response.put("dataType", "aggregated");
                 response.put("aggregationType", aggregationType);
             } else {
-                // 返回原始数据
-                List<ServerMetrics> rawData = metricsRepository
-                    .findByServerIdAndTimestampBetweenOrderByTimestampAsc(serverId, startTime, endTime);
                 response.put("data", convertRawToChartData(rawData));
                 response.put("dataType", "raw");
             }
@@ -116,8 +153,10 @@ public class MonitoringHistoryService {
      */
     public Map<String, Object> getServerStatistics(Long serverId, LocalDateTime startTime, LocalDateTime endTime) {
         try {
-            List<ServerMetrics> metrics = metricsRepository
-                .findByServerIdAndTimestampBetweenOrderByTimestampAsc(serverId, startTime, endTime);
+            List<ServerMetrics> metrics = Collections.emptyList();
+            if (metricsHubClient != null && metricsHubClient.isAvailable()) {
+                logger.debug("MetricsHub available - statistics should be computed from Hub query results");
+            }
             
             Map<String, Object> statistics = new HashMap<>();
             
@@ -193,9 +232,8 @@ public class MonitoringHistoryService {
             Map<String, Object> response = new HashMap<>();
             List<Map<String, Object>> anomalies = new ArrayList<>();
             
-            // CPU异常
-            List<ServerMetrics> highCpuEvents = metricsRepository
-                .findHighCpuPeriodsForServer(serverId, cpuThreshold, startTime, endTime);
+            // CPU异常 - 已由 Hub 提供，当前返回空集合
+            List<ServerMetrics> highCpuEvents = Collections.emptyList();
             
             for (ServerMetrics event : highCpuEvents) {
                 Map<String, Object> anomaly = new HashMap<>();
@@ -208,9 +246,8 @@ public class MonitoringHistoryService {
                 anomalies.add(anomaly);
             }
             
-            // 内存异常
-            List<ServerMetrics> highMemoryEvents = metricsRepository
-                .findHighMemoryPeriodsForServer(serverId, memoryThreshold, startTime, endTime);
+            // 内存异常 - 已由 Hub 提供，当前返回空集合
+            List<ServerMetrics> highMemoryEvents = Collections.emptyList();
             
             for (ServerMetrics event : highMemoryEvents) {
                 Map<String, Object> anomaly = new HashMap<>();
@@ -244,8 +281,10 @@ public class MonitoringHistoryService {
      * 导出数据为CSV
      */
     public byte[] exportToCsv(Long serverId, LocalDateTime startTime, LocalDateTime endTime) throws IOException {
-        List<ServerMetrics> metrics = metricsRepository
-            .findByServerIdAndTimestampBetweenOrderByTimestampAsc(serverId, startTime, endTime);
+        List<ServerMetrics> metrics = Collections.emptyList();
+        if (metricsHubClient != null && metricsHubClient.isAvailable()) {
+            logger.debug("MetricsHub available - export should be implemented via Hub API");
+        }
         
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try (Writer writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8)) {
@@ -286,9 +325,9 @@ public class MonitoringHistoryService {
             case "hour":
             case "day":
                 try {
-                    Object[] aggregatedData = aggregationType.equals("hour") 
-                        ? metricsRepository.findHourlyAggregatedMetrics(serverId, startTime, endTime)
-                        : metricsRepository.findDailyAggregatedMetrics(serverId, startTime, endTime);
+                    // 聚合查询应通过 Hub 获取，此处返回占位空数组
+                    logger.debug("Aggregated data should be fetched from Hub - returning placeholder");
+                    Object[] aggregatedData = new Object[0];
                     
                     List<Object[]> result = new ArrayList<>();
                     if (aggregatedData != null && aggregatedData.length > 0) {
@@ -337,9 +376,8 @@ public class MonitoringHistoryService {
                     return new ArrayList<>();
                 }
             default:
-                // 返回原始数据
-                List<ServerMetrics> rawData = metricsRepository
-                    .findByServerIdAndTimestampBetweenOrderByTimestampAsc(serverId, startTime, endTime);
+                // 返回原始数据 - 当前由 Hub 提供，保守返回空结果
+                List<ServerMetrics> rawData = Collections.emptyList();
                 return rawData.stream()
                     .map(m -> new Object[]{
                         m.getServerId(), m.getServerName(), 

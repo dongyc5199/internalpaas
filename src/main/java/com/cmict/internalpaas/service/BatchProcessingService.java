@@ -3,7 +3,7 @@ package com.cmict.internalpaas.service;
 import com.cmict.internalpaas.model.UserActivity;
 import com.cmict.internalpaas.model.ServerMetrics;
 import com.cmict.internalpaas.repository.UserActivityRepository;
-import com.cmict.internalpaas.repository.ServerMetricsRepository;
+// import com.cmict.internalpaas.repository.ServerMetricsRepository; // ❌ 已废弃 (Phase4-Step4)
 import com.cmict.internalpaas.repository.SSHSessionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +16,14 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.cmict.internalpaas.client.MetricsHubClient;
 
 /**
  * 批处理服务
  * 负责优化大量数据操作的性能
+ * 
+ * ⚠️ 部分功能已废弃 (Phase4-Step4: 2025-10-17)
+ * - batchSaveServerMetrics() - H2监控数据已移除
  */
 @Service
 @Transactional
@@ -34,8 +38,11 @@ public class BatchProcessingService {
     @Autowired
     private UserActivityRepository activityRepository;
     
-    @Autowired
-    private ServerMetricsRepository metricsRepository;
+    // ❌ 已废弃 (Phase4-Step4: 2025-10-17)
+    // @Autowired
+    // private ServerMetricsRepository metricsRepository;
+    @Autowired(required = false)
+    private MetricsHubClient metricsHubClient;
     
     @Autowired
     private SSHSessionRepository sshSessionRepository;
@@ -71,20 +78,29 @@ public class BatchProcessingService {
     
     /**
      * 批量保存服务器监控数据
+     * 
+     * ❌ 已废弃 (Phase4-Step4: 2025-10-17)
+     * 原因: H2数据库已移除,监控数据由Hub自动存储
+     * 
      * @param metrics 监控数据列表
+     * @deprecated Hub自动存储监控数据,无需手动批量保存
      */
+    @Deprecated(since = "2025-10-17", forRemoval = true)
     public void batchSaveServerMetrics(List<ServerMetrics> metrics) {
         if (metrics == null || metrics.isEmpty()) {
             return;
         }
         
-        logger.debug("开始批量保存{}条服务器监控数据", metrics.size());
+        logger.warn("batchSaveServerMetrics已废弃,监控数据应由Hub存储");
+        logger.debug("忽略批量保存{}条服务器监控数据", metrics.size());
         
         for (int i = 0; i < metrics.size(); i += BATCH_SIZE) {
             int endIndex = Math.min(i + BATCH_SIZE, metrics.size());
             List<ServerMetrics> batch = metrics.subList(i, endIndex);
-            
-            metricsRepository.saveAll(batch);
+            // 已移除对本地Repository的保存。若需要下沉到Hub，请实现Hub写入接口。
+            if (metricsHubClient != null && metricsHubClient.isAvailable()) {
+                logger.debug("MetricsHub is available but write API is not implemented; skipping batch save to Hub");
+            }
             
             if (i % (BATCH_SIZE * 5) == 0) {
                 entityManager.flush();
@@ -243,7 +259,7 @@ public class BatchProcessingService {
         try {
             // 获取各表的记录数
             long userActivityCount = activityRepository.count();
-            long serverMetricsCount = metricsRepository.count();
+            long serverMetricsCount = 0L; // H2已移除，保守返回0
             long sshSessionCount = sshSessionRepository.count();
             
             StringBuilder stats = new StringBuilder();

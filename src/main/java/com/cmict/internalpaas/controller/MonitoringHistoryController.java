@@ -2,8 +2,9 @@ package com.cmict.internalpaas.controller;
 
 import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.ServerMetrics;
-import com.cmict.internalpaas.repository.ServerMetricsRepository;
+// import com.cmict.internalpaas.repository.ServerMetricsRepository; // ❌ 已废弃 (Phase4-Step4)
 import com.cmict.internalpaas.service.MonitoringHistoryService;
+import com.cmict.internalpaas.client.MetricsHubClient;
 import com.cmict.internalpaas.service.ServerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,13 @@ import java.util.stream.Collectors;
 /**
  * 历史监控数据控制器
  * 提供历史监控数据查询、图表数据和分析功能
+ * 
+ * ⚠️ 已废弃 (Phase4-Step4: 2025-10-17)
+ * 原因: H2数据库已移除,历史监控数据由Hub提供
+ * 
+ * @deprecated 使用Hub的API端点获取历史监控数据
  */
+@Deprecated(since = "2025-10-17", forRemoval = true)
 @Controller
 @RequestMapping("/monitoring/history")
 public class MonitoringHistoryController {
@@ -35,8 +42,11 @@ public class MonitoringHistoryController {
     @Autowired
     private ServerService serverService;
     
-    @Autowired
-    private ServerMetricsRepository metricsRepository;
+    // ❌ 已废弃 (Phase4-Step4: 2025-10-17)
+    // @Autowired
+    // private ServerMetricsRepository metricsRepository;
+    @Autowired(required = false)
+    private MetricsHubClient metricsHubClient;
     
     /**
      * 历史监控主页面
@@ -79,7 +89,7 @@ public class MonitoringHistoryController {
             
             Map<String, Object> response = monitoringHistoryService
                 .getServerHistoryData(serverId, startTime, endTime, aggregated, aggregationType);
-            
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("获取服务器历史数据失败", e);
@@ -128,20 +138,39 @@ public class MonitoringHistoryController {
         
         try {
             LocalDateTime sinceTime = LocalDateTime.now().minusMinutes(minutes);
-            List<ServerMetrics> metrics = metricsRepository.findRecentMetrics(serverId, sinceTime);
-            
+            List<ServerMetrics> metrics = Collections.emptyList();
+
+            if (metricsHubClient != null && metricsHubClient.isAvailable()) {
+                try {
+                    Long fromMillis = sinceTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
+                    Long toMillis = LocalDateTime.now().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
+                    ServerMetrics sample = metricsHubClient.queryMetrics(serverId, fromMillis, toMillis, null, null);
+                    if (sample != null) metrics = List.of(sample);
+                } catch (Exception ex) {
+                    logger.warn("MetricsHub realtime query failed: {}", ex.getMessage());
+                }
+            } else {
+                logger.debug("MetricsHub not available - realtime will be empty or use service fallback");
+            }
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("data", convertToChartData(metrics, "realtime"));
             response.put("serverInfo", getServerInfo(serverId));
             response.put("dataCount", metrics.size());
             response.put("timeRange", minutes + " minutes");
-            
+
+            // 如果没有数据，尝试返回统计信息作为降级
+            if (metrics.isEmpty()) {
+                Map<String, Object> stats = monitoringHistoryService.getServerStatistics(serverId, sinceTime, LocalDateTime.now());
+                response.put("fallbackStatistics", stats);
+            }
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("获取实时数据失败", e);
             return ResponseEntity.internalServerError()
-                .body(Map.of("error", e.getMessage(), "success", false));
+                    .body(Map.of("error", e.getMessage(), "success", false));
         }
     }
     
@@ -199,19 +228,8 @@ public class MonitoringHistoryController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
         
         try {
-            List<Object[]> ranking = metricsRepository.getServerPerformanceRanking(startTime, endTime);
-            
-            List<Map<String, Object>> rankingData = ranking.stream()
-                .map(row -> {
-                    Map<String, Object> item = new HashMap<>();
-                    item.put("serverId", row[0]);
-                    item.put("serverName", row[1]);
-                    item.put("avgCpuUsage", row[2]);
-                    item.put("avgMemoryUsage", row[3]);
-                    item.put("avgDiskUsage", row[4]);
-                    return item;
-                })
-                .collect(Collectors.toList());
+            // 性能排名由 Hub 提供，当前返回空占位
+            List<Map<String, Object>> rankingData = new ArrayList<>();
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

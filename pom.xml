@@ -101,6 +101,15 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- H2 Database for Testing Only (Phase4-Step4: 2025-10-17)
+		     用途: 为测试环境提供内存数据库,支持非监控实体 (User, Server, Application, AgentDeployment)
+		     注意: scope=test,不会包含在生产部署中
+		     生产环境: 使用 PostgreSQL + Metrics Hub -->
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>com.jcraft</groupId>
 			<artifactId>jsch</artifactId>
