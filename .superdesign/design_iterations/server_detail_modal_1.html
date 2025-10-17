@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务器详情模态框 - Internal PaaS</title>
+    
+    <!-- External Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="server_detail_modal_theme.css">
+    
+    <style>
+        /* Demo page styles */
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 2rem;
+        }
+        
+        .demo-container {
+            text-align: center;
+            background: white;
+            padding: 3rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+        }
+        
+        .demo-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 1rem;
+        }
+        
+        .demo-description {
+            color: #6c757d;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .demo-button {
+            background: #0d6efd;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .demo-button:hover {
+            background: #0b5ed7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+        }
+        
+        .server-cards-demo {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .server-card-demo {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s;
+        }
+        
+        .server-card-demo:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .server-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .server-name-demo {
+            font-weight: 600;
+            color: #212529;
+        }
+        
+        .server-status-demo {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #198754;
+        }
+        
+        .server-details-demo {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+        
+        .view-details-btn {
+            background: #0d6efd;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .view-details-btn:hover {
+            background: #0b5ed7;
+        }
+    </style>
+</head>
+<body>
+    <!-- Demo Content -->
+    <div class="demo-container">
+        <h1 class="demo-title">服务器详情模态框演示</h1>
+        <p class="demo-description">
+            点击下方的服务器卡片或者演示按钮，查看现代化的服务器详情模态框。
+            模态框包含服务器实时指标、基本信息、应用列表和操作时间轴。
+        </p>
+        
+        <button class="demo-button" onclick="showServerModal('Production-Server-01')">
+            <i data-lucide="server"></i>
+            查看服务器详情
+        </button>
+        
+        <div class="server-cards-demo">
+            <div class="server-card-demo">
+                <div class="server-card-header">
+                    <span class="server-name-demo">Production-Server-01</span>
+                    <div class="server-status-demo"></div>
+                </div>
+                <div class="server-details-demo">
+                    192.168.1.100:22<br>
+                    CPU: 68% | 内存: 6.2GB | 应用: 3个
+                </div>
+                <button class="view-details-btn" onclick="showServerModal('Production-Server-01')">
+                    <i data-lucide="eye"></i>
+                    查看详情
+                </button>
+            </div>
+            
+            <div class="server-card-demo">
+                <div class="server-card-header">
+                    <span class="server-name-demo">Development-Server-02</span>
+                    <div class="server-status-demo" style="background: #ffc107;"></div>
+                </div>
+                <div class="server-details-demo">
+                    192.168.1.101:22<br>
+                    CPU: 82% | 内存: 7.8GB | 应用: 5个
+                </div>
+                <button class="view-details-btn" onclick="showServerModal('Development-Server-02')">
+                    <i data-lucide="eye"></i>
+                    查看详情
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Server Detail Modal -->
+    <div id="serverModal" class="server-modal-overlay">
+        <div class="server-modal">
+            <!-- Modal Header -->
+            <div class="server-modal-header">
+                <div class="server-modal-title">
+                    <i data-lucide="server"></i>
+                    <span id="modalServerName">Production-Server-01</span>
+                    <div class="server-status-badge">
+                        <div class="server-status-indicator"></div>
+                        <span>在线</span>
+                    </div>
+                </div>
+                <button class="modal-close-btn" onclick="hideServerModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="server-modal-content">
+                <!-- Metrics Cards -->
+                <div class="server-metrics fade-in">
+                    <div class="metric-card">
+                        <div class="metric-icon">
+                            <i data-lucide="cpu"></i>
+                        </div>
+                        <div class="metric-value" id="cpuValue">68%</div>
+                        <div class="metric-label">CPU使用率</div>
+                        <div class="metric-trend trend-up">
+                            <i data-lucide="trending-up"></i>
+                            <span>+5.2%</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-icon">
+                            <i data-lucide="hard-drive"></i>
+                        </div>
+                        <div class="metric-value" id="memoryValue">6.2GB</div>
+                        <div class="metric-label">内存使用</div>
+                        <div class="metric-trend trend-up">
+                            <i data-lucide="trending-up"></i>
+                            <span>+0.8GB</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-icon">
+                            <i data-lucide="hard-disk"></i>
+                        </div>
+                        <div class="metric-value" id="diskValue">45%</div>
+                        <div class="metric-label">磁盘使用</div>
+                        <div class="metric-trend trend-down">
+                            <i data-lucide="trending-down"></i>
+                            <span>-2.1%</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-icon">
+                            <i data-lucide="wifi"></i>
+                        </div>
+                        <div class="metric-value" id="networkValue">12MB/s</div>
+                        <div class="metric-label">网络流量</div>
+                        <div class="metric-trend trend-up">
+                            <i data-lucide="trending-up"></i>
+                            <span>+3.5MB/s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div class="server-main-content">
+                    <!-- Server Info Panel -->
+                    <div class="server-info-panel fade-in" style="animation-delay: 100ms">
+                        <div class="panel-header">
+                            <h3 class="panel-title">
+                                <i data-lucide="info"></i>
+                                服务器信息
+                            </h3>
+                        </div>
+                        <div class="panel-content">
+                            <div class="server-info-grid">
+                                <div class="info-item">
+                                    <span class="info-label">主机名</span>
+                                    <span class="info-value" id="hostname">production-server-01</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">IP地址</span>
+                                    <span class="info-value" id="ipAddress">192.168.1.100</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">SSH端口</span>
+                                    <span class="info-value" id="sshPort">22</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">操作系统</span>
+                                    <span class="info-value" id="operatingSystem">Ubuntu 20.04 LTS</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">运行时间</span>
+                                    <span class="info-value" id="uptime">15天 3小时 42分钟</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">工作目录</span>
+                                    <span class="info-value" id="workDirectory">/opt/apps</span>
+                                </div>
+                            </div>
+
+                            <div class="panel-header" style="margin-top: 2rem; padding: 0; background: none; border: none;">
+                                <h4 class="panel-title">
+                                    <i data-lucide="package"></i>
+                                    运行中的应用
+                                </h4>
+                            </div>
+                            
+                            <div class="app-list">
+                                <div class="app-item">
+                                    <div class="app-info">
+                                        <h5 class="app-name">UserService</h5>
+                                        <div class="app-details">v2.1.0 • 端口: 8080 • 内存: 256MB</div>
+                                    </div>
+                                    <div class="app-status">
+                                        <div class="status-dot status-running"></div>
+                                        <span class="status-text">运行中</span>
+                                    </div>
+                                </div>
+
+                                <div class="app-item">
+                                    <div class="app-info">
+                                        <h5 class="app-name">API Gateway</h5>
+                                        <div class="app-details">v1.5.2 • 端口: 8081 • 内存: 512MB</div>
+                                    </div>
+                                    <div class="app-status">
+                                        <div class="status-dot status-running"></div>
+                                        <span class="status-text">运行中</span>
+                                    </div>
+                                </div>
+
+                                <div class="app-item">
+                                    <div class="app-info">
+                                        <h5 class="app-name">Logger Service</h5>
+                                        <div class="app-details">v1.2.0 • 端口: 8082 • 上次运行: 2小时前</div>
+                                    </div>
+                                    <div class="app-status">
+                                        <div class="status-dot status-stopped"></div>
+                                        <span class="status-text">已停止</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Panel -->
+                    <div class="timeline-panel fade-in" style="animation-delay: 200ms">
+                        <div class="panel-header">
+                            <h3 class="panel-title">
+                                <i data-lucide="activity"></i>
+                                操作时间轴
+                            </h3>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-time">14:32</div>
+                                    <div class="timeline-event">
+                                        <h4 class="timeline-title">应用部署成功</h4>
+                                        <p class="timeline-description">
+                                            UserService v2.1.0 部署完成，新增用户认证功能和性能优化
+                                        </p>
+                                        <div class="timeline-user">
+                                            <i data-lucide="user"></i>
+                                            张三
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="timeline-item">
+                                    <div class="timeline-time">14:15</div>
+                                    <div class="timeline-event">
+                                        <h4 class="timeline-title">服务重启</h4>
+                                        <p class="timeline-description">
+                                            API Gateway 因配置更新自动重启，重启耗时 30 秒
+                                        </p>
+                                        <div class="timeline-user">
+                                            <i data-lucide="settings"></i>
+                                            系统自动
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="timeline-item">
+                                    <div class="timeline-time">13:45</div>
+                                    <div class="timeline-event">
+                                        <h4 class="timeline-title">负载均衡配置更新</h4>
+                                        <p class="timeline-description">
+                                            更新了上游服务器权重配置，优化了请求分发策略
+                                        </p>
+                                        <div class="timeline-user">
+                                            <i data-lucide="user"></i>
+                                            李四
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="timeline-item">
+                                    <div class="timeline-time">13:30</div>
+                                    <div class="timeline-event">
+                                        <h4 class="timeline-title">数据库备份</h4>
+                                        <p class="timeline-description">
+                                            定时任务完成数据库备份，备份文件大小 2.3GB
+                                        </p>
+                                        <div class="timeline-user">
+                                            <i data-lucide="database"></i>
+                                            系统自动
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="timeline-item">
+                                    <div class="timeline-time">13:18</div>
+                                    <div class="timeline-event">
+                                        <h4 class="timeline-title">SSL证书更新</h4>
+                                        <p class="timeline-description">
+                                            为 api.internal.com 域名更新了SSL证书，有效期延长至明年
+                                        </p>
+                                        <div class="timeline-user">
+                                            <i data-lucide="user"></i>
+                                            王五
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="timeline-item">
+                                    <div class="timeline-time">12:55</div>
+                                    <div class="timeline-event">
+                                        <h4 class="timeline-title">磁盘空间清理</h4>
+                                        <p class="timeline-description">
+                                            自动清理了过期日志文件和临时文件，释放磁盘空间 1.2GB
+                                        </p>
+                                        <div class="timeline-user">
+                                            <i data-lucide="trash-2"></i>
+                                            系统自动
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button class="load-more-btn" onclick="loadMoreLogs()">
+                                <i data-lucide="plus-circle"></i>
+                                加载更多记录
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="server-actions fade-in" style="animation-delay: 300ms">
+                    <button class="action-btn" onclick="connectSSH()">
+                        <i data-lucide="terminal"></i>
+                        SSH连接
+                    </button>
+                    <button class="action-btn secondary" onclick="viewFullLogs()">
+                        <i data-lucide="file-text"></i>
+                        完整日志
+                    </button>
+                    <button class="action-btn secondary" onclick="performanceReport()">
+                        <i data-lucide="bar-chart-3"></i>
+                        性能报告
+                    </button>
+                    <button class="action-btn secondary" onclick="manageConfig()">
+                        <i data-lucide="settings"></i>
+                        配置管理
+                    </button>
+                    <button class="action-btn danger" onclick="restartServer()">
+                        <i data-lucide="refresh-cw"></i>
+                        重启服务器
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Mock server data
+        const serverData = {
+            'Production-Server-01': {
+                hostname: 'production-server-01',
+                ipAddress: '192.168.1.100',
+                sshPort: '22',
+                operatingSystem: 'Ubuntu 20.04 LTS',
+                uptime: '15天 3小时 42分钟',
+                workDirectory: '/opt/apps',
+                cpu: '68%',
+                memory: '6.2GB',
+                disk: '45%',
+                network: '12MB/s'
+            },
+            'Development-Server-02': {
+                hostname: 'development-server-02',
+                ipAddress: '192.168.1.101',
+                sshPort: '22',
+                operatingSystem: 'Ubuntu 20.04 LTS',
+                uptime: '8天 12小时 15分钟',
+                workDirectory: '/home/apps',
+                cpu: '82%',
+                memory: '7.8GB',
+                disk: '67%',
+                network: '8MB/s'
+            }
+        };
+
+        // Show server modal
+        function showServerModal(serverName) {
+            const modal = document.getElementById('serverModal');
+            const data = serverData[serverName] || serverData['Production-Server-01'];
+            
+            // Update modal content
+            document.getElementById('modalServerName').textContent = serverName;
+            document.getElementById('hostname').textContent = data.hostname;
+            document.getElementById('ipAddress').textContent = data.ipAddress;
+            document.getElementById('sshPort').textContent = data.sshPort;
+            document.getElementById('operatingSystem').textContent = data.operatingSystem;
+            document.getElementById('uptime').textContent = data.uptime;
+            document.getElementById('workDirectory').textContent = data.workDirectory;
+            document.getElementById('cpuValue').textContent = data.cpu;
+            document.getElementById('memoryValue').textContent = data.memory;
+            document.getElementById('diskValue').textContent = data.disk;
+            document.getElementById('networkValue').textContent = data.network;
+            
+            // Show modal with animation
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            
+            // Reinitialize icons for new content
+            setTimeout(() => {
+                lucide.createIcons();
+            }, 100);
+        }
+
+        // Hide server modal
+        function hideServerModal() {
+            const modal = document.getElementById('serverModal');
+            modal.classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Action button functions
+        function connectSSH() {
+            alert('正在建立SSH连接...');
+        }
+
+        function viewFullLogs() {
+            alert('正在加载完整日志...');
+        }
+
+        function performanceReport() {
+            alert('正在生成性能报告...');
+        }
+
+        function manageConfig() {
+            alert('正在打开配置管理...');
+        }
+
+        function restartServer() {
+            if (confirm('确定要重启服务器吗？这将中断当前运行的所有应用。')) {
+                alert('正在重启服务器...');
+            }
+        }
+
+        function loadMoreLogs() {
+            alert('正在加载更多日志记录...');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('serverModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideServerModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideServerModal();
+            }
+        });
+
+        // Simulate real-time updates
+        function updateMetrics() {
+            const cpuElement = document.getElementById('cpuValue');
+            const currentCpu = parseInt(cpuElement.textContent);
+            const newCpu = currentCpu + Math.floor(Math.random() * 10 - 5);
+            const clampedCpu = Math.max(0, Math.min(100, newCpu));
+            cpuElement.textContent = clampedCpu + '%';
+        }
+
+        // Update metrics every 5 seconds when modal is open
+        setInterval(() => {
+            const modal = document.getElementById('serverModal');
+            if (modal.classList.contains('show')) {
+                updateMetrics();
+            }
+        }, 5000);
+
+        // Add ripple effect to buttons
+        document.addEventListener('click', function(e) {
+            if (e.target.matches('.action-btn, .demo-button, .view-details-btn')) {
+                const button = e.target;
+                const ripple = document.createElement('span');
+                const rect = button.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+                
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = x + 'px';
+                ripple.style.top = y + 'px';
+                ripple.classList.add('ripple-effect');
+                
+                button.appendChild(ripple);
+                
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            }
+        });
+    </script>
+
+    <style>
+        /* Ripple effect */
+        .ripple-effect {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            animation: ripple-animation 0.6s linear;
+            pointer-events: none;
+        }
+        
+        @keyframes ripple-animation {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+    </style>
+</body>
+</html>

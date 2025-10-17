@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统风格服务器详情模态框 - Internal PaaS</title>
+    
+    <!-- External Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    
+    <!-- System Style Theme CSS -->
+    <link rel="stylesheet" href="server_detail_modal_final_theme.css">
+    
+    <style>
+        /* Demo page styles matching system */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 2rem;
+        }
+        
+        .demo-container {
+            text-align: center;
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            max-width: 500px;
+            position: relative;
+        }
+        
+        .demo-container::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+        
+        .demo-title {
+            color: #2c3e50;
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 1rem;
+            letter-spacing: -0.5px;
+        }
+        
+        .demo-description {
+            color: #6c757d;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .demo-button {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            letter-spacing: -0.025em;
+        }
+        
+        .demo-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Demo Content -->
+    <div class="demo-container">
+        <h1 class="demo-title">系统风格服务器详情</h1>
+        <p class="demo-description">
+            采用系统一致的现代化时尚设计风格，
+            为管理员提供清晰的服务器状态和操作审计信息。
+        </p>
+        
+        <button class="demo-button" onclick="showServerModal()">
+            <i data-lucide="server"></i>
+            查看服务器详情
+        </button>
+    </div>
+
+    <!-- System Style Server Detail Modal -->
+    <div id="serverModal" class="system-modal-overlay">
+        <div class="system-modal">
+            <!-- System Style Header -->
+            <div class="system-header">
+                <h1 class="system-title">
+                    <i data-lucide="server"></i>
+                    Production-Server-01 详情
+                </h1>
+                <button class="system-close-btn" onclick="hideServerModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <!-- System Style Info Bar -->
+            <div class="system-info-bar">
+                <div class="system-info-item">
+                    <i data-lucide="monitor" class="system-info-icon"></i>
+                    <span>production-server-01</span>
+                </div>
+                <div class="system-info-item">
+                    <i data-lucide="map-pin" class="system-info-icon"></i>
+                    <span>192.168.1.100:22</span>
+                </div>
+                <div class="system-info-item">
+                    <i data-lucide="clock" class="system-info-icon"></i>
+                    <span>运行 15天3小时</span>
+                </div>
+                <div class="system-info-item">
+                    <i data-lucide="hard-drive" class="system-info-icon"></i>
+                    <span>Ubuntu 20.04 LTS</span>
+                </div>
+                <div class="system-info-item">
+                    <i data-lucide="folder" class="system-info-icon"></i>
+                    <span>/opt/apps</span>
+                </div>
+                <div class="system-info-item">
+                    <i data-lucide="wifi" class="system-info-icon"></i>
+                    <div class="system-status-online">
+                        <div class="system-status-dot"></div>
+                        在线 刚刚检查
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Grid -->
+            <div class="system-content">
+                <!-- Applications Panel -->
+                <div class="system-app-panel">
+                    <h2 class="system-panel-title">
+                        <i data-lucide="package"></i>
+                        应用运行状态
+                    </h2>
+
+                    <!-- Running Application -->
+                    <div class="system-app-card running system-fade-in">
+                        <div class="system-app-header">
+                            <h3 class="system-app-name">UserService v2.1.0</h3>
+                            <span class="system-app-status running">运行中</span>
+                        </div>
+                        <div class="system-app-metrics">
+                            <div class="system-app-metric">端口:8080</div>
+                            <div class="system-app-metric">CPU:45%</div>
+                            <div class="system-app-metric">内存:256MB</div>
+                            <div class="system-app-metric">运行:2小时</div>
+                        </div>
+                    </div>
+
+                    <!-- Another Running Application -->
+                    <div class="system-app-card running system-fade-in" style="animation-delay: 0.1s">
+                        <div class="system-app-header">
+                            <h3 class="system-app-name">API Gateway v1.5.2</h3>
+                            <span class="system-app-status running">运行中</span>
+                        </div>
+                        <div class="system-app-metrics">
+                            <div class="system-app-metric">端口:8081</div>
+                            <div class="system-app-metric">CPU:23%</div>
+                            <div class="system-app-metric">内存:512MB</div>
+                            <div class="system-app-metric">运行:5小时</div>
+                        </div>
+                    </div>
+
+                    <!-- Stopped Application -->
+                    <div class="system-app-card stopped system-fade-in" style="animation-delay: 0.2s">
+                        <div class="system-app-header">
+                            <h3 class="system-app-name">Logger Service v1.2.0</h3>
+                            <span class="system-app-status stopped">已停止</span>
+                        </div>
+                        <div class="system-app-metrics">
+                            <div class="system-app-metric">端口:8082</div>
+                            <div class="system-app-metric">停止:2小时前</div>
+                            <div class="system-app-metric">原因:手动停止</div>
+                        </div>
+                    </div>
+
+                    <!-- Starting Application -->
+                    <div class="system-app-card starting system-fade-in" style="animation-delay: 0.3s">
+                        <div class="system-app-header">
+                            <h3 class="system-app-name">Payment API v3.1.1</h3>
+                            <span class="system-app-status starting">启动中</span>
+                        </div>
+                        <div class="system-app-metrics">
+                            <div class="system-app-metric">端口:8083</div>
+                            <div class="system-app-metric">启动中...</div>
+                            <div class="system-app-metric">预计:30秒</div>
+                        </div>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="system-app-summary">
+                        💻 总计: 4个应用 • 3个运行中 • 1个已停止
+                    </div>
+                </div>
+
+                <!-- User Logs Panel -->
+                <div class="system-logs-panel">
+                    <h2 class="system-panel-title">
+                        <i data-lucide="file-text"></i>
+                        用户操作详情
+                    </h2>
+
+                    <!-- Log Entry 1 -->
+                    <div class="system-log-card system-fade-in">
+                        <div class="system-log-header">
+                            <div class="system-log-time">14:32:15</div>
+                            <div class="system-log-user">
+                                <i data-lucide="user"></i>
+                                张三 @192.168.1.50
+                            </div>
+                        </div>
+                        <div class="system-log-content">
+                            <h3 class="system-log-action">🚀 部署 UserService v2.1.0</h3>
+                            <div class="system-log-details">
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">执行命令:</span>
+                                    <span class="system-detail-value">docker deploy userservice:v2.1.0</span>
+                                </div>
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">构建时间:</span>
+                                    <span class="system-detail-value">2分35秒</span>
+                                </div>
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">部署状态:</span>
+                                    <span class="system-detail-value system-status-success">
+                                        <i data-lucide="check-circle"></i>
+                                        成功
+                                    </span>
+                                </div>
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">影响服务:</span>
+                                    <span class="system-detail-value">用户认证模块</span>
+                                </div>
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">版本特性:</span>
+                                    <span class="system-detail-value">新增双因子认证</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Log Entry 2 -->
+                    <div class="system-log-card system-fade-in" style="animation-delay: 0.1s">
+                        <div class="system-log-header">
+                            <div class="system-log-time">14:15:42</div>
+                            <div class="system-log-user">
+                                <i data-lucide="settings"></i>
+                                系统自动
+                            </div>
+                        </div>
+                        <div class="system-log-content">
+                            <h3 class="system-log-action">🔄 API Gateway 重启</h3>
+                            <div class="system-log-details">
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">触发原因:</span>
+                                    <span class="system-detail-value">配置文件变更</span>
+                                </div>
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">重启耗时:</span>
+                                    <span class="system-detail-value">30秒</span>
+                                </div>
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">健康检查:</span>
+                                    <span class="system-detail-value system-status-success">
+                                        <i data-lucide="check-circle"></i>
+                                        通过
+                                    </span>
+                                </div>
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">内存释放:</span>
+                                    <span class="system-detail-value">45MB</span>
+                                </div>
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">服务恢复:</span>
+                                    <span class="system-detail-value system-status-success">正常运行</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Log Entry 3 -->
+                    <div class="system-log-card system-fade-in" style="animation-delay: 0.2s">
+                        <div class="system-log-header">
+                            <div class="system-log-time">13:45:18</div>
+                            <div class="system-log-user">
+                                <i data-lucide="user"></i>
+                                李四 @192.168.1.88
+                            </div>
+                        </div>
+                        <div class="system-log-content">
+                            <h3 class="system-log-action">⚙️ 负载均衡配置更新</h3>
+                            <div class="system-log-details">
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">修改文件:</span>
+                                    <span class="system-detail-value">nginx.conf</span>
+                                </div>
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">权重调整:</span>
+                                    <span class="system-detail-value">server1: 3→5</span>
+                                </div>
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">测试结果:</span>
+                                    <span class="system-detail-value system-status-success">
+                                        <i data-lucide="check-circle"></i>
+                                        连通性正常
+                                    </span>
+                                </div>
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">性能提升:</span>
+                                    <span class="system-detail-value">响应时间-15%</span>
+                                </div>
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">配置验证:</span>
+                                    <span class="system-detail-value system-status-success">语法检查通过</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Log Entry 4 -->
+                    <div class="system-log-card system-fade-in" style="animation-delay: 0.3s">
+                        <div class="system-log-header">
+                            <div class="system-log-time">13:30:05</div>
+                            <div class="system-log-user">
+                                <i data-lucide="database"></i>
+                                系统自动
+                            </div>
+                        </div>
+                        <div class="system-log-content">
+                            <h3 class="system-log-action">💾 数据库备份任务</h3>
+                            <div class="system-log-details">
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">备份类型:</span>
+                                    <span class="system-detail-value">完整备份</span>
+                                </div>
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">备份大小:</span>
+                                    <span class="system-detail-value">2.3GB</span>
+                                </div>
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">压缩率:</span>
+                                    <span class="system-detail-value">68%</span>
+                                </div>
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">存储位置:</span>
+                                    <span class="system-detail-value">/backup/db_20241201.sql.gz</span>
+                                </div>
+                                <div class="system-detail-row">
+                                    <span class="system-detail-label">校验结果:</span>
+                                    <span class="system-detail-value system-status-success">
+                                        <i data-lucide="check-circle"></i>
+                                        备份完整
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Load More -->
+                    <button class="system-load-more" onclick="loadMoreLogs()">
+                        <i data-lucide="plus-circle"></i>
+                        加载更多操作记录 (还有23条)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Show server modal
+        function showServerModal() {
+            const modal = document.getElementById('serverModal');
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            
+            // Reinitialize icons for new content
+            setTimeout(() => {
+                lucide.createIcons();
+            }, 100);
+        }
+
+        // Hide server modal
+        function hideServerModal() {
+            const modal = document.getElementById('serverModal');
+            modal.classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Load more logs
+        function loadMoreLogs() {
+            const button = document.querySelector('.system-load-more');
+            const originalHTML = button.innerHTML;
+            
+            button.innerHTML = '<i data-lucide="loader-2" style="animation: spin 1s linear infinite;"></i>加载中...';
+            
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+                
+                // Show notification
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+                    color: white;
+                    padding: 16px 24px;
+                    border-radius: 12px;
+                    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+                    z-index: 1001;
+                    transform: translateX(400px);
+                    transition: transform 0.3s ease;
+                `;
+                notification.textContent = '✅ 已加载更多操作记录';
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.transform = 'translateX(0)';
+                }, 100);
+                
+                setTimeout(() => {
+                    notification.style.transform = 'translateX(400px)';
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
+                }, 2000);
+                
+                lucide.createIcons();
+            }, 1500);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('serverModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideServerModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideServerModal();
+            }
+        });
+
+        // Simulate real-time updates
+        function updateSystemStatus() {
+            const statusElements = document.querySelectorAll('.system-status-online');
+            statusElements.forEach(el => {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('zh-CN', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                el.innerHTML = `
+                    <div class="system-status-dot"></div>
+                    在线 ${timeString}更新
+                `;
+            });
+        }
+
+        // Update status every 30 seconds
+        setInterval(updateSystemStatus, 30000);
+
+        // Add rotation animation for loading
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Enhanced hover effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add enhanced interactions
+            const cards = document.querySelectorAll('.system-app-card, .system-log-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.filter = 'brightness(1.02)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.filter = 'brightness(1)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
