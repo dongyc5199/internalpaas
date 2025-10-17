@@ -54,3 +54,7 @@ screenshots/
 .env.e2e
 # Playwright browsers cache (optional, comment out if you want to cache browsers)
 # .cache/ms-playwright/
+/.eslintrc.cjs
+/.prettierrc.json
+/.stylelintrc.cjs
+/.windsurfrules
