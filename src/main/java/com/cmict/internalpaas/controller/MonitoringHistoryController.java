@@ -25,7 +25,8 @@ import java.util.stream.Collectors;
  * 提供历史监控数据查询、图表数据和分析功能
  * 
  * ⚠️ 已废弃 (Phase4-Step4: 2025-10-17)
- * 原因: H2数据库已移除,历史监控数据由Hub提供
+ * 原因: ServerMetrics表已移除,历史监控数据由Hub提供
+ * 说明: 本地H2数据库仍用于存储业务实体(Server, User等17个表)
  * 
  * @deprecated 使用Hub的API端点获取历史监控数据
  */
@@ -74,7 +75,11 @@ public class MonitoringHistoryController {
     
     /**
      * 获取单个服务器的历史数据
+     * 
+     * @deprecated 推荐使用 /monitoring/api/server/{id}/hub/query 获取Hub直接查询
+     * 该端点将在未来版本中移除
      */
+    @Deprecated
     @GetMapping("/api/server/{serverId}/data")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> getServerHistoryData(
@@ -85,6 +90,7 @@ public class MonitoringHistoryController {
             @RequestParam(defaultValue = "hour") String aggregationType) {
         
         try {
+            logger.warn("⚠️ 使用了废弃端点: /monitoring/history/api/server/{}/data, 推荐使用 /monitoring/api/server/{}/hub/query", serverId, serverId);
             logger.info("获取服务器 {} 的历史数据，时间范围: {} 到 {}", serverId, startTime, endTime);
             
             Map<String, Object> response = monitoringHistoryService
@@ -102,7 +108,11 @@ public class MonitoringHistoryController {
     
     /**
      * 获取多个服务器的比较数据
+     * 
+     * @deprecated 推荐使用 /monitoring/api/servers/hub/batch-query 批量查询
+     * 该端点将在未来版本中移除
      */
+    @Deprecated
     @GetMapping("/api/servers/compare")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> compareServers(
@@ -112,6 +122,7 @@ public class MonitoringHistoryController {
             @RequestParam(defaultValue = "hour") String aggregationType) {
         
         try {
+            logger.warn("⚠️ 使用了废弃端点: /monitoring/history/api/servers/compare, 推荐使用 /monitoring/api/servers/hub/batch-query");
             logger.info("比较服务器数据，服务器IDs: {}, 时间范围: {} 到 {}", serverIds, startTime, endTime);
             
             Map<String, Object> response = monitoringHistoryService
@@ -129,7 +140,11 @@ public class MonitoringHistoryController {
     
     /**
      * 获取实时数据（最近N分钟）
+     * 
+     * @deprecated 推荐使用 /monitoring/api/server/{id}/hub/query 配合时间参数
+     * 该端点将在未来版本中移除
      */
+    @Deprecated
     @GetMapping("/api/server/{serverId}/realtime")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> getRealtimeData(
@@ -137,6 +152,7 @@ public class MonitoringHistoryController {
             @RequestParam(defaultValue = "30") int minutes) {
         
         try {
+            logger.warn("⚠️ 使用了废弃端点: /monitoring/history/api/server/{}/realtime, 推荐使用 /monitoring/api/server/{}/hub/query", serverId, serverId);
             LocalDateTime sinceTime = LocalDateTime.now().minusMinutes(minutes);
             List<ServerMetrics> metrics = Collections.emptyList();
 
