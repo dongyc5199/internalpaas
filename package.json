@@ -29,7 +29,10 @@
     "test:e2e:codegen": "playwright codegen http://localhost:9090",
     "type-check": "tsc --noEmit",
     "ci:check": "npm run lint && npm run lint:style && npm run type-check && npm run test:run && npm run build",
-    "precommit": "npm run format && npm run lint:fix && npm run lint:style:fix && npm run test:run"
+    "precommit": "npm run format && npm run lint:fix && npm run lint:style:fix && npm run test:run",
+    "debt:check": "powershell -ExecutionPolicy Bypass -File scripts/check-debt.ps1",
+    "debt:view": "start TECHNICAL_DEBT.md",
+    "debt:summary": "start DEBT_SUMMARY.md"
   },
   "repository": {
     "type": "git",

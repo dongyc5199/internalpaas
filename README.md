@@ -40,6 +40,7 @@ Internal PaaS Platform 是一个轻量级的企业内部 PaaS 管理平台,提�
 - [AI Agent协作指南](AGENTS.md)
 - [开发路线图](docs/development/roadmap.md)
 - [Lombok IDE配置](docs/development/lombok-ide-setup.md)
+- [技术债务清单](TECHNICAL_DEBT.md) 🔧 - 待改进事项追踪
 
 ### 完整文档索引
 📖 **[文档中心](docs/README.md)** - 浏览所有文档
