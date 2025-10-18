@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务器群组管理 - 配置导入弹窗</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Page Header */
+        .page-header {
+            background: white;
+            padding: 20px 24px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .page-desc {
+            color: #666;
+            font-size: 13px;
+        }
+
+        /* Server List Card */
+        .server-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e8e8e8;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-default {
+            background: white;
+            color: #666;
+            border: 1px solid #e0e0e0;
+        }
+
+        .btn-default:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        /* Server Table */
+        .server-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .server-table thead {
+            background: #f8f9fa;
+        }
+
+        .server-table th {
+            padding: 12px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 2px solid #e8e8e8;
+        }
+
+        .server-table td {
+            padding: 14px 12px;
+            font-size: 13px;
+            color: #333;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .server-table tr:hover {
+            background: #fafbfc;
+        }
+
+        .server-name {
+            font-weight: 500;
+            color: #667eea;
+        }
+
+        .server-ip {
+            font-family: 'Consolas', monospace;
+            color: #666;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-online {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-offline {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Modal Dialog */
+        .modal-dialog {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #f5f5f5;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+            color: #999;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #e8e8e8;
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 24px;
+            max-height: calc(85vh - 140px);
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: #fafbfc;
+        }
+
+        /* Import Content Styles */
+        .clients-banner {
+            background: linear-gradient(135deg, #f5f7ff 0%, #faf5ff 100%);
+            border: 1px solid #e8e8ff;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .banner-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .banner-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .banner-count {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .clients-showcase {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .client-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #e8e8ff;
+            border-radius: 20px;
+            font-size: 12px;
+            transition: all 0.2s;
+            cursor: default;
+        }
+
+        .client-badge:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .client-badge.supported {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .client-badge.coming-soon {
+            opacity: 0.6;
+            border-style: dashed;
+        }
+
+        .client-icon-small {
+            font-size: 16px;
+        }
+
+        .client-name-small {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .client-status {
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 8px;
+            background: #10b981;
+            color: white;
+            font-weight: 600;
+        }
+
+        .client-status.coming {
+            background: #f59e0b;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .tab:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .info-box {
+            background: #f0f5ff;
+            border-left: 3px solid #667eea;
+            border-radius: 6px;
+            padding: 12px 14px;
+            margin-bottom: 20px;
+        }
+
+        .info-box-title {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .info-box-text {
+            color: #666;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .scan-button-wrapper {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .btn-large {
+            padding: 12px 32px;
+            font-size: 15px;
+        }
+
+        .scan-status {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .scan-status.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 3px;
+            transition: width 0.4s ease;
+            animation: shimmer 1.5s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .scan-steps {
+            margin-bottom: 16px;
+        }
+
+        .scan-step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            color: #999;
+            font-size: 13px;
+        }
+
+        .scan-step.active {
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .scan-step.completed {
+            color: #10b981;
+        }
+
+        .scan-step-icon {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .scan-result {
+            display: none;
+            padding: 16px;
+            border: 2px solid #10b981;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+        }
+
+        .scan-result.active {
+            display: block;
+            animation: resultFadeIn 0.3s ease;
+        }
+
+        @keyframes resultFadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .scan-result-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .scan-result-icon {
+            font-size: 28px;
+            color: #10b981;
+        }
+
+        .scan-result-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .scan-result-info {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .info-item {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .info-label {
+            color: #667eea;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .info-value {
+            color: #333;
+            font-size: 13px;
+        }
+
+        .scan-result-tip {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+            margin-bottom: 16px;
+        }
+
+        .tip-title {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        .tip-content {
+            color: #666;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #667eea;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-group .form-input {
+            flex: 1;
+        }
+
+        .form-help {
+            color: #999;
+            font-size: 11px;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+
+        .upload-area {
+            border: 2px dashed #d0d5dd;
+            border-radius: 10px;
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fafbfc;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f5f7ff;
+        }
+
+        .upload-icon {
+            font-size: 40px;
+            color: #cbd5e0;
+            margin-bottom: 12px;
+        }
+
+        .upload-text {
+            color: #666;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .upload-hint {
+            color: #999;
+            font-size: 11px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        /* Manual Import Styles */
+        .manual-step {
+            animation: stepFadeIn 0.3s ease;
+        }
+
+        @keyframes stepFadeIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .client-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .client-card {
+            position: relative;
+            background: white;
+            border: 2px solid #e8e8e8;
+            border-radius: 10px;
+            padding: 20px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .client-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .client-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f5f7ff 0%, #faf5ff 100%);
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.25);
+        }
+
+        .client-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .client-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .client-desc {
+            color: #999;
+            font-size: 11px;
+        }
+
+        .client-check {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .client-card.selected .client-check {
+            display: flex;
+        }
+
+        .step-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .path-options {
+            margin: 20px 0;
+        }
+
+        .path-option {
+            background: #fafbfc;
+            border: 1px solid #e8e8e8;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .path-option:has(input[type="radio"]:checked) {
+            border-color: #667eea;
+            background: #f5f7ff;
+        }
+
+        .option-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .option-header input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .option-title {
+            flex: 1;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .option-body {
+            margin-left: 28px;
+        }
+
+        .path-divider {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin: 12px 0;
+            position: relative;
+        }
+
+        .path-divider::before,
+        .path-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 45%;
+            height: 1px;
+            background: #e8e8e8;
+        }
+
+        .path-divider::before {
+            left: 0;
+        }
+
+        .path-divider::after {
+            right: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">服务器群组管理</div>
+            <div class="page-desc">管理和组织您的服务器资源</div>
+        </div>
+
+        <!-- Server List Card -->
+        <div class="server-card">
+            <div class="card-header">
+                <div class="card-title">📋 服务器列表</div>
+                <div class="card-actions">
+                    <button class="btn btn-primary" id="importConfigBtn">
+                        <span>📥</span>
+                        <span>导入配置</span>
+                    </button>
+                    <button class="btn btn-default">
+                        <span>➕</span>
+                        <span>添加服务器</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Server Table -->
+            <table class="server-table">
+                <thead>
+                    <tr>
+                        <th>服务器名称</th>
+                        <th>IP地址</th>
+                        <th>端口</th>
+                        <th>群组</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="server-name">生产环境-Web服务器01</span></td>
+                        <td><span class="server-ip">192.168.1.100</span></td>
+                        <td>22</td>
+                        <td>生产环境</td>
+                        <td><span class="status-badge status-online">在线</span></td>
+                        <td><button class="btn btn-default" style="padding: 4px 12px; font-size: 12px;">管理</button></td>
+                    </tr>
+                    <tr>
+                        <td><span class="server-name">测试环境-DB服务器01</span></td>
+                        <td><span class="server-ip">192.168.1.101</span></td>
+                        <td>22</td>
+                        <td>测试环境</td>
+                        <td><span class="status-badge status-online">在线</span></td>
+                        <td><button class="btn btn-default" style="padding: 4px 12px; font-size: 12px;">管理</button></td>
+                    </tr>
+                    <tr>
+                        <td><span class="server-name">开发环境-应用服务器01</span></td>
+                        <td><span class="server-ip">192.168.1.102</span></td>
+                        <td>22</td>
+                        <td>开发环境</td>
+                        <td><span class="status-badge status-offline">离线</span></td>
+                        <td><button class="btn btn-default" style="padding: 4px 12px; font-size: 12px;">管理</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Import Config Modal -->
+    <div class="modal-overlay" id="importModal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <span>📥</span>
+                    <span>导入SSH客户端配置</span>
+                </div>
+                <button class="modal-close" id="closeModalBtn">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Supported Clients Banner -->
+                <div class="clients-banner">
+                    <div class="banner-header">
+                        <div class="banner-title">
+                            <span>✨</span>
+                            <span>智能识别多种SSH客户端</span>
+                        </div>
+                        <div class="banner-count">自动检测 • 一键导入</div>
+                    </div>
+                    <div class="clients-showcase">
+                        <div class="client-badge supported">
+                            <span class="client-icon-small">🔐</span>
+                            <span class="client-name-small">SecureCRT</span>
+                            <span class="client-status">支持</span>
+                        </div>
+                        <div class="client-badge supported">
+                            <span class="client-icon-small">📡</span>
+                            <span class="client-name-small">Xshell</span>
+                            <span class="client-status">支持</span>
+                        </div>
+                        <div class="client-badge supported">
+                            <span class="client-icon-small">⚡</span>
+                            <span class="client-name-small">Tabby</span>
+                            <span class="client-status">支持</span>
+                        </div>
+                        <div class="client-badge coming-soon">
+                            <span class="client-icon-small">🖥️</span>
+                            <span class="client-name-small">MobaXterm</span>
+                            <span class="client-status coming">即将</span>
+                        </div>
+                        <div class="client-badge coming-soon">
+                            <span class="client-icon-small">🔧</span>
+                            <span class="client-name-small">PuTTY</span>
+                            <span class="client-status coming">计划</span>
+                        </div>
+                        <div style="font-size: 12px; color: #999; margin-left: 8px;">持续扩展中...</div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab active" data-tab="auto-scan">
+                        <span>🔍</span>
+                        <span>自动扫描</span>
+                    </button>
+                    <button class="tab" data-tab="manual">
+                        <span>📁</span>
+                        <span>手动指定</span>
+                    </button>
+                    <button class="tab" data-tab="upload">
+                        <span>📤</span>
+                        <span>文件上传</span>
+                    </button>
+                </div>
+
+                <!-- Auto Scan Tab -->
+                <div class="tab-content active" id="auto-scan">
+                    <div class="info-box">
+                        <div class="info-box-title">🔍 智能扫描能力</div>
+                        <div class="info-box-text">
+                            系统将自动检测已安装的SSH客户端，并智能定位配置文件<br>
+                            <strong>支持多客户端并存</strong>，一次扫描可发现所有已安装的SSH客户端配置
+                        </div>
+                    </div>
+
+                    <div class="scan-button-wrapper">
+                        <button class="btn btn-primary btn-large" id="startScanBtn">
+                            <span>🔍</span>
+                            <span>开始自动扫描</span>
+                        </button>
+                    </div>
+
+                    <!-- Scanning Status -->
+                    <div class="scan-status" id="scanningStatus">
+                        <div style="text-align: center; margin-bottom: 16px; color: #667eea; font-weight: 500; font-size: 14px;">
+                            <div class="spinner"></div>
+                            正在扫描配置文件...
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                        </div>
+                        <div class="scan-steps">
+                            <div class="scan-step" id="step1">
+                                <div class="scan-step-icon">⏳</div>
+                                <div>检查系统注册表...</div>
+                            </div>
+                            <div class="scan-step" id="step2">
+                                <div class="scan-step-icon">⏳</div>
+                                <div>扫描默认配置路径...</div>
+                            </div>
+                            <div class="scan-step" id="step3">
+                                <div class="scan-step-icon">⏳</div>
+                                <div>从安装目录推断配置位置...</div>
+                            </div>
+                            <div class="scan-step" id="step4">
+                                <div class="scan-step-icon">⏳</div>
+                                <div>验证配置文件有效性...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scan Success Result -->
+                    <div class="scan-result" id="scanSuccess">
+                        <div class="scan-result-header">
+                            <div class="scan-result-icon">✅</div>
+                            <div>
+                                <div class="scan-result-title">扫描成功！</div>
+                                <div style="color: #10b981; font-size: 13px;">检测到 2 个已安装的SSH客户端</div>
+                            </div>
+                        </div>
+
+                        <div class="scan-result-info">
+                            <div class="info-item">
+                                <div class="info-label">🔐 SecureCRT 9.0.1 <span class="badge badge-success">已安装</span></div>
+                                <div class="info-value">25 个会话 • 3 个分组 • C:\Users\Admin\AppData\Roaming\VanDyke\Config\</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">⚡ Tabby 1.0.196 <span class="badge badge-success">已安装</span></div>
+                                <div class="info-value">18 个会话 • 2 个分组 • C:\Users\Admin\AppData\Roaming\tabby\</div>
+                            </div>
+                        </div>
+
+                        <div class="scan-result-tip">
+                            <div class="tip-title">💡 智能建议</div>
+                            <div class="tip-content">
+                                共发现 43 个会话配置（来自2个客户端），系统将自动去重和合并。预计导入时间 3-5 分钟。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manual Tab -->
+                <div class="tab-content" id="manual">
+                    <!-- Step 1: Select SSH Client -->
+                    <div class="manual-step" id="manualStep1">
+                        <div class="info-box">
+                            <div class="info-box-title">🎯 步骤 1/2：选择 SSH 客户端</div>
+                            <div class="info-box-text">
+                                请选择要导入配置的 SSH 客户端类型
+                            </div>
+                        </div>
+
+                        <div class="client-grid">
+                            <div class="client-card" data-client="securecrt">
+                                <div class="client-icon">🔐</div>
+                                <div class="client-name">SecureCRT</div>
+                                <div class="client-desc">VanDyke Software</div>
+                                <div class="client-check">✓</div>
+                            </div>
+                            <div class="client-card" data-client="xshell">
+                                <div class="client-icon">🐚</div>
+                                <div class="client-name">Xshell</div>
+                                <div class="client-desc">NetSarang</div>
+                                <div class="client-check">✓</div>
+                            </div>
+                            <div class="client-card" data-client="tabby">
+                                <div class="client-icon">🎯</div>
+                                <div class="client-name">Tabby</div>
+                                <div class="client-desc">开源终端</div>
+                                <div class="client-check">✓</div>
+                            </div>
+                            <div class="client-card" data-client="mobaxterm">
+                                <div class="client-icon">⚡</div>
+                                <div class="client-name">MobaXterm</div>
+                                <div class="client-desc">Mobatek</div>
+                                <div class="client-check">✓</div>
+                            </div>
+                            <div class="client-card" data-client="putty">
+                                <div class="client-icon">🔧</div>
+                                <div class="client-name">PuTTY</div>
+                                <div class="client-desc">Simon Tatham</div>
+                                <div class="client-check">✓</div>
+                            </div>
+                        </div>
+
+                        <div class="step-actions">
+                            <button class="btn btn-primary" id="nextToPathBtn" disabled>
+                                <span>下一步</span>
+                                <span>→</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Specify Path -->
+                    <div class="manual-step" id="manualStep2" style="display: none;">
+                        <div class="info-box">
+                            <div class="info-box-title">📁 步骤 2/2：指定配置路径</div>
+                            <div class="info-box-text" id="clientPathHint">
+                                请指定 <strong id="selectedClientName">SecureCRT</strong> 的配置目录或安装目录
+                            </div>
+                        </div>
+
+                        <div class="path-options">
+                            <div class="path-option">
+                                <div class="option-header">
+                                    <input type="radio" name="pathType" id="pathTypeConfig" value="config" checked>
+                                    <label for="pathTypeConfig" class="option-title">
+                                        <span class="badge badge-success">推荐</span>
+                                        配置目录
+                                    </label>
+                                </div>
+                                <div class="option-body">
+                                    <div class="input-group">
+                                        <input type="text" class="form-input" id="configPathInput" 
+                                               placeholder="例如: C:\Users\YourName\AppData\Roaming\VanDyke\Config\">
+                                        <button class="btn btn-default" onclick="selectFolder('config')">📁 浏览</button>
+                                    </div>
+                                    <div class="form-help" id="configPathHelp">
+                                        Windows 默认: %APPDATA%\VanDyke\Config\Sessions
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="path-divider">或</div>
+
+                            <div class="path-option">
+                                <div class="option-header">
+                                    <input type="radio" name="pathType" id="pathTypeInstall" value="install">
+                                    <label for="pathTypeInstall" class="option-title">安装目录</label>
+                                </div>
+                                <div class="option-body">
+                                    <div class="input-group">
+                                        <input type="text" class="form-input" id="installPathInput" 
+                                               placeholder="例如: C:\Program Files\VanDyke Software\SecureCRT\">
+                                        <button class="btn btn-default" onclick="selectFolder('install')">📁 浏览</button>
+                                    </div>
+                                    <div class="form-help" id="installPathHelp">
+                                        系统将从安装目录自动推断配置文件位置
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-actions">
+                            <button class="btn btn-default" id="backToClientBtn">
+                                <span>←</span>
+                                <span>上一步</span>
+                            </button>
+                            <button class="btn btn-primary" id="confirmPathBtn" disabled>
+                                <span>✓</span>
+                                <span>确认</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Tab -->
+                <div class="tab-content" id="upload">
+                    <div class="info-box">
+                        <div class="info-box-title">📤 文件上传说明</div>
+                        <div class="info-box-text">
+                            支持拖拽或点击上传：Sessions 文件夹（.zip） 或单个配置文件（.ini），最大 50MB
+                        </div>
+                    </div>
+
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📤</div>
+                        <div class="upload-text">点击或拖拽文件到此处上传</div>
+                        <div class="upload-hint">支持 .ini 配置文件或 .zip 压缩包</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-default" id="cancelBtn">取消</button>
+                <button class="btn btn-primary" id="confirmImportBtn" disabled>
+                    <span>✓</span>
+                    <span>确认导入</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Modal control
+        const importModal = document.getElementById('importModal');
+        const importConfigBtn = document.getElementById('importConfigBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const confirmImportBtn = document.getElementById('confirmImportBtn');
+
+        // Open modal
+        importConfigBtn.addEventListener('click', () => {
+            importModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+
+        // Close modal
+        function closeModal() {
+            importModal.classList.remove('active');
+            document.body.style.overflow = '';
+            
+            // Reset modal state
+            document.getElementById('scanSuccess').classList.remove('active');
+            document.getElementById('scanningStatus').classList.remove('active');
+            confirmImportBtn.disabled = true;
+        }
+
+        closeModalBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+
+        // Close on overlay click
+        importModal.addEventListener('click', (e) => {
+            if (e.target === importModal) {
+                closeModal();
+            }
+        });
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.tab;
+                
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(targetTab).classList.add('active');
+            });
+        });
+
+        // Auto scan
+        document.getElementById('startScanBtn').addEventListener('click', () => {
+            const scanningStatus = document.getElementById('scanningStatus');
+            const scanSuccess = document.getElementById('scanSuccess');
+            const progressFill = document.getElementById('progressFill');
+            
+            scanSuccess.classList.remove('active');
+            scanningStatus.classList.add('active');
+            confirmImportBtn.disabled = true;
+            
+            const steps = [
+                { id: 'step1', progress: 25, delay: 500 },
+                { id: 'step2', progress: 50, delay: 1000 },
+                { id: 'step3', progress: 75, delay: 1500 },
+                { id: 'step4', progress: 100, delay: 2000 }
+            ];
+            
+            steps.forEach((step, index) => {
+                setTimeout(() => {
+                    const stepEl = document.getElementById(step.id);
+                    stepEl.classList.add('active');
+                    progressFill.style.width = step.progress + '%';
+                    
+                    if (index > 0) {
+                        document.getElementById(steps[index - 1].id).classList.remove('active');
+                        document.getElementById(steps[index - 1].id).classList.add('completed');
+                        document.getElementById(steps[index - 1].id).querySelector('.scan-step-icon').textContent = '✓';
+                    }
+                    
+                    if (step.progress === 100) {
+                        setTimeout(() => {
+                            stepEl.classList.remove('active');
+                            stepEl.classList.add('completed');
+                            stepEl.querySelector('.scan-step-icon').textContent = '✓';
+                            
+                            setTimeout(() => {
+                                scanningStatus.classList.remove('active');
+                                scanSuccess.classList.add('active');
+                                confirmImportBtn.disabled = false;
+                            }, 500);
+                        }, 300);
+                    }
+                }, step.delay);
+            });
+        });
+
+        // Confirm import
+        confirmImportBtn.addEventListener('click', () => {
+            alert('开始导入配置...\n\n将导入 43 个服务器配置到系统中');
+            closeModal();
+        });
+
+        // Upload area
+        const uploadArea = document.getElementById('uploadArea');
+        
+        uploadArea.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.ini,.zip';
+            input.onchange = (e) => {
+                if (e.target.files.length > 0) {
+                    uploadArea.innerHTML = `
+                        <div style="color: #10b981; font-size: 32px; margin-bottom: 12px;">✓</div>
+                        <div style="color: #333; font-weight: 500; margin-bottom: 4px;">${e.target.files[0].name}</div>
+                        <div style="color: #999; font-size: 11px;">点击重新选择文件</div>
+                    `;
+                    confirmImportBtn.disabled = false;
+                }
+            };
+            input.click();
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#667eea';
+            uploadArea.style.background = '#f5f7ff';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#d0d5dd';
+            uploadArea.style.background = '#fafbfc';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#d0d5dd';
+            uploadArea.style.background = '#fafbfc';
+            
+            if (e.dataTransfer.files.length > 0) {
+                uploadArea.innerHTML = `
+                    <div style="color: #10b981; font-size: 32px; margin-bottom: 12px;">✓</div>
+                    <div style="color: #333; font-weight: 500; margin-bottom: 4px;">${e.dataTransfer.files[0].name}</div>
+                    <div style="color: #999; font-size: 11px;">点击重新选择文件</div>
+                `;
+                confirmImportBtn.disabled = false;
+            }
+        });
+
+        // Manual Import - Client Selection
+        let selectedClient = null;
+        const clientCards = document.querySelectorAll('.client-card');
+        const nextToPathBtn = document.getElementById('nextToPathBtn');
+        const manualStep1 = document.getElementById('manualStep1');
+        const manualStep2 = document.getElementById('manualStep2');
+        const backToClientBtn = document.getElementById('backToClientBtn');
+        const selectedClientNameEl = document.getElementById('selectedClientName');
+        const configPathHelp = document.getElementById('configPathHelp');
+        const installPathHelp = document.getElementById('installPathHelp');
+        const configPathInput = document.getElementById('configPathInput');
+        const installPathInput = document.getElementById('installPathInput');
+        const confirmPathBtn = document.getElementById('confirmPathBtn');
+
+        // Client path configurations
+        const clientPathConfig = {
+            securecrt: {
+                name: 'SecureCRT',
+                configPath: '%APPDATA%\\VanDyke\\Config\\Sessions',
+                installPath: 'C:\\Program Files\\VanDyke Software\\SecureCRT'
+            },
+            xshell: {
+                name: 'Xshell',
+                configPath: '%USERPROFILE%\\Documents\\NetSarang Computer\\7\\Xshell\\Sessions',
+                installPath: 'C:\\Program Files\\NetSarang\\Xshell 7'
+            },
+            tabby: {
+                name: 'Tabby',
+                configPath: '%APPDATA%\\tabby\\config.yaml',
+                installPath: 'C:\\Users\\%USERNAME%\\AppData\\Local\\Programs\\Tabby'
+            },
+            mobaxterm: {
+                name: 'MobaXterm',
+                configPath: '%USERPROFILE%\\Documents\\MobaXterm\\Sessions',
+                installPath: 'C:\\Program Files\\Mobatek\\MobaXterm'
+            },
+            putty: {
+                name: 'PuTTY',
+                configPath: 'HKEY_CURRENT_USER\\Software\\SimonTatham\\PuTTY\\Sessions',
+                installPath: 'C:\\Program Files\\PuTTY'
+            }
+        };
+
+        // Client card selection
+        clientCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // Remove previous selection
+                clientCards.forEach(c => c.classList.remove('selected'));
+                
+                // Add new selection
+                card.classList.add('selected');
+                selectedClient = card.dataset.client;
+                
+                // Enable next button
+                nextToPathBtn.disabled = false;
+            });
+        });
+
+        // Next to path configuration
+        nextToPathBtn.addEventListener('click', () => {
+            if (!selectedClient) return;
+            
+            const config = clientPathConfig[selectedClient];
+            
+            // Update client name
+            selectedClientNameEl.textContent = config.name;
+            
+            // Update path hints
+            configPathHelp.textContent = `Windows 默认: ${config.configPath}`;
+            installPathHelp.textContent = `默认: ${config.installPath}`;
+            
+            // Update placeholders
+            configPathInput.placeholder = `例如: ${config.configPath}`;
+            installPathInput.placeholder = `例如: ${config.installPath}`;
+            
+            // Clear inputs
+            configPathInput.value = '';
+            installPathInput.value = '';
+            confirmPathBtn.disabled = true;
+            
+            // Switch steps
+            manualStep1.style.display = 'none';
+            manualStep2.style.display = 'block';
+        });
+
+        // Back to client selection
+        backToClientBtn.addEventListener('click', () => {
+            manualStep2.style.display = 'none';
+            manualStep1.style.display = 'block';
+        });
+
+        // Path input validation
+        [configPathInput, installPathInput].forEach(input => {
+            input.addEventListener('input', () => {
+                const pathTypeConfig = document.getElementById('pathTypeConfig');
+                const pathTypeInstall = document.getElementById('pathTypeInstall');
+                
+                if (pathTypeConfig.checked && configPathInput.value.trim()) {
+                    confirmPathBtn.disabled = false;
+                } else if (pathTypeInstall.checked && installPathInput.value.trim()) {
+                    confirmPathBtn.disabled = false;
+                } else {
+                    confirmPathBtn.disabled = true;
+                }
+            });
+        });
+
+        // Radio button change
+        document.querySelectorAll('input[name="pathType"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                const pathTypeConfig = document.getElementById('pathTypeConfig');
+                
+                if (pathTypeConfig.checked && configPathInput.value.trim()) {
+                    confirmPathBtn.disabled = false;
+                } else if (!pathTypeConfig.checked && installPathInput.value.trim()) {
+                    confirmPathBtn.disabled = false;
+                } else {
+                    confirmPathBtn.disabled = true;
+                }
+            });
+        });
+
+        // Confirm path
+        confirmPathBtn.addEventListener('click', () => {
+            const pathTypeConfig = document.getElementById('pathTypeConfig');
+            const pathType = pathTypeConfig.checked ? '配置目录' : '安装目录';
+            const pathValue = pathTypeConfig.checked ? configPathInput.value : installPathInput.value;
+            const config = clientPathConfig[selectedClient];
+            
+            alert(`✓ 配置已确认\n\n客户端: ${config.name}\n路径类型: ${pathType}\n路径: ${pathValue}\n\n系统将从该路径导入会话配置`);
+            
+            // Enable final import button
+            document.getElementById('confirmImportBtn').disabled = false;
+        });
+
+        // Folder selection helper (simulated)
+        function selectFolder(type) {
+            const input = type === 'config' ? configPathInput : installPathInput;
+            const config = clientPathConfig[selectedClient];
+            
+            // Simulate folder selection
+            const simulatedPath = type === 'config' ? config.configPath : config.installPath;
+            input.value = simulatedPath.replace('%APPDATA%', 'C:\\Users\\YourName\\AppData\\Roaming')
+                                       .replace('%USERPROFILE%', 'C:\\Users\\YourName')
+                                       .replace('%USERNAME%', 'YourName');
+            
+            // Trigger input event
+            input.dispatchEvent(new Event('input'));
+        }
+    </script>
+</body>
+</html>
