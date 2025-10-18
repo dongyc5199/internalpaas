@@ -22,6 +22,7 @@ import {
 import { eventBus } from "@/utils/event-bus";
 import { ServerListManager } from "./ServerListManager";
 import { ServerDetailOverlay } from "./ServerDetailOverlay";
+import { getServerImportModal } from "./server-import-modal";
 
 // 声明全局变量和函数，带默认值
 declare let currentLanguage: string;
@@ -262,6 +263,13 @@ declare global {
         if (addServerBtn) {
             addServerBtn.addEventListener("click", () => {
                 addNewServer();
+            });
+        }
+
+        const importServerBtn = document.getElementById("importServerBtn");
+        if (importServerBtn) {
+            importServerBtn.addEventListener("click", () => {
+                openServerImportModal();
             });
         }
 
@@ -781,6 +789,16 @@ declare global {
             );
             alert("无法打开服务器添加弹窗，请刷新页面后重试");
         }
+    }
+
+    function openServerImportModal() {
+        console.log("openServerImportModal called");
+        console.log("Getting server import modal instance...");
+        const importModal = getServerImportModal();
+        console.log("Modal instance obtained:", importModal);
+        console.log("Calling modal.open()...");
+        importModal.open();
+        console.log("modal.open() called");
     }
 
     // Global function to refresh server list (called from server-modal.js)

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.HashMap;
@@ -21,6 +22,39 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    /**
+     * 处理静态资源未找到异常
+     * 忽略浏览器开发工具的特定资源请求（如Chrome DevTools）
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public Object handleNoResourceFoundException(NoResourceFoundException ex, HttpServletRequest request) {
+        String resourcePath = ex.getResourcePath();
+        
+        // 忽略浏览器开发工具相关的资源请求，不记录错误日志
+        if (resourcePath != null && 
+            (resourcePath.contains(".well-known/") || 
+             resourcePath.contains("com.chrome.devtools") ||
+             resourcePath.contains("favicon.ico"))) {
+            logger.debug("忽略浏览器工具资源请求: {}", resourcePath);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        
+        // 其他资源未找到的情况记录警告日志
+        logger.warn("静态资源未找到: {}", resourcePath);
+        
+        if (isAjaxRequest(request)) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", "请求的资源不存在");
+            errorResponse.put("timestamp", System.currentTimeMillis());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
 
     /**
      * 统一处理运行时异常

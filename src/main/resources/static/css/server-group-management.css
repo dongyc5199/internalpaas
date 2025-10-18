@@ -287,6 +287,20 @@
     margin: 4px 0 0;
 }
 
+.section-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.section-actions button {
+    white-space: nowrap;
+}
+
+.section-actions button i {
+    margin-right: 8px;
+}
+
 /* ===== Toolbar Styles ===== */
 .server-list-toolbar {
     display: flex;

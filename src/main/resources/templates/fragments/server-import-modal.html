@@ -1,0 +1,327 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+</head>
+<body>
+    <div th:fragment="server-import-modal" class="modal-overlay" id="serverImportModal" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <span>📥</span>
+                    <span data-i18n-zh="导入SSH客户端配置" data-i18n-en="Import SSH Client Configuration">导入SSH客户端配置</span>
+                </div>
+                <button class="modal-close" data-action="modal-close">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Supported Clients Banner -->
+                <div class="clients-banner">
+                    <div class="banner-header">
+                        <div class="banner-title">
+                            <span>✨</span>
+                            <span data-i18n-zh="智能识别多种SSH客户端" data-i18n-en="Smart Recognition of Multiple SSH Clients">智能识别多种SSH客户端</span>
+                        </div>
+                        <div class="banner-count" data-i18n-zh="自动检测 • 一键导入" data-i18n-en="Auto Detect • One-Click Import">自动检测 • 一键导入</div>
+                    </div>
+                    <div class="clients-showcase">
+                        <div class="client-badge supported">
+                            <span class="client-icon-small">🔐</span>
+                            <span class="client-name-small">SecureCRT</span>
+                            <span class="client-status" data-i18n-zh="支持" data-i18n-en="Supported">支持</span>
+                        </div>
+                        <div class="client-badge supported">
+                            <span class="client-icon-small">📡</span>
+                            <span class="client-name-small">Xshell</span>
+                            <span class="client-status" data-i18n-zh="支持" data-i18n-en="Supported">支持</span>
+                        </div>
+                        <div class="client-badge supported">
+                            <span class="client-icon-small">⚡</span>
+                            <span class="client-name-small">Tabby</span>
+                            <span class="client-status" data-i18n-zh="支持" data-i18n-en="Supported">支持</span>
+                        </div>
+                        <div class="client-badge coming-soon">
+                            <span class="client-icon-small">🖥️</span>
+                            <span class="client-name-small">MobaXterm</span>
+                            <span class="client-status coming" data-i18n-zh="即将" data-i18n-en="Coming">即将</span>
+                        </div>
+                        <div class="client-badge coming-soon">
+                            <span class="client-icon-small">🔧</span>
+                            <span class="client-name-small">PuTTY</span>
+                            <span class="client-status coming" data-i18n-zh="计划" data-i18n-en="Planned">计划</span>
+                        </div>
+                        <div style="font-size: 12px; color: #999; margin-left: 8px;" data-i18n-zh="持续扩展中..." data-i18n-en="Continuously Expanding...">持续扩展中...</div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab active" data-tab="auto-scan">
+                        <span>🔍</span>
+                        <span data-i18n-zh="自动扫描" data-i18n-en="Auto Scan">自动扫描</span>
+                    </button>
+                    <button class="tab" data-tab="manual">
+                        <span>📁</span>
+                        <span data-i18n-zh="手动指定" data-i18n-en="Manual">手动指定</span>
+                    </button>
+                    <button class="tab" data-tab="upload">
+                        <span>📤</span>
+                        <span data-i18n-zh="文件上传" data-i18n-en="Upload">文件上传</span>
+                    </button>
+                </div>
+
+                <!-- Auto Scan Tab -->
+                <div class="tab-content active" id="auto-scan">
+                    <div class="info-box">
+                        <div class="info-box-title" data-i18n-zh="🔍 智能扫描能力" data-i18n-en="🔍 Smart Scanning">🔍 智能扫描能力</div>
+                        <div class="info-box-text">
+                            <span data-i18n-zh="系统将自动检测已安装的SSH客户端，并智能定位配置文件" data-i18n-en="The system will automatically detect installed SSH clients and intelligently locate configuration files">系统将自动检测已安装的SSH客户端，并智能定位配置文件</span><br>
+                            <strong data-i18n-zh="支持多客户端并存" data-i18n-en="Support for multiple clients">支持多客户端并存</strong><span data-i18n-zh="，一次扫描可发现所有已安装的SSH客户端配置" data-i18n-en=", one scan can discover all installed SSH client configurations">，一次扫描可发现所有已安装的SSH客户端配置</span>
+                        </div>
+                    </div>
+
+                    <div class="scan-button-wrapper">
+                        <button class="btn btn-primary btn-large" id="startScanBtn">
+                            <span>🔍</span>
+                            <span data-i18n-zh="开始自动扫描" data-i18n-en="Start Auto Scan">开始自动扫描</span>
+                        </button>
+                    </div>
+
+                    <!-- Scanning Status -->
+                    <div class="scan-status" id="scanningStatus">
+                        <div style="text-align: center; margin-bottom: 16px; color: #667eea; font-weight: 500; font-size: 14px;">
+                            <div class="spinner"></div>
+                            <span data-i18n-zh="正在扫描配置文件..." data-i18n-en="Scanning configuration files...">正在扫描配置文件...</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                        </div>
+                        <div class="scan-steps">
+                            <div class="scan-step" id="step1">
+                                <div class="scan-step-icon">⏳</div>
+                                <div data-i18n-zh="检查系统注册表..." data-i18n-en="Checking system registry...">检查系统注册表...</div>
+                            </div>
+                            <div class="scan-step" id="step2">
+                                <div class="scan-step-icon">⏳</div>
+                                <div data-i18n-zh="扫描默认配置路径..." data-i18n-en="Scanning default config paths...">扫描默认配置路径...</div>
+                            </div>
+                            <div class="scan-step" id="step3">
+                                <div class="scan-step-icon">⏳</div>
+                                <div data-i18n-zh="从安装目录推断配置位置..." data-i18n-en="Inferring config location from install directory...">从安装目录推断配置位置...</div>
+                            </div>
+                            <div class="scan-step" id="step4">
+                                <div class="scan-step-icon">⏳</div>
+                                <div data-i18n-zh="验证配置文件有效性..." data-i18n-en="Validating config files...">验证配置文件有效性...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scan Result (will be populated dynamically) -->
+                    <div class="scan-result" id="scanResult">
+                        <div class="scan-result-header">
+                            <div class="scan-result-icon">✅</div>
+                            <div>
+                                <div class="scan-result-title" data-i18n-zh="扫描成功！" data-i18n-en="Scan successful!">扫描成功！</div>
+                                <div style="color: #10b981; font-size: 13px;">
+                                    <span data-i18n-zh="检测到" data-i18n-en="Detected">检测到</span>
+                                    <span> </span>
+                                    <strong id="detectedClientName">-</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="scan-result-info">
+                            <div class="info-item">
+                                <div class="info-label">
+                                    <span>🔐</span>
+                                    <span> </span>
+                                    <strong id="detectedClientNameLabel">SecureCRT</strong>
+                                </div>
+                                <div class="info-value">
+                                    <span id="detectedServerCount">0</span>
+                                    <span> </span>
+                                    <span data-i18n-zh="个会话" data-i18n-en="sessions">个会话</span>
+                                    <span> • </span>
+                                    <span id="detectedConfigPath">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="scan-result-tip">
+                            <div class="tip-title" data-i18n-zh="💡 智能建议" data-i18n-en="💡 Smart Suggestion">💡 智能建议</div>
+                            <div class="tip-content" data-i18n-zh="系统将自动解析配置文件并导入服务器信息" data-i18n-en="System will automatically parse config files and import server info">系统将自动解析配置文件并导入服务器信息</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manual Tab -->
+                <div class="tab-content" id="manual">
+                    <!-- Step 1: Select SSH Client -->
+                    <div class="manual-step" id="manualStep1">
+                        <div class="info-box">
+                            <div class="info-box-title" data-i18n-zh="🎯 步骤 1/2：选择 SSH 客户端" data-i18n-en="🎯 Step 1/2: Select SSH Client">🎯 步骤 1/2：选择 SSH 客户端</div>
+                            <div class="info-box-text" data-i18n-zh="请选择要导入配置的 SSH 客户端类型" data-i18n-en="Please select the SSH client type to import">请选择要导入配置的 SSH 客户端类型</div>
+                        </div>
+
+                        <div class="client-grid">
+                            <div class="client-card" data-client="securecrt">
+                                <div class="client-icon">🔐</div>
+                                <div class="client-name">SecureCRT</div>
+                                <div class="client-desc">VanDyke Software</div>
+                                <div class="client-check">✓</div>
+                            </div>
+                            <div class="client-card" data-client="xshell">
+                                <div class="client-icon">🐚</div>
+                                <div class="client-name">Xshell</div>
+                                <div class="client-desc">NetSarang</div>
+                                <div class="client-check">✓</div>
+                            </div>
+                            <div class="client-card" data-client="tabby">
+                                <div class="client-icon">🎯</div>
+                                <div class="client-name">Tabby</div>
+                                <div class="client-desc" data-i18n-zh="开源终端" data-i18n-en="Open Source Terminal">开源终端</div>
+                                <div class="client-check">✓</div>
+                            </div>
+                            <div class="client-card" data-client="mobaxterm">
+                                <div class="client-icon">⚡</div>
+                                <div class="client-name">MobaXterm</div>
+                                <div class="client-desc">Mobatek</div>
+                                <div class="client-check">✓</div>
+                            </div>
+                            <div class="client-card" data-client="putty">
+                                <div class="client-icon">🔧</div>
+                                <div class="client-name">PuTTY</div>
+                                <div class="client-desc">Simon Tatham</div>
+                                <div class="client-check">✓</div>
+                            </div>
+                        </div>
+
+                        <div class="step-actions">
+                            <button class="btn btn-primary" id="nextToPathBtn" disabled>
+                                <span data-i18n-zh="下一步" data-i18n-en="Next">下一步</span>
+                                <span>→</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Specify Path -->
+                    <div class="manual-step" id="manualStep2" style="display: none;">
+                        <div class="info-box">
+                            <div class="info-box-title" data-i18n-zh="📁 步骤 2/2：指定配置路径" data-i18n-en="📁 Step 2/2: Specify Config Path">📁 步骤 2/2：指定配置路径</div>
+                            <div class="info-box-text" id="clientPathHint">
+                                <span data-i18n-zh="请指定" data-i18n-en="Please specify">请指定</span>
+                                <strong id="selectedClientName">SecureCRT</strong>
+                                <span data-i18n-zh="的配置目录或安装目录" data-i18n-en="'s configuration or installation directory">的配置目录或安装目录</span>
+                            </div>
+                        </div>
+
+                        <div class="path-options">
+                            <div class="path-option">
+                                <div class="option-header">
+                                    <input type="radio" name="pathType" id="pathTypeConfig" value="config" checked>
+                                    <label for="pathTypeConfig" class="option-title">
+                                        <span class="badge badge-success" data-i18n-zh="推荐" data-i18n-en="Recommended">推荐</span>
+                                        <span data-i18n-zh="配置目录" data-i18n-en="Config Directory">配置目录</span>
+                                    </label>
+                                </div>
+                                <div class="option-body">
+                                    <div class="input-group">
+                                        <input type="text" class="form-input" id="configPathInput" 
+                                               th:placeholder="#{server.import.config.path.placeholder}">
+                                        <button class="btn btn-default" data-action="browse-config">
+                                            <span>📁</span>
+                                            <span data-i18n-zh="浏览" data-i18n-en="Browse">浏览</span>
+                                        </button>
+                                    </div>
+                                    <div class="form-help" id="configPathHelp">
+                                        Windows 默认: %APPDATA%\VanDyke\Config\Sessions
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="path-divider" data-i18n-zh="或" data-i18n-en="or">或</div>
+
+                            <div class="path-option">
+                                <div class="option-header">
+                                    <input type="radio" name="pathType" id="pathTypeInstall" value="install">
+                                    <label for="pathTypeInstall" class="option-title" data-i18n-zh="安装目录" data-i18n-en="Install Directory">安装目录</label>
+                                </div>
+                                <div class="option-body">
+                                    <div class="input-group">
+                                        <input type="text" class="form-input" id="installPathInput" 
+                                               th:placeholder="#{server.import.install.path.placeholder}">
+                                        <button class="btn btn-default" data-action="browse-install">
+                                            <span>📁</span>
+                                            <span data-i18n-zh="浏览" data-i18n-en="Browse">浏览</span>
+                                        </button>
+                                    </div>
+                                    <div class="form-help" id="installPathHelp" data-i18n-zh="系统将从安装目录自动推断配置文件位置" data-i18n-en="System will auto-detect config file location from install directory">系统将从安装目录自动推断配置文件位置</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-actions">
+                            <button class="btn btn-default" id="backToClientBtn">
+                                <span>←</span>
+                                <span data-i18n-zh="上一步" data-i18n-en="Back">上一步</span>
+                            </button>
+                            <button class="btn btn-primary" id="confirmPathBtn" disabled>
+                                <span>✓</span>
+                                <span data-i18n-zh="确认" data-i18n-en="Confirm">确认</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Tab -->
+                <div class="tab-content" id="upload">
+                    <div class="info-box">
+                        <div class="info-box-title" data-i18n-zh="📤 文件上传说明" data-i18n-en="📤 File Upload Instructions">📤 文件上传说明</div>
+                        <div class="info-box-text" data-i18n-zh="支持拖拽或点击上传：Sessions 文件夹（.zip） 或单个配置文件（.ini），最大 50MB" data-i18n-en="Drag & drop or click to upload: Sessions folder (.zip) or config files (.ini), max 50MB">支持拖拽或点击上传：Sessions 文件夹（.zip） 或单个配置文件（.ini），最大 50MB</div>
+                    </div>
+
+                    <!-- Hidden file input -->
+                    <input type="file" id="fileInput" accept=".ini,.zip,.xsh,.yaml,.json" style="display: none;">
+
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📤</div>
+                        <div class="upload-text" data-i18n-zh="点击或拖拽文件到此处上传" data-i18n-en="Click or drag files here to upload">点击或拖拽文件到此处上传</div>
+                        <div class="upload-hint" data-i18n-zh="支持 .ini 配置文件或 .zip 压缩包" data-i18n-en="Supports .ini config files or .zip archives">支持 .ini 配置文件或 .zip 压缩包</div>
+                    </div>
+
+                    <!-- Upload Result -->
+                    <div class="upload-result" id="uploadResult">
+                        <div class="upload-result-header">
+                            <div class="upload-result-icon">✅</div>
+                            <div>
+                                <div class="upload-result-title" data-i18n-zh="文件上传成功！" data-i18n-en="File uploaded successfully!">文件上传成功！</div>
+                                <div style="color: #10b981; font-size: 13px;">
+                                    <span id="uploadFileName">config.zip</span>
+                                    <span> • </span>
+                                    <span id="uploadFileSize">2.3 MB</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="upload-result-info">
+                            <div class="info-item">
+                                <div class="info-label" data-i18n-zh="📋 文件信息" data-i18n-en="📋 File Info">📋 文件信息</div>
+                                <div class="info-value" data-i18n-zh="系统将自动解析配置文件并导入服务器信息" data-i18n-en="System will automatically parse the config file and import server info">系统将自动解析配置文件并导入服务器信息</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-default" data-action="modal-close">
+                    <span data-i18n-zh="取消" data-i18n-en="Cancel">取消</span>
+                </button>
+                <button class="btn btn-primary" id="confirmImportBtn" disabled>
+                    <span>✓</span>
+                    <span data-i18n-zh="确认导入" data-i18n-en="Confirm Import">确认导入</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
