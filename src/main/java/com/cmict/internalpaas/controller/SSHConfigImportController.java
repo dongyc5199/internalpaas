@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -59,9 +60,11 @@ public class SSHConfigImportController {
     private static final Logger logger = LoggerFactory.getLogger(SSHConfigImportController.class);
 
     /**
-     * 最大文件大小限制（1MB）
+     * 最大文件大小限制（从配置文件读取，默认1MB）
+     * Maximum file size limit (configurable via application.properties)
      */
-    private static final long MAX_FILE_SIZE = 1024 * 1024; // 1MB
+    @Value("${app.ssh-config-import.max-file-size:1048576}")
+    private long maxFileSize;
 
     @Autowired
     private SSHConfigImportService sshConfigImportService;
@@ -118,11 +121,11 @@ public class SSHConfigImportController {
             }
 
             // 2. 检查文件大小
-            if (file.getSize() > MAX_FILE_SIZE) {
-                logger.warn("文件大小超过限制: {} 字节 > {} 字节", file.getSize(), MAX_FILE_SIZE);
+            if (file.getSize() > maxFileSize) {
+                logger.warn("文件大小超过限制: {} 字节 > {} 字节", file.getSize(), maxFileSize);
                 return ResponseEntity.badRequest()
                         .body(createErrorResponse(
-                                String.format("文件大小超过限制，最大允许 %d MB", MAX_FILE_SIZE / 1024 / 1024)));
+                                String.format("文件大小超过限制，最大允许 %d MB", maxFileSize / 1024 / 1024)));
             }
 
             // 3. 检查文件类型（仅允许文本文件）
@@ -480,20 +483,31 @@ public class SSHConfigImportController {
         // 或者在Service中添加一个parseConfigContent(String content)方法
 
         // 临时方案：写入临时文件再解析
+        java.nio.file.Path tempFile = null;
         try {
-            java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("ssh-config-", ".tmp");
+            tempFile = java.nio.file.Files.createTempFile("ssh-config-", ".tmp");
             java.nio.file.Files.writeString(tempFile, configContent, StandardCharsets.UTF_8);
 
             SSHConfigParseResult result = sshConfigImportService.parseLocalConfig(tempFile.toString());
 
-            // 删除临时文件
-            java.nio.file.Files.deleteIfExists(tempFile);
-
             return result;
 
         } catch (IOException e) {
-            logger.error("创建临时文件失败", e);
+            logger.error("创建或写入临时文件失败", e);
             return SSHConfigParseResult.error("处理上传文件失败: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("解析配置文件时发生异常", e);
+            return SSHConfigParseResult.error("解析配置失败: " + e.getMessage());
+        } finally {
+            // 确保临时文件被删除（即使发生异常）
+            if (tempFile != null) {
+                try {
+                    java.nio.file.Files.deleteIfExists(tempFile);
+                    logger.debug("临时文件已删除: {}", tempFile);
+                } catch (IOException e) {
+                    logger.warn("删除临时文件失败: {}", tempFile, e);
+                }
+            }
         }
     }
 

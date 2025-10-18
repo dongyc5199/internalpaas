@@ -9,6 +9,7 @@ import com.cmict.internalpaas.repository.ServerRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +53,19 @@ public class SSHConfigImportService {
      */
     private static final String DEFAULT_SSH_CONFIG_PATH = System.getProperty("user.home") + "/.ssh/config";
 
+    /**
+     * 允许访问的SSH配置文件目录（仅限.ssh目录及其子目录）
+     */
+    private static final String ALLOWED_CONFIG_DIR = System.getProperty("user.home") + "/.ssh";
+
+    /**
+     * 是否启用路径安全验证
+     * 生产环境应设置为true以防止路径遍历攻击
+     * 测试环境可设置为false以允许使用临时目录
+     */
+    @Value("${app.ssh-config-import.path-security-enabled:true}")
+    private boolean pathSecurityEnabled;
+
     @Autowired
     private SSHConfigParser sshConfigParser;
 
@@ -72,6 +86,7 @@ public class SSHConfigImportService {
      * Parse local SSH config file
      *
      * 读取指定路径的SSH配置文件，解析为服务器导入DTO列表
+     * 安全性：仅允许访问~/.ssh目录下的配置文件，防止路径遍历攻击
      *
      * @param path SSH配置文件路径，如果为null则使用默认路径 ~/.ssh/config
      * @return SSH配置解析结果
@@ -81,6 +96,17 @@ public class SSHConfigImportService {
         String configPath = (path != null && !path.trim().isEmpty()) ? path : DEFAULT_SSH_CONFIG_PATH;
 
         logger.info("开始解析SSH配置文件: {}", configPath);
+
+        // 安全检查：验证路径是否在允许的目录内（仅在启用时执行）
+        if (pathSecurityEnabled) {
+            String pathValidationError = validateConfigPath(configPath);
+            if (pathValidationError != null) {
+                logger.warn("路径安全验证失败: {}", pathValidationError);
+                return SSHConfigParseResult.error(pathValidationError);
+            }
+        } else {
+            logger.debug("路径安全验证已禁用（测试环境）");
+        }
 
         try {
             // 检查文件是否存在
@@ -424,5 +450,68 @@ public class SSHConfigImportService {
                    validServers.size(), servers.size());
 
         return validServers;
+    }
+
+    /**
+     * 验证配置文件路径的安全性
+     * Validate config file path security
+     *
+     * 防止路径遍历攻击，仅允许访问~/.ssh目录及其子目录下的配置文件
+     *
+     * @param configPath 待验证的配置文件路径
+     * @return 如果路径不安全，返回错误消息；否则返回null
+     */
+    private String validateConfigPath(String configPath) {
+        try {
+            // 规范化并转为绝对路径
+            Path normalizedPath = Paths.get(configPath).normalize().toAbsolutePath();
+            Path allowedDir = Paths.get(ALLOWED_CONFIG_DIR).normalize().toAbsolutePath();
+
+            // 检查路径是否在允许的目录内
+            if (!normalizedPath.startsWith(allowedDir)) {
+                return String.format(
+                    "安全限制：仅允许访问 %s 目录下的配置文件。当前路径: %s",
+                    ALLOWED_CONFIG_DIR,
+                    normalizedPath
+                );
+            }
+
+            // 检查是否试图通过符号链接绕过限制
+            Path realPath = normalizedPath.toRealPath();
+            if (!realPath.startsWith(allowedDir.toRealPath())) {
+                return String.format(
+                    "安全限制：检测到符号链接指向 %s 目录之外。实际路径: %s",
+                    ALLOWED_CONFIG_DIR,
+                    realPath
+                );
+            }
+
+            logger.debug("路径安全验证通过: {}", normalizedPath);
+            return null; // 验证通过
+
+        } catch (IOException e) {
+            // 如果路径无法解析（如文件不存在），允许继续执行
+            // 文件是否存在的检查将在后续步骤进行
+            logger.debug("路径验证时遇到IO异常（可能文件不存在）: {}", e.getMessage());
+
+            // 但仍然检查规范化后的路径是否在允许目录内
+            try {
+                Path normalizedPath = Paths.get(configPath).normalize().toAbsolutePath();
+                Path allowedDir = Paths.get(ALLOWED_CONFIG_DIR).normalize().toAbsolutePath();
+
+                if (!normalizedPath.startsWith(allowedDir)) {
+                    return String.format(
+                        "安全限制：仅允许访问 %s 目录下的配置文件",
+                        ALLOWED_CONFIG_DIR
+                    );
+                }
+
+                return null; // 基本验证通过
+            } catch (Exception ex) {
+                return "路径格式无效: " + ex.getMessage();
+            }
+        } catch (Exception e) {
+            return "路径验证失败: " + e.getMessage();
+        }
     }
 }

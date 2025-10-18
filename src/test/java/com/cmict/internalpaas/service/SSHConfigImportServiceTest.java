@@ -7,11 +7,13 @@ import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.repository.ServerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
@@ -207,6 +209,287 @@ class SSHConfigImportServiceTest {
         // 警告信息可能存在也可能不存在（取决于解析器对缺失字段的处理）
         assertNotNull(result.getWarnings());
     }
+
+    // ==================== 路径安全验证测试 ====================
+
+    /**
+     * 路径安全验证测试嵌套类
+     * 这些测试需要启用路径安全验证
+     */
+    @Nested
+    @SpringBootTest
+    @ActiveProfiles("test")
+    @Transactional
+    @TestPropertySource(properties = {
+        "app.ssh-config-import.path-security-enabled=true"
+    })
+    @DisplayName("路径安全验证测试（启用安全检查）")
+    class PathSecurityTests {
+
+        @Autowired
+        private SSHConfigImportService importService;
+
+    @Test
+    @DisplayName("测试路径安全验证 - 有效的.ssh目录内路径")
+    void testPathSecurity_validSshPath() throws IOException {
+        // 准备测试数据 - 创建一个在.ssh目录内的配置文件
+        Path sshDir = Path.of(System.getProperty("user.home"), ".ssh");
+        if (!Files.exists(sshDir)) {
+            Files.createDirectories(sshDir);
+        }
+
+        Path configFile = sshDir.resolve("test_config_" + System.currentTimeMillis());
+        String config = """
+                Host test-server
+                    HostName 192.168.1.100
+                    Port 22
+                    User admin
+                    IdentityFile ~/.ssh/id_rsa
+                """;
+
+        try {
+            Files.writeString(configFile, config);
+
+            // 执行测试
+            SSHConfigParseResult result = importService.parseLocalConfig(configFile.toString());
+
+            // 验证结果 - 应该成功解析，没有安全错误
+            assertNotNull(result);
+            assertFalse(result.hasErrors(), "Should not have errors for valid .ssh path");
+            assertEquals(1, result.getServers().size());
+        } finally {
+            // 清理测试文件
+            if (Files.exists(configFile)) {
+                Files.delete(configFile);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("测试路径安全验证 - 路径遍历攻击防护")
+    void testPathSecurity_pathTraversalAttack() {
+        // 尝试通过路径遍历访问.ssh目录外的文件
+        String maliciousPath = System.getProperty("user.home") + "/.ssh/../../etc/passwd";
+
+        // 执行测试
+        SSHConfigParseResult result = importService.parseLocalConfig(maliciousPath);
+
+        // 验证结果 - 应该被安全检查拦截
+        assertNotNull(result);
+        assertTrue(result.hasErrors(), "Should have error for path traversal attempt");
+        assertFalse(result.getErrors().isEmpty());
+        assertTrue(
+            result.getErrors().get(0).contains("安全限制") ||
+            result.getErrors().get(0).contains("Security"),
+            "Error message should indicate security restriction"
+        );
+    }
+
+    @Test
+    @DisplayName("测试路径安全验证 - 绝对路径在.ssh目录外")
+    void testPathSecurity_absolutePathOutsideSsh() {
+        // 尝试访问.ssh目录外的绝对路径
+        String outsidePath;
+        if (System.getProperty("os.name").toLowerCase().contains("win")) {
+            outsidePath = "C:\\Windows\\System32\\config";
+        } else {
+            outsidePath = "/etc/passwd";
+        }
+
+        // 执行测试
+        SSHConfigParseResult result = importService.parseLocalConfig(outsidePath);
+
+        // 验证结果 - 应该被安全检查拦截
+        assertNotNull(result);
+        assertTrue(result.hasErrors(), "Should have error for path outside .ssh");
+        assertTrue(
+            result.getErrors().get(0).contains("安全限制") ||
+            result.getErrors().get(0).contains(".ssh"),
+            "Error message should mention .ssh directory restriction"
+        );
+    }
+
+    @Test
+    @DisplayName("测试路径安全验证 - 相对路径在.ssh目录外")
+    void testPathSecurity_relativePathOutsideSsh() {
+        // 尝试使用相对路径访问.ssh目录外的文件
+        String relativePath = "../../../etc/hosts";
+
+        // 执行测试
+        SSHConfigParseResult result = importService.parseLocalConfig(relativePath);
+
+        // 验证结果 - 应该被安全检查拦截
+        assertNotNull(result);
+        assertTrue(result.hasErrors(), "Should have error for relative path outside .ssh");
+        assertTrue(
+            result.getErrors().get(0).contains("安全限制"),
+            "Error message should indicate security restriction"
+        );
+    }
+
+    @Test
+    @DisplayName("测试路径安全验证 - .ssh目录内的子目录路径")
+    void testPathSecurity_validSubdirectoryPath() throws IOException {
+        // 创建.ssh目录的子目录
+        Path sshDir = Path.of(System.getProperty("user.home"), ".ssh");
+        Path subDir = sshDir.resolve("test_subdir_" + System.currentTimeMillis());
+
+        if (!Files.exists(sshDir)) {
+            Files.createDirectories(sshDir);
+        }
+        Files.createDirectories(subDir);
+
+        Path configFile = subDir.resolve("config");
+        String config = """
+                Host subdir-server
+                    HostName 192.168.1.100
+                    Port 22
+                    User admin
+                    IdentityFile ~/.ssh/id_rsa
+                """;
+
+        try {
+            Files.writeString(configFile, config);
+
+            // 执行测试
+            SSHConfigParseResult result = importService.parseLocalConfig(configFile.toString());
+
+            // 验证结果 - 子目录内的路径应该被允许
+            assertNotNull(result);
+            assertFalse(result.hasErrors(), "Should allow paths in .ssh subdirectories");
+            assertEquals(1, result.getServers().size());
+        } finally {
+            // 清理测试文件和目录
+            if (Files.exists(configFile)) {
+                Files.delete(configFile);
+            }
+            if (Files.exists(subDir)) {
+                Files.delete(subDir);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("测试路径安全验证 - 路径包含..但仍在.ssh目录内")
+    void testPathSecurity_dotDotWithinSsh() throws IOException {
+        // 创建.ssh目录的子目录
+        Path sshDir = Path.of(System.getProperty("user.home"), ".ssh");
+        Path subDir = sshDir.resolve("test_subdir2_" + System.currentTimeMillis());
+
+        if (!Files.exists(sshDir)) {
+            Files.createDirectories(sshDir);
+        }
+        Files.createDirectories(subDir);
+
+        Path configFile = sshDir.resolve("test_config2_" + System.currentTimeMillis());
+        String config = """
+                Host dotdot-server
+                    HostName 192.168.1.100
+                    Port 22
+                    User admin
+                    IdentityFile ~/.ssh/id_rsa
+                """;
+
+        try {
+            Files.writeString(configFile, config);
+
+            // 使用包含..但规范化后仍在.ssh目录内的路径
+            String pathWithDotDot = subDir.toString() + "/../" + configFile.getFileName();
+
+            // 执行测试
+            SSHConfigParseResult result = importService.parseLocalConfig(pathWithDotDot);
+
+            // 验证结果 - 规范化后在.ssh目录内的路径应该被允许
+            assertNotNull(result);
+            assertFalse(result.hasErrors(), "Should allow paths that normalize to .ssh directory");
+            assertEquals(1, result.getServers().size());
+        } finally {
+            // 清理测试文件和目录
+            if (Files.exists(configFile)) {
+                Files.delete(configFile);
+            }
+            if (Files.exists(subDir)) {
+                Files.delete(subDir);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("测试路径安全验证 - 符号链接安全检查")
+    void testPathSecurity_symlinkSecurity() throws IOException {
+        // 注意：此测试在Windows上可能需要管理员权限，在Linux/macOS上应正常运行
+        String osName = System.getProperty("os.name").toLowerCase();
+        if (osName.contains("win")) {
+            // Windows上跳过符号链接测试（需要管理员权限）
+            return;
+        }
+
+        Path sshDir = Path.of(System.getProperty("user.home"), ".ssh");
+        if (!Files.exists(sshDir)) {
+            Files.createDirectories(sshDir);
+        }
+
+        // 创建一个指向.ssh目录外的符号链接
+        Path symlinkPath = sshDir.resolve("malicious_link_" + System.currentTimeMillis());
+        Path targetPath = Path.of(System.getProperty("user.home"), "test_target_" + System.currentTimeMillis());
+
+        try {
+            // 创建目标文件
+            Files.writeString(targetPath, "Host test\n    HostName 192.168.1.1\n");
+
+            // 创建符号链接
+            Files.createSymbolicLink(symlinkPath, targetPath);
+
+            // 执行测试
+            SSHConfigParseResult result = importService.parseLocalConfig(symlinkPath.toString());
+
+            // 验证结果 - 应该检测到符号链接指向.ssh目录外
+            assertNotNull(result);
+            assertTrue(result.hasErrors(), "Should detect symlink pointing outside .ssh");
+            assertTrue(
+                result.getErrors().get(0).contains("符号链接") ||
+                result.getErrors().get(0).contains("symlink") ||
+                result.getErrors().get(0).contains("安全限制"),
+                "Error message should mention symlink or security restriction"
+            );
+        } catch (UnsupportedOperationException e) {
+            // 某些文件系统不支持符号链接，跳过测试
+            System.out.println("Symlink test skipped: " + e.getMessage());
+        } finally {
+            // 清理测试文件
+            if (Files.exists(symlinkPath)) {
+                Files.delete(symlinkPath);
+            }
+            if (Files.exists(targetPath)) {
+                Files.delete(targetPath);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("测试路径安全验证 - 非法路径格式")
+    void testPathSecurity_invalidPathFormat() {
+        // 测试各种非法路径格式
+        String[] invalidPaths = {
+            "",                          // 空路径
+            "   ",                       // 空白路径
+            "\0invalid",                 // 包含空字符
+        };
+
+        for (String invalidPath : invalidPaths) {
+            SSHConfigParseResult result = importService.parseLocalConfig(invalidPath);
+            assertNotNull(result, "Result should not be null for path: " + invalidPath);
+            // 空路径会使用默认路径，其他非法路径应该有错误
+            if (!invalidPath.trim().isEmpty()) {
+                assertTrue(
+                    result.hasErrors() || !result.getServers().isEmpty(),
+                    "Should handle invalid path format: " + invalidPath
+                );
+            }
+        }
+    }
+
+    } // End of PathSecurityTests nested class
 
     // ==================== previewImport 测试 ====================
 
