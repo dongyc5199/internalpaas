@@ -923,7 +923,7 @@
     gap: 12px;
 }
 
-.btn {
+.modal-overlay .btn {
     padding: 10px 20px;
     border: none;
     border-radius: 6px;
@@ -933,31 +933,31 @@
     transition: all 0.2s;
 }
 
-.btn-secondary {
+.modal-overlay .btn-secondary {
     background: #f1f3f5;
     color: #333;
 }
 
-.btn-secondary:hover {
+.modal-overlay .btn-secondary:hover {
     background: #e9ecef;
 }
 
-.btn-primary {
+.modal-overlay .btn-primary {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
 }
 
-.btn-primary:hover {
+.modal-overlay .btn-primary:hover {
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     transform: translateY(-1px);
 }
 
-.btn-primary:disabled {
+.modal-overlay .btn-primary:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.btn-primary:disabled:hover {
+.modal-overlay .btn-primary:disabled:hover {
     box-shadow: none;
     transform: none;
 }

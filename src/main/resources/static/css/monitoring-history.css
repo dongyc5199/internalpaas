@@ -486,13 +486,16 @@ body {
     transform: translateY(0);
 }
 
-.btn-primary {
+/* 限定按钮样式在monitoring页面内，避免全局污染 */
+.navbar-dark .btn-primary,
+.container-fluid .btn-primary {
     background: linear-gradient(135deg, var(--primary-color) 0%, #0056b3 100%);
     border: none;
     box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
 }
 
-.btn-primary:hover {
+.navbar-dark .btn-primary:hover,
+.container-fluid .btn-primary:hover {
     background: linear-gradient(135deg, #0056b3 0%, var(--primary-color) 100%);
     box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
 }

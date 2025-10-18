@@ -22,7 +22,6 @@ import {
 import { eventBus } from "@/utils/event-bus";
 import { ServerListManager } from "./ServerListManager";
 import { ServerDetailOverlay } from "./ServerDetailOverlay";
-import { getServerImportModal } from "./server-import-modal";
 
 // 声明全局变量和函数，带默认值
 declare let currentLanguage: string;
@@ -92,6 +91,8 @@ function safeShowMessage(message: string, type: "success" | "error" | "warning" 
 declare global {
     interface Window {
         showToast?: (message: string, type?: string) => void;
+        openServerModal?: () => void;
+        openServerImportModal?: () => void;
         ServerGroupModule?: {
             init: () => void;
             cleanup: () => void;
@@ -138,12 +139,15 @@ declare global {
                 handleLanguageChange()
             );
         }
-        if (!document.querySelector(".server-group-management")) {
+        
+        const container = document.querySelector(".server-group-management");
+        if (!container) {
+            console.log("Server group management container not found, skipping...");
             return;
         }
 
-        // 防止重复初始化
-        if (serverGroupManagementInitialized) {
+        // 检查是否已经初始化（通过检查container上的标记）
+        if (container.hasAttribute('data-initialized')) {
             console.log("Server group management already initialized, skipping...");
             return;
         }
@@ -154,11 +158,15 @@ declare global {
         initServerGroupEvents();
         startServerGroupAutoRefresh();
 
+        // 在DOM元素上标记已初始化
+        container.setAttribute('data-initialized', 'true');
         serverGroupManagementInitialized = true;
         console.log("Server group management initialized");
     }
 
     function cleanupServerGroupManagement() {
+        console.log("Cleaning up server group management...");
+        
         if (unsubscribeLanguageChange) {
             unsubscribeLanguageChange();
             unsubscribeLanguageChange = null;
@@ -179,7 +187,13 @@ declare global {
         }
 
         stopServerGroupAutoRefresh();
-        serverGroupManagementInitialized = false;
+        
+        // 清除DOM上的初始化标记
+        const container = document.querySelector(".server-group-management");
+        if (container) {
+            container.removeAttribute("data-initialized");
+        }
+        
         console.log("Server group management cleaned up");
     }
 
@@ -792,13 +806,20 @@ declare global {
     }
 
     function openServerImportModal() {
-        console.log("openServerImportModal called");
-        console.log("Getting server import modal instance...");
-        const importModal = getServerImportModal();
-        console.log("Modal instance obtained:", importModal);
-        console.log("Calling modal.open()...");
-        importModal.open();
-        console.log("modal.open() called");
+        console.log("openServerImportModal called from server-group-management");
+        
+        // 使用全局函数，与addNewServer保持一致的调用方式
+        if (typeof window.openServerImportModal === "function") {
+            console.log("Calling window.openServerImportModal()");
+            window.openServerImportModal();
+        } else {
+            console.error("Server import modal not available");
+            console.error(
+                "window object keys:",
+                Object.keys(window).filter((k) => k.includes("server") || k.includes("import") || k.includes("modal"))
+            );
+            alert("无法打开服务器导入弹窗，请刷新页面后重试");
+        }
     }
 
     // Global function to refresh server list (called from server-modal.js)

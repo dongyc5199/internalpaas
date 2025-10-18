@@ -422,32 +422,33 @@
     justify-content: center;
 }
 
-.btn-primary {
+/* 限定按钮样式在profile页面内，避免全局污染 */
+.dashboard-container .btn-primary {
     background: var(--primary-color, #3b82f6);
     color: white;
 }
 
-.btn-primary:hover {
+.dashboard-container .btn-primary:hover {
     background: var(--primary-color-dark, #2563eb);
     transform: translateY(-1px);
 }
 
-.btn-secondary {
+.dashboard-container .btn-secondary {
     background: var(--secondary-color, #6b7280);
     color: white;
 }
 
-.btn-secondary:hover {
+.dashboard-container .btn-secondary:hover {
     background: var(--secondary-color-dark, #4b5563);
     transform: translateY(-1px);
 }
 
-.btn-success {
+.dashboard-container .btn-success {
     background: var(--success-color, #10b981);
     color: white;
 }
 
-.btn-success:hover {
+.dashboard-container .btn-success:hover {
     background: var(--success-color-dark, #059669);
     transform: translateY(-1px);
 }

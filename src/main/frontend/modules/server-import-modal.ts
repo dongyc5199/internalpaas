@@ -89,6 +89,7 @@ export class ServerImportModal {
     private scanResults: any = null;
     private unsubscribeLanguageChange: (() => void) | null = null;
     private initialized: boolean = false;
+    private globalEventsAttached: boolean = false;  // 全局事件只绑定一次
 
     constructor() {
         // 延迟初始化，等待DOM加载完成
@@ -97,6 +98,9 @@ export class ServerImportModal {
         } else {
             this.init();
         }
+        
+        // 绑定全局事件（只执行一次）
+        this.attachGlobalEvents();
     }
 
     private init() {
@@ -123,27 +127,71 @@ export class ServerImportModal {
         this.initialized = true;
         console.log("Server Import Modal initialized (3-Tab Version)");
     }
-
-    private attachEvents() {
-        if (!this.modal) return;
-
-        // 关闭按钮事件
-        const closeBtn = this.modal.querySelector('[data-action="modal-close"]');
-        closeBtn?.addEventListener("click", () => this.close());
-
-        // Overlay点击关闭
-        this.modal.addEventListener("click", (e) => {
-            if (e.target === this.modal) {
-                this.close();
-            }
-        });
-
+    
+    // 全局事件（使用事件委托，只绑定一次）
+    private attachGlobalEvents() {
+        if (this.globalEventsAttached) return;
+        
+        console.log("Attaching global delegated events...");
+        
         // ESC键关闭
         document.addEventListener("keydown", (e) => {
             if (e.key === "Escape" && this.isOpen()) {
                 this.close();
             }
         });
+        
+        // 使用事件委托处理modal内的所有点击
+        document.addEventListener("click", (e) => {
+            const target = e.target as HTMLElement;
+            
+            // 关闭按钮
+            if (target.closest('[data-action="modal-close"]')) {
+                const modal = target.closest("#serverImportModal");
+                if (modal && this.isOpen()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("Close button clicked via delegation");
+                    this.close();
+                }
+                return;
+            }
+            
+            // 点击遮罩层关闭
+            if (target.id === "serverImportModal" && target.classList.contains("modal-overlay")) {
+                console.log("Overlay clicked via delegation");
+                this.close();
+                return;
+            }
+            
+            // 取消按钮
+            if (target.id === "cancelBtn" || target.closest("#cancelBtn")) {
+                const modal = target.closest("#serverImportModal");
+                if (modal) {
+                    e.preventDefault();
+                    console.log("Cancel button clicked via delegation");
+                    this.close();
+                }
+                return;
+            }
+        });
+        
+        this.globalEventsAttached = true;
+        console.log("Global delegated events attached");
+    }
+
+    private attachEvents() {
+        if (!this.modal) return;
+        
+        // 检查是否已经绑定过事件（通过data属性标记）
+        if (this.modal.hasAttribute("data-events-attached")) {
+            console.log("Events already attached to this modal element");
+            return;
+        }
+
+        console.log("Attaching events to modal element...");
+
+        // 注意：关闭相关事件已通过全局委托处理，这里不再重复绑定
 
         // 标签页切换
         const tabs = this.modal.querySelectorAll(".import-tab");
@@ -200,7 +248,7 @@ export class ServerImportModal {
                 this.loadDefaultPath("install");
             }
         });
-
+        
         // === Upload Tab Events ===
         const uploadArea = this.modal.querySelector("#uploadArea");
         const fileInput = this.modal.querySelector("#fileInput") as HTMLInputElement;
@@ -235,21 +283,41 @@ export class ServerImportModal {
         });
 
         // === Footer Buttons ===
-        const cancelBtn = this.modal.querySelector("#cancelBtn");
-        cancelBtn?.addEventListener("click", () => this.close());
-
+        // 注意：取消按钮已通过全局委托处理
         const confirmImportBtn = this.modal.querySelector("#confirmImportBtn");
         confirmImportBtn?.addEventListener("click", () => this.confirmImport());
+        
+        // 标记已绑定事件
+        this.modal.setAttribute("data-events-attached", "true");
+        console.log("Events attached successfully");
     }
 
     public open() {
         console.log("ServerImportModal.open() called");
+        
+        // 每次打开时重新查找DOM元素，避免缓存过期的引用
+        this.modal = document.getElementById("serverImportModal");
+        
         console.log("this.modal:", this.modal);
         
         if (!this.modal) {
             console.error("Modal element not found! Cannot open modal.");
-            return;
+            console.error("Attempting to reinitialize...");
+            // 尝试重新初始化
+            this.initialized = false;
+            this.init();
+            
+            // 再次尝试获取
+            this.modal = document.getElementById("serverImportModal");
+            if (!this.modal) {
+                console.error("Modal element still not found after reinit!");
+                return;
+            }
         }
+        
+        // 重新绑定事件（因为DOM可能已被重新创建）
+        console.log("Re-attaching events...");
+        this.attachEvents();
         
         console.log("Calling reset()...");
         this.reset();
