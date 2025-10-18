@@ -176,8 +176,8 @@
     background: #f59e0b;
 }
 
-/* ===== Import Tabs Styles ===== */
-.import-tabs {
+/* ===== Tabs Styles ===== */
+.tabs {
     display: flex;
     gap: 8px;
     margin-bottom: 20px;
@@ -186,7 +186,7 @@
     border-radius: 8px;
 }
 
-.import-tab {
+.tab {
     flex: 1;
     padding: 10px 16px;
     border: none;
@@ -203,12 +203,12 @@
     font-weight: 500;
 }
 
-.import-tab:hover {
+.tab:hover {
     background: white;
     color: #667eea;
 }
 
-.import-tab.active {
+.tab.active {
     background: white;
     color: #667eea;
     box-shadow: 0 2px 6px rgba(0,0,0,0.08);
@@ -222,10 +222,64 @@
     display: block;
 }
 
+/* Info Box Styles */
+.info-box {
+    background: #f0f5ff;
+    border-left: 3px solid #667eea;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 20px;
+}
+
+.info-box-title {
+    color: #667eea;
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.info-box-text {
+    color: #666;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* Scan Button */
+.scan-button-wrapper {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.btn-large {
+    padding: 12px 32px;
+    font-size: 15px;
+}
+
 /* ===== Auto Scan Tab Styles ===== */
 .scan-status {
+    display: none;
     text-align: center;
     padding: 40px 20px;
+}
+
+.scan-status.active {
+    display: block;
+}
+
+.spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #667eea;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 .scan-status.scanning {
@@ -526,32 +580,125 @@
     color: #999;
 }
 
-.path-options {
+.client-check {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    background: #667eea;
+    color: white;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.client-card.selected .client-check {
     display: flex;
-    gap: 12px;
-    margin-bottom: 20px;
+}
+
+.step-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.path-options {
+    margin: 20px 0;
 }
 
 .path-option {
-    flex: 1;
-    padding: 12px;
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    cursor: pointer;
+    background: #fafbfc;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
     transition: all 0.2s;
 }
 
-.path-option:hover {
+.path-option:has(input[type="radio"]:checked) {
     border-color: #667eea;
+    background: #f5f7ff;
 }
 
-.path-option.selected {
-    border-color: #667eea;
-    background: #f8f9ff;
+.option-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
 }
 
-.path-option input[type="radio"] {
-    margin-right: 8px;
+.option-header input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.option-title {
+    flex: 1;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.option-body {
+    margin-left: 28px;
+}
+
+.path-divider {
+    text-align: center;
+    color: #999;
+    font-size: 12px;
+    margin: 12px 0;
+    position: relative;
+}
+
+.path-divider::before,
+.path-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 45%;
+    height: 1px;
+    background: #e8e8e8;
+}
+
+.path-divider::before {
+    left: 0;
+}
+
+.path-divider::after {
+    right: 0;
+}
+
+.form-help {
+    color: #999;
+    font-size: 11px;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #d1fae5;
+    color: #065f46;
 }
 
 .form-group {
