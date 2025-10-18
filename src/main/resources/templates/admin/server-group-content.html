@@ -172,6 +172,12 @@
                         </p>
                     </div>
                     <div class="section-actions">
+                        <button aria-label="Import SSH config" class="btn btn-secondary" id="importSshConfigBtn" title="Import from SSH config file" type="button" onclick="window.openSSHConfigImportWizard && window.openSSHConfigImportWizard()">
+                            <i aria-hidden="true">🔧</i>
+                            <span data-i18n-en="Import SSH Config" data-i18n-zh="导入SSH配置">
+                                导入SSH配置
+                            </span>
+                        </button>
                         <button aria-label="Import servers" class="btn btn-secondary" id="importServerBtn" title="Import servers" type="button">
                             <i aria-hidden="true">📥</i>
                             <span data-i18n-en="Import Servers" data-i18n-zh="导入服务器">
@@ -316,5 +322,8 @@
 
     <!-- Server Import Modal -->
     <div th:replace="fragments/server-import-modal :: server-import-modal"></div>
+
+    <!-- SSH Config Import Wizard Modal -->
+    <div th:replace="fragments/ssh-config-import-wizard :: ssh-config-import-wizard"></div>
 </body>
 </html>

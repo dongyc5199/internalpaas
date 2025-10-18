@@ -1,39 +1,45 @@
 package com.cmict.internalpaas.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * SSH配置解析结果DTO
  * SSH Config Parse Result Data Transfer Object
- * 
+ *
  * 用于返回SSH配置文件解析的结果，包含解析出的服务器列表、警告和错误信息
- * 
+ *
  * @author GitHub Copilot
  * @since 2025-10-18
  */
+@Schema(description = "SSH配置解析结果，包含解析出的服务器列表、警告和错误信息")
 public class SSHConfigParseResult {
-    
+
     /**
      * 解析到的Host总数
      */
+    @Schema(description = "解析到的Host总数", example = "10")
     private int totalHosts;
-    
+
     /**
      * 可导入的服务器列表
      */
+    @Schema(description = "可导入的服务器列表")
     private List<ServerImportDto> servers;
-    
+
     /**
      * 警告信息列表
      * 例如：通配符Host被跳过、ProxyJump暂不支持等
      */
+    @Schema(description = "警告信息列表", example = "[\"跳过通配符Host: *.example.com\"]")
     private List<String> warnings;
-    
+
     /**
      * 错误信息列表
      * 例如：解析失败、格式错误等
      */
+    @Schema(description = "错误信息列表", example = "[\"配置文件不存在\"]")
     private List<String> errors;
 
     /**

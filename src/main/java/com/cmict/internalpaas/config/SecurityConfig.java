@@ -2,6 +2,7 @@ package com.cmict.internalpaas.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.session.SessionRegistry;
@@ -14,6 +15,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.access.AccessDeniedException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,6 +25,7 @@ import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, UserDetailsService userDetailsService)
@@ -45,10 +49,11 @@ public class SecurityConfig {
                 .permitAll()
             )
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**", "/ws/**", "/test/**", 
+                .ignoringRequestMatchers("/h2-console/**", "/ws/**", "/test/**",
                     "/monitoring/server/*/refresh", "/monitoring/trigger-health-check",
                     "/monitoring/history/api/**", "/monitoring/thresholds/api/**",
                     "/api/server-user-groups/**", "/api/permission-test/**",
+                    "/api/ssh-config-import/**", // SSH配置导入API
                     "/terminal/api/**", "/user-operations/api/**") // 禁用H2控制台、WebSocket、测试接口、监控接口、用户操作接口和终端API的CSRF保护
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // 使用Cookie存储CSRF token
             )
@@ -63,6 +68,7 @@ public class SecurityConfig {
             )
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(ajaxAwareAuthenticationEntryPoint()) // 设置自定义认证入口点
+                .accessDeniedHandler(ajaxAwareAccessDeniedHandler()) // 设置自定义访问拒绝处理器
             )
             .userDetailsService(userDetailsService); // 设置UserDetailsService
 
@@ -146,6 +152,39 @@ public class SecurityConfig {
                     } else {
                         response.sendRedirect("/login");
                     }
+                }
+            }
+        };
+    }
+
+    /**
+     * 自定义访问拒绝处理器，用于处理AJAX请求的访问被拒绝
+     */
+    @Bean
+    public AccessDeniedHandler ajaxAwareAccessDeniedHandler() {
+        return new AccessDeniedHandler() {
+            @Override
+            public void handle(HttpServletRequest request, HttpServletResponse response,
+                    AccessDeniedException accessDeniedException) throws IOException, ServletException {
+
+                // 检查是否是API请求
+                String requestedWith = request.getHeader("X-Requested-With");
+                String accept = request.getHeader("Accept");
+                String contentType = request.getHeader("Content-Type");
+
+                boolean isApiRequest = "XMLHttpRequest".equals(requestedWith) ||
+                                      (accept != null && accept.contains("application/json")) ||
+                                      (contentType != null && contentType.contains("application/json")) ||
+                                      request.getRequestURI().contains("/api/");
+
+                if (isApiRequest) {
+                    // API请求返回403状态码和JSON响应
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write("{\"error\":\"access_denied\",\"message\":\"访问被拒绝，权限不足\"}");
+                } else {
+                    // 普通请求重定向到拒绝访问页面或首页
+                    response.sendRedirect("/");
                 }
             }
         };

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+</head>
+<body>
+    <!-- SSH Config Import Wizard Modal -->
+    <div th:fragment="ssh-config-import-wizard" class="ssh-config-wizard-overlay" id="sshConfigImportModal" style="display: none;">
+        <div class="ssh-wizard-container">
+            <!-- Header -->
+            <div class="ssh-wizard-header">
+                <div class="wizard-title">
+                    <span class="wizard-icon">🔧</span>
+                    <span>导入 SSH 配置</span>
+                </div>
+                <button class="wizard-close-btn" onclick="window.sshConfigWizard?.close()">
+                    <span>✕</span>
+                </button>
+            </div>
+
+            <!-- Progress Steps -->
+            <div class="wizard-steps">
+                <div class="wizard-step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">选择配置源</div>
+                </div>
+                <div class="wizard-step-divider"></div>
+                <div class="wizard-step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">预览服务器</div>
+                </div>
+                <div class="wizard-step-divider"></div>
+                <div class="wizard-step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">导入结果</div>
+                </div>
+            </div>
+
+            <!-- Body Content -->
+            <div class="ssh-wizard-body">
+                <!-- Step 1: Select Config Source -->
+                <div class="wizard-content" id="wizardStep1">
+                    <div class="wizard-content-header">
+                        <h3>选择配置文件来源</h3>
+                        <p class="text-muted">支持从本地 SSH 配置文件导入服务器信息</p>
+                    </div>
+
+                    <!-- Three Options -->
+                    <div class="config-source-options">
+                        <!-- Option 1: Scan Local Config -->
+                        <div class="source-option-card">
+                            <div class="option-icon">🔍</div>
+                            <div class="option-content">
+                                <h4>扫描本地配置</h4>
+                                <p class="option-desc">自动检测 ~/.ssh/config 文件</p>
+                                <div class="option-details">
+                                    <div class="detail-item">
+                                        <span class="detail-icon">📍</span>
+                                        <span id="defaultConfigPath">~/.ssh/config</span>
+                                    </div>
+                                    <div class="detail-item" id="configExistsIndicator">
+                                        <span class="detail-icon">⏳</span>
+                                        <span>检查中...</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary btn-block" id="scanLocalConfigBtn">
+                                    <span class="btn-icon">🔍</span>
+                                    <span>开始扫描</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Option 2: Upload File -->
+                        <div class="source-option-card">
+                            <div class="option-icon">📤</div>
+                            <div class="option-content">
+                                <h4>上传配置文件</h4>
+                                <p class="option-desc">支持 SSH config 格式的文本文件</p>
+
+                                <!-- Hidden File Input -->
+                                <input type="file" id="sshConfigFileInput" accept=".config,.txt,text/plain" style="display: none;">
+
+                                <!-- Drag & Drop Area -->
+                                <div class="upload-drop-zone" id="uploadDropZone">
+                                    <div class="drop-zone-content">
+                                        <div class="drop-zone-icon">📄</div>
+                                        <div class="drop-zone-text">
+                                            <p class="drop-zone-primary">点击或拖拽文件到此处</p>
+                                            <p class="drop-zone-secondary">支持 .config, .txt 文件，最大 1MB</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Upload Progress -->
+                                <div class="upload-progress" id="uploadProgress" style="display: none;">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="uploadProgressBar"></div>
+                                    </div>
+                                    <p class="progress-text" id="uploadProgressText">上传中...</p>
+                                </div>
+
+                                <!-- Upload Success -->
+                                <div class="upload-success" id="uploadSuccess" style="display: none;">
+                                    <div class="success-icon">✅</div>
+                                    <p class="success-text">
+                                        <span>文件上传成功：</span>
+                                        <strong id="uploadedFileName"></strong>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Option 3: Custom Path -->
+                        <div class="source-option-card">
+                            <div class="option-icon">📁</div>
+                            <div class="option-content">
+                                <h4>自定义路径</h4>
+                                <p class="option-desc">指定配置文件的绝对路径</p>
+                                <div class="custom-path-input-group">
+                                    <div class="form-group">
+                                        <label for="customConfigPath" class="form-label">配置文件路径</label>
+                                        <input
+                                            type="text"
+                                            id="customConfigPath"
+                                            class="form-control"
+                                            placeholder="/path/to/your/config"
+                                            autocomplete="off">
+                                        <div class="form-help">
+                                            示例: /home/user/.ssh/config 或 C:\Users\user\.ssh\config
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary btn-block" id="parseCustomPathBtn">
+                                        <span class="btn-icon">📂</span>
+                                        <span>解析文件</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Parse Result -->
+                    <div class="parse-result-panel" id="parseResultPanel" style="display: none;">
+                        <div class="result-header">
+                            <div class="result-icon success" id="parseResultIcon">✅</div>
+                            <div class="result-info">
+                                <h4 id="parseResultTitle">解析成功</h4>
+                                <p id="parseResultSummary" class="text-muted"></p>
+                            </div>
+                        </div>
+
+                        <!-- Warnings -->
+                        <div class="result-warnings" id="parseWarnings" style="display: none;">
+                            <div class="warning-header">
+                                <span class="warning-icon">⚠️</span>
+                                <span>警告信息</span>
+                            </div>
+                            <ul class="warning-list" id="warningList"></ul>
+                        </div>
+
+                        <!-- Errors -->
+                        <div class="result-errors" id="parseErrors" style="display: none;">
+                            <div class="error-header">
+                                <span class="error-icon">❌</span>
+                                <span>错误信息</span>
+                            </div>
+                            <ul class="error-list" id="errorList"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Preview Servers -->
+                <div class="wizard-content" id="wizardStep2" style="display: none;">
+                    <div class="wizard-content-header">
+                        <h3>预览服务器列表</h3>
+                        <p class="text-muted">请选择要导入的服务器，并补充必要信息</p>
+                    </div>
+
+                    <!-- Batch Operations Toolbar -->
+                    <div class="preview-toolbar">
+                        <div class="toolbar-left">
+                            <button class="btn btn-sm btn-default" id="selectAllServersBtn" type="button">
+                                <span>☑️</span>
+                                <span>全选</span>
+                            </button>
+                            <button class="btn btn-sm btn-default" id="selectValidServersBtn" type="button">
+                                <span>✅</span>
+                                <span>选择有效</span>
+                            </button>
+                            <button class="btn btn-sm btn-default" id="deselectAllServersBtn" type="button">
+                                <span>⬜</span>
+                                <span>取消全选</span>
+                            </button>
+                        </div>
+                        <div class="toolbar-right">
+                            <div class="selection-stats">
+                                <span>已选</span>
+                                <strong id="selectedServerCount">0</strong>
+                                <span>/</span>
+                                <span>总计</span>
+                                <strong id="totalServerCount">0</strong>
+                                <span>台</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Server Preview Table -->
+                    <div class="preview-table-container">
+                        <table class="preview-table" id="serverPreviewTable">
+                            <thead>
+                                <tr>
+                                    <th class="col-checkbox">
+                                        <input type="checkbox" id="selectAllCheckbox" aria-label="全选/取消全选">
+                                    </th>
+                                    <th class="col-name">服务器名称 <span class="required-mark">*</span></th>
+                                    <th class="col-hostname">主机名 <span class="required-mark">*</span></th>
+                                    <th class="col-port">SSH端口</th>
+                                    <th class="col-username">用户名 <span class="required-mark">*</span></th>
+                                    <th class="col-auth">认证方式 <span class="required-mark">*</span></th>
+                                    <th class="col-type">服务器类型</th>
+                                    <th class="col-status">状态</th>
+                                    <th class="col-actions">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="serverPreviewTableBody">
+                                <!-- 表格行将由JavaScript动态生成 -->
+                                <tr class="empty-state-row">
+                                    <td colspan="9" class="empty-state">
+                                        <div class="empty-icon">📋</div>
+                                        <p>暂无数据</p>
+                                        <p class="empty-hint">请先选择配置文件并解析</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="preview-legend">
+                        <div class="legend-title">状态说明：</div>
+                        <div class="legend-items">
+                            <div class="legend-item">
+                                <span class="status-badge status-ready">✓ 就绪</span>
+                                <span class="legend-desc">可以导入</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="status-badge status-duplicate">⚠ 重复</span>
+                                <span class="legend-desc">与现有服务器冲突</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="status-badge status-invalid">✗ 缺失字段</span>
+                                <span class="legend-desc">需要补充信息</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Import Result -->
+                <div class="wizard-content" id="wizardStep3" style="display: none;">
+                    <!-- Import Progress (shown during import) -->
+                    <div class="import-progress-container" id="importProgressContainer" style="display: none;">
+                        <div class="import-progress-content">
+                            <div class="spinner-large"></div>
+                            <h3>正在导入服务器...</h3>
+                            <p class="progress-text" id="importProgressText">正在验证服务器信息</p>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" id="importProgressFill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Import Result (shown after import) -->
+                    <div class="import-result-container" id="importResultContainer">
+                        <!-- Success Summary Card -->
+                        <div class="result-summary-card" id="resultSummaryCard">
+                            <div class="summary-icon" id="summaryIcon">
+                                <span class="icon-success">✓</span>
+                            </div>
+                            <div class="summary-content">
+                                <h3 class="summary-title" id="summaryTitle">导入成功！</h3>
+                                <p class="summary-text" id="summaryText">
+                                    成功导入 <strong id="successCount">0</strong> 台服务器
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Failure Details (shown if there are failures) -->
+                        <div class="failure-section" id="failureSection" style="display: none;">
+                            <div class="section-header">
+                                <h4>
+                                    <span class="section-icon">⚠️</span>
+                                    <span>导入失败详情</span>
+                                </h4>
+                                <p class="section-subtitle">以下服务器导入失败，请检查配置后重试</p>
+                            </div>
+                            <div class="failure-table-container">
+                                <table class="failure-table">
+                                    <thead>
+                                        <tr>
+                                            <th>服务器名称</th>
+                                            <th>主机名</th>
+                                            <th>失败原因</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="failureTableBody">
+                                        <!-- 动态填充 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Success List (shown if there are successes) -->
+                        <div class="success-section" id="successSection" style="display: none;">
+                            <div class="section-header">
+                                <h4>
+                                    <span class="section-icon">✓</span>
+                                    <span>成功导入的服务器</span>
+                                </h4>
+                                <p class="section-subtitle">以下服务器已成功添加到系统中</p>
+                            </div>
+                            <div class="success-grid" id="successServerGrid">
+                                <!-- 动态填充服务器卡片 -->
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="result-actions">
+                            <button class="btn btn-secondary" id="restartImportBtn">
+                                <span>🔄</span>
+                                <span>重新导入</span>
+                            </button>
+                            <button class="btn btn-primary" id="viewServersBtn">
+                                <span>📋</span>
+                                <span>查看服务器列表</span>
+                            </button>
+                            <button class="btn btn-default" id="closeWizardBtn">
+                                <span>✕</span>
+                                <span>关闭</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="ssh-wizard-footer">
+                <button class="btn btn-secondary" id="wizardCancelBtn" onclick="window.sshConfigWizard?.close()">
+                    <span>取消</span>
+                </button>
+                <div class="footer-actions-right">
+                    <button class="btn btn-default" id="wizardPrevBtn" style="display: none;">
+                        <span>← 上一步</span>
+                    </button>
+                    <button class="btn btn-primary" id="wizardNextBtn" disabled>
+                        <span>下一步 →</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

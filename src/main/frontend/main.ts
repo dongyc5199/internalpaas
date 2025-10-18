@@ -2,6 +2,7 @@ import "./styles/main.css";
 import "./modules/server-group-management";
 import "./modules/server-modal";
 import "./modules/server-import-modal";
+import "./modules/SSHConfigImportWizard";
 import "./modules/theme";
 import "./modules/dashboard";
 

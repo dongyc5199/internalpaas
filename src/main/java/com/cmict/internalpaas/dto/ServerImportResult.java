@@ -1,38 +1,44 @@
 package com.cmict.internalpaas.dto;
 
 import com.cmict.internalpaas.model.Server;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * 服务器导入结果DTO
  * Server Import Result Data Transfer Object
- * 
+ *
  * 用于返回批量导入服务器的执行结果，包含成功和失败的详情
- * 
+ *
  * @author GitHub Copilot
  * @since 2025-10-18
  */
+@Schema(description = "服务器批量导入结果，包含成功和失败的详情")
 public class ServerImportResult {
-    
+
     /**
      * 成功导入的服务器数量
      */
+    @Schema(description = "成功导入的服务器数量", example = "3")
     private int successCount;
-    
+
     /**
      * 导入失败的服务器数量
      */
+    @Schema(description = "导入失败的服务器数量", example = "1")
     private int failedCount;
-    
+
     /**
      * 成功导入的服务器列表
      */
+    @Schema(description = "成功导入的服务器列表")
     private List<Server> successServers;
-    
+
     /**
      * 失败详情列表
      */
+    @Schema(description = "失败详情列表")
     private List<ImportFailure> failures;
 
     /**
@@ -194,16 +200,19 @@ public class ServerImportResult {
      * 导入失败记录
      * 内部静态类，用于存储单个服务器的导入失败信息
      */
+    @Schema(description = "导入失败记录")
     public static class ImportFailure {
-        
+
         /**
          * 服务器名称
          */
+        @Schema(description = "服务器名称", example = "duplicate-server")
         private String serverName;
-        
+
         /**
          * 失败原因
          */
+        @Schema(description = "失败原因", example = "服务器已存在（主机名和端口重复）")
         private String reason;
 
         /**

@@ -1,96 +1,112 @@
 package com.cmict.internalpaas.dto;
 
 import com.cmict.internalpaas.model.Server;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * 服务器导入DTO
  * Server Import Data Transfer Object
- * 
+ *
  * 用于SSH配置导入功能，存储待导入的服务器信息
  * 包含从SSH配置映射的字段和需要用户补充的字段
- * 
+ *
  * @author GitHub Copilot
  * @since 2025-10-18
  */
+@Schema(description = "服务器导入DTO，用于SSH配置导入功能")
 public class ServerImportDto {
     
     // ==================== 从SSH配置映射的字段 ====================
-    
+
     /**
      * 服务器名称（来自SSH配置的Host）
      */
+    @Schema(description = "服务器名称", example = "dev-server-1", required = true)
     private String name;
-    
+
     /**
      * 主机名或IP地址（来自SSH配置的HostName）
      */
+    @Schema(description = "主机名或IP地址", example = "192.168.1.100", required = true)
     private String hostname;
-    
+
     /**
      * SSH端口（来自SSH配置的Port）
      */
+    @Schema(description = "SSH端口", example = "22", defaultValue = "22")
     private Integer sshPort;
-    
+
     /**
      * SSH用户名（来自SSH配置的User）
      */
+    @Schema(description = "SSH用户名", example = "root", required = true)
     private String sshUsername;
-    
+
     /**
      * SSH私钥路径（来自SSH配置的IdentityFile）
      */
+    @Schema(description = "SSH私钥路径", example = "~/.ssh/id_rsa")
     private String sshKeyPath;
-    
+
     // ==================== 需要用户补充的字段 ====================
-    
+
     /**
      * SSH密码（需手动输入）
      * 注意：仅用于传输，不会明文存储
      */
+    @Schema(description = "SSH密码（与私钥二选一）", example = "password123")
     private String sshPassword;
-    
+
     /**
      * 应用端口（默认8080）
      */
+    @Schema(description = "应用端口", example = "8080", defaultValue = "8080")
     private Integer port;
-    
+
     /**
      * 工作目录（默认/home/{user}）
      */
+    @Schema(description = "工作目录", example = "/home/user")
     private String baseWorkDirectory;
-    
+
     /**
      * 描述信息
      */
+    @Schema(description = "描述信息", example = "开发服务器")
     private String description;
-    
+
     /**
      * 服务器类型（默认DEVELOPMENT）
      */
+    @Schema(description = "服务器类型", example = "DEVELOPMENT", defaultValue = "DEVELOPMENT")
     private Server.ServerType serverType;
-    
+
     // ==================== 验证相关字段 ====================
-    
+
     /**
      * 是否通过验证
      */
+    @Schema(description = "是否通过验证", example = "true")
     private boolean valid;
-    
+
     /**
      * 缺失的字段列表
      */
+    @Schema(description = "缺失的字段列表", example = "[\"sshPassword\"]")
     private List<String> missingFields;
-    
+
     /**
      * 是否与现有服务器重复
      */
+    @Schema(description = "是否与现有服务器重复", example = "false")
     private boolean duplicate;
-    
+
     /**
      * 与哪个服务器重复（服务器名称）
      */
+    @Schema(description = "与哪个服务器重复", example = "existing-server-1")
     private String duplicateWith;
 
     /**

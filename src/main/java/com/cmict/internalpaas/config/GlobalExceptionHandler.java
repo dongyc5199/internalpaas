@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.HashMap;
@@ -104,6 +105,15 @@ public class GlobalExceptionHandler {
         } else if (message != null && message.contains("端口分配失败")) {
             title = "端口分配失败";
             userMessage = message;
+        } else if (message != null && (message.contains("SSH配置") || message.contains("SSH config"))) {
+            title = "SSH配置解析失败";
+            userMessage = message;
+        } else if (message != null && message.contains("服务器已存在")) {
+            title = "服务器导入失败";
+            userMessage = message;
+        } else if (message != null && message.contains("验证失败")) {
+            title = "数据验证失败";
+            userMessage = message;
         } else if (message != null && message.contains("数据库")) {
             title = "数据库错误";
             userMessage = "数据库操作失败，请稍后重试";
@@ -162,11 +172,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public Object handleSecurityException(org.springframework.security.access.AccessDeniedException ex, HttpServletRequest request) {
         logger.warn("访问被拒绝: {}", ex.getMessage());
-        
-        String userMessage = "您没有权限执行此操作，请联系管理员";
-        
+
         if (isAjaxRequest(request)) {
-            return handleAjaxException(ex, HttpStatus.FORBIDDEN, userMessage);
+            // 为API请求返回标准的access_denied错误
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "access_denied");
+            errorResponse.put("message", "访问被拒绝，权限不足");
+            errorResponse.put("timestamp", System.currentTimeMillis());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
         } else {
             return "redirect:/login?error=access_denied";
         }
@@ -198,14 +213,46 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理文件上传大小超限异常
+     * SSH配置文件上传时会触发此异常
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public Object handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex, HttpServletRequest request) {
+        logger.warn("文件上传大小超限: {}", ex.getMessage());
+
+        long maxSize = ex.getMaxUploadSize();
+        String userMessage;
+
+        if (maxSize > 0) {
+            // 转换为MB
+            long maxSizeMB = maxSize / (1024 * 1024);
+            userMessage = String.format("文件大小超过限制，最大允许 %d MB", maxSizeMB);
+        } else {
+            userMessage = "文件大小超过限制，请选择较小的文件";
+        }
+
+        if (isAjaxRequest(request)) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", true);
+            errorResponse.put("message", userMessage);
+            errorResponse.put("timestamp", System.currentTimeMillis());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
+        } else {
+            return handlePageException(ex, "文件上传失败", userMessage, request);
+        }
+    }
+
+    /**
      * 处理所有其他未捕获的异常
      */
     @ExceptionHandler(Exception.class)
     public Object handleAllException(Exception ex, HttpServletRequest request) {
         logger.error("未处理的异常: {}", ex.getMessage(), ex);
-        
+
         String userMessage = "系统发生未知错误，请稍后重试或联系管理员";
-        
+
         if (isAjaxRequest(request)) {
             return handleAjaxException(ex, HttpStatus.INTERNAL_SERVER_ERROR, userMessage);
         } else {
