@@ -4294,18 +4294,44 @@ function initDashboardRealTimeUpdates() {
              * 初始化SSH扫描按钮事件
              */
             function initSSHScanButton() {
+                console.log('[DEBUG] initSSHScanButton() 被调用');
                 const startScanBtn = document.getElementById('startScanBtn');
                 if (!startScanBtn) {
+                    console.log('[DEBUG] startScanBtn 按钮未找到!');
                     return; // 按钮不存在时直接返回
                 }
                 
-                startScanBtn.addEventListener('click', handleStartScan);
+                console.log('[DEBUG] startScanBtn 找到，准备绑定点击事件');
+                console.log('[DEBUG] 按钮元素:', startScanBtn);
+                console.log('[DEBUG] 按钮是否禁用:', startScanBtn.disabled);
+                console.log('[DEBUG] 按钮计算样式:', window.getComputedStyle(startScanBtn).pointerEvents);
+                
+                // 移除可能存在的旧事件监听器
+                startScanBtn.removeEventListener('click', handleStartScan);
+                
+                // 添加新的事件监听器
+                startScanBtn.addEventListener('click', function(e) {
+                    console.log('[DEBUG] ========== 按钮点击事件触发！==========');
+                    console.log('[DEBUG] 事件对象:', e);
+                    console.log('[DEBUG] 目标元素:', e.target);
+                    console.log('[DEBUG] 当前元素:', e.currentTarget);
+                    handleStartScan();
+                }, false);
+                
+                // 也尝试用 onclick
+                startScanBtn.onclick = function(e) {
+                    console.log('[DEBUG] ========== onclick 触发！==========');
+                    handleStartScan();
+                };
+                
+                console.log('[DEBUG] 点击事件已绑定完成');
             }
             
             /**
              * 处理开始扫描按钮点击
              */
             async function handleStartScan() {
+                console.log('[DEBUG] handleStartScan() 被调用 - 用户点击了扫描按钮');
                 if (scanInProgress) {
                     showToast('⏳ 扫描正在进行中，请稍候...', 'info');
                     return;
@@ -4313,16 +4339,34 @@ function initDashboardRealTimeUpdates() {
                 
                 try {
                     scanInProgress = true;
+                    console.log('[DEBUG] 开始扫描流程');
                     
                     // 1. 显示扫描状态
                     showScanningStatus();
                     
-                    // 2. 调用扫描API
+                    // 2. 获取 CSRF token
+                    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+                    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+                    
+                    console.log('[DEBUG] CSRF Token:', csrfToken);
+                    console.log('[DEBUG] CSRF Header:', csrfHeader);
+                    
+                    // 3. 准备请求头
+                    const headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    
+                    // 添加 CSRF header
+                    if (csrfToken && csrfHeader) {
+                        headers[csrfHeader] = csrfToken;
+                    }
+                    
+                    console.log('[DEBUG] 请求头:', headers);
+                    
+                    // 4. 调用扫描API
                     const response = await fetch('/api/ssh-scan/scan-all', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
+                        headers: headers
                     });
                     
                     if (!response.ok) {
@@ -4331,12 +4375,15 @@ function initDashboardRealTimeUpdates() {
                     }
                     
                     const result = await response.json();
+                    console.log('[DEBUG] 扫描API返回结果:', result);
                     
                     // 3. 显示扫描结果
                     if (result.success) {
+                        console.log('[DEBUG] 扫描成功，准备调用 showScanResult');
                         showScanResult(result.data);
                         showToast('✅ 扫描完成！', 'success');
                     } else {
+                        console.log('[DEBUG] 扫描失败:', result.message);
                         throw new Error(result.message || '扫描失败');
                     }
                     
@@ -4419,6 +4466,8 @@ function initDashboardRealTimeUpdates() {
              * 显示扫描结果
              */
             function showScanResult(data) {
+                console.log('[DEBUG] showScanResult() 被调用', data);
+                
                 const scanStatus = document.getElementById('scanningStatus');
                 const scanResult = document.getElementById('scanResult');
                 const scanBtn = document.getElementById('startScanBtn');
@@ -4441,16 +4490,63 @@ function initDashboardRealTimeUpdates() {
                     scanResult.style.display = 'block';
                 }
                 
-                // 启用下一步按钮
-                if (wizardNextBtn) {
-                    wizardNextBtn.disabled = false;
-                }
-                if (confirmImportBtn) {
-                    confirmImportBtn.disabled = false;
+                // 填充扫描结果数据
+                console.log('[DEBUG] 调用 populateScanResult');
+                populateScanResult(data);
+                
+                // 自动切换到预览表格步骤（延迟1秒让用户看到扫描结果）
+                console.log('[DEBUG] 设置 setTimeout 准备切换到预览步骤');
+                setTimeout(() => {
+                    console.log('[DEBUG] setTimeout 触发，调用 switchToPreviewStep');
+                    switchToPreviewStep();
+                }, 1000);
+            }
+            
+            /**
+             * 切换到预览步骤
+             */
+            function switchToPreviewStep() {
+                console.log('[DEBUG] switchToPreviewStep() 被调用');
+                
+                // 隐藏扫描区域，显示预览表格
+                const autoScanTab = document.getElementById('auto-scan');
+                const wizardStep2 = document.getElementById('wizardStep2');
+                const wizardNextBtn = document.getElementById('wizardNextBtn');
+                const wizardPrevBtn = document.getElementById('wizardPrevBtn');
+                
+                console.log('[DEBUG] Elements:', {
+                    autoScanTab: !!autoScanTab,
+                    wizardStep2: !!wizardStep2,
+                    wizardNextBtn: !!wizardNextBtn,
+                    wizardPrevBtn: !!wizardPrevBtn
+                });
+                
+                if (autoScanTab) {
+                    console.log('[DEBUG] 隐藏 autoScanTab');
+                    autoScanTab.style.display = 'none';
                 }
                 
-                // 填充扫描结果数据
-                populateScanResult(data);
+                if (wizardStep2) {
+                    console.log('[DEBUG] 显示 wizardStep2');
+                    wizardStep2.style.display = 'block';
+                }
+                
+                // 启用下一步按钮
+                if (wizardNextBtn) {
+                    console.log('[DEBUG] 启用下一步按钮');
+                    wizardNextBtn.disabled = false;
+                    wizardNextBtn.innerHTML = '<span>下一步 →</span>';
+                }
+                
+                // 显示上一步按钮
+                if (wizardPrevBtn) {
+                    console.log('[DEBUG] 显示上一步按钮');
+                    wizardPrevBtn.style.display = 'inline-block';
+                }
+                
+                // 显示提示
+                console.log('[DEBUG] 调用 showToast');
+                showToast('✓ 扫描完成，请选择要导入的服务器', 'success');
             }
             
             /**
@@ -4470,6 +4566,9 @@ function initDashboardRealTimeUpdates() {
                 if (scanResultInfo) {
                     let html = '';
                     
+                    // 获取客户端数量
+                    const clientCount = Object.keys(aggregatedResult.sourceStatistics).length;
+                    
                     // 显示每个客户端的统计
                     for (const [clientName, count] of Object.entries(aggregatedResult.sourceStatistics)) {
                         const icon = getClientIcon(clientName);
@@ -4486,20 +4585,22 @@ function initDashboardRealTimeUpdates() {
                         `;
                     }
                     
-                    // 显示汇总统计
-                    html += `
-                        <div class="info-item" style="border-top: 1px solid #e5e7eb; margin-top: 12px; padding-top: 12px;">
-                            <div class="info-label">
-                                <span>📊</span>
-                                <strong>汇总统计</strong>
+                    // 只有在多客户端场景下才显示汇总统计（单客户端场景下汇总信息与客户端信息重复）
+                    if (clientCount > 1) {
+                        html += `
+                            <div class="info-item" style="border-top: 1px solid #e5e7eb; margin-top: 12px; padding-top: 12px;">
+                                <div class="info-label">
+                                    <span>📊</span>
+                                    <strong>汇总统计</strong>
+                                </div>
+                                <div class="info-value">
+                                    总计 <strong>${aggregatedResult.totalInputCount}</strong> 个 • 
+                                    去重后 <strong>${aggregatedResult.uniqueCount}</strong> 个 • 
+                                    去重率 <strong>${(aggregatedResult.deduplicationRate * 100).toFixed(1)}%</strong>
+                                </div>
                             </div>
-                            <div class="info-value">
-                                总计 <strong>${aggregatedResult.totalInputCount}</strong> 个 • 
-                                去重后 <strong>${aggregatedResult.uniqueCount}</strong> 个 • 
-                                去重率 <strong>${(aggregatedResult.deduplicationRate * 100).toFixed(1)}%</strong>
-                            </div>
-                        </div>
-                    `;
+                        `;
+                    }
                     
                     scanResultInfo.innerHTML = html;
                 }
@@ -4513,7 +4614,393 @@ function initDashboardRealTimeUpdates() {
                 
                 // 存储扫描结果供后续使用
                 window.sshScanResult = aggregatedResult;
+                
+                // 填充预览表格
+                populatePreviewTable(aggregatedResult);
             }
+            
+            /**
+             * 填充预览表格
+             */
+            function populatePreviewTable(aggregatedResult) {
+                const tableBody = document.getElementById('serverPreviewTableBody');
+                const totalCountElem = document.getElementById('totalServerCount');
+                const selectedCountElem = document.getElementById('selectedServerCount');
+                
+                if (!tableBody) {
+                    return;
+                }
+                
+                const { hostsWithSource, uniqueCount } = aggregatedResult;
+                
+                // 更新统计
+                if (totalCountElem) {
+                    totalCountElem.textContent = uniqueCount;
+                }
+                if (selectedCountElem) {
+                    selectedCountElem.textContent = '0';
+                }
+                
+                // 清空表格
+                tableBody.innerHTML = '';
+                
+                // 生成表格行
+                hostsWithSource.forEach((hostWithSource, index) => {
+                    const host = hostWithSource.host;
+                    const source = hostWithSource.source;
+                    const row = createTableRow(host, source, index);
+                    tableBody.appendChild(row);
+                });
+                
+                // 初始化表格功能
+                initTableFeatures();
+            }
+            
+            /**
+             * 创建表格行
+             */
+            function createTableRow(host, source, index) {
+                const tr = document.createElement('tr');
+                tr.className = 'server-row';
+                tr.dataset.index = index;
+                
+                // 复选框列
+                const tdCheckbox = document.createElement('td');
+                tdCheckbox.className = 'col-checkbox';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'server-checkbox';
+                checkbox.dataset.index = index;
+                tdCheckbox.appendChild(checkbox);
+                tr.appendChild(tdCheckbox);
+                
+                // 服务器名称列
+                const tdName = document.createElement('td');
+                tdName.className = 'col-name';
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.className = 'form-control form-control-sm';
+                nameInput.value = host.name || host.hostname || '';
+                nameInput.placeholder = '请输入服务器名称';
+                nameInput.dataset.field = 'name';
+                tdName.appendChild(nameInput);
+                tr.appendChild(tdName);
+                
+                // 主机名列
+                const tdHostname = document.createElement('td');
+                tdHostname.className = 'col-hostname';
+                tdHostname.innerHTML = `
+                    <span class="hostname-text" title="${host.hostname || ''}">${host.hostname || '-'}</span>
+                `;
+                tr.appendChild(tdHostname);
+                
+                // SSH端口列
+                const tdPort = document.createElement('td');
+                tdPort.className = 'col-port';
+                tdPort.innerHTML = `<span class="port-badge">${host.port || 22}</span>`;
+                tr.appendChild(tdPort);
+                
+                // 用户名列
+                const tdUsername = document.createElement('td');
+                tdUsername.className = 'col-username';
+                tdUsername.innerHTML = `
+                    <span class="username-badge">${host.user || '-'}</span>
+                `;
+                tr.appendChild(tdUsername);
+                
+                // 认证方式列
+                const tdAuth = document.createElement('td');
+                tdAuth.className = 'col-auth';
+                const authType = host.identityFile ? '密钥认证' : '密码认证';
+                const authIcon = host.identityFile ? '🔑' : '🔒';
+                tdAuth.innerHTML = `
+                    <span class="auth-badge" title="${host.identityFile || '密码认证'}">
+                        ${authIcon} ${authType}
+                    </span>
+                `;
+                tr.appendChild(tdAuth);
+                
+                // 服务器类型列
+                const tdType = document.createElement('td');
+                tdType.className = 'col-type';
+                const typeSelect = document.createElement('select');
+                typeSelect.className = 'form-control form-control-sm';
+                typeSelect.dataset.field = 'type';
+                typeSelect.innerHTML = `
+                    <option value="LINUX">Linux</option>
+                    <option value="WINDOWS">Windows</option>
+                    <option value="UNIX">Unix</option>
+                    <option value="OTHER">其他</option>
+                `;
+                typeSelect.value = 'LINUX';
+                tdType.appendChild(typeSelect);
+                tr.appendChild(tdType);
+                
+                // 状态列
+                const tdStatus = document.createElement('td');
+                tdStatus.className = 'col-status';
+                const statusBadge = document.createElement('span');
+                statusBadge.className = 'status-badge status-ready';
+                statusBadge.innerHTML = '✓ 就绪';
+                tdStatus.appendChild(statusBadge);
+                tr.appendChild(tdStatus);
+                
+                // 操作列
+                const tdActions = document.createElement('td');
+                tdActions.className = 'col-actions';
+                tdActions.innerHTML = `
+                    <div class="action-buttons">
+                        <button class="btn-icon" title="查看详情" onclick="viewHostDetail(${index})">
+                            <span>👁️</span>
+                        </button>
+                        <button class="btn-icon btn-delete" title="从列表移除" onclick="removeHostFromTable(${index})">
+                            <span>🗑️</span>
+                        </button>
+                    </div>
+                `;
+                
+                // 添加来源信息（隐藏字段）
+                const sourceIcon = getClientIcon(source);
+                const sourceSpan = document.createElement('span');
+                sourceSpan.className = 'source-badge';
+                sourceSpan.title = `来源: ${source}`;
+                sourceSpan.textContent = `${sourceIcon} ${source}`;
+                sourceSpan.style.cssText = 'display: inline-block; margin-left: 8px; padding: 2px 8px; background: #f3f4f6; border-radius: 4px; font-size: 11px;';
+                tdHostname.appendChild(sourceSpan);
+                
+                // 存储主机数据
+                tr.dataset.hostData = JSON.stringify({
+                    ...host,
+                    source: source
+                });
+                
+                return tr;
+            }
+            
+            /**
+             * 初始化表格功能
+             */
+            function initTableFeatures() {
+                // 全选/取消全选
+                const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.addEventListener('change', function(e) {
+                        const checkboxes = document.querySelectorAll('.server-checkbox');
+                        checkboxes.forEach(cb => cb.checked = e.target.checked);
+                        updateSelectionCount();
+                    });
+                }
+                
+                // 批量操作按钮
+                const selectAllBtn = document.getElementById('selectAllServersBtn');
+                if (selectAllBtn) {
+                    selectAllBtn.addEventListener('click', function() {
+                        document.querySelectorAll('.server-checkbox').forEach(cb => cb.checked = true);
+                        updateSelectionCount();
+                    });
+                }
+                
+                const deselectAllBtn = document.getElementById('deselectAllServersBtn');
+                if (deselectAllBtn) {
+                    deselectAllBtn.addEventListener('click', function() {
+                        document.querySelectorAll('.server-checkbox').forEach(cb => cb.checked = false);
+                        updateSelectionCount();
+                    });
+                }
+                
+                const selectValidBtn = document.getElementById('selectValidServersBtn');
+                if (selectValidBtn) {
+                    selectValidBtn.addEventListener('click', function() {
+                        document.querySelectorAll('.server-row').forEach(row => {
+                            const statusBadge = row.querySelector('.status-badge');
+                            const checkbox = row.querySelector('.server-checkbox');
+                            if (statusBadge && statusBadge.classList.contains('status-ready') && checkbox) {
+                                checkbox.checked = true;
+                            }
+                        });
+                        updateSelectionCount();
+                    });
+                }
+                
+                // 单个复选框变化
+                document.querySelectorAll('.server-checkbox').forEach(cb => {
+                    cb.addEventListener('change', updateSelectionCount);
+                });
+                
+                // 添加表格排序和筛选功能
+                initTableSorting();
+                initTableFiltering();
+            }
+            
+            /**
+             * 更新选择计数
+             */
+            function updateSelectionCount() {
+                const selectedCount = document.querySelectorAll('.server-checkbox:checked').length;
+                const selectedCountElem = document.getElementById('selectedServerCount');
+                if (selectedCountElem) {
+                    selectedCountElem.textContent = selectedCount;
+                }
+            }
+            
+            /**
+             * 初始化表格排序
+             */
+            function initTableSorting() {
+                const headers = document.querySelectorAll('.preview-table th');
+                headers.forEach(header => {
+                    if (!header.classList.contains('col-checkbox') && 
+                        !header.classList.contains('col-actions')) {
+                        header.style.cursor = 'pointer';
+                        header.title = '点击排序';
+                        
+                        header.addEventListener('click', function() {
+                            sortTable(this);
+                        });
+                    }
+                });
+            }
+            
+            /**
+             * 表格排序
+             */
+            function sortTable(header) {
+                const table = document.getElementById('serverPreviewTable');
+                const tbody = document.getElementById('serverPreviewTableBody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                const columnIndex = Array.from(header.parentElement.children).indexOf(header);
+                
+                // 确定排序方向
+                const isAscending = header.classList.contains('sort-asc');
+                
+                // 清除所有排序标记
+                header.parentElement.querySelectorAll('th').forEach(th => {
+                    th.classList.remove('sort-asc', 'sort-desc');
+                });
+                
+                // 添加新的排序标记
+                if (isAscending) {
+                    header.classList.add('sort-desc');
+                } else {
+                    header.classList.add('sort-asc');
+                }
+                
+                // 排序行
+                rows.sort((a, b) => {
+                    const aText = a.children[columnIndex].textContent.trim();
+                    const bText = b.children[columnIndex].textContent.trim();
+                    
+                    // 数字排序
+                    const aNum = parseFloat(aText);
+                    const bNum = parseFloat(bText);
+                    if (!isNaN(aNum) && !isNaN(bNum)) {
+                        return isAscending ? bNum - aNum : aNum - bNum;
+                    }
+                    
+                    // 文本排序
+                    return isAscending ? 
+                        bText.localeCompare(aText) : 
+                        aText.localeCompare(bText);
+                });
+                
+                // 重新插入行
+                rows.forEach(row => tbody.appendChild(row));
+            }
+            
+            /**
+             * 初始化表格筛选
+             */
+            function initTableFiltering() {
+                // 添加筛选工具栏（如果需要）
+                // 这里可以添加按来源筛选的下拉框
+            }
+            
+            /**
+             * 查看主机详情
+             */
+            window.viewHostDetail = function(index) {
+                const row = document.querySelector(`tr[data-index="${index}"]`);
+                if (!row) return;
+                
+                const hostData = JSON.parse(row.dataset.hostData);
+                
+                // 显示详情对话框
+                const detailsHtml = `
+                    <div style="padding: 20px;">
+                        <h4 style="margin-bottom: 16px;">主机详细信息</h4>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; font-weight: bold;">主机名:</td>
+                                <td style="padding: 8px;">${hostData.hostname || '-'}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; font-weight: bold;">端口:</td>
+                                <td style="padding: 8px;">${hostData.port || 22}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; font-weight: bold;">用户名:</td>
+                                <td style="padding: 8px;">${hostData.user || '-'}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; font-weight: bold;">认证方式:</td>
+                                <td style="padding: 8px;">${hostData.identityFile ? '密钥认证' : '密码认证'}</td>
+                            </tr>
+                            ${hostData.identityFile ? `
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; font-weight: bold;">密钥文件:</td>
+                                <td style="padding: 8px; word-break: break-all;">${hostData.identityFile}</td>
+                            </tr>
+                            ` : ''}
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; font-weight: bold;">来源:</td>
+                                <td style="padding: 8px;">${getClientIcon(hostData.source)} ${hostData.source}</td>
+                            </tr>
+                            ${hostData.description ? `
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; font-weight: bold;">描述:</td>
+                                <td style="padding: 8px;">${hostData.description}</td>
+                            </tr>
+                            ` : ''}
+                            ${hostData.group ? `
+                            <tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 8px; font-weight: bold;">分组:</td>
+                                <td style="padding: 8px;">${hostData.group}</td>
+                            </tr>
+                            ` : ''}
+                        </table>
+                    </div>
+                `;
+                
+                // 使用现有的 showToast 或创建简单对话框
+                if (typeof showToast === 'function') {
+                    showToast('主机详情: ' + hostData.hostname, 'info');
+                } else {
+                    alert('主机详情:\n' + JSON.stringify(hostData, null, 2));
+                }
+            };
+            
+            /**
+             * 从表格移除主机
+             */
+            window.removeHostFromTable = function(index) {
+                const row = document.querySelector(`tr[data-index="${index}"]`);
+                if (!row) return;
+                
+                if (confirm('确定要从列表中移除这个主机吗？')) {
+                    row.remove();
+                    
+                    // 更新统计
+                    const totalCount = document.querySelectorAll('.server-row').length;
+                    const totalCountElem = document.getElementById('totalServerCount');
+                    if (totalCountElem) {
+                        totalCountElem.textContent = totalCount;
+                    }
+                    
+                    updateSelectionCount();
+                    
+                    showToast('✓ 已从列表移除', 'success');
+                }
+            };
             
             /**
              * 获取客户端图标
@@ -4529,23 +5016,452 @@ function initDashboardRealTimeUpdates() {
                 return icons[clientName] || '💻';
             }
             
+            // ========================================
+            // Phase 6.6: 导入集成功能
+            // ========================================
+            
+            /**
+             * 初始化下一步按钮
+             */
+            function initWizardNextButton() {
+                const wizardNextBtn = document.getElementById('wizardNextBtn');
+                if (!wizardNextBtn) return;
+                
+                // 移除可能存在的旧事件监听器
+                const newBtn = wizardNextBtn.cloneNode(true);
+                wizardNextBtn.parentNode.replaceChild(newBtn, wizardNextBtn);
+                
+                // 添加新的事件监听器
+                newBtn.addEventListener('click', async function() {
+                    try {
+                        // 获取选中的服务器
+                        const selectedServers = getSelectedServers();
+                        
+                        if (selectedServers.length === 0) {
+                            showToast('请至少选择一台服务器', 'warning');
+                            return;
+                        }
+                        
+                        // 显示确认对话框
+                        const confirmed = confirm(
+                            `确定要导入 ${selectedServers.length} 台服务器吗？\n\n` +
+                            `系统将自动检查重复并导入到数据库。`
+                        );
+                        
+                        if (!confirmed) return;
+                        
+                        // 执行导入
+                        await importSelectedServers(selectedServers);
+                        
+                    } catch (error) {
+                        console.error('下一步操作失败:', error);
+                        showToast('操作失败: ' + error.message, 'error');
+                    }
+                });
+            }
+            
+            /**
+             * 初始化上一步按钮
+             */
+            function initWizardPrevButton() {
+                const wizardPrevBtn = document.getElementById('wizardPrevBtn');
+                if (!wizardPrevBtn) return;
+                
+                // 移除可能存在的旧事件监听器
+                const newBtn = wizardPrevBtn.cloneNode(true);
+                wizardPrevBtn.parentNode.replaceChild(newBtn, wizardPrevBtn);
+                
+                // 添加新的事件监听器
+                newBtn.addEventListener('click', function() {
+                    switchBackToScanStep();
+                });
+            }
+            
+            /**
+             * 返回到扫描步骤
+             */
+            function switchBackToScanStep() {
+                const autoScanTab = document.getElementById('auto-scan');
+                const wizardStep2 = document.getElementById('wizardStep2');
+                const wizardStep3 = document.getElementById('wizardStep3');
+                const wizardPrevBtn = document.getElementById('wizardPrevBtn');
+                const wizardNextBtn = document.getElementById('wizardNextBtn');
+                
+                // 显示扫描区域
+                if (autoScanTab) {
+                    autoScanTab.style.display = 'block';
+                }
+                
+                // 隐藏其他步骤
+                if (wizardStep2) {
+                    wizardStep2.style.display = 'none';
+                }
+                if (wizardStep3) {
+                    wizardStep3.style.display = 'none';
+                }
+                
+                // 隐藏上一步按钮
+                if (wizardPrevBtn) {
+                    wizardPrevBtn.style.display = 'none';
+                }
+                
+                // 重置下一步按钮
+                if (wizardNextBtn) {
+                    wizardNextBtn.disabled = true;
+                    wizardNextBtn.innerHTML = '<span>下一步 →</span>';
+                }
+            }
+            
+            /**
+             * 获取选中的服务器
+             */
+            function getSelectedServers() {
+                const checkboxes = document.querySelectorAll('.server-checkbox:checked');
+                const servers = [];
+                
+                checkboxes.forEach(checkbox => {
+                    const row = checkbox.closest('tr');
+                    if (!row) return;
+                    
+                    const dto = convertToServerImportDto(row);
+                    if (dto) {
+                        servers.push(dto);
+                    }
+                });
+                
+                return servers;
+            }
+            
+            /**
+             * 转换为 ServerImportDto 格式
+             */
+            function convertToServerImportDto(tableRow) {
+                try {
+                    const hostData = JSON.parse(tableRow.dataset.hostData);
+                    
+                    // 从表格输入框获取用户编辑的值
+                    const serverNameInput = tableRow.querySelector('.server-name-input');
+                    const serverTypeSelect = tableRow.querySelector('.server-type-select');
+                    
+                    return {
+                        serverName: serverNameInput ? serverNameInput.value : hostData.hostname,
+                        hostname: hostData.hostname,
+                        sshPort: hostData.port || 22,
+                        username: hostData.user,
+                        authMethod: hostData.authMethod || (hostData.identityFile ? 'key' : 'password'),
+                        password: hostData.password || null,
+                        privateKeyPath: hostData.identityFile || null,
+                        serverType: serverTypeSelect ? serverTypeSelect.value : 'Linux',
+                        description: hostData.description || `从 ${hostData.source} 导入`,
+                        groupPath: hostData.group || hostData.folder || '/',
+                        tags: []
+                    };
+                } catch (error) {
+                    console.error('转换数据格式失败:', error);
+                    return null;
+                }
+            }
+            
+            /**
+             * 批量导入选中的服务器
+             */
+            async function importSelectedServers(servers) {
+                try {
+                    // 显示导入进度
+                    showImportProgress();
+                    
+                    // 调用批量导入 API
+                    const response = await fetch('/api/ssh-config-import/batch', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(servers)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    // 隐藏进度
+                    hideImportProgress();
+                    
+                    // 处理不同状态码
+                    if (response.ok || response.status === 207) {
+                        // 全部成功或部分成功 (207 Multi-Status)
+                        showImportResult(result);
+                    } else {
+                        // 全部失败或请求错误
+                        showImportError(result);
+                    }
+                    
+                } catch (error) {
+                    console.error('导入失败:', error);
+                    hideImportProgress();
+                    showToast('导入失败: ' + error.message, 'error');
+                }
+            }
+            
+            /**
+             * 显示导入进度
+             */
+            function showImportProgress() {
+                // 切换到 Step 3 (导入结果页)
+                const step2 = document.getElementById('wizardStep2');
+                const step3 = document.getElementById('wizardStep3');
+                
+                if (step2) step2.style.display = 'none';
+                if (step3) step3.style.display = 'block';
+                
+                // 显示进度容器
+                const progressContainer = document.getElementById('importProgressContainer');
+                const resultContainer = document.getElementById('importResultContainer');
+                
+                if (progressContainer) progressContainer.style.display = 'block';
+                if (resultContainer) resultContainer.style.display = 'none';
+                
+                // 更新进度文本
+                const progressText = document.getElementById('importProgressText');
+                if (progressText) {
+                    progressText.textContent = '正在导入服务器，请稍候...';
+                }
+                
+                // 禁用按钮
+                const wizardNextBtn = document.getElementById('wizardNextBtn');
+                const wizardCancelBtn = document.getElementById('wizardCancelBtn');
+                if (wizardNextBtn) wizardNextBtn.disabled = true;
+                if (wizardCancelBtn) wizardCancelBtn.disabled = true;
+            }
+            
+            /**
+             * 隐藏导入进度
+             */
+            function hideImportProgress() {
+                const progressContainer = document.getElementById('importProgressContainer');
+                if (progressContainer) {
+                    progressContainer.style.display = 'none';
+                }
+            }
+            
+            /**
+             * 显示导入结果
+             */
+            function showImportResult(result) {
+                // 显示结果容器
+                const resultContainer = document.getElementById('importResultContainer');
+                if (resultContainer) {
+                    resultContainer.style.display = 'block';
+                }
+                
+                // 更新成功统计
+                const successCount = document.getElementById('successCount');
+                if (successCount) {
+                    successCount.textContent = result.successCount || 0;
+                }
+                
+                // 更新标题和图标
+                const summaryTitle = document.getElementById('summaryTitle');
+                const summaryText = document.getElementById('summaryText');
+                const summaryIcon = document.getElementById('summaryIcon');
+                
+                if (result.successCount === result.totalCount) {
+                    // 全部成功
+                    if (summaryTitle) summaryTitle.textContent = '导入成功！';
+                    if (summaryIcon) summaryIcon.innerHTML = '<span class="icon-success">✓</span>';
+                    if (summaryText) {
+                        summaryText.innerHTML = `成功导入 <strong>${result.successCount}</strong> 台服务器`;
+                    }
+                } else if (result.successCount > 0) {
+                    // 部分成功
+                    if (summaryTitle) summaryTitle.textContent = '部分导入成功';
+                    if (summaryIcon) summaryIcon.innerHTML = '<span class="icon-warning">⚠</span>';
+                    if (summaryText) {
+                        summaryText.innerHTML = `成功 <strong>${result.successCount}</strong> 台，失败 <strong>${result.failedCount}</strong> 台`;
+                    }
+                } else {
+                    // 全部失败
+                    if (summaryTitle) summaryTitle.textContent = '导入失败';
+                    if (summaryIcon) summaryIcon.innerHTML = '<span class="icon-error">✗</span>';
+                    if (summaryText) {
+                        summaryText.innerHTML = `失败 <strong>${result.failedCount}</strong> 台`;
+                    }
+                }
+                
+                // 显示失败详情
+                if (result.failedCount > 0 && result.failedList) {
+                    const failureSection = document.getElementById('failureSection');
+                    if (failureSection) {
+                        failureSection.style.display = 'block';
+                        
+                        const failureTableBody = document.getElementById('failureTableBody');
+                        if (failureTableBody) {
+                            failureTableBody.innerHTML = '';
+                            
+                            result.failedList.forEach(failed => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${failed.serverName || failed.hostname}</td>
+                                    <td>${failed.hostname}</td>
+                                    <td class="text-danger">${failed.reason || failed.errorMessage || '未知错误'}</td>
+                                `;
+                                failureTableBody.appendChild(row);
+                            });
+                        }
+                    }
+                }
+                
+                // 显示成功列表
+                if (result.successCount > 0 && result.successList) {
+                    const successSection = document.getElementById('successSection');
+                    if (successSection) {
+                        successSection.style.display = 'block';
+                        
+                        const successGrid = document.getElementById('successServerGrid');
+                        if (successGrid) {
+                            successGrid.innerHTML = '';
+                            
+                            result.successList.forEach(success => {
+                                const card = document.createElement('div');
+                                card.className = 'server-card-success';
+                                card.innerHTML = `
+                                    <div class="server-card-icon">✓</div>
+                                    <div class="server-card-name">${success.serverName}</div>
+                                    <div class="server-card-host">${success.hostname}</div>
+                                `;
+                                successGrid.appendChild(card);
+                            });
+                        }
+                    }
+                }
+                
+                // 启用关闭按钮
+                const wizardCancelBtn = document.getElementById('wizardCancelBtn');
+                if (wizardCancelBtn) wizardCancelBtn.disabled = false;
+                
+                // 显示成功提示
+                if (result.successCount > 0) {
+                    showToast(`✓ 成功导入 ${result.successCount} 台服务器`, 'success');
+                }
+            }
+            
+            /**
+             * 显示导入错误
+             */
+            function showImportError(result) {
+                const resultContainer = document.getElementById('importResultContainer');
+                if (resultContainer) {
+                    resultContainer.style.display = 'block';
+                }
+                
+                const summaryTitle = document.getElementById('summaryTitle');
+                const summaryIcon = document.getElementById('summaryIcon');
+                const summaryText = document.getElementById('summaryText');
+                
+                if (summaryTitle) summaryTitle.textContent = '导入失败';
+                if (summaryIcon) summaryIcon.innerHTML = '<span class="icon-error">✗</span>';
+                if (summaryText) {
+                    summaryText.textContent = result.message || '服务器导入失败，请检查配置后重试';
+                }
+                
+                // 启用按钮
+                const wizardCancelBtn = document.getElementById('wizardCancelBtn');
+                if (wizardCancelBtn) wizardCancelBtn.disabled = false;
+                
+                showToast('导入失败: ' + (result.message || '未知错误'), 'error');
+            }
+            
+            /**
+             * Toast 通知函数 (如果全局没有，则创建简单版本)
+             */
+            function showToast(message, type = 'info') {
+                // 尝试使用全局 showToast
+                if (window.showToast && typeof window.showToast === 'function') {
+                    window.showToast(message, type);
+                    return;
+                }
+                
+                // 否则使用简单的 alert
+                const icons = {
+                    'success': '✓',
+                    'error': '✗',
+                    'warning': '⚠',
+                    'info': 'ℹ'
+                };
+                alert(`${icons[type] || ''} ${message}`);
+            }
+            
             /**
              * 页面加载后初始化
              */
             function init() {
-                // 延迟初始化，确保DOM完全加载
-                setTimeout(() => {
-                    initSSHScanButton();
-                }, 500);
+                console.log('[DEBUG] SSH扫描模块 init() 被调用');
                 
-                // 监听模态框打开事件，重新初始化按钮
+                // 使用事件委托，在 document 上监听点击
                 document.addEventListener('click', function(e) {
+                    // 检查是否点击了扫描按钮
+                    if (e.target.id === 'startScanBtn' || e.target.closest('#startScanBtn')) {
+                        console.log('[DEBUG] ========== 通过事件委托捕获到扫描按钮点击！==========');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleStartScan();
+                        return;
+                    }
+                    
+                    // 检测打开模态框的点击
                     const importTrigger = e.target.closest('[data-action="open-import-modal"]');
                     if (importTrigger) {
+                        console.log('[DEBUG] 检测到打开导入模态框的点击');
                         setTimeout(() => {
+                            console.log('[DEBUG] 模态框打开后重新初始化按钮');
                             initSSHScanButton();
-                        }, 100);
+                            initWizardNextButton();  // 重新初始化下一步按钮
+                            initWizardPrevButton();  // 重新初始化上一步按钮
+                        }, 300);  // 增加延迟到 300ms
                     }
+                });
+                
+                // 延迟初始化，确保DOM完全加载
+                setTimeout(() => {
+                    console.log('[DEBUG] 开始初始化扫描和按钮功能');
+                    initSSHScanButton();
+                    initWizardNextButton();  // 初始化下一步按钮
+                    initWizardPrevButton();  // 初始化上一步按钮
+                    console.log('[DEBUG] 初始化完成');
+                    
+                    // 设置 MutationObserver 监听模态框的显示
+                    setupModalObserver();
+                }, 500);
+            }
+            
+            /**
+             * 设置 MutationObserver 监听模态框显示状态
+             */
+            function setupModalObserver() {
+                const modal = document.getElementById('sshConfigImportModal');
+                if (!modal) {
+                    console.log('[DEBUG] 未找到 sshConfigImportModal');
+                    return;
+                }
+                
+                console.log('[DEBUG] 设置模态框观察器');
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                            const isVisible = modal.style.display !== 'none' && 
+                                            window.getComputedStyle(modal).display !== 'none';
+                            if (isVisible) {
+                                console.log('[DEBUG] 模态框变为可见，重新初始化按钮');
+                                setTimeout(() => {
+                                    initSSHScanButton();
+                                    initWizardNextButton();
+                                    initWizardPrevButton();
+                                }, 100);
+                            }
+                        }
+                    });
+                });
+                
+                observer.observe(modal, {
+                    attributes: true,
+                    attributeFilter: ['style', 'class']
                 });
             }
             
@@ -4558,5 +5474,8 @@ function initDashboardRealTimeUpdates() {
             
         })();
     </script>
+    
+    <!-- Include SSH Config Import Wizard Modal -->
+    <div th:replace="~{fragments/ssh-config-import-wizard :: ssh-config-import-wizard}"></div>
 </body>
 </html>

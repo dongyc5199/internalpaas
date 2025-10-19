@@ -240,11 +240,12 @@ export class SSHConfigImportWizard {
         }
 
         // ===== 自动扫描Tab事件 =====
-        // 新版模板中按钮 id 为 #startScanBtn，旧版可能为 #btnStartScan，兼容两者
-        const btnStartScan = this.modal.querySelector<HTMLButtonElement>('#startScanBtn') || this.modal.querySelector<HTMLButtonElement>('#btnStartScan');
-        btnStartScan?.addEventListener('click', () => {
-            this.startAutoScan();
-        });
+        // 注意：扫描按钮的点击事件由 main-layout.html 中的代码处理
+        // 不在这里绑定 #startScanBtn 的点击事件，避免冲突
+        // const btnStartScan = this.modal.querySelector<HTMLButtonElement>('#startScanBtn');
+        // btnStartScan?.addEventListener('click', () => {
+        //     this.startAutoScan();
+        // });
 
         // ===== 文件上传Tab事件 =====
         const uploadArea = this.modal.querySelector<HTMLDivElement>('#uploadArea');
