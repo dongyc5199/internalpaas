@@ -237,6 +237,18 @@ public class SSHConfigImportController {
     }
 
     /**
+     * 兼容旧前端调用：扫描本地SSH配置（别名）
+     * POST /api/ssh-config-import/scan-local
+     *
+     * 说明：历史上前端曾调用 /scan-local，后来改为 /parse-local。为了向后兼容部分编译/缓存的前端资源，提供一个代理方法，内部复用 parseLocalConfig 的逻辑。
+     */
+    @PostMapping("/scan-local")
+    public ResponseEntity<?> scanLocalAlias(@RequestParam(value = "path", required = false) String path) {
+        // 直接复用 parseLocalConfig 的实现逻辑
+        return this.parseLocalConfig(path);
+    }
+
+    /**
      * 预览导入 - 执行去重检查
      * Preview import with duplicate check
      *

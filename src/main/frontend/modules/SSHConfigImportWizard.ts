@@ -222,17 +222,26 @@ export class SSHConfigImportWizard {
         console.log("Attaching events to SSH Config Import Modal (Tab version)...");
 
         // ===== Tab切换事件 =====
-        this.modal.querySelectorAll<HTMLButtonElement>('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabName = tab.dataset.tab as 'auto-scan' | 'upload' | 'manual';
-                if (tabName) {
-                    this.switchTab(tabName);
-                }
-            });
-        });
+        // 支持两种命名：旧版使用 .tab，新版模板使用 .import-tab
+        const tabSelectors = ['.tab', '.import-tab'];
+        for (const sel of tabSelectors) {
+            const tabs = Array.from(this.modal.querySelectorAll<HTMLButtonElement>(sel));
+            if (tabs.length > 0) {
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        const tabName = (tab.dataset.tab as 'auto-scan' | 'upload' | 'manual') || tab.getAttribute('data-tab');
+                        if (tabName) {
+                            this.switchTab(tabName as any);
+                        }
+                    });
+                });
+                break; // found matching selector, stop searching
+            }
+        }
 
         // ===== 自动扫描Tab事件 =====
-        const btnStartScan = this.modal.querySelector<HTMLButtonElement>('#btnStartScan');
+        // 新版模板中按钮 id 为 #startScanBtn，旧版可能为 #btnStartScan，兼容两者
+        const btnStartScan = this.modal.querySelector<HTMLButtonElement>('#startScanBtn') || this.modal.querySelector<HTMLButtonElement>('#btnStartScan');
         btnStartScan?.addEventListener('click', () => {
             this.startAutoScan();
         });
