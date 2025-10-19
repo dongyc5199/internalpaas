@@ -48,6 +48,7 @@ export interface ServerImportPreview {
     baseWorkDirectory?: string | null;
     description?: string | null;
     serverType?: "DEVELOPMENT" | "TESTING" | "STAGING" | "PRODUCTION" | null;
+    osType?: "LINUX" | "WINDOWS" | "MACOS" | "UNIX" | "BSD" | "OTHER" | null;
 
     // 验证状态
     valid: boolean;                   // 是否有效（必填字段齐全）
@@ -1327,6 +1328,20 @@ export class SSHConfigImportWizard {
             </select>
         `;
         row.appendChild(typeCell);
+
+        // 操作系统类型
+        const osTypeCell = document.createElement("td");
+        osTypeCell.innerHTML = `
+            <select class="editable-select" data-field="osType" data-index="${index}">
+                <option value="LINUX" ${server.osType === "LINUX" || !server.osType ? "selected" : ""}>Linux</option>
+                <option value="WINDOWS" ${server.osType === "WINDOWS" ? "selected" : ""}>Windows</option>
+                <option value="MACOS" ${server.osType === "MACOS" ? "selected" : ""}>macOS</option>
+                <option value="UNIX" ${server.osType === "UNIX" ? "selected" : ""}>Unix</option>
+                <option value="BSD" ${server.osType === "BSD" ? "selected" : ""}>BSD</option>
+                <option value="OTHER" ${server.osType === "OTHER" ? "selected" : ""}>其他</option>
+            </select>
+        `;
+        row.appendChild(osTypeCell);
 
         // 状态
         const statusCell = document.createElement("td");

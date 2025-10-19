@@ -73,6 +73,21 @@ public class SSHHostConfig {
     private String password;
     
     /**
+     * ServerType - 服务器类型（环境类型）
+     * 用于标识服务器所属环境
+     * 例如: "DEVELOPMENT", "TESTING", "STAGING", "PRODUCTION"
+     * 默认值: "DEVELOPMENT"
+     */
+    private String serverType = "DEVELOPMENT";
+    
+    /**
+     * OsType - 操作系统类型
+     * 用于存储服务器的操作系统类型（可选）
+     * 例如: "LINUX", "WINDOWS", "MACOS"
+     */
+    private String osType;
+    
+    /**
      * 其他配置项
      * 存储未明确定义的SSH配置项
      * 例如: ForwardAgent, ServerAliveInterval等
@@ -168,6 +183,22 @@ public class SSHHostConfig {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getServerType() {
+        return serverType;
+    }
+
+    public void setServerType(String serverType) {
+        this.serverType = serverType;
+    }
+
+    public String getOsType() {
+        return osType;
+    }
+
+    public void setOsType(String osType) {
+        this.osType = osType;
     }
 
     public Map<String, String> getExtraOptions() {

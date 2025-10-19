@@ -72,6 +72,31 @@ public class SSHConfigMapper {
             dto.setSshPassword(sshConfig.getPassword());
             logger.debug("映射SSH密码字段（明文传输）");
         }
+        
+        // 映射服务器类型（环境类型）
+        // 如果SSH配置中指定了serverType，使用指定值；否则使用默认值DEVELOPMENT
+        if (sshConfig.getServerType() != null && !sshConfig.getServerType().isEmpty()) {
+            try {
+                dto.setServerType(Server.ServerType.valueOf(sshConfig.getServerType().toUpperCase()));
+                logger.debug("映射服务器类型: {}", sshConfig.getServerType());
+            } catch (IllegalArgumentException e) {
+                logger.warn("无效的服务器类型: {}，使用默认值DEVELOPMENT", sshConfig.getServerType());
+                dto.setServerType(Server.ServerType.DEVELOPMENT);
+            }
+        }
+        // 如果没有指定，保持DTO的默认值（DEVELOPMENT）
+        
+        // 映射操作系统类型（如果有）
+        if (sshConfig.getOsType() != null && !sshConfig.getOsType().isEmpty()) {
+            try {
+                dto.setOsType(Server.OsType.valueOf(sshConfig.getOsType().toUpperCase()));
+                logger.debug("映射操作系统类型: {}", sshConfig.getOsType());
+            } catch (IllegalArgumentException e) {
+                logger.warn("无效的操作系统类型: {}，使用默认值LINUX", sshConfig.getOsType());
+                dto.setOsType(Server.OsType.LINUX);
+            }
+        }
+        // 如果没有指定，保持DTO的默认值（LINUX）
 
         // 默认值已在ServerImportDto构造函数中设置
         // port = 8080

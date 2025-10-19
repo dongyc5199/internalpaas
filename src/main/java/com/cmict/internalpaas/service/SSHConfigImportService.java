@@ -367,6 +367,13 @@ public class SSHConfigImportService {
         } else {
             server.setServerType(Server.ServerType.DEVELOPMENT);
         }
+        
+        // 操作系统类型
+        if (dto.getOsType() != null) {
+            server.setOsType(dto.getOsType());
+        } else {
+            server.setOsType(Server.OsType.LINUX);
+        }
 
         // 默认设置
         server.setActive(true);

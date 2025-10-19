@@ -251,33 +251,7 @@
                         <p class="text-muted">请选择要导入的服务器，并补充必要信息</p>
                     </div>
 
-                    <!-- Batch Operations Toolbar -->
-                    <div class="preview-toolbar">
-                        <div class="toolbar-left">
-                            <button class="btn btn-sm btn-default" id="selectAllServersBtn" type="button">
-                                <span>☑️</span>
-                                <span>全选</span>
-                            </button>
-                            <button class="btn btn-sm btn-default" id="selectValidServersBtn" type="button">
-                                <span>✅</span>
-                                <span>选择有效</span>
-                            </button>
-                            <button class="btn btn-sm btn-default" id="deselectAllServersBtn" type="button">
-                                <span>⬜</span>
-                                <span>取消全选</span>
-                            </button>
-                        </div>
-                        <div class="toolbar-right">
-                            <div class="selection-stats">
-                                <span>已选</span>
-                                <strong id="selectedServerCount">0</strong>
-                                <span>/</span>
-                                <span>总计</span>
-                                <strong id="totalServerCount">0</strong>
-                                <span>台</span>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Batch Operations Toolbar 已移除（如需恢复可还原此处） -->
 
                     <!-- Server Preview Table -->
                     <div class="preview-table-container">
@@ -297,6 +271,7 @@
                                         <span class="optional-mark" title="使用私钥认证时可留空">（可选）</span>
                                     </th>
                                     <th class="col-type">服务器类型</th>
+                                    <th class="col-os">操作系统</th>
                                     <th class="col-status">状态</th>
                                     <!-- 操作列已移除 -->
                                 </tr>
@@ -304,7 +279,7 @@
                             <tbody id="serverPreviewTableBody">
                                 <!-- 表格行将由JavaScript动态生成 -->
                                 <tr class="empty-state-row">
-                                    <td colspan="9" class="empty-state">
+                                    <td colspan="10" class="empty-state">
                                         <div class="empty-icon">📋</div>
                                         <p>暂无数据</p>
                                         <p class="empty-hint">请先选择配置文件并解析</p>

@@ -83,6 +83,12 @@ public class ServerImportDto {
     @Schema(description = "服务器类型", example = "DEVELOPMENT", defaultValue = "DEVELOPMENT")
     private Server.ServerType serverType;
 
+    /**
+     * 操作系统类型（默认LINUX）
+     */
+    @Schema(description = "操作系统类型", example = "LINUX", defaultValue = "LINUX")
+    private Server.OsType osType;
+
     // ==================== 验证相关字段 ====================
 
     /**
@@ -120,6 +126,7 @@ public class ServerImportDto {
         this.port = 8080;
         this.sshPort = 22;
         this.serverType = Server.ServerType.DEVELOPMENT;
+        this.osType = Server.OsType.LINUX;
     }
 
     // ==================== Getters and Setters ====================
@@ -202,6 +209,14 @@ public class ServerImportDto {
 
     public void setServerType(Server.ServerType serverType) {
         this.serverType = serverType;
+    }
+
+    public Server.OsType getOsType() {
+        return osType;
+    }
+
+    public void setOsType(Server.OsType osType) {
+        this.osType = osType;
     }
 
     public boolean isValid() {

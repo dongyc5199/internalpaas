@@ -71,6 +71,10 @@ public class Server {
     private ServerType serverType = ServerType.DEVELOPMENT;
     
     @Enumerated(EnumType.STRING)
+    @Column(name = "os_type")
+    private OsType osType = OsType.LINUX;
+    
+    @Enumerated(EnumType.STRING)
     @Column(name = "privilege_level")
     private PrivilegeLevel privilegeLevel = PrivilegeLevel.UNKNOWN;
     
@@ -130,6 +134,26 @@ public class Server {
         private final String description;
         
         ServerType(String description) {
+            this.description = description;
+        }
+        
+        public String getDescription() {
+            return description;
+        }
+    }
+    
+    // 操作系统类型枚举
+    public enum OsType {
+        LINUX("Linux"),
+        WINDOWS("Windows"),
+        MACOS("macOS"),
+        UNIX("Unix"),
+        BSD("BSD"),
+        OTHER("其他");
+        
+        private final String description;
+        
+        OsType(String description) {
             this.description = description;
         }
         
@@ -318,6 +342,9 @@ public class Server {
     
     public ServerType getServerType() { return serverType; }
     public void setServerType(ServerType serverType) { this.serverType = serverType; }
+    
+    public OsType getOsType() { return osType; }
+    public void setOsType(OsType osType) { this.osType = osType; }
     
     public PrivilegeLevel getPrivilegeLevel() { return privilegeLevel; }
     public void setPrivilegeLevel(PrivilegeLevel privilegeLevel) { this.privilegeLevel = privilegeLevel; }

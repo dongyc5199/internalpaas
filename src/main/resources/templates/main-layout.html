@@ -4805,21 +4805,49 @@ function initDashboardRealTimeUpdates() {
                 tdPassword.appendChild(passwordInput);
                 tr.appendChild(tdPassword);
                 
-                // 服务器类型列
+                // 服务器类型列（环境类型）
                 const tdType = document.createElement('td');
                 tdType.className = 'col-type';
                 const typeSelect = document.createElement('select');
                 typeSelect.className = 'form-control form-control-sm server-type-select';
-                typeSelect.dataset.field = 'type';
+                typeSelect.dataset.field = 'serverType';
                 typeSelect.innerHTML = `
-                    <option value="LINUX">Linux</option>
-                    <option value="WINDOWS">Windows</option>
-                    <option value="UNIX">Unix</option>
-                    <option value="OTHER">其他</option>
+                    <option value="DEVELOPMENT">开发服务器</option>
+                    <option value="TESTING">测试服务器</option>
+                    <option value="STAGING">预生产服务器</option>
+                    <option value="PRODUCTION">生产服务器</option>
                 `;
-                typeSelect.value = 'LINUX';
+                // 设置默认值为 DEVELOPMENT 或 host.serverType
+                typeSelect.value = host.serverType || 'DEVELOPMENT';
+                // Make server type read-only in preview: disable the select so user cannot edit
+                typeSelect.disabled = true;
+                typeSelect.title = '只读: 服务器环境类型';
+                // Keep select visually consistent and mark for styling
+                typeSelect.classList.add('editable-select', 'readonly-select');
                 tdType.appendChild(typeSelect);
                 tr.appendChild(tdType);
+                
+                // 操作系统列
+                const tdOs = document.createElement('td');
+                tdOs.className = 'col-os';
+                const osSelect = document.createElement('select');
+                osSelect.className = 'form-control form-control-sm server-os-select';
+                osSelect.dataset.field = 'osType';
+                osSelect.innerHTML = `
+                    <option value="LINUX">Linux</option>
+                    <option value="WINDOWS">Windows</option>
+                    <option value="MACOS">macOS</option>
+                    <option value="UNIX">Unix</option>
+                    <option value="BSD">BSD</option>
+                    <option value="OTHER">其他</option>
+                `;
+                // 设置默认值为 LINUX 或 host.osType
+                osSelect.value = host.osType || 'LINUX';
+                osSelect.disabled = true;
+                osSelect.title = '只读: 操作系统类型';
+                osSelect.classList.add('editable-select', 'readonly-select');
+                tdOs.appendChild(osSelect);
+                tr.appendChild(tdOs);
                 
                 // 状态列
                 const tdStatus = document.createElement('td');
@@ -5181,6 +5209,22 @@ function initDashboardRealTimeUpdates() {
                         return;
                     }
 
+                    // ✅ 新增：验证每台服务器是否有认证凭证
+                    const serversWithoutAuth = selectedServers.filter(server => {
+                        const hasPassword = server.sshPassword && server.sshPassword.trim() !== '';
+                        const hasKeyPath = server.sshKeyPath && server.sshKeyPath.trim() !== '';
+                        return !hasPassword && !hasKeyPath;
+                    });
+
+                    if (serversWithoutAuth.length > 0) {
+                        const serverNames = serversWithoutAuth.map(s => s.name).join('、');
+                        showToast(
+                            `以下服务器缺少SSH认证凭证（密码或私钥）：\n${serverNames}\n\n请在表格中填写SSH密码或确保配置了私钥。`,
+                            'error'
+                        );
+                        return;
+                    }
+
                     const confirmed = confirm(
                         `确定要导入 ${selectedServers.length} 台服务器吗？\n\n` +
                         `系统将自动检查重复并导入到数据库。`
@@ -5382,6 +5426,7 @@ function initDashboardRealTimeUpdates() {
                     // 从表格输入框获取用户编辑的值
                     const serverNameInput = tableRow.querySelector('.server-name-input');
                     const serverTypeSelect = tableRow.querySelector('.server-type-select');
+                    const osTypeSelect = tableRow.querySelector('.server-os-select');  // ✅ 新增：获取操作系统选择框
                     const passwordInput = tableRow.querySelector('.server-password-input');  // ✅ 新增：获取密码输入框
                     
                     // ✅ 新增：优先使用用户输入的密码，其次使用原始数据中的密码
@@ -5395,6 +5440,7 @@ function initDashboardRealTimeUpdates() {
                         sshPassword: password,  // ✅ 修改：使用收集的密码
                         sshKeyPath: hostData.identityFile || null,
                         serverType: serverTypeSelect ? serverTypeSelect.value : 'DEVELOPMENT',
+                        osType: osTypeSelect ? osTypeSelect.value : 'LINUX',  // ✅ 新增：操作系统类型
                         description: hostData.description || `从 ${hostData.source} 导入`,
                         // 可选字段
                         baseWorkDirectory: null,  // 后端会自动生成
@@ -5595,6 +5641,14 @@ function initDashboardRealTimeUpdates() {
                 if (result.successCount > 0) {
                     showToast(`✓ 成功导入 ${result.successCount} 台服务器`, 'success');
                 }
+                
+                // ✅ 新增：如果全部导入成功，2秒后自动关闭弹窗
+                if (result.successCount === result.totalCount && result.successCount > 0) {
+                    setTimeout(() => {
+                        console.log('[DEBUG] 导入全部成功，自动关闭弹窗');
+                        closeSSHConfigModal();
+                    }, 2000);
+                }
             }
             
             /**
@@ -5640,6 +5694,112 @@ function initDashboardRealTimeUpdates() {
                     'info': 'ℹ'
                 };
                 alert(`${icons[type] || ''} ${message}`);
+            }
+            
+            /**
+             * 关闭SSH配置导入弹窗
+             */
+            function closeSSHConfigModal() {
+                console.log('[DEBUG] 关闭SSH配置导入弹窗');
+                const modal = document.getElementById('sshConfigImportModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                    console.log('[DEBUG] 弹窗已关闭');
+                    
+                    // 关闭后重置所有状态
+                    resetModalState();
+                }
+            }
+            
+            /**
+             * 重置弹窗内部所有状态
+             */
+            function resetModalState() {
+                console.log('[DEBUG] 重置弹窗状态');
+                
+                // 1. 重置向导步骤和状态
+                wizardState.reset();
+                
+                // 2. 重置扫描按钮状态
+                const startScanBtn = document.getElementById('startScanBtn');
+                if (startScanBtn) {
+                    startScanBtn.disabled = false;
+                    startScanBtn.classList.remove('is-scanning');
+                    startScanBtn.innerHTML = '<span>🔍</span><span>开始自动扫描</span>';
+                    startScanBtn.style.display = 'inline-flex';  // ✅ 确保按钮可见
+                    console.log('[DEBUG] 扫描按钮已重置');
+                }
+                
+                // 3. 清空扫描结果表格
+                const scanResultBody = document.getElementById('scanResultBody');
+                if (scanResultBody) {
+                    scanResultBody.innerHTML = '';
+                }
+                
+                // 4. 清空服务器预览表格
+                const serverPreviewTableBody = document.getElementById('serverPreviewTableBody');
+                if (serverPreviewTableBody) {
+                    serverPreviewTableBody.innerHTML = '';
+                }
+                
+                // 5. 隐藏扫描状态
+                const scanningStatus = document.getElementById('scanningStatus');
+                if (scanningStatus) {
+                    scanningStatus.style.display = 'none';
+                }
+                
+                // 6. 隐藏扫描结果容器
+                const scanResultContainer = document.getElementById('scanResultContainer');
+                if (scanResultContainer) {
+                    scanResultContainer.style.display = 'none';
+                }
+                
+                // 7. 重置进度条
+                const progressFill = document.getElementById('progressFill');
+                if (progressFill) {
+                    progressFill.style.width = '0%';
+                }
+                
+                // 8. 隐藏导入结果容器
+                const importResultContainer = document.getElementById('importResultContainer');
+                if (importResultContainer) {
+                    importResultContainer.style.display = 'none';
+                }
+                
+                // 9. 清空成功列表
+                const successServerGrid = document.getElementById('successServerGrid');
+                if (successServerGrid) {
+                    successServerGrid.innerHTML = '';
+                }
+                
+                // 10. 清空失败列表
+                const failureTableBody = document.getElementById('failureTableBody');
+                if (failureTableBody) {
+                    failureTableBody.innerHTML = '';
+                }
+                
+                // 11. 隐藏成功和失败区域
+                const successSection = document.getElementById('successSection');
+                const failureSection = document.getElementById('failureSection');
+                if (successSection) successSection.style.display = 'none';
+                if (failureSection) failureSection.style.display = 'none';
+                
+                // 12. 显示自动扫描标签页内容，隐藏其他步骤
+                const autoScanTab = document.getElementById('auto-scan');
+                const wizardStep2 = document.getElementById('wizardStep2');
+                const wizardStep3 = document.getElementById('wizardStep3');
+                
+                if (autoScanTab) autoScanTab.style.display = 'block';
+                if (wizardStep2) wizardStep2.style.display = 'none';
+                if (wizardStep3) wizardStep3.style.display = 'none';
+                
+                // 13. ✅ 新增：调用 updateUI() 确保按钮状态与步骤一致
+                if (typeof wizardState !== 'undefined' && wizardState.updateUI) {
+                    console.log('[DEBUG] 调用 wizardState.updateUI() 更新按钮显示');
+                    wizardState.updateUI();
+                }
+                
+                console.log('[DEBUG] 弹窗状态重置完成');
             }
             
             /**
@@ -5870,6 +6030,23 @@ function initDashboardRealTimeUpdates() {
                         return;
                     }
                     
+                    // ✅ 新增：检查是否点击了关闭弹窗按钮
+                    const closeBtn = e.target.closest('[data-action="ssh-config-modal-close"]');
+                    if (closeBtn) {
+                        console.log('[DEBUG] 检测到关闭SSH配置导入弹窗按钮点击');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        closeSSHConfigModal();
+                        return;
+                    }
+                    
+                    // ✅ 新增：点击弹窗背景遮罩层也关闭弹窗
+                    if (e.target.id === 'sshConfigImportModal' && e.target.classList.contains('ssh-config-wizard-overlay')) {
+                        console.log('[DEBUG] 检测到点击弹窗背景遮罩层');
+                        closeSSHConfigModal();
+                        return;
+                    }
+                    
                     // 检测打开模态框的点击
                     const importTrigger = e.target.closest('[data-action="open-import-modal"]');
                     if (importTrigger) {
@@ -5880,6 +6057,17 @@ function initDashboardRealTimeUpdates() {
                             initWizardNextButton();  // 重新初始化下一步按钮
                             initWizardPrevButton();  // 重新初始化上一步按钮
                         }, 300);  // 增加延迟到 300ms
+                    }
+                });
+                
+                // ✅ 新增：ESC键关闭弹窗
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        const modal = document.getElementById('sshConfigImportModal');
+                        if (modal && modal.style.display !== 'none') {
+                            console.log('[DEBUG] ESC键关闭弹窗');
+                            closeSSHConfigModal();
+                        }
                     }
                 });
                 

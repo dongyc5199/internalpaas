@@ -93,6 +93,17 @@ class ServerModal {
                                             <option value="testing">测试环境</option>
                                         </select>
                                     </div>
+                                    <div class="server-modal-form-group">
+                                        <label class="server-modal-form-label">操作系统</label>
+                                        <select class="server-modal-form-control" name="osType" id="serverOsType">
+                                            <option value="LINUX" selected>Linux</option>
+                                            <option value="WINDOWS">Windows</option>
+                                            <option value="MACOS">macOS</option>
+                                            <option value="UNIX">Unix</option>
+                                            <option value="BSD">BSD</option>
+                                            <option value="OTHER">其他</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="server-modal-form-group">
                                     <label class="server-modal-form-label">描述</label>

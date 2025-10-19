@@ -172,7 +172,7 @@
 }
 
 .wizard-content-header {
-    margin-bottom: 32px;
+    margin-bottom: 22px; /* reduced by ~1/3 from 32px */
 }
 
 .wizard-content-header h3 {
@@ -1146,6 +1146,29 @@
     outline: none;
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Read-only appearance: disabled selects in the type column should look like text
+   but still participate in layout and data collection. */
+.readonly-select:disabled,
+.preview-table td.col-type .readonly-select:disabled {
+    background: transparent;
+    border: none;
+    padding: 0;
+    height: auto;
+    min-height: 0;
+    color: #374151;
+    cursor: default;
+    box-shadow: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+/* Ensure disabled select still shows its text centered like other columns */
+.preview-table td.col-type {
+    display: table-cell; /* keep table layout */
+    vertical-align: middle;
+    text-align: center;
 }
 
 /* Row Actions */
