@@ -146,6 +146,25 @@
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>2.2.0</version>
 		</dependency>
+		
+		<!-- SSH Multi-Client Scanner Dependencies (Phase 1) -->
+		<!-- JNA Platform - Windows Registry Access for SecureCRT/Xshell detection -->
+		<dependency>
+			<groupId>net.java.dev.jna</groupId>
+			<artifactId>jna-platform</artifactId>
+			<version>5.14.0</version>
+		</dependency>
+		<!-- SnakeYAML - Tabby config.yaml parsing -->
+		<dependency>
+			<groupId>org.yaml</groupId>
+			<artifactId>snakeyaml</artifactId>
+			<version>2.2</version>
+		</dependency>
+		<!-- Jackson XML - Xshell .xsh file parsing (Already included in Spring Boot) -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-xml</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
