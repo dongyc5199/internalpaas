@@ -4283,6 +4283,280 @@ function initDashboardRealTimeUpdates() {
                 close: closeUserAddModal
             };
         })();
+
+        // ==================== SSH客户端扫描功能 ====================
+        (function() {
+            'use strict';
+            
+            let scanInProgress = false;
+            
+            /**
+             * 初始化SSH扫描按钮事件
+             */
+            function initSSHScanButton() {
+                const startScanBtn = document.getElementById('startScanBtn');
+                if (!startScanBtn) {
+                    return; // 按钮不存在时直接返回
+                }
+                
+                startScanBtn.addEventListener('click', handleStartScan);
+            }
+            
+            /**
+             * 处理开始扫描按钮点击
+             */
+            async function handleStartScan() {
+                if (scanInProgress) {
+                    showToast('⏳ 扫描正在进行中，请稍候...', 'info');
+                    return;
+                }
+                
+                try {
+                    scanInProgress = true;
+                    
+                    // 1. 显示扫描状态
+                    showScanningStatus();
+                    
+                    // 2. 调用扫描API
+                    const response = await fetch('/api/ssh-scan/scan-all', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || '扫描失败');
+                    }
+                    
+                    const result = await response.json();
+                    
+                    // 3. 显示扫描结果
+                    if (result.success) {
+                        showScanResult(result.data);
+                        showToast('✅ 扫描完成！', 'success');
+                    } else {
+                        throw new Error(result.message || '扫描失败');
+                    }
+                    
+                } catch (error) {
+                    console.error('SSH扫描失败:', error);
+                    hideScanningStatus();
+                    showToast('❌ ' + error.message, 'error');
+                } finally {
+                    scanInProgress = false;
+                }
+            }
+            
+            /**
+             * 显示扫描中状态
+             */
+            function showScanningStatus() {
+                const scanBtn = document.getElementById('startScanBtn');
+                const scanStatus = document.getElementById('scanningStatus');
+                const scanResult = document.getElementById('scanResult');
+                
+                if (scanBtn) {
+                    scanBtn.disabled = true;
+                    scanBtn.innerHTML = '<span class="spinner"></span><span>扫描中...</span>';
+                }
+                
+                if (scanStatus) {
+                    scanStatus.style.display = 'block';
+                    animateScanSteps();
+                }
+                
+                if (scanResult) {
+                    scanResult.style.display = 'none';
+                }
+            }
+            
+            /**
+             * 隐藏扫描中状态
+             */
+            function hideScanningStatus() {
+                const scanBtn = document.getElementById('startScanBtn');
+                const scanStatus = document.getElementById('scanningStatus');
+                
+                if (scanBtn) {
+                    scanBtn.disabled = false;
+                    scanBtn.innerHTML = '<span>🔍</span><span>开始自动扫描</span>';
+                }
+                
+                if (scanStatus) {
+                    scanStatus.style.display = 'none';
+                }
+            }
+            
+            /**
+             * 动画显示扫描步骤
+             */
+            function animateScanSteps() {
+                const steps = ['step1', 'step2', 'step3', 'step4'];
+                const progressFill = document.getElementById('progressFill');
+                
+                steps.forEach((stepId, index) => {
+                    setTimeout(() => {
+                        const step = document.getElementById(stepId);
+                        if (step) {
+                            const icon = step.querySelector('.scan-step-icon');
+                            if (icon) {
+                                icon.textContent = '✓';
+                                icon.style.color = '#10b981';
+                            }
+                            step.style.opacity = '1';
+                        }
+                        
+                        if (progressFill) {
+                            progressFill.style.width = `${((index + 1) / steps.length) * 100}%`;
+                        }
+                    }, index * 500);
+                });
+            }
+            
+            /**
+             * 显示扫描结果
+             */
+            function showScanResult(data) {
+                const scanStatus = document.getElementById('scanningStatus');
+                const scanResult = document.getElementById('scanResult');
+                const scanBtn = document.getElementById('startScanBtn');
+                const wizardNextBtn = document.getElementById('wizardNextBtn');
+                const confirmImportBtn = document.getElementById('confirmImportBtn');
+                
+                // 隐藏扫描状态
+                if (scanStatus) {
+                    scanStatus.style.display = 'none';
+                }
+                
+                // 恢复扫描按钮
+                if (scanBtn) {
+                    scanBtn.disabled = false;
+                    scanBtn.innerHTML = '<span>🔍</span><span>重新扫描</span>';
+                }
+                
+                // 显示结果区域
+                if (scanResult) {
+                    scanResult.style.display = 'block';
+                }
+                
+                // 启用下一步按钮
+                if (wizardNextBtn) {
+                    wizardNextBtn.disabled = false;
+                }
+                if (confirmImportBtn) {
+                    confirmImportBtn.disabled = false;
+                }
+                
+                // 填充扫描结果数据
+                populateScanResult(data);
+            }
+            
+            /**
+             * 填充扫描结果数据
+             */
+            function populateScanResult(data) {
+                const { scanSummary, aggregatedResult } = data;
+                
+                // 更新标题
+                const scanResultSubtitle = document.getElementById('scanResultSubtitle');
+                if (scanResultSubtitle) {
+                    scanResultSubtitle.textContent = `检测到 ${scanSummary.scannedClients.length} 个SSH客户端`;
+                }
+                
+                // 更新详细信息
+                const scanResultInfo = document.getElementById('scanResultInfo');
+                if (scanResultInfo) {
+                    let html = '';
+                    
+                    // 显示每个客户端的统计
+                    for (const [clientName, count] of Object.entries(aggregatedResult.sourceStatistics)) {
+                        const icon = getClientIcon(clientName);
+                        html += `
+                            <div class="info-item">
+                                <div class="info-label">
+                                    <span>${icon}</span>
+                                    <strong>${clientName}</strong>
+                                </div>
+                                <div class="info-value">
+                                    <span>${count}</span> 个主机
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    // 显示汇总统计
+                    html += `
+                        <div class="info-item" style="border-top: 1px solid #e5e7eb; margin-top: 12px; padding-top: 12px;">
+                            <div class="info-label">
+                                <span>📊</span>
+                                <strong>汇总统计</strong>
+                            </div>
+                            <div class="info-value">
+                                总计 <strong>${aggregatedResult.totalInputCount}</strong> 个 • 
+                                去重后 <strong>${aggregatedResult.uniqueCount}</strong> 个 • 
+                                去重率 <strong>${(aggregatedResult.deduplicationRate * 100).toFixed(1)}%</strong>
+                            </div>
+                        </div>
+                    `;
+                    
+                    scanResultInfo.innerHTML = html;
+                }
+                
+                // 更新提示内容
+                const scanTipContent = document.getElementById('scanTipContent');
+                if (scanTipContent) {
+                    const estimatedTime = Math.ceil(aggregatedResult.uniqueCount / 20); // 假设每20个主机需要1分钟
+                    scanTipContent.textContent = `系统已自动去重和合并配置，预计导入时间 ${estimatedTime} 分钟`;
+                }
+                
+                // 存储扫描结果供后续使用
+                window.sshScanResult = aggregatedResult;
+            }
+            
+            /**
+             * 获取客户端图标
+             */
+            function getClientIcon(clientName) {
+                const icons = {
+                    'SecureCRT': '🔐',
+                    'Xshell': '📡',
+                    'Tabby': '⚡',
+                    'MobaXterm': '🖥️',
+                    'PuTTY': '🔧'
+                };
+                return icons[clientName] || '💻';
+            }
+            
+            /**
+             * 页面加载后初始化
+             */
+            function init() {
+                // 延迟初始化，确保DOM完全加载
+                setTimeout(() => {
+                    initSSHScanButton();
+                }, 500);
+                
+                // 监听模态框打开事件，重新初始化按钮
+                document.addEventListener('click', function(e) {
+                    const importTrigger = e.target.closest('[data-action="open-import-modal"]');
+                    if (importTrigger) {
+                        setTimeout(() => {
+                            initSSHScanButton();
+                        }, 100);
+                    }
+                });
+            }
+            
+            // 初始化
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+            
+        })();
     </script>
 </body>
 </html>
