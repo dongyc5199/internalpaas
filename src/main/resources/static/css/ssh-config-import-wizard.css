@@ -188,6 +188,38 @@
     margin: 0;
 }
 
+/* ==================== Auto Scan Spinner & Status ==================== */
+.scan-status-heading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    color: #667eea;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.scan-status-text {
+    display: inline-block;
+}
+
+.scan-ripple {
+    display: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(79, 70, 229, 0.22), transparent 40%);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.06);
+    animation: ripple 1400ms infinite linear;
+    margin: 6px auto;
+}
+
+@keyframes ripple {
+    0% { transform: scale(0.9); opacity: 1; }
+    70% { transform: scale(1.6); opacity: 0.35; }
+    100% { transform: scale(1.8); opacity: 0; }
+}
+
 /* Config Source Options */
 .config-source-options {
     display: grid;
@@ -820,8 +852,30 @@
 
 /* Table Columns */
 .col-checkbox {
-    width: 40px;
+    width: 48px;
     text-align: center;
+    vertical-align: middle;
+    position: relative;
+}
+
+.col-checkbox input[type="checkbox"] {
+    width: 16px !important;
+    height: 16px !important;
+    margin: 0 !important;
+    accent-color: #4f46e5 !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: inline-block !important;
+    position: relative !important;
+    z-index: 10 !important;
+    /* 强制显示边框确保可见性 */
+    border: 2px solid #4f46e5 !important;
+    border-radius: 3px !important;
+    background-color: white !important;
+    appearance: auto !important;
+    -webkit-appearance: checkbox !important;
+    -moz-appearance: checkbox !important;
 }
 
 .col-name {
@@ -844,6 +898,10 @@
     min-width: 150px;
 }
 
+.col-password {
+    min-width: 180px;
+}
+
 .col-type {
     width: 120px;
 }
@@ -861,6 +919,34 @@
 .required-mark {
     color: #ef4444;
     font-weight: bold;
+}
+
+/* Optional Mark */
+.optional-mark {
+    color: #9ca3af;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+/* Password Input */
+.server-password-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.server-password-input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.server-password-input::placeholder {
+    color: #9ca3af;
+    font-size: 12px;
 }
 
 /* Empty State */
@@ -1633,3 +1719,563 @@
 [data-theme="dark"] .result-actions {
     border-top-color: #374151;
 }
+
+/* ========================================
+   Shared Styles (from server-import-modal.css)
+   迁移自 server-import-modal.css 的共享样式
+   ======================================== */
+
+/* Preview table checkbox column */
+.server-import-table .col-checkbox,
+.server-import-preview .col-checkbox,
+.preview-table .col-checkbox {
+    width: 48px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+.server-import-table .col-checkbox input[type="checkbox"],
+.server-import-preview .col-checkbox input[type="checkbox"],
+.preview-table .col-checkbox input[type="checkbox"],
+input[type="checkbox"].server-checkbox {
+    width: 16px !important;
+    height: 16px !important;
+    margin: 0 auto !important;
+    accent-color: #4f46e5 !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: inline-block !important;
+    position: relative !important;
+    z-index: 10 !important;
+    /* 强制显示边框确保可见性 */
+    border: 2px solid #4f46e5 !important;
+    border-radius: 3px !important;
+    background-color: white !important;
+    appearance: auto !important;
+    -webkit-appearance: checkbox !important;
+    -moz-appearance: checkbox !important;
+}
+
+/* Clients Banner Styles */
+.clients-banner {
+    background: linear-gradient(135deg, #f5f7ff 0%, #faf5ff 100%);
+    border: 1px solid #e8e8ff;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.banner-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.banner-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #667eea;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.banner-count {
+    font-size: 12px;
+    color: #999;
+}
+
+.clients-showcase {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.client-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: white;
+    border: 1px solid #e8e8ff;
+    border-radius: 20px;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.client-badge:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+    transform: translateY(-1px);
+}
+
+.client-badge.supported {
+    border-color: #10b981;
+    background: #f0fdf4;
+}
+
+.client-badge.coming-soon {
+    opacity: 0.6;
+    border-style: dashed;
+}
+
+.client-icon-small {
+    font-size: 16px;
+}
+
+.client-name-small {
+    font-weight: 500;
+    color: #333;
+}
+
+.client-status {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: #10b981;
+    color: white;
+    font-weight: 600;
+}
+
+.client-status.coming {
+    background: #f59e0b;
+}
+
+/* ===== Tabs Styles ===== */
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: #f8f9fa;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.tab {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: #666;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.tab:hover {
+    background: white;
+    color: #667eea;
+}
+
+.tab.active {
+    background: white;
+    color: #667eea;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Info Box Styles */
+.info-box {
+    background: #f0f5ff;
+    border-left: 3px solid #667eea;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 20px;
+}
+
+.info-box-title {
+    color: #667eea;
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.info-box-text {
+    color: #666;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* Scan Button */
+.scan-button-wrapper {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.btn-large {
+    padding: 12px 32px;
+    font-size: 15px;
+}
+
+/* Scan Button States */
+#startScanBtn.is-scanning {
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* Lightweight Spinner for Scan Button */
+.scan-spinner-lite {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin-lite 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+@keyframes spin-lite {
+    to { 
+        transform: rotate(360deg); 
+    }
+}
+
+.scan-btn-text {
+    vertical-align: middle;
+}
+
+/* ===== Auto Scan Tab Styles ===== */
+.scan-status {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.scan-status.active {
+    display: block;
+}
+
+.spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #667eea;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.scan-status.scanning {
+    background: linear-gradient(135deg, #f0f9ff 0%, #f5f3ff 100%);
+    border-radius: 12px;
+}
+
+.scan-status-heading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    color: #667eea;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.scan-status-text {
+    display: inline-block;
+}
+
+.scan-ripple {
+    display: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(79, 70, 229, 0.22), transparent 40%);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.06);
+    animation: ripple 1400ms infinite linear;
+    margin: 6px auto;
+}
+
+@keyframes ripple {
+    0% { transform: scale(0.9); opacity: 1; }
+    70% { transform: scale(1.6); opacity: 0.35; }
+    100% { transform: scale(1.8); opacity: 0; }
+}
+
+.progress-ring {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 20px;
+    position: relative;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #e9ecef;
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    animation: progressShimmer 1.5s infinite;
+}
+
+@keyframes progressShimmer {
+    0% { opacity: 1; }
+    50% { opacity: 0.8; }
+    100% { opacity: 1; }
+}
+
+.scan-steps {
+    display: flex;
+    justify-content: space-between;
+    margin: 24px 0;
+    padding: 0 20px;
+}
+
+.scan-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    padding: 12px 8px;
+    color: #999;
+    font-size: 12px;
+}
+
+.scan-step.active {
+    color: #667eea;
+    font-weight: 600;
+}
+
+.scan-step.completed {
+    color: #10b981;
+}
+
+.scan-step-icon {
+    width: 20px;
+    margin: 0 auto 8px;
+    text-align: center;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.scan-result {
+    display: none;
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.scan-result.active {
+    display: block;
+}
+
+/* Scan Result Header */
+.scan-result-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.scan-result-icon {
+    font-size: 28px;
+    color: #10b981;
+    flex-shrink: 0;
+}
+
+.scan-result-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Scan Result Info */
+.scan-result-info {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.info-item {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 3px solid #667eea;
+}
+
+.info-label {
+    color: #667eea;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.info-value {
+    color: #333;
+    font-size: 13px;
+}
+
+/* Scan Result Tip */
+.scan-result-tip {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 3px solid #667eea;
+}
+
+.tip-title {
+    color: #667eea;
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+
+.tip-content {
+    color: #666;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-input::placeholder {
+    color: #adb5bd;
+}
+
+.input-group {
+    display: flex;
+    gap: 8px;
+}
+
+.input-group .form-input {
+    flex: 1;
+}
+
+.form-help {
+    color: #999;
+    font-size: 11px;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+.path-examples {
+    margin-top: 12px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.path-example-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #667eea;
+    margin-bottom: 8px;
+}
+
+.path-example-list {
+    font-size: 11px;
+    color: #666;
+}
+
+/* Upload Area Styles */
+.upload-area {
+    border: 2px dashed #e9ecef;
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    transition: all 0.2s;
+    cursor: pointer;
+    background: #fafbfc;
+}
+
+.upload-area:hover {
+    border-color: #667eea;
+    background: #f8f9ff;
+}
+
+.upload-area.dragover {
+    border-color: #667eea;
+    background: #f8f9ff;
+    border-style: solid;
+}
+
+.upload-icon {
+    font-size: 48px;
+    color: #667eea;
+    margin-bottom: 16px;
+}
+
+.upload-text {
+    font-size: 14px;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.upload-hint {
+    font-size: 12px;
+    color: #999;
+}
+
+.upload-result {
+    display: none;
+    margin-top: 20px;
+    padding: 20px;
+    background: #f0fdf4;
+    border: 1px solid #10b981;
+    border-radius: 12px;
+}
+
+.upload-result.active {
+    display: block;
+}
+

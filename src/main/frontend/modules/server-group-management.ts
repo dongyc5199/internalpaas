@@ -504,8 +504,6 @@ declare global {
 
             const data = await response.json();
 
-            updateLoadStatistics(data.statistics);
-
             if (placeholder) placeholder.classList.add("hidden");
             container.classList.add("active");
 
@@ -647,22 +645,6 @@ declare global {
     }
 
     // getChartColor 已从 @/utils 导入，不再需要本地实现
-
-    // 辅助函数：更新DOM元素内容
-    function updateElement(id: string, value: string | number) {
-        const element = document.getElementById(id);
-        if (element) {
-            element.textContent = String(value);
-        }
-    }
-
-    function updateLoadStatistics(stats: any) {
-        if (!stats) return;
-        updateElement("loadExcellent", stats.excellent || 0);
-        updateElement("loadGood", stats.good || 0);
-        updateElement("loadWarning", stats.warning || 0);
-        updateElement("loadCritical", stats.critical || 0);
-    }
 
     // filterServerList 已被 ServerListManager.filter() 替代
     // switchServerView 已被 ServerListManager.switchView() 替代

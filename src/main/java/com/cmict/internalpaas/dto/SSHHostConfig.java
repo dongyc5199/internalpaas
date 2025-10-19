@@ -66,6 +66,13 @@ public class SSHHostConfig {
     private String group;
     
     /**
+     * Password - SSH登录密码（明文，仅用于临时传输）
+     * ⚠️ 注意：此字段仅在解析和导入过程中使用，不会持久化存储
+     * 最终会通过 PasswordEncryptionService 加密后存储到 Server 实体
+     */
+    private String password;
+    
+    /**
      * 其他配置项
      * 存储未明确定义的SSH配置项
      * 例如: ForwardAgent, ServerAliveInterval等
@@ -155,6 +162,14 @@ public class SSHHostConfig {
         this.group = group;
     }
 
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public Map<String, String> getExtraOptions() {
         return extraOptions;
     }
@@ -210,6 +225,24 @@ public class SSHHostConfig {
      */
     public boolean hasIdentityFile() {
         return identityFile != null && !identityFile.isEmpty();
+    }
+
+    /**
+     * 检查是否配置了密码
+     * 
+     * @return true表示配置了Password
+     */
+    public boolean hasPassword() {
+        return password != null && !password.isEmpty();
+    }
+
+    /**
+     * 检查是否有SSH认证凭证（密码或私钥）
+     * 
+     * @return true表示已配置密码或私钥
+     */
+    public boolean hasAuthCredentials() {
+        return hasPassword() || hasIdentityFile();
     }
 
     /**

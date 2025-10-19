@@ -96,26 +96,6 @@
                                 </span>
                             </div>
                         </div>
-                        <div class="analysis-panel__actions">
-                            <div class="load-statistics" id="loadStatistics">
-                                <span class="stat stat--excellent" data-i18n-en="Excellent" data-i18n-zh="优秀">
-                                    <span class="stat__indicator"></span>
-                                    <span class="stat__value" id="loadExcellent">0</span>
-                                </span>
-                                <span class="stat stat--good" data-i18n-en="Good" data-i18n-zh="良好">
-                                    <span class="stat__indicator"></span>
-                                    <span class="stat__value" id="loadGood">0</span>
-                                </span>
-                                <span class="stat stat--warning" data-i18n-en="Warning" data-i18n-zh="警告">
-                                    <span class="stat__indicator"></span>
-                                    <span class="stat__value" id="loadWarning">0</span>
-                                </span>
-                                <span class="stat stat--critical" data-i18n-en="Critical" data-i18n-zh="严重">
-                                    <span class="stat__indicator"></span>
-                                    <span class="stat__value" id="loadCritical">0</span>
-                                </span>
-                            </div>
-                        </div>
                     </header>
                     <div class="analysis-panel__body">
                         <div class="chart-container" id="loadDistributionChartContainer">
@@ -319,9 +299,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Server Import Modal -->
-    <div th:replace="fragments/server-import-modal :: server-import-modal"></div>
 
     <!-- SSH Config Import Wizard Modal -->
     <div th:replace="fragments/ssh-config-import-wizard :: ssh-config-import-wizard"></div>

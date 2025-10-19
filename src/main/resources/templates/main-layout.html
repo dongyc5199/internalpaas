@@ -25,7 +25,6 @@
     <link rel="stylesheet" href="/css/server-group-management.css">
     <link rel="stylesheet" href="/css/user-permission-management.css">
     <link rel="stylesheet" href="/css/server-modal.css">
-    <link rel="stylesheet" href="/css/server-import-modal.css">
     <link rel="stylesheet" href="/css/ssh-config-import-wizard.css">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="icon" type="image/svg+xml" sizes="16x16" href="/favicon-16x16.svg">
@@ -4381,7 +4380,7 @@ function initDashboardRealTimeUpdates() {
                     if (result.success) {
                         console.log('[DEBUG] 扫描成功，准备调用 showScanResult');
                         showScanResult(result.data);
-                        showToast('✅ 扫描完成！', 'success');
+                        //showToast('✅ 扫描完成！', 'success');
                     } else {
                         console.log('[DEBUG] 扫描失败:', result.message);
                         throw new Error(result.message || '扫描失败');
@@ -4390,6 +4389,10 @@ function initDashboardRealTimeUpdates() {
                 } catch (error) {
                     console.error('SSH扫描失败:', error);
                     hideScanningStatus();
+                    
+                    // ✅ 新增：显示错误信息到 scanResult 区域
+                    showScanError(error.message || '扫描过程中发生未知错误');
+                    
                     showToast('❌ ' + error.message, 'error');
                 } finally {
                     scanInProgress = false;
@@ -4403,15 +4406,22 @@ function initDashboardRealTimeUpdates() {
                 const scanBtn = document.getElementById('startScanBtn');
                 const scanStatus = document.getElementById('scanningStatus');
                 const scanResult = document.getElementById('scanResult');
+                const scanRipple = document.getElementById('scanRipple');
                 
                 if (scanBtn) {
                     scanBtn.disabled = true;
-                    scanBtn.innerHTML = '<span class="spinner"></span><span>扫描中...</span>';
+                    scanBtn.classList.add('is-scanning');
+                    scanBtn.innerHTML = '<span class="scan-spinner-lite" aria-hidden="true"></span><span class="scan-btn-text">扫描中...</span>';
+                    console.log('[DEBUG] 扫描状态启用后按钮HTML:', scanBtn.innerHTML);
                 }
                 
+                // ✅ 始终隐藏扫描动画状态
                 if (scanStatus) {
-                    scanStatus.style.display = 'block';
-                    animateScanSteps();
+                    scanStatus.style.display = 'none';  // 改为始终隐藏
+                    scanStatus.classList.add('scanning', 'active');
+                    if (scanRipple) { scanRipple.style.display = 'none'; }  // ripple 也隐藏
+                    // animateScanSteps();  // 不需要动画了
+                    console.log('[DEBUG] scanningStatus 保持隐藏状态');
                 }
                 
                 if (scanResult) {
@@ -4425,15 +4435,70 @@ function initDashboardRealTimeUpdates() {
             function hideScanningStatus() {
                 const scanBtn = document.getElementById('startScanBtn');
                 const scanStatus = document.getElementById('scanningStatus');
+                const scanRipple = document.getElementById('scanRipple');
                 
                 if (scanBtn) {
                     scanBtn.disabled = false;
                     scanBtn.innerHTML = '<span>🔍</span><span>开始自动扫描</span>';
+                    scanBtn.classList.remove('is-scanning');
+                    console.log('[DEBUG] 扫描状态隐藏后按钮HTML:', scanBtn.innerHTML);
                 }
                 
                 if (scanStatus) {
                     scanStatus.style.display = 'none';
+                    scanStatus.classList.remove('scanning', 'active');
+                    if (scanRipple) { scanRipple.style.display = 'none'; }
                 }
+            }
+            
+            /**
+             * 显示扫描错误信息
+             * 
+             * @param {string} errorMessage 错误消息
+             */
+            function showScanError(errorMessage) {
+                console.log('[DEBUG] showScanError() 被调用:', errorMessage);
+                
+                const scanResult = document.getElementById('scanResult');
+                const scanResultIcon = scanResult?.querySelector('.scan-result-icon');
+                const scanResultTitle = scanResult?.querySelector('.scan-result-title');
+                const scanResultSubtitle = document.getElementById('scanResultSubtitle');
+                const scanResultInfo = document.getElementById('scanResultInfo');
+                
+                if (!scanResult) {
+                    console.warn('[WARN] scanResult 元素未找到');
+                    return;
+                }
+                
+                // 更新样式为错误状态
+                if (scanResultIcon) {
+                    scanResultIcon.textContent = '❌';
+                }
+                
+                if (scanResultTitle) {
+                    scanResultTitle.textContent = '扫描失败';
+                }
+                
+                if (scanResultSubtitle) {
+                    scanResultSubtitle.textContent = '无法完成自动扫描';
+                }
+                
+                if (scanResultInfo) {
+                    scanResultInfo.innerHTML = `
+                        <div class="error-detail" style="padding: 12px; background: #fee; border: 1px solid #fcc; border-radius: 6px; color: #c33;">
+                            <div style="font-weight: 600; margin-bottom: 8px;">错误详情：</div>
+                            <div>${errorMessage}</div>
+                            <div style="margin-top: 12px; font-size: 13px; color: #666;">
+                                💡 建议：请尝试手动上传配置文件
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // ✅ 显示错误结果区域
+                scanResult.style.display = 'block';
+                
+                console.log('[DEBUG] 扫描错误信息已显示');
             }
             
             /**
@@ -4479,20 +4544,28 @@ function initDashboardRealTimeUpdates() {
                     scanStatus.style.display = 'none';
                 }
                 
-                // 恢复扫描按钮
+                // 恢复扫描按钮到默认状态
                 if (scanBtn) {
                     scanBtn.disabled = false;
-                    scanBtn.innerHTML = '<span>🔍</span><span>重新扫描</span>';
+                    scanBtn.classList.remove('is-scanning');
+                    // 重置按钮文本为默认状态
+                    scanBtn.innerHTML = '<span>🔍</span><span>开始自动扫描</span>';
+                    console.log('[DEBUG] 扫描结果显示后，按钮已重置为默认状态');
                 }
                 
-                // 显示结果区域
+                // ✅ 正常情况下不显示结果区域（保持隐藏状态）
                 if (scanResult) {
-                    scanResult.style.display = 'block';
+                    scanResult.style.display = 'none';  // 改为 none，只在异常时才显示
+                    console.log('[DEBUG] scanResult 保持隐藏状态（正常流程）');
                 }
                 
-                // 填充扫描结果数据
+                // 填充扫描结果数据（用于后续可能的展示）
                 console.log('[DEBUG] 调用 populateScanResult');
                 populateScanResult(data);
+                
+                // 标记首次扫描已完成
+                wizardState.hasScanned = true;
+                console.log('[STATE] 首次扫描完成，hasScanned = true');
                 
                 // 自动切换到预览表格步骤（延迟1秒让用户看到扫描结果）
                 console.log('[DEBUG] 设置 setTimeout 准备切换到预览步骤');
@@ -4511,14 +4584,10 @@ function initDashboardRealTimeUpdates() {
                 // 隐藏扫描区域，显示预览表格
                 const autoScanTab = document.getElementById('auto-scan');
                 const wizardStep2 = document.getElementById('wizardStep2');
-                const wizardNextBtn = document.getElementById('wizardNextBtn');
-                const wizardPrevBtn = document.getElementById('wizardPrevBtn');
                 
                 console.log('[DEBUG] Elements:', {
                     autoScanTab: !!autoScanTab,
-                    wizardStep2: !!wizardStep2,
-                    wizardNextBtn: !!wizardNextBtn,
-                    wizardPrevBtn: !!wizardPrevBtn
+                    wizardStep2: !!wizardStep2
                 });
                 
                 if (autoScanTab) {
@@ -4531,22 +4600,12 @@ function initDashboardRealTimeUpdates() {
                     wizardStep2.style.display = 'block';
                 }
                 
-                // 启用下一步按钮
-                if (wizardNextBtn) {
-                    console.log('[DEBUG] 启用下一步按钮');
-                    wizardNextBtn.disabled = false;
-                    wizardNextBtn.innerHTML = '<span>下一步 →</span>';
-                }
-                
-                // 显示上一步按钮
-                if (wizardPrevBtn) {
-                    console.log('[DEBUG] 显示上一步按钮');
-                    wizardPrevBtn.style.display = 'inline-block';
-                }
+                // 更新状态为预览步骤
+                wizardState.setStep(WizardStep.PREVIEW);
                 
                 // 显示提示
                 console.log('[DEBUG] 调用 showToast');
-                showToast('✓ 扫描完成，请选择要导入的服务器', 'success');
+                //showToast('✓ 扫描完成，请选择要导入的服务器', 'success');
             }
             
             /**
@@ -4623,13 +4682,16 @@ function initDashboardRealTimeUpdates() {
              * 填充预览表格
              */
             function populatePreviewTable(aggregatedResult) {
+                console.log('[DEBUG] populatePreviewTable 调用，数据:', aggregatedResult);
                 const tableBody = document.getElementById('serverPreviewTableBody');
                 const totalCountElem = document.getElementById('totalServerCount');
                 const selectedCountElem = document.getElementById('selectedServerCount');
                 
                 if (!tableBody) {
+                    console.error('[ERROR] 找不到 serverPreviewTableBody 元素');
                     return;
                 }
+                console.log('[DEBUG] tableBody 找到，当前 innerHTML 长度:', tableBody.innerHTML.length);
                 
                 const { hostsWithSource, uniqueCount } = aggregatedResult;
                 
@@ -4642,15 +4704,19 @@ function initDashboardRealTimeUpdates() {
                 }
                 
                 // 清空表格
+                console.log('[DEBUG] 清空表格前 rows:', tableBody.querySelectorAll('tr').length);
                 tableBody.innerHTML = '';
                 
                 // 生成表格行
+                console.log('[DEBUG] 开始生成表格行，hostsWithSource 长度:', hostsWithSource.length);
                 hostsWithSource.forEach((hostWithSource, index) => {
                     const host = hostWithSource.host;
                     const source = hostWithSource.source;
                     const row = createTableRow(host, source, index);
+                    console.log('[DEBUG] 创建行', index, ':', row);
                     tableBody.appendChild(row);
                 });
+                console.log('[DEBUG] 表格行生成完毕，实际 rows:', tableBody.querySelectorAll('tr').length);
                 
                 // 初始化表格功能
                 initTableFeatures();
@@ -4660,6 +4726,7 @@ function initDashboardRealTimeUpdates() {
              * 创建表格行
              */
             function createTableRow(host, source, index) {
+                console.log('[DEBUG] createTableRow 调用，index:', index, 'host:', host);
                 const tr = document.createElement('tr');
                 tr.className = 'server-row';
                 tr.dataset.index = index;
@@ -4671,6 +4738,7 @@ function initDashboardRealTimeUpdates() {
                 checkbox.type = 'checkbox';
                 checkbox.className = 'server-checkbox';
                 checkbox.dataset.index = index;
+                console.log('[DEBUG] 创建 checkbox:', checkbox);
                 tdCheckbox.appendChild(checkbox);
                 tr.appendChild(tdCheckbox);
                 
@@ -4679,7 +4747,7 @@ function initDashboardRealTimeUpdates() {
                 tdName.className = 'col-name';
                 const nameInput = document.createElement('input');
                 nameInput.type = 'text';
-                nameInput.className = 'form-control form-control-sm';
+                nameInput.className = 'form-control form-control-sm server-name-input';
                 nameInput.value = host.name || host.hostname || '';
                 nameInput.placeholder = '请输入服务器名称';
                 nameInput.dataset.field = 'name';
@@ -4720,11 +4788,28 @@ function initDashboardRealTimeUpdates() {
                 `;
                 tr.appendChild(tdAuth);
                 
+                // ✅ 新增：SSH密码列
+                const tdPassword = document.createElement('td');
+                tdPassword.className = 'col-password';
+                const passwordInput = document.createElement('input');
+                passwordInput.type = 'password';
+                passwordInput.className = 'form-control form-control-sm server-password-input';
+                passwordInput.value = host.password || '';
+                passwordInput.placeholder = host.identityFile ? '使用私钥（可留空）' : '请输入密码';
+                passwordInput.dataset.field = 'password';
+                passwordInput.title = '可选填写SSH登录密码，系统会加密存储';
+                // 如果有私钥，密码不是必填
+                if (!host.identityFile) {
+                    passwordInput.setAttribute('aria-label', '建议填写SSH密码');
+                }
+                tdPassword.appendChild(passwordInput);
+                tr.appendChild(tdPassword);
+                
                 // 服务器类型列
                 const tdType = document.createElement('td');
                 tdType.className = 'col-type';
                 const typeSelect = document.createElement('select');
-                typeSelect.className = 'form-control form-control-sm';
+                typeSelect.className = 'form-control form-control-sm server-type-select';
                 typeSelect.dataset.field = 'type';
                 typeSelect.innerHTML = `
                     <option value="LINUX">Linux</option>
@@ -4836,11 +4921,26 @@ function initDashboardRealTimeUpdates() {
              * 更新选择计数
              */
             function updateSelectionCount() {
-                const selectedCount = document.querySelectorAll('.server-checkbox:checked').length;
+                const allCheckboxes = document.querySelectorAll('.server-checkbox');
+                const selectedCheckboxes = document.querySelectorAll('.server-checkbox:checked');
+                console.log('[DEBUG] updateSelectionCount 调用:', {
+                    '总checkbox数': allCheckboxes.length,
+                    '选中checkbox数': selectedCheckboxes.length,
+                    '所有checkbox': Array.from(allCheckboxes).map(cb => ({
+                        checked: cb.checked,
+                        disabled: cb.disabled,
+                        visible: cb.offsetWidth > 0 && cb.offsetHeight > 0
+                    }))
+                });
+                
+                const selectedCount = selectedCheckboxes.length;
                 const selectedCountElem = document.getElementById('selectedServerCount');
                 if (selectedCountElem) {
                     selectedCountElem.textContent = selectedCount;
                 }
+
+                // 使用状态管理更新选中的服务器（这会自动更新按钮状态）
+                wizardState.updateSelectedServers(Array.from(selectedCheckboxes));
             }
             
             /**
@@ -5025,110 +5125,250 @@ function initDashboardRealTimeUpdates() {
              */
             function initWizardNextButton() {
                 const wizardNextBtn = document.getElementById('wizardNextBtn');
-                if (!wizardNextBtn) return;
+                if (!wizardNextBtn) {
+                    console.warn('[DEBUG] 未找到 wizardNextBtn 按钮');
+                    return;
+                }
+
+                console.log('[DEBUG] 初始化 wizardNextBtn:', {
+                    'id': wizardNextBtn.id,
+                    'disabled': wizardNextBtn.disabled,
+                    'innerHTML': wizardNextBtn.innerHTML,
+                    'onclick': wizardNextBtn.onclick
+                });
+
+                // 清除可能存在的内联onclick（防止冲突）
+                wizardNextBtn.onclick = null;
                 
-                // 移除可能存在的旧事件监听器
-                const newBtn = wizardNextBtn.cloneNode(true);
-                wizardNextBtn.parentNode.replaceChild(newBtn, wizardNextBtn);
+                // 移除旧的事件监听器（如果存在）
+                wizardNextBtn.removeEventListener('click', handleWizardNextClick);
                 
                 // 添加新的事件监听器
-                newBtn.addEventListener('click', async function() {
-                    try {
-                        // 获取选中的服务器
-                        const selectedServers = getSelectedServers();
-                        
-                        if (selectedServers.length === 0) {
-                            showToast('请至少选择一台服务器', 'warning');
-                            return;
-                        }
-                        
-                        // 显示确认对话框
-                        const confirmed = confirm(
-                            `确定要导入 ${selectedServers.length} 台服务器吗？\n\n` +
-                            `系统将自动检查重复并导入到数据库。`
-                        );
-                        
-                        if (!confirmed) return;
-                        
-                        // 执行导入
-                        await importSelectedServers(selectedServers);
-                        
-                    } catch (error) {
-                        console.error('下一步操作失败:', error);
-                        showToast('操作失败: ' + error.message, 'error');
-                    }
+                wizardNextBtn.addEventListener('click', handleWizardNextClick);
+                
+                console.log('[DEBUG] wizardNextBtn 事件已绑定，addEventListener 模式');
+            }
+
+            async function handleWizardNextClick(event) {
+                console.log('[DEBUG] ========== handleWizardNextClick 被调用 ==========');
+                console.log('[DEBUG] event:', event);
+                console.log('[DEBUG] event.type:', event.type);
+                console.log('[DEBUG] event.target:', event.target);
+                console.log('[DEBUG] event.currentTarget:', event.currentTarget);
+                
+                event.preventDefault();
+                event.stopPropagation();
+
+                const button = event.currentTarget;
+                console.log('[DEBUG] 按钮状态:', {
+                    'button存在': !!button,
+                    'button.id': button ? button.id : 'null',
+                    'disabled': button ? button.disabled : 'null',
+                    'innerHTML': button ? button.innerHTML.substring(0, 50) : 'null'
                 });
+                
+                if (!button || button.disabled) {
+                    console.log('[DEBUG] wizardNextBtn 当前不可用，忽略点击');
+                    return;
+                }
+
+                try {
+                    const selectedServers = getSelectedServers();
+                    console.log('[DEBUG] wizardNextBtn 点击，选中的服务器数:', selectedServers.length, selectedServers);
+
+                    if (selectedServers.length === 0) {
+                        showToast('请至少选择一台服务器', 'warning');
+                        return;
+                    }
+
+                    const confirmed = confirm(
+                        `确定要导入 ${selectedServers.length} 台服务器吗？\n\n` +
+                        `系统将自动检查重复并导入到数据库。`
+                    );
+
+                    if (!confirmed) {
+                        console.log('[DEBUG] 用户取消导入操作');
+                        return;
+                    }
+
+                    button.disabled = true;
+                    button.innerHTML = '<span>处理中...</span>';
+
+                    await importSelectedServers(selectedServers);
+
+                } catch (error) {
+                    console.error('下一步操作失败:', error);
+                    showToast('操作失败: ' + error.message, 'error');
+                } finally {
+                    // 按钮状态在 importSelectedServers 内部会再次根据流程调整
+                }
             }
             
             /**
              * 初始化上一步按钮
              */
+            /**
+             * 初始化上一步按钮（使用事件委托，此函数仅用于调试）
+             */
             function initWizardPrevButton() {
                 const wizardPrevBtn = document.getElementById('wizardPrevBtn');
-                if (!wizardPrevBtn) return;
+                if (!wizardPrevBtn) {
+                    console.warn('[DEBUG] 未找到 wizardPrevBtn 按钮');
+                    return;
+                }
                 
-                // 移除可能存在的旧事件监听器
-                const newBtn = wizardPrevBtn.cloneNode(true);
-                wizardPrevBtn.parentNode.replaceChild(newBtn, wizardPrevBtn);
-                
-                // 添加新的事件监听器
-                newBtn.addEventListener('click', function() {
-                    switchBackToScanStep();
-                });
+                console.log('[DEBUG] wizardPrevBtn 找到，使用事件委托模式');
             }
             
             /**
              * 返回到扫描步骤
              */
             function switchBackToScanStep() {
+                console.log('[DEBUG] ========== switchBackToScanStep 被调用 ==========');
+                
+                const autoScanTab = document.getElementById('auto-scan');
+                const wizardStep2 = document.getElementById('wizardStep2');
+                const wizardStep3 = document.getElementById('wizardStep3');
+                
+                console.log('[DEBUG] 元素状态:', {
+                    'autoScanTab存在': !!autoScanTab,
+                    'wizardStep2存在': !!wizardStep2,
+                    'wizardStep3存在': !!wizardStep3
+                });
+                
+                // 显示扫描区域
+                if (autoScanTab) {
+                    autoScanTab.style.display = 'block';
+                    console.log('[DEBUG] autoScanTab 显示');
+                }
+                
+                // 隐藏其他步骤
+                if (wizardStep2) {
+                    wizardStep2.style.display = 'none';
+                    console.log('[DEBUG] wizardStep2 隐藏');
+                }
+                if (wizardStep3) {
+                    wizardStep3.style.display = 'none';
+                }
+                
+                // 重置 hasScanned 标志，允许重新扫描
+                wizardState.hasScanned = false;
+                console.log('[STATE] 重置 hasScanned = false，允许重新扫描');
+                
+                // 更新状态为扫描步骤
+                wizardState.setStep(WizardStep.SCAN);
+            }
+            
+            /**
+             * 从导入结果返回到预览步骤（保留数据）
+             */
+            function switchBackToPreviewStep() {
+                console.log('[DEBUG] ========== switchBackToPreviewStep 被调用 ==========');
+                
                 const autoScanTab = document.getElementById('auto-scan');
                 const wizardStep2 = document.getElementById('wizardStep2');
                 const wizardStep3 = document.getElementById('wizardStep3');
                 const wizardPrevBtn = document.getElementById('wizardPrevBtn');
                 const wizardNextBtn = document.getElementById('wizardNextBtn');
                 
-                // 显示扫描区域
-                if (autoScanTab) {
-                    autoScanTab.style.display = 'block';
-                }
+                console.log('[DEBUG] 从导入结果返回到预览步骤，保留服务器列表数据');
                 
-                // 隐藏其他步骤
-                if (wizardStep2) {
-                    wizardStep2.style.display = 'none';
+                // 隐藏扫描区域和导入结果
+                if (autoScanTab) {
+                    autoScanTab.style.display = 'none';
+                    console.log('[DEBUG] autoScanTab 隐藏');
                 }
                 if (wizardStep3) {
                     wizardStep3.style.display = 'none';
+                    console.log('[DEBUG] wizardStep3 隐藏');
                 }
                 
-                // 隐藏上一步按钮
+                // 显示预览步骤（保留表格数据）
+                if (wizardStep2) {
+                    wizardStep2.style.display = 'block';
+                    console.log('[DEBUG] wizardStep2 显示（数据保留）');
+                }
+                
+                // 显示上一步按钮
                 if (wizardPrevBtn) {
-                    wizardPrevBtn.style.display = 'none';
+                    wizardPrevBtn.style.display = 'inline-block';
+                    console.log('[DEBUG] 上一步按钮显示');
                 }
                 
-                // 重置下一步按钮
-                if (wizardNextBtn) {
-                    wizardNextBtn.disabled = true;
-                    wizardNextBtn.innerHTML = '<span>下一步 →</span>';
+                // 更新下一步按钮状态（根据选中数量）
+                updateSelectionCount();
+                
+                console.log('[DEBUG] switchBackToPreviewStep 完成');
+            }
+            
+            /**
+             * 从导入结果页返回到预览步骤（保留数据）
+             */
+            function switchBackToPreviewStep() {
+                console.log('[DEBUG] ========== switchBackToPreviewStep 被调用 ==========');
+                
+                const autoScanTab = document.getElementById('auto-scan');
+                const wizardStep2 = document.getElementById('wizardStep2');
+                const wizardStep3 = document.getElementById('wizardStep3');
+                
+                console.log('[DEBUG] 元素状态:', {
+                    'autoScanTab存在': !!autoScanTab,
+                    'wizardStep2存在': !!wizardStep2,
+                    'wizardStep3存在': !!wizardStep3
+                });
+                
+                // 隐藏扫描区域和导入结果
+                if (autoScanTab) {
+                    autoScanTab.style.display = 'none';
+                    console.log('[DEBUG] autoScanTab 隐藏');
                 }
+                if (wizardStep3) {
+                    wizardStep3.style.display = 'none';
+                    console.log('[DEBUG] wizardStep3 隐藏');
+                }
+                
+                // 显示预览步骤（数据已经存在，不需要重新填充）
+                if (wizardStep2) {
+                    wizardStep2.style.display = 'block';
+                    console.log('[DEBUG] wizardStep2 显示（保留现有数据）');
+                }
+                
+                // 更新状态为预览步骤
+                wizardState.setStep(WizardStep.PREVIEW);
+                
+                // 重新计算选中的服务器数量
+                const selectedCheckboxes = document.querySelectorAll('.server-checkbox:checked');
+                wizardState.updateSelectedServers(Array.from(selectedCheckboxes));
+                
+                console.log('[DEBUG] 返回到预览步骤完成，当前选中:', wizardState.selectedServers.length);
             }
             
             /**
              * 获取选中的服务器
              */
             function getSelectedServers() {
+                console.log('[DEBUG] getSelectedServers 被调用');
                 const checkboxes = document.querySelectorAll('.server-checkbox:checked');
+                console.log('[DEBUG] 找到选中的checkbox数量:', checkboxes.length);
+                
                 const servers = [];
                 
-                checkboxes.forEach(checkbox => {
+                checkboxes.forEach((checkbox, index) => {
+                    console.log(`[DEBUG] 处理checkbox ${index}:`, checkbox);
                     const row = checkbox.closest('tr');
-                    if (!row) return;
+                    if (!row) {
+                        console.warn(`[DEBUG] checkbox ${index} 找不到父级 tr`);
+                        return;
+                    }
                     
                     const dto = convertToServerImportDto(row);
+                    console.log(`[DEBUG] checkbox ${index} 转换结果:`, dto);
                     if (dto) {
                         servers.push(dto);
                     }
                 });
                 
+                console.log('[DEBUG] getSelectedServers 返回:', servers);
                 return servers;
             }
             
@@ -5142,19 +5382,23 @@ function initDashboardRealTimeUpdates() {
                     // 从表格输入框获取用户编辑的值
                     const serverNameInput = tableRow.querySelector('.server-name-input');
                     const serverTypeSelect = tableRow.querySelector('.server-type-select');
+                    const passwordInput = tableRow.querySelector('.server-password-input');  // ✅ 新增：获取密码输入框
+                    
+                    // ✅ 新增：优先使用用户输入的密码，其次使用原始数据中的密码
+                    const password = passwordInput && passwordInput.value ? passwordInput.value : (hostData.password || null);
                     
                     return {
-                        serverName: serverNameInput ? serverNameInput.value : hostData.hostname,
+                        name: serverNameInput ? serverNameInput.value : hostData.hostname,
                         hostname: hostData.hostname,
                         sshPort: hostData.port || 22,
-                        username: hostData.user,
-                        authMethod: hostData.authMethod || (hostData.identityFile ? 'key' : 'password'),
-                        password: hostData.password || null,
-                        privateKeyPath: hostData.identityFile || null,
-                        serverType: serverTypeSelect ? serverTypeSelect.value : 'Linux',
+                        sshUsername: hostData.user,
+                        sshPassword: password,  // ✅ 修改：使用收集的密码
+                        sshKeyPath: hostData.identityFile || null,
+                        serverType: serverTypeSelect ? serverTypeSelect.value : 'DEVELOPMENT',
                         description: hostData.description || `从 ${hostData.source} 导入`,
-                        groupPath: hostData.group || hostData.folder || '/',
-                        tags: []
+                        // 可选字段
+                        baseWorkDirectory: null,  // 后端会自动生成
+                        port: 8080  // 应用端口默认值
                     };
                 } catch (error) {
                     console.error('转换数据格式失败:', error);
@@ -5204,18 +5448,32 @@ function initDashboardRealTimeUpdates() {
              * 显示导入进度
              */
             function showImportProgress() {
-                // 切换到 Step 3 (导入结果页)
+                console.log('[DEBUG] showImportProgress() 被调用');
+                
+                // 切换到 Step 3 (导入结果页) - 隐藏前面所有步骤
+                const autoScanTab = document.getElementById('auto-scan');
                 const step2 = document.getElementById('wizardStep2');
                 const step3 = document.getElementById('wizardStep3');
                 
-                if (step2) step2.style.display = 'none';
-                if (step3) step3.style.display = 'block';
+                console.log('[DEBUG] 隐藏前面的步骤');
+                if (autoScanTab) {
+                    autoScanTab.style.display = 'none';
+                    console.log('[DEBUG] auto-scan 已隐藏');
+                }
+                if (step2) {
+                    step2.style.display = 'none';
+                    console.log('[DEBUG] wizardStep2 已隐藏');
+                }
+                if (step3) {
+                    step3.style.display = 'block';
+                    console.log('[DEBUG] wizardStep3 已显示');
+                }
                 
-                // 显示进度容器
+                // 显示进度容器（使用flex保持居中布局）
                 const progressContainer = document.getElementById('importProgressContainer');
                 const resultContainer = document.getElementById('importResultContainer');
                 
-                if (progressContainer) progressContainer.style.display = 'block';
+                if (progressContainer) progressContainer.style.display = 'flex';
                 if (resultContainer) resultContainer.style.display = 'none';
                 
                 // 更新进度文本
@@ -5224,11 +5482,9 @@ function initDashboardRealTimeUpdates() {
                     progressText.textContent = '正在导入服务器，请稍候...';
                 }
                 
-                // 禁用按钮
-                const wizardNextBtn = document.getElementById('wizardNextBtn');
-                const wizardCancelBtn = document.getElementById('wizardCancelBtn');
-                if (wizardNextBtn) wizardNextBtn.disabled = true;
-                if (wizardCancelBtn) wizardCancelBtn.disabled = true;
+                // 更新状态为导入步骤（导入中，importResult为null）
+                wizardState.importResult = null;  // 重置导入结果
+                wizardState.setStep(WizardStep.IMPORT);
             }
             
             /**
@@ -5332,9 +5588,8 @@ function initDashboardRealTimeUpdates() {
                     }
                 }
                 
-                // 启用关闭按钮
-                const wizardCancelBtn = document.getElementById('wizardCancelBtn');
-                if (wizardCancelBtn) wizardCancelBtn.disabled = false;
+                // 更新状态管理对象（统一控制按钮）
+                wizardState.setImportResult(result);
                 
                 // 显示成功提示
                 if (result.successCount > 0) {
@@ -5361,9 +5616,8 @@ function initDashboardRealTimeUpdates() {
                     summaryText.textContent = result.message || '服务器导入失败，请检查配置后重试';
                 }
                 
-                // 启用按钮
-                const wizardCancelBtn = document.getElementById('wizardCancelBtn');
-                if (wizardCancelBtn) wizardCancelBtn.disabled = false;
+                // 更新状态管理对象（统一控制按钮）
+                wizardState.setImportResult(result);
                 
                 showToast('导入失败: ' + (result.message || '未知错误'), 'error');
             }
@@ -5391,11 +5645,222 @@ function initDashboardRealTimeUpdates() {
             /**
              * 页面加载后初始化
              */
+            
+            // ========================================
+            // 向导状态管理系统
+            // ========================================
+            
+            /**
+             * 向导步骤枚举
+             */
+            const WizardStep = {
+                SCAN: 'scan',           // 步骤1: 扫描配置
+                PREVIEW: 'preview',     // 步骤2: 预览服务器列表
+                IMPORT: 'import'        // 步骤3: 导入进度/结果
+            };
+            
+            /**
+             * 向导状态对象
+             */
+            const wizardState = {
+                currentStep: WizardStep.SCAN,
+                scanData: null,              // 扫描结果数据
+                selectedServers: [],         // 选中的服务器
+                importResult: null,          // 导入结果
+                hasScanned: false,           // 是否已完成首次扫描
+                
+                /**
+                 * 重置状态
+                 */
+                reset: function() {
+                    this.currentStep = WizardStep.SCAN;
+                    this.scanData = null;
+                    this.selectedServers = [];
+                    this.importResult = null;
+                    this.hasScanned = false;
+                    console.log('[STATE] 向导状态已重置');
+                },
+                
+                /**
+                 * 设置当前步骤
+                 */
+                setStep: function(step) {
+                    console.log(`[STATE] 步骤切换: ${this.currentStep} → ${step}`);
+                    this.currentStep = step;
+                    this.updateUI();
+                },
+                
+                /**
+                 * 更新UI状态（按钮显示/禁用）
+                 */
+                updateUI: function() {
+                    console.log(`[STATE] 更新UI，当前步骤: ${this.currentStep}`);
+                    
+                    const prevBtn = document.getElementById('wizardPrevBtn');
+                    const nextBtn = document.getElementById('wizardNextBtn');
+                    const cancelBtn = document.getElementById('wizardCancelBtn');
+                    const scanBtn = document.getElementById('startScanBtn');
+                    
+                    // 根据当前步骤更新按钮状态
+                    switch (this.currentStep) {
+                        case WizardStep.SCAN:
+                            // 步骤1: 扫描页
+                            this.updateButton(prevBtn, { visible: false, disabled: true });
+                            this.updateButton(nextBtn, { visible: true, disabled: true, text: '下一步 →' });
+                            this.updateButton(cancelBtn, { visible: true, disabled: false });
+                            // 开始扫描按钮：只在首次扫描时显示
+                            if (scanBtn) {
+                                scanBtn.style.display = this.hasScanned ? 'none' : 'inline-flex';
+                            }
+                            console.log('[STATE] Step1按钮: Prev(隐藏) Next(禁用) Cancel(启用) Scan(' + (this.hasScanned ? '隐藏' : '显示') + ')');
+                            break;
+                            
+                        case WizardStep.PREVIEW:
+                            // 步骤2: 预览页
+                            this.updateButton(prevBtn, { visible: true, disabled: false, text: '← 上一步' });
+                            this.updateButton(nextBtn, { 
+                                visible: true, 
+                                disabled: this.selectedServers.length === 0, 
+                                text: '下一步 →' 
+                            });
+                            this.updateButton(cancelBtn, { visible: true, disabled: false });
+                            // 预览页隐藏扫描按钮
+                            if (scanBtn) {
+                                scanBtn.style.display = 'none';
+                            }
+                            console.log('[STATE] Step2按钮: Prev(启用) Next(根据选择) Cancel(启用) Scan(隐藏)');
+                            break;
+                            
+                        case WizardStep.IMPORT:
+                            // 步骤3: 导入中或导入完成
+                            const isImporting = this.importResult === null;
+                            this.updateButton(prevBtn, { 
+                                visible: !isImporting,  // 导入中隐藏，完成后显示
+                                disabled: isImporting,
+                                text: '← 上一步' 
+                            });
+                            this.updateButton(nextBtn, { visible: false, disabled: true });
+                            this.updateButton(cancelBtn, { visible: true, disabled: isImporting });
+                            // 导入页隐藏扫描按钮
+                            if (scanBtn) {
+                                scanBtn.style.display = 'none';
+                            }
+                            console.log(`[STATE] Step3按钮: Prev(${isImporting ? '隐藏' : '显示'}) Next(隐藏) Cancel(${isImporting ? '禁用' : '启用'}) Scan(隐藏)`);
+                            break;
+                    }
+                },
+                
+                /**
+                 * 更新单个按钮状态
+                 */
+                updateButton: function(btn, options) {
+                    if (!btn) return;
+                    
+                    if (options.visible !== undefined) {
+                        btn.style.display = options.visible ? 'inline-flex' : 'none';
+                    }
+                    if (options.disabled !== undefined) {
+                        btn.disabled = options.disabled;
+                    }
+                    if (options.text !== undefined) {
+                        btn.innerHTML = `<span>${options.text}</span>`;
+                    }
+                },
+                
+                /**
+                 * 更新选中的服务器数量
+                 */
+                updateSelectedServers: function(servers) {
+                    this.selectedServers = servers || [];
+                    console.log(`[STATE] 选中服务器数量: ${this.selectedServers.length}`);
+                    
+                    // 如果当前在预览步骤，更新下一步按钮状态
+                    if (this.currentStep === WizardStep.PREVIEW) {
+                        const nextBtn = document.getElementById('wizardNextBtn');
+                        if (nextBtn) {
+                            nextBtn.disabled = this.selectedServers.length === 0;
+                            console.log(`[STATE] 下一步按钮状态: ${nextBtn.disabled ? '禁用' : '启用'}`);
+                        }
+                    }
+                },
+                
+                /**
+                 * 设置导入结果（导入完成后调用）
+                 */
+                setImportResult: function(result) {
+                    this.importResult = result;
+                    console.log('[STATE] 导入结果已设置:', result);
+                    this.updateUI();  // 重新更新UI，显示上一步按钮
+                }
+            };
+            
+            /**
+             * 初始化
+             */
             function init() {
                 console.log('[DEBUG] SSH扫描模块 init() 被调用');
                 
                 // 使用事件委托，在 document 上监听点击
                 document.addEventListener('click', function(e) {
+                    // 处理 wizardPrevBtn 点击（使用事件委托）
+                    if (e.target.id === 'wizardPrevBtn' || e.target.closest('#wizardPrevBtn')) {
+                        console.log('[DEBUG] ========== 全局捕获到 wizardPrevBtn 点击！==========');
+                        const btn = document.getElementById('wizardPrevBtn');
+                        console.log('[DEBUG] 按钮状态:', { display: btn.style.display, disabled: btn.disabled });
+                        
+                        if (btn.style.display !== 'none' && !btn.disabled) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            // 判断当前在哪个步骤
+                            const wizardStep2 = document.getElementById('wizardStep2');
+                            const wizardStep3 = document.getElementById('wizardStep3');
+                            
+                            const isOnStep2 = wizardStep2 && window.getComputedStyle(wizardStep2).display !== 'none';
+                            const isOnStep3 = wizardStep3 && window.getComputedStyle(wizardStep3).display !== 'none';
+                            
+                            console.log('[DEBUG] 当前步骤:', { isOnStep2, isOnStep3 });
+                            
+                            if (isOnStep3) {
+                                // 从导入结果页返回到预览页（保留数据）
+                                console.log('[DEBUG] 从Step3返回到Step2，调用 switchBackToPreviewStep');
+                                switchBackToPreviewStep();
+                            } else if (isOnStep2) {
+                                // 从预览页返回到扫描页
+                                console.log('[DEBUG] 从Step2返回到Step1，调用 switchBackToScanStep');
+                                switchBackToScanStep();
+                            }
+                            return;
+                        } else {
+                            console.log('[DEBUG] 上一步按钮不可用，忽略点击');
+                        }
+                    }
+                    
+                    // 处理 wizardNextBtn 点击（使用事件委托）
+                    if (e.target.id === 'wizardNextBtn' || e.target.closest('#wizardNextBtn')) {
+                        console.log('[DEBUG] ========== 全局捕获到 wizardNextBtn 点击！==========');
+                        const btn = document.getElementById('wizardNextBtn');
+                        console.log('[DEBUG] 按钮状态:', { disabled: btn.disabled, innerHTML: btn.innerHTML.substring(0, 50) });
+                        
+                        if (!btn.disabled) {
+                            console.log('[DEBUG] 通过事件委托直接调用 handleWizardNextClick');
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            // 创建一个伪事件对象传递给处理函数
+                            const syntheticEvent = {
+                                ...e,
+                                currentTarget: btn,
+                                preventDefault: () => e.preventDefault(),
+                                stopPropagation: () => e.stopPropagation()
+                            };
+                            handleWizardNextClick(syntheticEvent);
+                            return;
+                        } else {
+                            console.log('[DEBUG] 按钮被禁用，忽略点击');
+                        }
+                    }
+                    
                     // 检查是否点击了扫描按钮
                     if (e.target.id === 'startScanBtn' || e.target.closest('#startScanBtn')) {
                         console.log('[DEBUG] ========== 通过事件委托捕获到扫描按钮点击！==========');
@@ -5453,6 +5918,8 @@ function initDashboardRealTimeUpdates() {
                                     initSSHScanButton();
                                     initWizardNextButton();
                                     initWizardPrevButton();
+                                    // 诊断表格状态
+                                    diagnoseTableState();
                                 }, 100);
                             }
                         }
@@ -5465,6 +5932,50 @@ function initDashboardRealTimeUpdates() {
                 });
             }
             
+            /**
+             * 诊断表格状态（用于调试checkbox不显示问题）
+             */
+            function diagnoseTableState() {
+                console.log('=== 表格诊断开始 ===');
+                const tbody = document.getElementById('serverPreviewTableBody');
+                if (!tbody) {
+                    console.error('[DIAG] 找不到 serverPreviewTableBody');
+                    return;
+                }
+                
+                const rows = tbody.querySelectorAll('tr');
+                console.log('[DIAG] 表格行数:', rows.length);
+                
+                rows.forEach((row, index) => {
+                    const checkboxTd = row.querySelector('.col-checkbox');
+                    const checkbox = row.querySelector('input[type="checkbox"]');
+                    console.log(`[DIAG] 行${index}:`, {
+                        'col-checkbox存在': !!checkboxTd,
+                        'checkbox存在': !!checkbox,
+                        'checkboxTd HTML': checkboxTd ? checkboxTd.outerHTML.substring(0, 100) : 'null',
+                        'checkbox computed display': checkbox ? window.getComputedStyle(checkbox).display : 'null',
+                        'checkbox computed visibility': checkbox ? window.getComputedStyle(checkbox).visibility : 'null',
+                        'checkbox computed opacity': checkbox ? window.getComputedStyle(checkbox).opacity : 'null',
+                        'checkbox computed color': checkbox ? window.getComputedStyle(checkbox).color : 'null',
+                        'checkbox computed backgroundColor': checkbox ? window.getComputedStyle(checkbox).backgroundColor : 'null',
+                        'checkbox computed border': checkbox ? window.getComputedStyle(checkbox).border : 'null',
+                        'checkbox computed zIndex': checkbox ? window.getComputedStyle(checkbox).zIndex : 'null',
+                        'checkbox offsetWidth': checkbox ? checkbox.offsetWidth : 'null',
+                        'checkbox offsetHeight': checkbox ? checkbox.offsetHeight : 'null',
+                        'checkbox getBoundingClientRect': checkbox ? checkbox.getBoundingClientRect() : 'null'
+                    });
+                });
+                
+                console.log('=== 表格诊断结束 ===');
+            }
+            
+            // 在切换到预览步骤时也诊断
+            const originalSwitchToPreview = switchToPreviewStep;
+            switchToPreviewStep = function() {
+                originalSwitchToPreview.apply(this, arguments);
+                setTimeout(diagnoseTableState, 200);
+            };
+            
             // 初始化
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', init);
@@ -5473,9 +5984,104 @@ function initDashboardRealTimeUpdates() {
             }
             
         })();
-    </script>
-    
-    <!-- Include SSH Config Import Wizard Modal -->
-    <div th:replace="~{fragments/ssh-config-import-wizard :: ssh-config-import-wizard}"></div>
+        </script>
+
+        <!-- Inline compact spinner styles (small & lively, non-intrusive) -->
+        <style>
+        /* Compact bouncing dots spinner used inside the scan button */
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 6px;
+            position: relative;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .spinner::before, .spinner::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: linear-gradient(90deg,#4f46e5,#06b6d4);
+            transform-origin: center;
+            animation: bounce 900ms infinite ease-in-out;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+        }
+        .spinner::before { left: 0; animation-delay: 0ms; }
+        .spinner { background: transparent; }
+        .spinner span { display:none }
+        .spinner::after { right: 0; animation-delay: 300ms; }
+
+        @keyframes bounce {
+            0% { transform: translateY(0) scale(0.9); opacity:0.9 }
+            50% { transform: translateY(-6px) scale(1.05); opacity:1 }
+            100% { transform: translateY(0) scale(0.95); opacity:0.9 }
+        }
+
+        /* Scan status heading layout */
+        .scan-status-heading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            margin-bottom: 16px;
+            color: #667eea;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .scan-status-text {
+            display: inline-block;
+        }
+
+        .scan-spinner-lite {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.45);
+            border-top-color: #ffffff;
+            border-right-color: rgba(59, 130, 246, 0.9);
+            animation: scanRotate 0.8s linear infinite;
+            vertical-align: middle;
+            box-shadow: 0 0 6px rgba(59, 130, 246, 0.35);
+        }
+
+        .scan-btn-text {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        @keyframes scanRotate {
+            to { transform: rotate(360deg); }
+        }
+
+        #startScanBtn[disabled],
+        #startScanBtn.is-scanning {
+            opacity: 0.95;
+            cursor: progress;
+        }
+
+        /* Small subtle ripple displayed in scan-status area */
+        .scan-ripple {
+            display: none;
+            width: 44px; height: 44px; border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(79,70,229,0.22), transparent 40%);
+            box-shadow: 0 6px 20px rgba(79,70,229,0.06);
+            animation: ripple 1400ms infinite linear;
+            margin: 6px auto;
+        }
+        @keyframes ripple {
+            0% { transform: scale(0.9); opacity: 1 }
+            70% { transform: scale(1.6); opacity: 0.35 }
+            100% { transform: scale(1.8); opacity: 0 }
+        }
+        </style>
+
+        <!-- Include SSH Config Import Wizard Modal -->
+        <div th:replace="~{fragments/ssh-config-import-wizard :: ssh-config-import-wizard}"></div>
 </body>
 </html>

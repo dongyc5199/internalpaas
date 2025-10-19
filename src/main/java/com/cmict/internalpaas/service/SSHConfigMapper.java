@@ -65,6 +65,13 @@ public class SSHConfigMapper {
         dto.setSshPort(sshConfig.getPort() != null ? sshConfig.getPort() : 22);
         dto.setSshUsername(sshConfig.getUser());
         dto.setSshKeyPath(sshConfig.getIdentityFile());
+        
+        // 映射密码字段（如果有）
+        // ⚠️ 注意：密码为明文，仅用于传输，最终会加密存储
+        if (sshConfig.getPassword() != null && !sshConfig.getPassword().isEmpty()) {
+            dto.setSshPassword(sshConfig.getPassword());
+            logger.debug("映射SSH密码字段（明文传输）");
+        }
 
         // 默认值已在ServerImportDto构造函数中设置
         // port = 8080

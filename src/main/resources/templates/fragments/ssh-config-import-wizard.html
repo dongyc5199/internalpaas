@@ -94,13 +94,14 @@
 
                     <!-- Scanning Status -->
                     <div class="scan-status" id="scanningStatus">
-                        <div style="text-align: center; margin-bottom: 16px; color: #667eea; font-weight: 500; font-size: 14px;">
-                            <span class="spinner"></span>
-                            正在扫描配置文件...
+                        <div class="scan-status-heading">
+                            <span class="scan-status-text">正在扫描配置文件...</span>
                         </div>
                         <div class="progress-bar">
                             <div class="progress-fill" id="progressFill" style="width: 0%"></div>
                         </div>
+                        <!-- Small ripple element for compact scanning animation -->
+                        <div class="scan-ripple" id="scanRipple" aria-hidden="true"></div>
                         <div class="scan-steps">
                             <div class="scan-step" id="step1">
                                 <div class="scan-step-icon">⏳</div>
@@ -291,6 +292,10 @@
                                     <th class="col-port">SSH端口</th>
                                     <th class="col-username">用户名 <span class="required-mark">*</span></th>
                                     <th class="col-auth">认证方式 <span class="required-mark">*</span></th>
+                                    <th class="col-password">
+                                        SSH密码
+                                        <span class="optional-mark" title="使用私钥认证时可留空">（可选）</span>
+                                    </th>
                                     <th class="col-type">服务器类型</th>
                                     <th class="col-status">状态</th>
                                     <th class="col-actions">操作</th>
@@ -299,7 +304,7 @@
                             <tbody id="serverPreviewTableBody">
                                 <!-- 表格行将由JavaScript动态生成 -->
                                 <tr class="empty-state-row">
-                                    <td colspan="9" class="empty-state">
+                                    <td colspan="10" class="empty-state">
                                         <div class="empty-icon">📋</div>
                                         <p>暂无数据</p>
                                         <p class="empty-hint">请先选择配置文件并解析</p>
@@ -397,21 +402,7 @@
                             </div>
                         </div>
 
-                        <!-- Action Buttons -->
-                        <div class="result-actions">
-                            <button class="btn btn-secondary" id="restartImportBtn">
-                                <span>🔄</span>
-                                <span>重新导入</span>
-                            </button>
-                            <button class="btn btn-primary" id="viewServersBtn">
-                                <span>📋</span>
-                                <span>查看服务器列表</span>
-                            </button>
-                            <button class="btn btn-default" id="closeWizardBtn">
-                                <span>✕</span>
-                                <span>关闭</span>
-                            </button>
-                        </div>
+                        <!-- Action Buttons 已移除 -->
                     </div>
                 </div>
             </div>
