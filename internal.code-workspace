@@ -5,6 +5,8 @@
     }
   ],
   "settings": {
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.configuration.updateBuildConfiguration": "interactive"
     // 在这里可以添加你的 VSCode 配置
   }
 }

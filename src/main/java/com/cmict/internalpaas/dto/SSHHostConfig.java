@@ -53,6 +53,19 @@ public class SSHHostConfig {
     private String proxyJump;
     
     /**
+     * Description - 描述信息
+     * 用于存储会话的描述信息（SecureCRT等客户端）
+     */
+    private String description;
+    
+    /**
+     * Group - 分组信息
+     * 用于存储会话的分组或文件夹路径（SecureCRT等客户端）
+     * 例如: "Production/Servers", "Development"
+     */
+    private String group;
+    
+    /**
      * 其他配置项
      * 存储未明确定义的SSH配置项
      * 例如: ForwardAgent, ServerAliveInterval等
@@ -124,6 +137,22 @@ public class SSHHostConfig {
 
     public void setProxyJump(String proxyJump) {
         this.proxyJump = proxyJump;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
     }
 
     public Map<String, String> getExtraOptions() {

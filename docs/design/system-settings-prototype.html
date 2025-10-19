@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统设置 - SSH配置导入 - 原型页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 30px 20px;
+        }
+
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 16px;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: linear-gradient(90deg, #e0e0e0 0%, #e0e0e0 100%);
+            z-index: 0;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e8e8e8;
+            color: #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 6px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .step.active .step-number {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .step.completed .step-number {
+            background: #10b981;
+            color: white;
+        }
+
+        .step-title {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .step.active .step-title {
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .section-title {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 18px;
+            font-weight: 600;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .tab:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+
+        .tab-icon {
+            font-size: 16px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .info-box {
+            background: #f0f5ff;
+            border-left: 3px solid #667eea;
+            border-radius: 6px;
+            padding: 12px 14px;
+            margin-bottom: 20px;
+        }
+
+        .info-box-title {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .info-box-text {
+            color: #666;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .info-box-text ul {
+            margin: 6px 0 0 18px;
+        }
+
+        .info-box-text li {
+            margin: 3px 0;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #d0d5dd;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-default {
+            background: white;
+            color: #666;
+            border: 1px solid #e0e0e0;
+        }
+
+        .btn-default:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .btn-large {
+            padding: 12px 32px;
+            font-size: 15px;
+        }
+
+        .scan-status {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .scan-status.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 3px;
+            transition: width 0.4s ease;
+            animation: shimmer 1.5s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .scan-steps {
+            margin-bottom: 16px;
+        }
+
+        .scan-step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            color: #999;
+            font-size: 13px;
+        }
+
+        .scan-step.active {
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .scan-step.completed {
+            color: #10b981;
+        }
+
+        .scan-step-icon {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .scan-result {
+            display: none;
+            padding: 16px;
+            border: 2px solid #10b981;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+        }
+
+        .scan-result.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .scan-result-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .scan-result-icon {
+            font-size: 28px;
+            color: #10b981;
+        }
+
+        .scan-result-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .scan-result-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .info-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .info-label {
+            color: #999;
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .scan-result-tip {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+            margin-bottom: 16px;
+        }
+
+        .tip-title {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        .tip-content {
+            color: #666;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-group .form-input {
+            flex: 1;
+        }
+
+        .form-help {
+            color: #999;
+            font-size: 11px;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+
+        .upload-area {
+            border: 2px dashed #d0d5dd;
+            border-radius: 10px;
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fafbfc;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f5f7ff;
+        }
+
+        .upload-icon {
+            font-size: 40px;
+            color: #cbd5e0;
+            margin-bottom: 12px;
+        }
+
+        .upload-text {
+            color: #666;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .upload-hint {
+            color: #999;
+            font-size: 11px;
+        }
+
+        .file-list {
+            margin-top: 12px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e8e8e8;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-icon {
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .file-name {
+            color: #333;
+            font-size: 13px;
+        }
+
+        .file-remove {
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+
+        .file-remove:hover {
+            transform: scale(1.2);
+        }
+
+        .error-box {
+            background: #fef2f2;
+            border-left: 3px solid #ef4444;
+            border-radius: 8px;
+            padding: 14px;
+            margin-top: 16px;
+        }
+
+        .error-title {
+            color: #ef4444;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .error-content {
+            color: #666;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .error-paths {
+            background: white;
+            padding: 8px 10px;
+            border-radius: 6px;
+            margin: 8px 0;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 11px;
+            color: #999;
+            border: 1px solid #fee;
+        }
+
+        .error-solutions {
+            margin-top: 12px;
+        }
+
+        .error-solutions-title {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+
+        .solution-item {
+            padding: 6px 0;
+            color: #666;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #667eea;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Navigation buttons at bottom */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>系统设置</h1>
+            <div class="subtitle">SSH服务器配置导入向导</div>
+        </div>
+
+        <!-- Main Card -->
+        <div class="card">
+            <!-- Steps -->
+            <div class="steps">
+                <div class="step completed">
+                    <div class="step-number">1</div>
+                    <div class="step-title">选择SSH客户端</div>
+                </div>
+                <div class="step active">
+                    <div class="step-number">2</div>
+                    <div class="step-title">配置文件扫描</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-title">选择服务器</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-title">导入确认</div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="section-title">配置文件获取方式</div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="auto-scan">
+                    <span class="tab-icon">🔍</span>
+                    <span>自动扫描（推荐）</span>
+                </button>
+                <button class="tab" data-tab="manual">
+                    <span class="tab-icon">📁</span>
+                    <span>手动指定</span>
+                </button>
+                <button class="tab" data-tab="upload">
+                    <span class="tab-icon">📤</span>
+                    <span>文件上传</span>
+                </button>
+            </div>
+
+            <!-- Auto Scan Tab -->
+            <div class="tab-content active" id="auto-scan">
+                <div class="info-box">
+                    <div class="info-box-title">🔍 自动扫描说明</div>
+                    <div class="info-box-text">
+                        系统将智能检测配置文件位置：注册表 → 默认路径 → 安装目录推断 → 历史记录
+                        <br><strong>适用：</strong>标准安装用户（推荐）
+                    </div>
+                </div>
+
+                <div style="text-align: center;">
+                    <button class="btn btn-primary btn-large" id="startScanBtn">
+                        <span>🔍</span>
+                        <span>开始自动扫描</span>
+                    </button>
+                </div>
+
+                <!-- Scanning Status -->
+                <div class="scan-status" id="scanningStatus">
+                    <div style="text-align: center; margin-bottom: 16px; color: #667eea; font-weight: 500; font-size: 14px;">
+                        <div class="spinner" style="vertical-align: middle; margin-right: 6px;"></div>
+                        正在扫描配置文件...
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                    <div class="scan-steps">
+                        <div class="scan-step" id="step1">
+                            <div class="scan-step-icon">⏳</div>
+                            <div>检查 Windows 注册表...</div>
+                        </div>
+                        <div class="scan-step" id="step2">
+                            <div class="scan-step-icon">⏳</div>
+                            <div>扫描默认配置路径...</div>
+                        </div>
+                        <div class="scan-step" id="step3">
+                            <div class="scan-step-icon">⏳</div>
+                            <div>从安装目录推断配置位置...</div>
+                        </div>
+                        <div class="scan-step" id="step4">
+                            <div class="scan-step-icon">⏳</div>
+                            <div>验证配置文件有效性...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scan Success Result -->
+                <div class="scan-result" id="scanSuccess">
+                    <div class="scan-result-header">
+                        <div class="scan-result-icon">✅</div>
+                        <div>
+                            <div class="scan-result-title">扫描成功！</div>
+                            <div style="color: #67c23a; font-size: 14px;">检测到 SecureCRT 配置文件</div>
+                        </div>
+                    </div>
+
+                    <div class="scan-result-info">
+                        <div class="info-item">
+                            <div class="info-label">检测到软件：</div>
+                            <div class="info-value">SecureCRT 9.0.1 <span class="badge badge-success">已安装</span></div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">配置路径：</div>
+                            <div class="info-value">C:\Users\Admin\AppData\Roaming\VanDyke\Config\</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">会话数量：</div>
+                            <div class="info-value">25 个会话</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">文件夹数量：</div>
+                            <div class="info-value">3 个分组</div>
+                        </div>
+                    </div>
+
+                    <div class="scan-result-tip">
+                        <div class="tip-title">💡 智能建议</div>
+                        <div class="tip-content">
+                            发现 25 个会话配置，建议空闲时段导入。预计耗时 2-3 分钟。
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-primary btn-large" id="continueImportBtn">
+                            <span>▶️</span>
+                            <span>继续导入</span>
+                        </button>
+                        <button class="btn btn-default" id="rescanBtn">
+                            <span>🔄</span>
+                            <span>重新扫描</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Scan Failed Result -->
+                <div class="error-box" id="scanFailed" style="display: none;">
+                    <div class="error-title">❌ 扫描失败</div>
+                    <div class="error-content">
+                        <p>未能自动检测到 SecureCRT 的配置文件。已扫描以下路径：</p>
+                        <div class="error-paths">
+                            ✗ C:\Users\Admin\AppData\Roaming\VanDyke\Config\Sessions\<br>
+                            ✗ C:\ProgramData\VanDyke\Config\Sessions\<br>
+                            ✗ D:\Program Files\VanDyke Software\SecureCRT\Config\<br>
+                            ✗ 注册表: HKEY_CURRENT_USER\Software\VanDyke\SecureCRT\Config Path
+                        </div>
+                        <p><strong>可能的原因：</strong></p>
+                        <ul style="margin: 8px 0 0 20px;">
+                            <li>SecureCRT 未安装或使用便携版</li>
+                            <li>配置文件位于非标准位置</li>
+                            <li>权限不足无法访问配置目录</li>
+                        </ul>
+                    </div>
+                    <div class="error-solutions">
+                        <div class="error-solutions-title">💡 解决方案：</div>
+                        <div class="solution-item">
+                            <strong>方式1：</strong>切换到"手动指定"选项卡，指定配置文件或安装目录
+                        </div>
+                        <div class="solution-item">
+                            <strong>方式2：</strong>切换到"文件上传"选项卡，直接上传配置文件
+                        </div>
+                        <div class="solution-item">
+                            <strong>方式3：</strong>以管理员权限运行程序后重试
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Tab -->
+            <div class="tab-content" id="manual">
+                <div class="info-box">
+                    <div class="info-box-title">📁 手动指定说明</div>
+                    <div class="info-box-text">
+                        支持：① 直接指定配置目录（推荐） ② 指定安装目录自动推断
+                        <br><strong>适用：</strong>便携版、自定义路径、权限受限
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        选项1：指定配置目录 <span class="badge badge-warning">推荐</span>
+                    </label>
+                    <div class="input-group">
+                        <input type="text" class="form-input" placeholder="例如: C:\Users\YourName\AppData\Roaming\VanDyke\Config\" id="configDirInput">
+                        <button class="btn btn-default">📁 浏览</button>
+                    </div>
+                    <div class="form-help">
+                        Windows 默认路径: %APPDATA%\VanDyke\Config\<br>
+                        macOS 默认路径: ~/Library/Application Support/VanDyke/SecureCRT/Config/
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin: 20px 0; color: #999;">或</div>
+
+                <div class="form-group">
+                    <label class="form-label">选项2：指定安装目录</label>
+                    <div class="input-group">
+                        <input type="text" class="form-input" placeholder="例如: C:\Program Files\VanDyke Software\SecureCRT\" id="installDirInput">
+                        <button class="btn btn-default">📁 浏览</button>
+                    </div>
+                    <div class="form-help">
+                        系统将从安装目录自动推断配置文件位置
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary btn-large" id="validatePathBtn">
+                        <span>✓</span>
+                        <span>验证并继续</span>
+                    </button>
+                    <button class="btn btn-default">取消</button>
+                </div>
+            </div>
+
+            <!-- Upload Tab -->
+            <div class="tab-content" id="upload">
+                <div class="info-box">
+                    <div class="info-box-title">📤 文件上传说明</div>
+                    <div class="info-box-text">
+                        支持拖拽或点击上传：Sessions 文件夹（.zip） 或单个配置文件（.ini），最大 50MB
+                        <br><strong>适用：</strong>Web 应用、远程访问、无文件系统权限
+                    </div>
+                </div>
+
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📤</div>
+                    <div class="upload-text">点击或拖拽文件到此处上传</div>
+                    <div class="upload-hint">支持 .ini 配置文件或 .zip 压缩包，单个文件最大 50MB</div>
+                </div>
+
+                <div class="file-list" id="fileList" style="display: none;">
+                    <div class="file-item">
+                        <div class="file-info">
+                            <span class="file-icon">📄</span>
+                            <span class="file-name">Sessions.zip (2.3 MB)</span>
+                        </div>
+                        <span class="file-remove">✕</span>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary btn-large" id="uploadConfirmBtn" disabled>
+                        <span>✓</span>
+                        <span>解析配置文件</span>
+                    </button>
+                    <button class="btn btn-default">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="nav-buttons">
+            <button class="btn btn-default">← 上一步</button>
+            <button class="btn btn-default">取消</button>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.tab;
+                
+                // Update active tab
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update active content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(targetTab).classList.add('active');
+            });
+        });
+
+        // Auto scan simulation
+        document.getElementById('startScanBtn').addEventListener('click', () => {
+            const scanningStatus = document.getElementById('scanningStatus');
+            const scanSuccess = document.getElementById('scanSuccess');
+            const scanFailed = document.getElementById('scanFailed');
+            const progressFill = document.getElementById('progressFill');
+            
+            // Hide results
+            scanSuccess.classList.remove('active');
+            scanFailed.style.display = 'none';
+            
+            // Show scanning status
+            scanningStatus.classList.add('active');
+            
+            // Simulate scanning steps
+            const steps = [
+                { id: 'step1', progress: 25, delay: 500 },
+                { id: 'step2', progress: 50, delay: 1000 },
+                { id: 'step3', progress: 75, delay: 1500 },
+                { id: 'step4', progress: 100, delay: 2000 }
+            ];
+            
+            steps.forEach((step, index) => {
+                setTimeout(() => {
+                    const stepEl = document.getElementById(step.id);
+                    stepEl.classList.add('active');
+                    progressFill.style.width = step.progress + '%';
+                    
+                    if (index > 0) {
+                        document.getElementById(steps[index - 1].id).classList.remove('active');
+                        document.getElementById(steps[index - 1].id).classList.add('completed');
+                        document.getElementById(steps[index - 1].id).querySelector('.scan-step-icon').textContent = '✓';
+                    }
+                    
+                    if (step.progress === 100) {
+                        setTimeout(() => {
+                            stepEl.classList.remove('active');
+                            stepEl.classList.add('completed');
+                            stepEl.querySelector('.scan-step-icon').textContent = '✓';
+                            
+                            // Hide scanning, show result
+                            setTimeout(() => {
+                                scanningStatus.classList.remove('active');
+                                
+                                // Randomly show success or failure (80% success rate)
+                                if (Math.random() > 0.2) {
+                                    scanSuccess.classList.add('active');
+                                } else {
+                                    scanFailed.style.display = 'block';
+                                }
+                            }, 500);
+                        }, 300);
+                    }
+                }, step.delay);
+            });
+        });
+
+        // Rescan button
+        document.getElementById('rescanBtn').addEventListener('click', () => {
+            document.getElementById('scanSuccess').classList.remove('active');
+            
+            // Reset scan steps
+            document.querySelectorAll('.scan-step').forEach(step => {
+                step.classList.remove('active', 'completed');
+                step.querySelector('.scan-step-icon').textContent = '⏳';
+            });
+            
+            document.getElementById('progressFill').style.width = '0%';
+            
+            // Start scan again
+            document.getElementById('startScanBtn').click();
+        });
+
+        // Continue import button
+        document.getElementById('continueImportBtn').addEventListener('click', () => {
+            alert('将进入步骤3：选择要导入的服务器');
+        });
+
+        // Validate path button
+        document.getElementById('validatePathBtn').addEventListener('click', () => {
+            const configDir = document.getElementById('configDirInput').value;
+            const installDir = document.getElementById('installDirInput').value;
+            
+            if (!configDir && !installDir) {
+                alert('请至少填写一个路径');
+                return;
+            }
+            
+            alert('正在验证路径...\n\n' + (configDir || installDir));
+        });
+
+        // Upload area
+        const uploadArea = document.getElementById('uploadArea');
+        const fileList = document.getElementById('fileList');
+        const uploadConfirmBtn = document.getElementById('uploadConfirmBtn');
+        
+        uploadArea.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.ini,.zip';
+            input.onchange = (e) => {
+                if (e.target.files.length > 0) {
+                    fileList.style.display = 'block';
+                    uploadConfirmBtn.disabled = false;
+                }
+            };
+            input.click();
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#409eff';
+            uploadArea.style.background = '#f5f9ff';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#dcdfe6';
+            uploadArea.style.background = 'white';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#dcdfe6';
+            uploadArea.style.background = 'white';
+            
+            if (e.dataTransfer.files.length > 0) {
+                fileList.style.display = 'block';
+                uploadConfirmBtn.disabled = false;
+            }
+        });
+
+        // File remove
+        document.querySelectorAll('.file-remove').forEach(btn => {
+            btn.addEventListener('click', () => {
+                fileList.style.display = 'none';
+                uploadConfirmBtn.disabled = true;
+            });
+        });
+
+        uploadConfirmBtn.addEventListener('click', () => {
+            alert('正在解析配置文件...');
+        });
+    </script>
+</body>
+</html>

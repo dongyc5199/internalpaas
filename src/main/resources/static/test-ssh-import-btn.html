@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSH导入按钮测试页面</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 SSH配置导入按钮测试页面</h1>
+    
+    <div class="test-section">
+        <h2>1. 环境检查</h2>
+        <button class="btn btn-primary" onclick="checkEnvironment()">运行环境检查</button>
+        <div id="envStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 按钮测试</h2>
+        <p>这是实际的导入按钮（应与页面上的按钮相同）：</p>
+        <button 
+            aria-label="Import SSH config" 
+            class="btn btn-secondary" 
+            id="importSshConfigBtn" 
+            title="Import from SSH config file" 
+            type="button" 
+            onclick="window.openSSHConfigImportWizard && window.openSSHConfigImportWizard()">
+            🔧 导入SSH配置
+        </button>
+        <div id="btnStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. 手动触发测试</h2>
+        <button class="btn btn-primary" onclick="manualTrigger()">手动调用函数</button>
+        <div id="manualStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. 模态框检查</h2>
+        <button class="btn btn-primary" onclick="checkModal()">检查模态框元素</button>
+        <div id="modalStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. 控制台日志</h2>
+        <p>请打开浏览器控制台（F12）查看详细日志</p>
+        <button class="btn btn-primary" onclick="copyLogs()">复制诊断信息</button>
+        <pre id="logOutput"></pre>
+    </div>
+
+    <script>
+        let diagnosticLogs = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            diagnosticLogs.push(`[${timestamp}] ${type.toUpperCase()}: ${message}`);
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function showStatus(elementId, message, type = 'info') {
+            const el = document.getElementById(elementId);
+            el.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function checkEnvironment() {
+            log('开始环境检查', 'info');
+            let html = '<h3>环境检查结果：</h3><ul>';
+            let allPass = true;
+
+            // 检查按钮元素
+            const btn = document.getElementById('importSshConfigBtn');
+            if (btn) {
+                html += '<li class="status success">✅ 按钮元素存在</li>';
+                html += `<li>   - onclick: ${btn.getAttribute('onclick')}</li>`;
+                html += `<li>   - disabled: ${btn.disabled}</li>`;
+                log('按钮元素检查通过', 'success');
+            } else {
+                html += '<li class="status error">❌ 按钮元素不存在</li>';
+                allPass = false;
+                log('按钮元素不存在', 'error');
+            }
+
+            // 检查全局函数
+            if (typeof window.openSSHConfigImportWizard === 'function') {
+                html += '<li class="status success">✅ window.openSSHConfigImportWizard 函数存在</li>';
+                log('全局函数检查通过', 'success');
+            } else {
+                html += '<li class="status error">❌ window.openSSHConfigImportWizard 函数不存在</li>';
+                const sshFunctions = Object.keys(window).filter(k => 
+                    k.toLowerCase().includes('ssh') || k.toLowerCase().includes('wizard')
+                );
+                html += `<li>   - 找到的相关函数: ${sshFunctions.join(', ') || '无'}</li>`;
+                allPass = false;
+                log('全局函数不存在', 'error');
+            }
+
+            // 检查模态框元素
+            const modal = document.getElementById('sshConfigImportModal');
+            if (modal) {
+                html += '<li class="status success">✅ 模态框元素存在</li>';
+                html += `<li>   - display: ${window.getComputedStyle(modal).display}</li>`;
+                log('模态框元素检查通过', 'success');
+            } else {
+                html += '<li class="status error">❌ 模态框元素不存在</li>';
+                allPass = false;
+                log('模态框元素不存在', 'error');
+            }
+
+            // 检查CSS
+            const cssLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+            const sshCSS = cssLinks.find(link => link.href.includes('ssh-config-import-wizard.css'));
+            if (sshCSS) {
+                html += '<li class="status success">✅ SSH向导CSS已加载</li>';
+                log('CSS文件检查通过', 'success');
+            } else {
+                html += '<li class="status error">❌ SSH向导CSS未加载</li>';
+                allPass = false;
+                log('CSS文件未加载', 'error');
+            }
+
+            // 检查JS
+            const scripts = Array.from(document.querySelectorAll('script[src]'));
+            const mainJS = scripts.find(s => s.src.includes('main') || s.src.includes('dist'));
+            if (mainJS) {
+                html += '<li class="status success">✅ 主JS文件已加载</li>';
+                html += `<li>   - 路径: ${mainJS.src}</li>`;
+                log('JS文件检查通过', 'success');
+            } else {
+                html += '<li class="status error">❌ 主JS文件未找到</li>';
+                allPass = false;
+                log('JS文件未找到', 'error');
+            }
+
+            html += '</ul>';
+
+            if (allPass) {
+                html += '<div class="status success"><strong>✅ 所有检查通过！按钮应该可以正常工作。</strong></div>';
+                log('所有检查通过', 'success');
+            } else {
+                html += '<div class="status error"><strong>❌ 发现问题，请查看上述失败项。</strong></div>';
+                log('存在检查失败项', 'error');
+            }
+
+            showStatus('envStatus', html, '');
+        }
+
+        function manualTrigger() {
+            log('尝试手动触发函数', 'info');
+            try {
+                if (typeof window.openSSHConfigImportWizard === 'function') {
+                    window.openSSHConfigImportWizard();
+                    showStatus('manualStatus', '✅ 手动调用成功！请检查模态框是否弹出。', 'success');
+                    log('手动调用成功', 'success');
+                } else {
+                    showStatus('manualStatus', '❌ window.openSSHConfigImportWizard 函数不存在', 'error');
+                    log('函数不存在，无法调用', 'error');
+                }
+            } catch (error) {
+                showStatus('manualStatus', `❌ 调用失败: ${error.message}`, 'error');
+                log(`调用失败: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        function checkModal() {
+            log('检查模态框元素', 'info');
+            const modal = document.getElementById('sshConfigImportModal');
+            
+            if (modal) {
+                let html = '<h3>模态框信息：</h3><ul>';
+                html += '<li class="status success">✅ 模态框元素存在</li>';
+                html += `<li>ID: ${modal.id}</li>`;
+                html += `<li>类名: ${modal.className}</li>`;
+                html += `<li>Display: ${window.getComputedStyle(modal).display}</li>`;
+                html += `<li>内容长度: ${modal.innerHTML.length} 字符</li>`;
+                html += `<li>子元素数: ${modal.children.length}</li>`;
+                html += '</ul>';
+                
+                html += '<button class="btn btn-secondary" onclick="forceShowModal()">强制显示模态框（调试用）</button>';
+                
+                showStatus('modalStatus', html, '');
+                log('模态框检查完成', 'success');
+            } else {
+                showStatus('modalStatus', '❌ 模态框元素不存在！请确认页面已包含 ssh-config-import-wizard fragment。', 'error');
+                log('模态框元素不存在', 'error');
+            }
+        }
+
+        function forceShowModal() {
+            log('强制显示模态框', 'info');
+            const modal = document.getElementById('sshConfigImportModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                showStatus('modalStatus', '✅ 模态框已强制显示（仅用于调试）', 'success');
+                log('模态框已强制显示', 'success');
+            }
+        }
+
+        function copyLogs() {
+            const logText = diagnosticLogs.join('\n');
+            document.getElementById('logOutput').textContent = logText;
+            
+            // 复制到剪贴板
+            navigator.clipboard.writeText(logText).then(() => {
+                alert('诊断日志已复制到剪贴板！');
+            }).catch(err => {
+                console.error('复制失败:', err);
+            });
+        }
+
+        // 页面加载时自动运行检查
+        window.addEventListener('load', () => {
+            log('页面加载完成', 'info');
+            setTimeout(() => {
+                checkEnvironment();
+            }, 500);
+        });
+
+        // 监听按钮点击
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'importSshConfigBtn') {
+                log('按钮被点击', 'info');
+                console.log('Button clicked event:', e);
+            }
+        });
+    </script>
+</body>
+</html>
