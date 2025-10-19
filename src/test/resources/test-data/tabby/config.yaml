@@ -1,0 +1,21 @@
+profiles:
+  - type: ssh
+    name: prod-db-server
+    options:
+      host: 192.168.1.100
+      port: 22
+      user: dbadmin
+      privateKey: C:\Users\admin\.ssh\id_rsa_prod
+    description: Production Database Server
+    group: Production/Databases
+  - type: ssh
+    name: dev-api-server
+    options:
+      host: dev-server-01.example.com
+      port: 2222
+      user: developer
+    description: Development API Server
+    group: Development/API
+  - type: local
+    name: Local Terminal
+    # 这个会被过滤掉，因为类型不是 ssh
