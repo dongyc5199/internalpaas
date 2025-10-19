@@ -106,7 +106,7 @@ export interface DefaultPathInfo {
 export class SSHConfigImportWizard {
     // 私有属性
     private modal: HTMLElement | null = null;
-    private step: number = 1;                            // 当前步骤：1=选择文件, 2=预览列表, 3=导入结果
+    private currentTab: 'auto-scan' | 'upload' | 'manual' = 'auto-scan'; // 当前激活的Tab
     private servers: ServerImportPreview[] = [];         // 解析出的服务器列表
     private selectedServers: ServerImportPreview[] = []; // 勾选的服务器列表
     private importResult: ServerImportResult | null = null;
@@ -219,16 +219,126 @@ export class SSHConfigImportWizard {
             return;
         }
 
-        console.log("Attaching events to SSH Config Import Modal...");
+        console.log("Attaching events to SSH Config Import Modal (Tab version)...");
 
-        // TODO: 后续步骤会添加具体事件绑定
-        // - 步骤1：文件上传、扫描本地、输入路径
-        // - 步骤2：表格勾选、编辑、批量操作
-        // - 步骤3：查看服务器列表、重新导入
+        // ===== Tab切换事件 =====
+        this.modal.querySelectorAll<HTMLButtonElement>('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab as 'auto-scan' | 'upload' | 'manual';
+                if (tabName) {
+                    this.switchTab(tabName);
+                }
+            });
+        });
+
+        // ===== 自动扫描Tab事件 =====
+        const btnStartScan = this.modal.querySelector<HTMLButtonElement>('#btnStartScan');
+        btnStartScan?.addEventListener('click', () => {
+            this.startAutoScan();
+        });
+
+        // ===== 文件上传Tab事件 =====
+        const uploadArea = this.modal.querySelector<HTMLDivElement>('#uploadArea');
+        const fileInput = this.modal.querySelector<HTMLInputElement>('#sshConfigFileInput');
+
+        // 点击上传区域触发文件选择
+        uploadArea?.addEventListener('click', (e) => {
+            if ((e.target as HTMLElement).tagName !== 'INPUT') {
+                fileInput?.click();
+            }
+        });
+
+        // 文件选择事件
+        fileInput?.addEventListener('change', (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (file) {
+                this.handleFileUpload(file);
+            }
+        });
+
+        // 拖拽事件
+        uploadArea?.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea?.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea?.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer?.files[0];
+            if (file) {
+                this.handleFileUpload(file);
+            }
+        });
+
+        // ===== 自定义路径Tab事件 =====
+        // 路径示例点击事件
+        this.modal.querySelectorAll<HTMLDivElement>('.path-example-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const path = item.dataset.path;
+                if (path) {
+                    const pathInput = this.modal?.querySelector<HTMLInputElement>('#manualPathInput');
+                    if (pathInput) {
+                        pathInput.value = path;
+                        pathInput.focus();
+                    }
+                }
+            });
+        });
+
+        // 解析自定义路径按钮
+        const btnParsePath = this.modal.querySelector<HTMLButtonElement>('#btnParsePath');
+        btnParsePath?.addEventListener('click', () => {
+            const pathInput = this.modal?.querySelector<HTMLInputElement>('#manualPathInput');
+            if (pathInput?.value) {
+                this.parseCustomPath(pathInput.value);
+            } else {
+                showError('请输入配置文件路径');
+            }
+        });
+
+        // ===== 全局按钮事件 =====
+        // 确认导入按钮
+        const btnConfirmImport = this.modal.querySelector<HTMLButtonElement>('#btnConfirmImport');
+        btnConfirmImport?.addEventListener('click', () => {
+            this.confirmImport();
+        });
 
         // 标记已绑定事件
         this.modal.setAttribute("data-ssh-config-events-attached", "true");
-        console.log("Events attached to SSH Config Import Modal");
+        console.log("Events attached to SSH Config Import Modal (Tab version)");
+    }
+
+    /**
+     * 切换Tab
+     */
+    private switchTab(tabName: 'auto-scan' | 'upload' | 'manual') {
+        console.log(`Switching to tab: ${tabName}`);
+        this.currentTab = tabName;
+
+        // 更新Tab按钮状态
+        const tabs = this.modal?.querySelectorAll<HTMLButtonElement>('.tab');
+        tabs?.forEach(tab => {
+            if (tab.dataset.tab === tabName) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+
+        // 更新Tab内容显示
+        const contents = this.modal?.querySelectorAll<HTMLDivElement>('.tab-content');
+        contents?.forEach(content => {
+            if (content.id === tabName) {
+                content.classList.add('active');
+            } else {
+                content.classList.remove('active');
+            }
+        });
     }
 
     // ==================== 公共方法：打开/关闭 ====================
@@ -269,6 +379,8 @@ export class SSHConfigImportWizard {
         // 显示模态框
         console.log("Adding 'active' class to modal overlay...");
         this.modal.classList.add("active");
+        // 移除内联的 display: none 样式
+        this.modal.style.display = "flex";
 
         // 阻止背景滚动
         document.body.style.overflow = "hidden";
@@ -283,6 +395,8 @@ export class SSHConfigImportWizard {
 
         console.log("Closing SSH Config Import Modal");
         this.modal.classList.remove("active");
+        // 恢复 display: none
+        this.modal.style.display = "none";
         document.body.style.overflow = "";
 
         // 重置状态
@@ -308,85 +422,32 @@ export class SSHConfigImportWizard {
         this.customPath = "";
         this.defaultPathInfo = null;
 
-        // TODO: 更新UI显示
-        this.updateStepDisplay();
-    }
+        // Tab版本: 重置Tab状态
+        this.currentTab = "auto-scan";
+        this.switchTab("auto-scan");
 
-    // ==================== 步骤控制 ====================
+        // 清空所有结果显示
+        const scanResult = this.modal?.querySelector<HTMLDivElement>("#scanResult");
+        const uploadResult = this.modal?.querySelector<HTMLDivElement>("#uploadResult");
+        const parseResult = this.modal?.querySelector<HTMLDivElement>("#parseResult");
 
-    /**
-     * 更新步骤显示
-     */
-    private updateStepDisplay() {
-        if (!this.modal) return;
+        scanResult?.classList.remove("active");
+        uploadResult?.classList.remove("active");
+        parseResult?.classList.remove("active");
 
-        console.log(`Updating step display: step ${this.step}`);
-
-        // 1. 更新步骤指示器
-        const steps = this.modal.querySelectorAll(".wizard-step");
-        steps.forEach((stepEl, index) => {
-            const stepNumber = index + 1;
-            stepEl.classList.remove("active", "completed");
-            if (stepNumber < this.step) {
-                stepEl.classList.add("completed");
-            } else if (stepNumber === this.step) {
-                stepEl.classList.add("active");
-            }
-        });
-
-        // 2. 切换内容区域显示
-        const contents = this.modal.querySelectorAll(".wizard-content");
-        contents.forEach((contentEl, index) => {
-            const stepNumber = index + 1;
-            if (stepNumber === this.step) {
-                (contentEl as HTMLElement).style.display = "block";
-            } else {
-                (contentEl as HTMLElement).style.display = "none";
-            }
-        });
-
-        // 3. 更新底部按钮
-        const prevBtn = document.getElementById("wizardPrevBtn");
-        const nextBtn = document.getElementById("wizardNextBtn");
-
-        if (prevBtn && nextBtn) {
-            if (this.step === 1) {
-                prevBtn.style.display = "none";
-                nextBtn.disabled = true;
-                nextBtn.innerHTML = "<span>下一步 →</span>";
-            } else if (this.step === 2) {
-                prevBtn.style.display = "inline-flex";
-                nextBtn.disabled = this.selectedServers.length === 0;
-                nextBtn.innerHTML = "<span>导入选中的服务器 →</span>";
-                // 渲染预览表格
-                this.renderPreviewTable();
-            } else if (this.step === 3) {
-                prevBtn.style.display = "none";
-                nextBtn.style.display = "none";
-                // 渲染导入结果
-                this.renderImportResult();
-            }
+        // 重置文件输入
+        const fileInput = this.modal?.querySelector<HTMLInputElement>("#sshConfigFileInput");
+        if (fileInput) {
+            fileInput.value = "";
         }
-    }
 
-    /**
-     * 进入下一步
-     */
-    private nextStep() {
-        if (this.step < 3) {
-            this.step++;
-            this.updateStepDisplay();
+        // 重置路径输入
+        const pathInput = this.modal?.querySelector<HTMLInputElement>("#manualPathInput");
+        if (pathInput) {
+            pathInput.value = "";
         }
-    }
 
-    /**
-     * 返回上一步
-     */
-    private prevStep() {
-        if (this.step > 1) {
-            this.step--;
-            this.updateStepDisplay();
-        }
+        console.log("Wizard reset to initial state (Tab version)");
     }
 
     // ==================== API调用方法（待实现） ====================
@@ -471,9 +532,25 @@ export class SSHConfigImportWizard {
             // 显示成功消息
             showSuccess(`文件上传成功！解析到 ${result.totalHosts} 个Host，${this.servers.filter(s => s.valid && !s.duplicate).length} 个可导入`);
 
-            // 6. 进入步骤2（预览）
-            this.step = 2;
-            this.updateStepDisplay();
+            // Tab版本:显示上传结果在当前Tab
+            const uploadResult = this.modal?.querySelector<HTMLDivElement>("#uploadResult");
+            if (uploadResult) {
+                uploadResult.classList.add("active");
+                uploadResult.innerHTML = `
+                    <div class="success-box">
+                        <div class="success-icon">✓</div>
+                        <h3>上传成功</h3>
+                        <div class="info-item">
+                            <div class="info-label">解析到的Host数量</div>
+                            <div class="info-value">${result.totalHosts}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">可导入的服务器</div>
+                            <div class="info-value">${this.servers.filter(s => s.valid && !s.duplicate).length}</div>
+                        </div>
+                    </div>
+                `;
+            }
 
         } catch (error) {
             console.error("File upload failed:", error);
@@ -563,6 +640,250 @@ export class SSHConfigImportWizard {
             console.error("Local scan failed:", error);
             const errorMessage = error instanceof Error ? error.message : "本地配置扫描失败，请重试";
             showError(errorMessage);
+        }
+    }
+
+    /**
+     * ===== Tab版本专用方法 =====
+     * 开始自动扫描 (Tab版本)
+     * 带4步进度动画的自动扫描功能
+     */
+    private async startAutoScan() {
+        console.log("Starting auto-scan with progress animation...");
+
+        const scanningStatus = this.modal?.querySelector<HTMLDivElement>("#scanningStatus");
+        const scanResult = this.modal?.querySelector<HTMLDivElement>("#scanResult");
+        const progressFill = this.modal?.querySelector<HTMLDivElement>("#progressFill");
+
+        if (!scanningStatus || !scanResult) {
+            console.error("Scan status elements not found");
+            return;
+        }
+
+        try {
+            // 显示扫描状态
+            scanningStatus.classList.add("active");
+            scanResult.classList.remove("active");
+
+            // 定义4步进度
+            const steps = [
+                { id: "step1", progress: 25, delay: 500 },
+                { id: "step2", progress: 50, delay: 1000 },
+                { id: "step3", progress: 75, delay: 1500 },
+                { id: "step4", progress: 100, delay: 2000 }
+            ];
+
+            // 调用后端API开始扫描
+            const response = await fetch("/api/ssh-config-import/scan-local", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                if (response.status === 404) {
+                    throw new Error("未找到本地SSH配置文件");
+                }
+                throw new Error(errorData?.message || `扫描失败：HTTP ${response.status}`);
+            }
+
+            const result: SSHConfigParseResult = await response.json();
+
+            // 执行进度动画
+            for (let i = 0; i < steps.length; i++) {
+                await new Promise(resolve => setTimeout(resolve, steps[i].delay));
+
+                const stepEl = this.modal?.querySelector<HTMLDivElement>(`#${steps[i].id}`);
+                if (stepEl) {
+                    stepEl.classList.add("active");
+                    if (progressFill) {
+                        progressFill.style.width = `${steps[i].progress}%`;
+                    }
+                }
+
+                // 标记前一步完成
+                if (i > 0) {
+                    const prevStep = this.modal?.querySelector<HTMLDivElement>(`#${steps[i - 1].id}`);
+                    if (prevStep) {
+                        prevStep.classList.remove("active");
+                        prevStep.classList.add("completed");
+                        const icon = prevStep.querySelector(".scan-step-icon");
+                        if (icon) icon.textContent = "✓";
+                    }
+                }
+            }
+
+            // 标记最后一步完成
+            const lastStep = this.modal?.querySelector<HTMLDivElement>("#step4");
+            if (lastStep) {
+                lastStep.classList.remove("active");
+                lastStep.classList.add("completed");
+                const icon = lastStep.querySelector(".scan-step-icon");
+                if (icon) icon.textContent = "✓";
+            }
+
+            // 延迟后显示结果
+            await new Promise(resolve => setTimeout(resolve, 500));
+            scanningStatus.classList.remove("active");
+            scanResult.classList.add("active");
+
+            // 处理扫描结果
+            if (result.servers && result.servers.length > 0) {
+                this.servers = result.servers.map(server => ({
+                    ...server,
+                    selected: server.valid && !server.duplicate,
+                    editing: false
+                }));
+                this.updateSelectedServers();
+                this.displayScanResult(result);
+                showSuccess(`扫描完成！发现 ${result.totalHosts} 个配置，${this.servers.filter(s => s.valid && !s.duplicate).length} 个可导入`);
+            } else {
+                showError("未发现SSH配置文件");
+            }
+
+        } catch (error) {
+            console.error("Auto-scan failed:", error);
+            scanningStatus.classList.remove("active");
+            showError(error instanceof Error ? error.message : "自动扫描失败");
+        }
+    }
+
+    /**
+     * 显示扫描结果 (Tab版本)
+     */
+    private displayScanResult(result: SSHConfigParseResult) {
+        const resultInfo = this.modal?.querySelector<HTMLDivElement>("#scanResultInfo");
+        const subtitle = this.modal?.querySelector<HTMLParagraphElement>("#scanResultSubtitle");
+        const tipContent = this.modal?.querySelector<HTMLSpanElement>("#scanTipContent");
+
+        if (!resultInfo) return;
+
+        // 更新副标题
+        if (subtitle) {
+            const clientCount = new Set(result.servers.map(s => this.guessClientName(s.hostname || s.name))).size;
+            subtitle.textContent = `检测到 ${clientCount} 个已安装的SSH客户端`;
+        }
+
+        // 填充结果信息
+        const clientSummary = this.groupByClient(result.servers);
+        resultInfo.innerHTML = clientSummary.map(item => `
+            <div class="info-item">
+                <div class="info-label">
+                    ${this.getClientIcon(item.clientName)} ${item.clientName} ${item.version}
+                    <span class="badge badge-success">已安装</span>
+                </div>
+                <div class="info-value">
+                    ${item.sessionCount} 个会话 • ${item.configPath}
+                </div>
+            </div>
+        `).join("");
+
+        // 更新提示
+        if (tipContent) {
+            const totalSessions = result.servers.length;
+            tipContent.textContent = `共发现 ${totalSessions} 个会话配置（来自${clientSummary.length}个客户端），系统将自动去重和合并。预计导入时间 3-5 分钟。`;
+        }
+    }
+
+    /**
+     * 根据hostname猜测客户端名称
+     */
+    private guessClientName(hostname: string): string {
+        if (!hostname) return "Unknown";
+        const lower = hostname.toLowerCase();
+        if (lower.includes("securecrt")) return "SecureCRT";
+        if (lower.includes("xshell")) return "Xshell";
+        if (lower.includes("tabby")) return "Tabby";
+        if (lower.includes("mobaxterm")) return "MobaXterm";
+        if (lower.includes("putty")) return "PuTTY";
+        return "SSH Config";
+    }
+
+    /**
+     * 获取客户端图标
+     */
+    private getClientIcon(clientName: string): string {
+        const icons: Record<string, string> = {
+            "SecureCRT": "🔐",
+            "Xshell": "📡",
+            "Tabby": "⚡",
+            "MobaXterm": "🖥️",
+            "PuTTY": "🔧",
+            "SSH Config": "💻",
+            "Unknown": "💻"
+        };
+        return icons[clientName] || "💻";
+    }
+
+    /**
+     * 按客户端分组
+     */
+    private groupByClient(servers: ServerImportPreview[]): {
+        clientName: string;
+        version: string;
+        sessionCount: number;
+        configPath: string;
+    }[] {
+        const grouped = new Map<string, {
+            clientName: string;
+            version: string;
+            sessionCount: number;
+            configPath: string;
+        }>();
+
+        servers.forEach(server => {
+            const clientName = this.guessClientName(server.hostname || server.name);
+            if (!grouped.has(clientName)) {
+                grouped.set(clientName, {
+                    clientName,
+                    version: "未知版本",
+                    sessionCount: 0,
+                    configPath: server.hostname || "默认路径"
+                });
+            }
+            grouped.get(clientName)!.sessionCount++;
+        });
+
+        return Array.from(grouped.values());
+    }
+
+    /**
+     * 确认导入 (Tab版本)
+     */
+    private async confirmImport() {
+        if (this.selectedServers.length === 0) {
+            showError("请先选择要导入的服务器");
+            return;
+        }
+
+        console.log(`Confirming import of ${this.selectedServers.length} servers...`);
+
+        try {
+            const response = await fetch("/api/ssh-config-import/confirm", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ servers: this.selectedServers })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                throw new Error(errorData?.message || `导入失败：HTTP ${response.status}`);
+            }
+
+            const result: ServerImportResult = await response.json();
+            this.importResult = result;
+
+            showSuccess(`导入成功！成功 ${result.successCount} 个，失败 ${result.failedCount} 个`);
+
+            // 关闭模态框并触发事件
+            this.close();
+            eventBus.emit("server:imported", result);
+
+        } catch (error) {
+            console.error("Import failed:", error);
+            showError(error instanceof Error ? error.message : "导入失败");
         }
     }
 
@@ -1442,6 +1763,14 @@ export function getSSHConfigImportWizard(): SSHConfigImportWizard {
     console.log("Global openSSHConfigImportWizard called");
     const wizard = getSSHConfigImportWizard();
     wizard.open();
+};
+
+// 暴露wizard实例给全局,供HTML关闭按钮调用
+(window as any).sshConfigWizard = {
+    close: () => {
+        console.log("Global sshConfigWizard.close() called");
+        getSSHConfigImportWizard().close();
+    }
 };
 
 // 页面加载时初始化

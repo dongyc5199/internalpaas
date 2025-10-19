@@ -281,8 +281,6 @@ public class AgentDeployService {
                 logger.error("端口被占用 - serverId: {}", server.getId());
             }
 
-            result.setPassed(result.isPassed());
-
         } catch (Exception e) {
             logger.error("预检查异常 - serverId: {}", server.getId(), e);
             result.addError("预检查异常: " + e.getMessage());

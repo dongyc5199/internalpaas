@@ -10,136 +10,211 @@
             <!-- Header -->
             <div class="ssh-wizard-header">
                 <div class="wizard-title">
-                    <span class="wizard-icon">🔧</span>
-                    <span>导入 SSH 配置</span>
+                    <span class="wizard-icon">📥</span>
+                    <span>导入SSH客户端配置</span>
                 </div>
-                <button class="wizard-close-btn" onclick="window.sshConfigWizard?.close()">
+                <button class="wizard-close-btn" data-action="ssh-config-modal-close">
                     <span>✕</span>
                 </button>
             </div>
 
-            <!-- Progress Steps -->
-            <div class="wizard-steps">
-                <div class="wizard-step active" data-step="1">
-                    <div class="step-number">1</div>
-                    <div class="step-label">选择配置源</div>
-                </div>
-                <div class="wizard-step-divider"></div>
-                <div class="wizard-step" data-step="2">
-                    <div class="step-number">2</div>
-                    <div class="step-label">预览服务器</div>
-                </div>
-                <div class="wizard-step-divider"></div>
-                <div class="wizard-step" data-step="3">
-                    <div class="step-number">3</div>
-                    <div class="step-label">导入结果</div>
-                </div>
-            </div>
-
             <!-- Body Content -->
             <div class="ssh-wizard-body">
-                <!-- Step 1: Select Config Source -->
-                <div class="wizard-content" id="wizardStep1">
-                    <div class="wizard-content-header">
-                        <h3>选择配置文件来源</h3>
-                        <p class="text-muted">支持从本地 SSH 配置文件导入服务器信息</p>
+                <!-- Supported Clients Banner -->
+                <div class="clients-banner">
+                    <div class="banner-header">
+                        <div class="banner-title">
+                            <span>✨</span>
+                            <span>智能识别多种SSH客户端</span>
+                        </div>
+                        <div class="banner-count">自动检测 • 一键导入</div>
+                    </div>
+                    <div class="clients-showcase">
+                        <div class="client-badge supported">
+                            <span class="client-icon-small">🔐</span>
+                            <span class="client-name-small">SecureCRT</span>
+                            <span class="client-status">支持</span>
+                        </div>
+                        <div class="client-badge supported">
+                            <span class="client-icon-small">📡</span>
+                            <span class="client-name-small">Xshell</span>
+                            <span class="client-status">支持</span>
+                        </div>
+                        <div class="client-badge supported">
+                            <span class="client-icon-small">⚡</span>
+                            <span class="client-name-small">Tabby</span>
+                            <span class="client-status">支持</span>
+                        </div>
+                        <div class="client-badge coming-soon">
+                            <span class="client-icon-small">🖥️</span>
+                            <span class="client-name-small">MobaXterm</span>
+                            <span class="client-status coming">即将</span>
+                        </div>
+                        <div class="client-badge coming-soon">
+                            <span class="client-icon-small">🔧</span>
+                            <span class="client-name-small">PuTTY</span>
+                            <span class="client-status coming">计划</span>
+                        </div>
+                        <div style="font-size: 12px; color: #999; margin-left: 8px;">持续扩展中...</div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab active" data-tab="auto-scan">
+                        <span>🔍</span>
+                        <span>自动扫描</span>
+                    </button>
+                    <button class="tab" data-tab="upload">
+                        <span>📤</span>
+                        <span>文件上传</span>
+                    </button>
+                    <button class="tab" data-tab="manual">
+                        <span>📁</span>
+                        <span>自定义路径</span>
+                    </button>
+                </div>
+
+                <!-- Auto Scan Tab -->
+                <div class="tab-content active" id="auto-scan">
+                    <div class="info-box">
+                        <div class="info-box-title">🔍 智能扫描能力</div>
+                        <div class="info-box-text">
+                            系统将自动检测已安装的SSH客户端,并智能定位配置文件<br>
+                            <strong>支持多客户端并存</strong>,一次扫描可发现所有已安装的SSH客户端配置
+                        </div>
                     </div>
 
-                    <!-- Three Options -->
-                    <div class="config-source-options">
-                        <!-- Option 1: Scan Local Config -->
-                        <div class="source-option-card">
-                            <div class="option-icon">🔍</div>
-                            <div class="option-content">
-                                <h4>扫描本地配置</h4>
-                                <p class="option-desc">自动检测 ~/.ssh/config 文件</p>
-                                <div class="option-details">
-                                    <div class="detail-item">
-                                        <span class="detail-icon">📍</span>
-                                        <span id="defaultConfigPath">~/.ssh/config</span>
-                                    </div>
-                                    <div class="detail-item" id="configExistsIndicator">
-                                        <span class="detail-icon">⏳</span>
-                                        <span>检查中...</span>
-                                    </div>
-                                </div>
-                                <button class="btn btn-primary btn-block" id="scanLocalConfigBtn">
-                                    <span class="btn-icon">🔍</span>
-                                    <span>开始扫描</span>
-                                </button>
-                            </div>
+                    <div class="scan-button-wrapper">
+                        <button class="btn btn-primary btn-large" id="startScanBtn">
+                            <span>🔍</span>
+                            <span>开始自动扫描</span>
+                        </button>
+                    </div>
+
+                    <!-- Scanning Status -->
+                    <div class="scan-status" id="scanningStatus">
+                        <div style="text-align: center; margin-bottom: 16px; color: #667eea; font-weight: 500; font-size: 14px;">
+                            <span class="spinner"></span>
+                            正在扫描配置文件...
                         </div>
-
-                        <!-- Option 2: Upload File -->
-                        <div class="source-option-card">
-                            <div class="option-icon">📤</div>
-                            <div class="option-content">
-                                <h4>上传配置文件</h4>
-                                <p class="option-desc">支持 SSH config 格式的文本文件</p>
-
-                                <!-- Hidden File Input -->
-                                <input type="file" id="sshConfigFileInput" accept=".config,.txt,text/plain" style="display: none;">
-
-                                <!-- Drag & Drop Area -->
-                                <div class="upload-drop-zone" id="uploadDropZone">
-                                    <div class="drop-zone-content">
-                                        <div class="drop-zone-icon">📄</div>
-                                        <div class="drop-zone-text">
-                                            <p class="drop-zone-primary">点击或拖拽文件到此处</p>
-                                            <p class="drop-zone-secondary">支持 .config, .txt 文件，最大 1MB</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Upload Progress -->
-                                <div class="upload-progress" id="uploadProgress" style="display: none;">
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" id="uploadProgressBar"></div>
-                                    </div>
-                                    <p class="progress-text" id="uploadProgressText">上传中...</p>
-                                </div>
-
-                                <!-- Upload Success -->
-                                <div class="upload-success" id="uploadSuccess" style="display: none;">
-                                    <div class="success-icon">✅</div>
-                                    <p class="success-text">
-                                        <span>文件上传成功：</span>
-                                        <strong id="uploadedFileName"></strong>
-                                    </p>
-                                </div>
-                            </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
                         </div>
-
-                        <!-- Option 3: Custom Path -->
-                        <div class="source-option-card">
-                            <div class="option-icon">📁</div>
-                            <div class="option-content">
-                                <h4>自定义路径</h4>
-                                <p class="option-desc">指定配置文件的绝对路径</p>
-                                <div class="custom-path-input-group">
-                                    <div class="form-group">
-                                        <label for="customConfigPath" class="form-label">配置文件路径</label>
-                                        <input
-                                            type="text"
-                                            id="customConfigPath"
-                                            class="form-control"
-                                            placeholder="/path/to/your/config"
-                                            autocomplete="off">
-                                        <div class="form-help">
-                                            示例: /home/user/.ssh/config 或 C:\Users\user\.ssh\config
-                                        </div>
-                                    </div>
-                                    <button class="btn btn-primary btn-block" id="parseCustomPathBtn">
-                                        <span class="btn-icon">📂</span>
-                                        <span>解析文件</span>
-                                    </button>
-                                </div>
+                        <div class="scan-steps">
+                            <div class="scan-step" id="step1">
+                                <div class="scan-step-icon">⏳</div>
+                                <div>检查系统注册表...</div>
+                            </div>
+                            <div class="scan-step" id="step2">
+                                <div class="scan-step-icon">⏳</div>
+                                <div>扫描默认配置路径...</div>
+                            </div>
+                            <div class="scan-step" id="step3">
+                                <div class="scan-step-icon">⏳</div>
+                                <div>从安装目录推断配置位置...</div>
+                            </div>
+                            <div class="scan-step" id="step4">
+                                <div class="scan-step-icon">⏳</div>
+                                <div>验证配置文件有效性...</div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Scan Result -->
+                    <div class="scan-result" id="scanResult">
+                        <div class="scan-result-header">
+                            <div class="scan-result-icon">✅</div>
+                            <div>
+                                <div class="scan-result-title">扫描成功!</div>
+                                <div class="scan-result-subtitle" id="scanResultSubtitle">检测到配置文件</div>
+                            </div>
+                        </div>
+                        <div class="scan-result-info" id="scanResultInfo">
+                            <!-- 动态填充扫描结果 -->
+                        </div>
+                        <div class="scan-result-tip">
+                            <div class="tip-title">💡 智能建议</div>
+                            <div class="tip-content" id="scanTipContent">
+                                系统将自动去重和合并配置,预计导入时间 3-5 分钟
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Tab -->
+                <div class="tab-content" id="upload">
+                    <div class="info-box">
+                        <div class="info-box-title">📤 文件上传说明</div>
+                        <div class="info-box-text">
+                            支持拖拽或点击上传: Sessions 文件夹(.zip) 或单个配置文件(.ini, .xsh, .config, .txt),最大 50MB
+                        </div>
+                    </div>
+
+                    <!-- Hidden File Input -->
+                    <input type="file" id="sshConfigFileInput" accept=".config,.txt,.ini,.xsh,.zip,text/plain" style="display: none;">
+
+                    <!-- Upload Area -->
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📤</div>
+                        <div class="upload-text">点击或拖拽文件到此处上传</div>
+                        <div class="upload-hint">支持 .config, .ini, .xsh, .zip 文件</div>
+                    </div>
+
+                    <!-- Upload Result -->
+                    <div class="upload-result" id="uploadResult">
+                        <div class="upload-success-icon">✅</div>
+                        <div class="upload-file-name" id="uploadFileName"></div>
+                        <div class="upload-file-size" id="uploadFileSize"></div>
+                    </div>
+                </div>
+
+                <!-- Manual Path Tab -->
+                <div class="tab-content" id="manual">
+                    <div class="info-box">
+                        <div class="info-box-title">📁 自定义路径说明</div>
+                        <div class="info-box-text">
+                            请指定 SSH 配置文件的完整路径,系统将尝试解析并导入配置
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="manualConfigPath" class="form-label">配置文件路径</label>
+                        <div class="input-group">
+                            <input
+                                type="text"
+                                id="manualConfigPath"
+                                class="form-input"
+                                placeholder="例如: ~/.ssh/config 或 C:\Users\user\.ssh\config"
+                                autocomplete="off">
+                            <button class="btn btn-default" id="browsePathBtn">📁 浏览</button>
+                        </div>
+                        <div class="form-help">
+                            支持 Linux/Mac: ~/.ssh/config | Windows: %USERPROFILE%\.ssh\config
+                        </div>
+                    </div>
+
+                    <div class="path-examples">
+                        <div class="path-example-title">常见路径参考:</div>
+                        <div class="path-example-list">
+                            <div class="path-example-item" data-path="~/.ssh/config">
+                                <span class="path-example-icon">🐧</span>
+                                <span class="path-example-text">~/.ssh/config</span>
+                            </div>
+                            <div class="path-example-item" data-path="C:\Users\%USERNAME%\.ssh\config">
+                                <span class="path-example-icon">🪟</span>
+                                <span class="path-example-text">C:\Users\%USERNAME%\.ssh\config</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-block" id="parseManualPathBtn">
+                        <span class="btn-icon">📂</span>
+                        <span>解析配置文件</span>
+                    </button>
 
                     <!-- Parse Result -->
-                    <div class="parse-result-panel" id="parseResultPanel" style="display: none;">
+                    <div class="parse-result-panel" id="parseResultPanel">
                         <div class="result-header">
                             <div class="result-icon success" id="parseResultIcon">✅</div>
                             <div class="result-info">

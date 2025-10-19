@@ -1,0 +1,655 @@
+/* ========================================
+   SSH Config Import Wizard - New Design
+   对齐 server-group-import-modal.html 设计稿
+   ======================================== */
+
+/* 客户端展示横幅 */
+.clients-banner {
+    background: linear-gradient(135deg, #f5f7ff 0%, #faf5ff 100%);
+    border: 1px solid #e8e8ff;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.banner-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.banner-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #667eea;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.banner-count {
+    font-size: 12px;
+    color: #999;
+}
+
+.clients-showcase {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.client-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: white;
+    border: 1px solid #e8e8ff;
+    border-radius: 20px;
+    font-size: 12px;
+    transition: all 0.2s;
+    cursor: default;
+}
+
+.client-badge:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+    transform: translateY(-1px);
+}
+
+.client-badge.supported {
+    border-color: #10b981;
+    background: #f0fdf4;
+}
+
+.client-badge.coming-soon {
+    opacity: 0.6;
+    border-style: dashed;
+}
+
+.client-icon-small {
+    font-size: 16px;
+}
+
+.client-name-small {
+    font-weight: 500;
+    color: #333;
+}
+
+.client-status {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: #10b981;
+    color: white;
+    font-weight: 600;
+}
+
+.client-status.coming {
+    background: #f59e0b;
+}
+
+/* Tab切换布局 - 使用与server-import-modal相同的类名 */
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: #f8f9fa;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.tab {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: #666;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.tab:hover {
+    background: white;
+    color: #667eea;
+}
+
+.tab.active {
+    background: white;
+    color: #667eea;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* Tab内容区域 */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: tabFadeIn 0.3s ease;
+}
+
+@keyframes tabFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 信息提示框 */
+.info-box {
+    background: #f0f5ff;
+    border-left: 3px solid #667eea;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 20px;
+}
+
+.info-box-title {
+    color: #667eea;
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.info-box-text {
+    color: #666;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* 扫描按钮区域 */
+.scan-button-wrapper {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.btn-large {
+    padding: 12px 32px;
+    font-size: 15px;
+}
+
+/* 扫描状态 */
+.scan-status {
+    display: none;
+    margin-top: 20px;
+}
+
+.scan-status.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* 进度条 */
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #f0f0f0;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+/* 扫描步骤 */
+.scan-steps {
+    margin-bottom: 16px;
+}
+
+.scan-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    color: #999;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.scan-step.active {
+    color: #667eea;
+    font-weight: 500;
+}
+
+.scan-step.completed {
+    color: #10b981;
+}
+
+.scan-step-icon {
+    width: 20px;
+    text-align: center;
+    font-size: 16px;
+}
+
+/* Spinner动画 */
+.spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #667eea;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 扫描结果 */
+.scan-result {
+    display: none;
+    padding: 16px;
+    border: 2px solid #10b981;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+}
+
+.scan-result.active {
+    display: block;
+    animation: resultFadeIn 0.3s ease;
+}
+
+@keyframes resultFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.scan-result-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.scan-result-icon {
+    font-size: 28px;
+    color: #10b981;
+}
+
+.scan-result-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.scan-result-subtitle {
+    font-size: 13px;
+    color: #10b981;
+}
+
+.scan-result-info {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.info-item {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 3px solid #667eea;
+}
+
+.info-label {
+    color: #667eea;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.info-value {
+    color: #333;
+    font-size: 13px;
+}
+
+.scan-result-tip {
+    background: white;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 3px solid #667eea;
+}
+
+.tip-title {
+    color: #667eea;
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+
+.tip-content {
+    color: #666;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* 上传区域 */
+.upload-area {
+    border: 2px dashed #d0d5dd;
+    border-radius: 10px;
+    padding: 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fafbfc;
+    margin-bottom: 16px;
+}
+
+.upload-area:hover {
+    border-color: #667eea;
+    background: #f5f7ff;
+}
+
+.upload-icon {
+    font-size: 40px;
+    color: #cbd5e0;
+    margin-bottom: 12px;
+}
+
+.upload-text {
+    color: #666;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.upload-hint {
+    color: #999;
+    font-size: 11px;
+}
+
+/* 上传结果 */
+.upload-result {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    border: 2px solid #10b981;
+    border-radius: 10px;
+}
+
+.upload-result.active {
+    display: block;
+    animation: resultFadeIn 0.3s ease;
+}
+
+.upload-success-icon {
+    font-size: 32px;
+    color: #10b981;
+    margin-bottom: 12px;
+}
+
+.upload-file-name {
+    color: #333;
+    font-weight: 500;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.upload-file-size {
+    color: #999;
+    font-size: 11px;
+}
+
+/* 表单元素 */
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-label {
+    display: block;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.input-group {
+    display: flex;
+    gap: 8px;
+}
+
+.input-group .form-input {
+    flex: 1;
+}
+
+.form-help {
+    color: #999;
+    font-size: 11px;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+/* 路径示例 */
+.path-examples {
+    background: #fafbfc;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.path-example-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.path-example-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.path-example-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: white;
+    border: 1px solid #e8e8e8;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.path-example-item:hover {
+    border-color: #667eea;
+    background: #f5f7ff;
+}
+
+.path-example-icon {
+    font-size: 16px;
+}
+
+.path-example-text {
+    flex: 1;
+    font-size: 12px;
+    color: #666;
+    font-family: 'Consolas', monospace;
+}
+
+/* 解析结果面板 */
+.parse-result-panel {
+    display: none;
+    margin-top: 16px;
+    padding: 16px;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    border: 2px solid #10b981;
+    border-radius: 10px;
+}
+
+.parse-result-panel.active {
+    display: block;
+    animation: resultFadeIn 0.3s ease;
+}
+
+.result-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.result-icon {
+    font-size: 32px;
+}
+
+.result-icon.success {
+    color: #10b981;
+}
+
+.result-icon.error {
+    color: #ef4444;
+}
+
+.result-info h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 4px 0;
+}
+
+.text-muted {
+    color: #999;
+    font-size: 13px;
+}
+
+/* 警告和错误 */
+.result-warnings,
+.result-errors {
+    margin-top: 12px;
+    padding: 12px;
+    background: white;
+    border-radius: 6px;
+}
+
+.result-warnings {
+    border-left: 3px solid #f59e0b;
+}
+
+.result-errors {
+    border-left: 3px solid #ef4444;
+}
+
+.warning-header,
+.error-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.warning-icon {
+    color: #f59e0b;
+}
+
+.error-icon {
+    color: #ef4444;
+}
+
+.warning-list,
+.error-list {
+    margin: 0;
+    padding-left: 20px;
+    list-style: disc;
+}
+
+.warning-list li,
+.error-list li {
+    color: #666;
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 4px;
+}
+
+/* 按钮样式 */
+.btn-block {
+    width: 100%;
+}
+
+.btn-icon {
+    margin-right: 4px;
+}
+
+/* Footer按钮 */
+.ssh-wizard-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e8e8e8;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: #fafbfc;
+}
+
+/* Badge样式 */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #d1fae5;
+    color: #065f46;
+}

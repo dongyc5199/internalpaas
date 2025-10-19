@@ -7,7 +7,6 @@ import java.util.List;
  * Agent部署预检查结果
  */
 public class PreCheckResult {
-    private boolean passed;
     private boolean sshConnectable;
     private boolean hasSudoPermission;
     private boolean hasEnoughDiskSpace;
@@ -24,7 +23,6 @@ public class PreCheckResult {
      */
     public void addError(String error) {
         this.errors.add(error);
-        this.passed = false;
     }
 
     /**
@@ -38,8 +36,10 @@ public class PreCheckResult {
      * 检查是否通过
      */
     public boolean isPassed() {
-        return passed && sshConnectable && hasSudoPermission
-                && hasEnoughDiskSpace && portsAvailable;
+        // 检查是否通过：所有检查项都为true，且没有错误
+        return sshConnectable && hasSudoPermission
+                && hasEnoughDiskSpace && portsAvailable
+                && errors.isEmpty();
     }
 
     /**
@@ -53,10 +53,6 @@ public class PreCheckResult {
     }
 
     // Getters and Setters
-
-    public void setPassed(boolean passed) {
-        this.passed = passed;
-    }
 
     public boolean isSshConnectable() {
         return sshConnectable;
