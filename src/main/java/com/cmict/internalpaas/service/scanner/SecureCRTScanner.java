@@ -5,6 +5,7 @@ import com.cmict.internalpaas.service.parser.ConfigParser;
 import com.cmict.internalpaas.util.PathUtil;
 import com.cmict.internalpaas.util.WindowsRegistryUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -56,7 +57,7 @@ public class SecureCRTScanner implements ClientScanner {
     
     private final ConfigParser<File> iniParser;
     
-    public SecureCRTScanner(ConfigParser<File> iniParser) {
+    public SecureCRTScanner(@Qualifier("secureCRTIniParser") ConfigParser<File> iniParser) {
         this.iniParser = iniParser;
     }
     

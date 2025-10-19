@@ -7,6 +7,7 @@ import com.cmict.internalpaas.util.WindowsRegistryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -100,7 +101,7 @@ public class TabbyScanner implements ClientScanner {
      * @param yamlParser YAML 格式配置解析器
      */
     @Autowired
-    public TabbyScanner(ConfigParser<File> yamlParser) {
+    public TabbyScanner(@Qualifier("tabbyYamlParser") ConfigParser<File> yamlParser) {
         this.yamlParser = yamlParser;
     }
     
