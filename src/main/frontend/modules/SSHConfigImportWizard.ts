@@ -734,8 +734,8 @@ export class SSHConfigImportWizard {
                 if (icon) icon.textContent = "✓";
             }
 
-            // 延迟后显示结果
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // 延迟后显示结果（增加 500ms，原为 500ms）
+            await new Promise(resolve => setTimeout(resolve, 1000));
             scanningStatus.classList.remove("active");
             scanResult.classList.add("active");
 

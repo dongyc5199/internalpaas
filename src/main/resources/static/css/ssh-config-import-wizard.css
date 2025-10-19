@@ -399,6 +399,26 @@
 
 .form-label {
     font-size: 13px;
+
+/* Preview table container: allow horizontal scrolling when table is wider than container */
+.preview-table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* smooth scrolling on mobile */
+}
+
+/* Table layout: allow table to be wider than container and avoid cell wrap */
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto; /* allow natural column width based on content */
+    min-width: 900px; /* fallback minimum width so scrollbar appears on narrow windows */
+}
+
+.preview-table th,
+.preview-table td {
+    white-space: nowrap; /* prevent cell content from wrapping, triggers horizontal scroll */
+}
     font-weight: 500;
     color: #374151;
 }
@@ -816,16 +836,103 @@
 .preview-table-container {
     border: 1px solid #e5e7eb;
     border-radius: 8px;
-    overflow: hidden;
+    /* allow horizontal scrolling when table is wider than container */
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
     margin-bottom: 20px;
 }
 
-/* Preview Table */
+/* Preview Table - conservative, stable layout */
 .preview-table {
-    width: 100%;
+    width: max-content; /* allow overflow when needed */
+    min-width: 100%;
     border-collapse: collapse;
     font-size: 14px;
 }
+
+/* Table header & body basic rules */
+.preview-table thead {
+    background: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.preview-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+}
+
+.preview-table td {
+    padding: 12px 16px;
+    border-top: 1px solid #e5e7eb;
+    color: #6b7280;
+    vertical-align: middle;
+}
+
+.preview-table tbody tr:hover {
+    background: #f9fafb;
+}
+
+/* Freeze first column (checkbox column) safely */
+.preview-table thead th.col-checkbox,
+.preview-table tbody td.col-checkbox {
+    position: -webkit-sticky; /* Safari */
+    position: sticky;
+    left: 0;
+}
+
+.preview-table thead th.col-checkbox {
+    z-index: 40;
+    background: #f9fafb; /* match header */
+    box-shadow: 2px 0 0 rgba(0,0,0,0.03) inset;
+}
+
+.preview-table tbody td.col-checkbox {
+    z-index: 30;
+    background: white;
+}
+
+/* Keep checkbox cells aligned and centered */
+.preview-table th.col-checkbox,
+.preview-table td.col-checkbox {
+    text-align: center;
+    padding: 12px 8px;
+}
+
+/* Unified min-height for input controls; allow multiline content to expand */
+.preview-table input[type="text"],
+.preview-table input[type="password"],
+.preview-table .editable-field,
+.preview-table .server-password-input,
+.preview-table select,
+.preview-table textarea {
+    min-height: 36px;
+    height: auto;
+    padding: 6px 10px;
+    box-sizing: border-box;
+}
+
+/* Center commonly non-input columns (port/type/status) to mimic mockup */
+.preview-table th.col-port,
+.preview-table td.col-port,
+.preview-table th.col-type,
+.preview-table td.col-type,
+.preview-table th.col-status,
+.preview-table td.col-status {
+    text-align: center;
+}
+
+/* Hide actions column visually; template header removed and colspan adjusted */
+.preview-table th.col-actions,
+.preview-table td.col-actions,
+.preview-table .row-actions {
+    display: none !important;
+}
+
+/* end of preview-table styles */
 
 .preview-table thead {
     background: #f9fafb;

@@ -4567,12 +4567,12 @@ function initDashboardRealTimeUpdates() {
                 wizardState.hasScanned = true;
                 console.log('[STATE] 首次扫描完成，hasScanned = true');
                 
-                // 自动切换到预览表格步骤（延迟1秒让用户看到扫描结果）
+                // 自动切换到预览表格步骤（延迟2秒让用户看到扫描结果，基于需求延长 0.5s）
                 console.log('[DEBUG] 设置 setTimeout 准备切换到预览步骤');
                 setTimeout(() => {
                     console.log('[DEBUG] setTimeout 触发，调用 switchToPreviewStep');
                     switchToPreviewStep();
-                }, 1000);
+                }, 2000);
             }
             
             /**
