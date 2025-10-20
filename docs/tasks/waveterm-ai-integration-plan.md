@@ -69,11 +69,12 @@
       ollama:
         enabled: false
         base-url: http://localhost:11434
-    chat:
-      default-provider: moonshot
-      max-context-messages: 20
-      streaming-enabled: true
+      chat:
+        default-provider: moonshot
+        max-context-messages: 20
+        streaming-enabled: true
   ```
+- **生产部署**：通过环境变量注入敏感信息（如 `MOONSHOT_API_KEY`、`OLLAMA_HOST`、`OLLAMA_ENABLED`）。项目根目录提供 `.env.sample`，按需复制为 `.env`（不纳入版本控制）；Spring Boot 通过 `spring.config.import=optional:file:.env[.properties]` 自动加载。若密钥缺失会回退到 Echo 客户端，ChatService 也会输出带排查指引的错误消息，便于运维告警。
 - **日志/审计**：与 `UserActivityService` 对接，记录 AI 请求、模型、耗时等关键指标。
 
 ## 7. 风险与缓解
