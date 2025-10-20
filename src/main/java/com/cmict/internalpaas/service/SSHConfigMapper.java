@@ -208,11 +208,9 @@ public class SSHConfigMapper {
             missingFields.add("sshUsername");
         }
 
-        // 检查SSH认证凭证（密码或私钥，至少一个）
-        if (!dto.hasAuthCredentials()) {
-            missingFields.add("sshPassword/sshKeyPath");
-        }
-
+        // 注意：不再强制要求认证凭证（密码或私钥）
+        // 允许用户稍后补充，提升导入灵活性
+        
         return missingFields;
     }
 

@@ -2634,29 +2634,175 @@ function initDashboardRealTimeUpdates() {
                 }
             }
 
-                        // Server Group Management Functions delegated to bundled module
+                        // Server Group Management Functions
             function initServerGroupManagement() {
-                if (window.ServerGroupModule && typeof window.ServerGroupModule.init === 'function') {
-                    window.ServerGroupModule.init();
+                console.log('初始化服务器群组管理...');
+
+                // 加载服务器列表数据
+                loadServerGroupList();
+
+                // 初始化事件监听
+                initServerGroupEvents();
+
+                console.log('服务器群组管理初始化完成');
+            }
+
+            function initServerGroupEvents() {
+                // 刷新数据按钮
+                const refreshBtn = document.getElementById('refreshServerGroupBtn');
+                if (refreshBtn) {
+                    refreshBtn.addEventListener('click', () => {
+                        loadServerGroupList();
+                    });
+                }
+
+                // 添加服务器按钮
+                const addServerBtn = document.getElementById('addServerBtn');
+                if (addServerBtn) {
+                    addServerBtn.addEventListener('click', () => {
+                        emit('spa:navigate', { route: 'servers' });
+                    });
+                }
+            }
+
+            function loadServerGroupList() {
+                console.log('加载服务器群组列表...');
+
+                fetch('/admin/server-groups/api/list')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch server list');
+                        }
+                        return response.json();
+                    })
+                    .then(servers => {
+                        console.log('服务器列表加载成功:', servers);
+                        renderServerTable(servers);
+                    })
+                    .catch(error => {
+                        console.error('加载服务器列表失败:', error);
+                        showServerTableError('加载服务器列表失败');
+                    });
+            }
+
+            function renderServerTable(servers) {
+                const tbody = document.getElementById('serverTableBody');
+                if (!tbody) {
+                    console.error('找不到 serverTableBody 元素');
+                    return;
+                }
+
+                if (!servers || servers.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="11" class="empty-state">
+                                <span data-i18n-en="No servers found" data-i18n-zh="未找到服务器">未找到服务器</span>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = servers.map(server => buildServerTableRow(server)).join('');
+            }
+
+            function buildServerTableRow(server) {
+                const id = server.id || '';
+                const name = escapeHtml(server.name || 'Unknown');
+                const status = normalizeServerStatus(server.status);
+                const healthScore = server.healthScore || 0;
+                const cpu = formatUsage(server.cpuUsage);
+                const memory = formatUsage(server.memoryUsage);
+                const disk = formatUsage(server.diskUsage);
+                const apps = server.apps || 0;
+                const users = server.users || 0;
+                const uptime = escapeHtml(server.uptime || '--');
+
+                const statusClass = getStatusClass(status);
+                const healthClass = getHealthClass(healthScore);
+
+                return `
+                    <tr data-server-id="${id}">
+                        <td>
+                            <input type="checkbox" class="server-checkbox" value="${id}" aria-label="Select server ${name}"/>
+                        </td>
+                        <td>
+                            <div class="server-name-cell">
+                                <strong>${name}</strong>
+                                <small>${escapeHtml(server.address || '')}${server.port ? ':' + server.port : ''}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge badge-${statusClass}">
+                                ${getStatusText(status)}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="health-score health-score-${healthClass}">
+                                ${healthScore}
+                            </span>
+                        </td>
+                        <td>${cpu}</td>
+                        <td>${memory}</td>
+                        <td>${disk}</td>
+                        <td>${apps}</td>
+                        <td>${users}</td>
+                        <td>${uptime}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-sm btn-secondary" onclick="viewServerDetail(${id})" title="查看详情">
+                                    <span data-i18n-en="Details" data-i18n-zh="详情">详情</span>
+                                </button>
+                                <button class="btn btn-sm btn-primary" onclick="connectToServer(${id})" title="SSH连接">
+                                    <span data-i18n-en="SSH" data-i18n-zh="SSH">SSH</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            function getStatusClass(status) {
+                switch(status) {
+                    case 'online': return 'success';
+                    case 'warning': return 'warning';
+                    case 'offline': return 'danger';
+                    default: return 'secondary';
+                }
+            }
+
+            function getHealthClass(score) {
+                if (score >= 90) return 'excellent';
+                if (score >= 75) return 'good';
+                if (score >= 60) return 'fair';
+                return 'poor';
+            }
+
+            function showServerTableError(message) {
+                const tbody = document.getElementById('serverTableBody');
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="11" class="error-state">
+                                <span class="text-danger">${escapeHtml(message)}</span>
+                            </td>
+                        </tr>
+                    `;
                 }
             }
 
             function cleanupServerGroupManagement() {
-                if (window.ServerGroupModule && typeof window.ServerGroupModule.cleanup === 'function') {
-                    window.ServerGroupModule.cleanup();
-                }
+                console.log('清理服务器群组管理...');
             }
 
             window.viewServerDetails = function(viewServerId) {
-                if (window.ServerGroupModule && typeof window.ServerGroupModule.viewServerDetails === 'function') {
-                    window.ServerGroupModule.viewServerDetails(viewServerId);
-                }
+                // 向后兼容的包装函数（复数形式）
+                viewServerDetail(viewServerId);
             };
 
             window.refreshServer = function(refreshServerId) {
-                if (window.ServerGroupModule && typeof window.ServerGroupModule.refreshServer === 'function') {
-                    window.ServerGroupModule.refreshServer(refreshServerId);
-                }
+                console.log('刷新服务器:', refreshServerId);
+                loadServerGroupList();
             };
 
 
@@ -3336,10 +3482,95 @@ function initDashboardRealTimeUpdates() {
 
             // 全局函数，供HTML中使用
             window.viewServerDetail = function(serverId) {
-                // 导航到服务器详情页面
                 console.log('查看服务器详情:', serverId);
-                emit('spa:navigate', { route: 'servers' });
+
+                // 显示详情弹窗 overlay
+                const overlay = document.getElementById('serverDetailOverlay');
+                if (overlay) {
+                    overlay.setAttribute('aria-hidden', 'false');
+                    overlay.classList.add('is-open');
+
+                    // 加载服务器详情内容
+                    loadServerDetailContent(serverId);
+
+                    // 设置关闭事件监听
+                    const closeButtons = overlay.querySelectorAll('[data-action="detail-close"]');
+                    closeButtons.forEach(btn => {
+                        btn.onclick = function(e) {
+                            e.preventDefault();
+                            closeServerDetailOverlay();
+                        };
+                    });
+
+                    // ESC键关闭
+                    document.addEventListener('keydown', handleEscapeKey);
+                } else {
+                    console.error('找不到 serverDetailOverlay 元素');
+                }
             };
+
+            function loadServerDetailContent(serverId) {
+                const detailBody = document.querySelector('[data-role="server-detail-body"]');
+                const detailTitle = document.querySelector('[data-role="detail-panel-title"]');
+
+                if (!detailBody) {
+                    console.error('找不到 server-detail-body 元素');
+                    return;
+                }
+
+                // 显示加载中
+                detailBody.innerHTML = `
+                    <div class="loading-state" style="padding: 40px; text-align: center;">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p style="margin-top: 16px;">正在加载服务器详情...</p>
+                    </div>
+                `;
+
+                // 调用后端API获取详情 HTML 片段
+                fetch(`/admin/server-groups/${serverId}/detail-fragment`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch server detail');
+                        }
+                        return response.text();
+                    })
+                    .then(html => {
+                        detailBody.innerHTML = html;
+
+                        // 更新标题
+                        if (detailTitle) {
+                            detailTitle.textContent = '服务器详情';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('加载服务器详情失败:', error);
+                        detailBody.innerHTML = `
+                            <div class="error-state" style="padding: 40px; text-align: center;">
+                                <span class="text-danger">加载服务器详情失败</span>
+                                <p style="margin-top: 16px;">${escapeHtml(error.message)}</p>
+                            </div>
+                        `;
+                    });
+            }
+
+            function closeServerDetailOverlay() {
+                const overlay = document.getElementById('serverDetailOverlay');
+                if (overlay) {
+                    overlay.setAttribute('aria-hidden', 'true');
+                    overlay.classList.remove('is-open');
+
+                    // 移除 ESC 键监听
+                    document.removeEventListener('keydown', handleEscapeKey);
+                }
+            }
+
+            function handleEscapeKey(e) {
+                if (e.key === 'Escape') {
+                    closeServerDetailOverlay();
+                }
+            }
 
             window.connectToServer = function(serverId) {
                 // 打开SSH连接
@@ -4852,10 +5083,11 @@ function initDashboardRealTimeUpdates() {
                 // 状态列
                 const tdStatus = document.createElement('td');
                 tdStatus.className = 'col-status';
-                const statusBadge = document.createElement('span');
-                statusBadge.className = 'status-badge status-ready';
-                statusBadge.innerHTML = '✓ 就绪';
-                tdStatus.appendChild(statusBadge);
+                const statusDot = document.createElement('span');
+                statusDot.className = 'status-dot status-dot-green';
+                statusDot.innerHTML = '●';
+                statusDot.title = '可以导入';
+                tdStatus.appendChild(statusDot);
                 tr.appendChild(tdStatus);
                 
                 // 操作列
@@ -4925,9 +5157,9 @@ function initDashboardRealTimeUpdates() {
                 if (selectValidBtn) {
                     selectValidBtn.addEventListener('click', function() {
                         document.querySelectorAll('.server-row').forEach(row => {
-                            const statusBadge = row.querySelector('.status-badge');
+                            const statusDot = row.querySelector('.status-dot');
                             const checkbox = row.querySelector('.server-checkbox');
-                            if (statusBadge && statusBadge.classList.contains('status-ready') && checkbox) {
+                            if (statusDot && statusDot.classList.contains('status-dot-green') && checkbox) {
                                 checkbox.checked = true;
                             }
                         });
@@ -5209,22 +5441,8 @@ function initDashboardRealTimeUpdates() {
                         return;
                     }
 
-                    // ✅ 新增：验证每台服务器是否有认证凭证
-                    const serversWithoutAuth = selectedServers.filter(server => {
-                        const hasPassword = server.sshPassword && server.sshPassword.trim() !== '';
-                        const hasKeyPath = server.sshKeyPath && server.sshKeyPath.trim() !== '';
-                        return !hasPassword && !hasKeyPath;
-                    });
-
-                    if (serversWithoutAuth.length > 0) {
-                        const serverNames = serversWithoutAuth.map(s => s.name).join('、');
-                        showToast(
-                            `以下服务器缺少SSH认证凭证（密码或私钥）：\n${serverNames}\n\n请在表格中填写SSH密码或确保配置了私钥。`,
-                            'error'
-                        );
-                        return;
-                    }
-
+                    // 注意：允许密码为空的情况，用户可能稍后补充或使用其他认证方式
+                    
                     const confirmed = confirm(
                         `确定要导入 ${selectedServers.length} 台服务器吗？\n\n` +
                         `系统将自动检查重复并导入到数据库。`

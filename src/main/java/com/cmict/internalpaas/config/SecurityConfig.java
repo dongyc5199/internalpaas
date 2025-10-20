@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .requestMatchers("/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN") // 管理员和超级管理员才能访问管理页面
                 .requestMatchers("/developer/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN") // 开发者、管理员和超级管理员都能访问研发工作台
                 .requestMatchers("/terminal/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN") // 所有认证用户都能访问SSH终端
+                .requestMatchers("/ai/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN") // 认证用户可访问AI能力
                 .anyRequest().authenticated() // 其他所有请求都需要认证
             )
             .formLogin(form -> form
@@ -54,7 +55,8 @@ public class SecurityConfig {
                     "/monitoring/history/api/**", "/monitoring/thresholds/api/**",
                     "/api/server-user-groups/**", "/api/permission-test/**",
                     "/api/ssh-config-import/**", // SSH配置导入API
-                    "/terminal/api/**", "/user-operations/api/**") // 禁用H2控制台、WebSocket、测试接口、监控接口、用户操作接口和终端API的CSRF保护
+                    "/terminal/api/**", "/user-operations/api/**",
+                    "/ai/**") // 禁用H2控制台、WebSocket、测试接口、监控接口、用户操作接口、终端API和AI API的CSRF保护
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // 使用Cookie存储CSRF token
             )
             .headers(headers -> headers

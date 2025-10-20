@@ -161,4 +161,26 @@ public class ServerGroupController {
                     .body(new ServerProcessKillResponse(false, "终止进程时发生异常", pid));
         }
     }
+
+    /**
+     * Get server detail HTML fragment
+     * Returns the server-detail-content fragment for use in the overlay modal
+     */
+    @GetMapping("/{serverId}/detail-fragment")
+    public String getServerDetailFragment(
+            @PathVariable Long serverId,
+            @RequestParam(value = "processSort", defaultValue = "cpu") String processSort,
+            org.springframework.ui.Model model) {
+        logger.info("Loading server detail fragment for server {}", serverId);
+        try {
+            ServerGroupService.ProcessSortOption sortOption = ServerGroupService.ProcessSortOption.from(processSort);
+            ServerDetailDto detail = serverGroupService.getServerDetail(serverId, sortOption);
+            model.addAttribute("serverDetail", detail);
+            return "fragments/server-detail-content :: server-detail-content";
+        } catch (Exception e) {
+            logger.error("Failed to load server detail fragment for server {}", serverId, e);
+            model.addAttribute("errorMessage", "加载服务器详情失败: " + e.getMessage());
+            return "fragments/error :: error-fragment";
+        }
+    }
 }

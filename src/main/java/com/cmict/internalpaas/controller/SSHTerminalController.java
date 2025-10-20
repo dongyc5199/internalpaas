@@ -94,6 +94,21 @@ public class SSHTerminalController {
     }
     
     /**
+     * 终端 + AI 助手 Demo 页面
+     */
+    @GetMapping("/ai-demo")
+    public String aiAssistDemo(Model model) {
+        try {
+            List<Server> servers = serverService.getActiveServers();
+            model.addAttribute("servers", servers);
+            return "terminal/ai-assist-demo";
+        } catch (Exception e) {
+            model.addAttribute("error", "加载AI演示页面失败: " + e.getMessage());
+            return "terminal/ai-assist-demo";
+        }
+    }
+    
+    /**
      * 获取服务器列表API
      */
     @GetMapping("/api/servers")

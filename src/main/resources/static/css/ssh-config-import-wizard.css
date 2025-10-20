@@ -1111,6 +1111,26 @@
     color: #991b1b;
 }
 
+/* Status Dots */
+.status-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1;
+    width: 14px;
+    height: 14px;
+    animation: none !important;
+}
+
+.status-dot-green {
+    color: #10b981;
+}
+
+.status-dot-yellow {
+    color: #f59e0b;
+}
+
 /* Editable Fields */
 .editable-field {
     padding: 6px 10px;
