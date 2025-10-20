@@ -60,3 +60,4 @@ screenshots/
 /.windsurfrules
 nul
 infra/perf/otlp_load_gen.sh
+.env
