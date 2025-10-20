@@ -9,6 +9,7 @@
     <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/fontawesome-local.css">
     <link href="/vendor/xterm/xterm.css" rel="stylesheet">
+    <link href="/css/ai-assistant.css" rel="stylesheet">
     <style>
         /* 确保页面高度正确 */
         html,
@@ -499,6 +500,7 @@
     <script src="/vendor/xterm/xterm-addon-fit.js"></script>
     <script src="/vendor/xterm/xterm-addon-web-links.js"></script>
     <script src="/vendor/xterm/xterm-addon-search.js"></script>
+    <script src="/js/ai-assistant.js"></script>
     <script>
         class SSHTerminalManager {
             constructor() {
@@ -1308,6 +1310,19 @@
                     session.ws.close();
                 }
             });
+        });
+
+        // 初始化AI助手
+        document.addEventListener('DOMContentLoaded', () => {
+            // 延迟初始化，确保terminalManager已经创建
+            setTimeout(() => {
+                if (typeof AiAssistant !== 'undefined' && terminalManager) {
+                    aiAssistant = new AiAssistant(terminalManager);
+                    console.log('AI助手已初始化');
+                } else {
+                    console.warn('AI助手初始化失败：依赖未加载');
+                }
+            }, 500);
         });
     </script>
 </body>
