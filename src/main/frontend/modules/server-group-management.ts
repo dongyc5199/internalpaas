@@ -4,36 +4,28 @@ import {
     formatUptime,
     formatPercentage,
     formatTimestamp,
-    formatNumber,
-    getUsageClass,
-    setLocalizedText as utilsSetLocalizedText,
-    updateMetricSummaryText as utilsUpdateMetricSummaryText,
     safeShowToast,
     showSuccess,
     showError,
     getChartColor,
-    generateChartColors,
     destroyChart,
-    destroyCharts,
-    updateChartData,
     createTimeSeriesChartConfig,
     createBarChartConfig
 } from "@/utils";
 import { eventBus } from "@/utils/event-bus";
 import { ServerListManager } from "./ServerListManager";
 import { ServerDetailOverlay } from "./ServerDetailOverlay";
+import type { Server } from "../types/server-management";
 
-// 声明全局变量和函数，带默认值
-declare let currentLanguage: string;
 declare function t(key: string, category?: string): string;
-declare function applyLanguage(language: string, persist?: boolean, emitEvent?: boolean): void;
 declare function showSuccessMessage(message: string): void;
 declare function showErrorMessage(message: string): void;
 declare function showWarningMessage(message: string): void;
 
-// 确保currentLanguage有默认值
-if (typeof currentLanguage === "undefined") {
-    (window as any).currentLanguage = "zh";
+const DEFAULT_LANGUAGE = "zh";
+
+function getCurrentLanguage(): string {
+    return window.currentLanguage || DEFAULT_LANGUAGE;
 }
 
 // 安全的国际化函数包装器
@@ -54,7 +46,7 @@ function safeT(key: string, category?: string): string {
         applicationCount: { zh: "应用数量", en: "Application Count" }
     };
 
-    const lang = typeof currentLanguage !== "undefined" ? currentLanguage : "zh";
+    const lang = getCurrentLanguage();
     return defaultTexts[key]?.[lang] || key;
 }
 
@@ -90,9 +82,12 @@ function safeShowMessage(message: string, type: "success" | "error" | "warning" 
 
 declare global {
     interface Window {
+        currentLanguage?: string;
         showToast?: (message: string, type?: string) => void;
         openServerModal?: () => void;
         openServerImportModal?: () => void;
+        serverListManager?: ServerListManager;
+        serverDetailOverlay?: ServerDetailOverlay;
         ServerGroupModule?: {
             init: () => void;
             cleanup: () => void;
@@ -104,11 +99,45 @@ declare global {
     }
 }
 
+type HealthTrendSeries = {
+    serverName: string;
+    healthScores: number[];
+};
+
+type HealthTrendResponse = {
+    timePoints: string[];
+    servers: HealthTrendSeries[];
+};
+
+type LoadDistributionMetric = {
+    label: string;
+    servers: Array<{ value: number }>;
+};
+
+type LoadDistributionResponse = {
+    metrics: LoadDistributionMetric[];
+};
+
+type AppDistributionDataset = {
+    label: string;
+    data: number[];
+    color?: string;
+};
+
+type AppDistributionResponse = {
+    servers: string[];
+    appTypes: AppDistributionDataset[];
+};
+
+if (!window.currentLanguage) {
+    window.currentLanguage = DEFAULT_LANGUAGE;
+}
+
 (() => {
     let unsubscribeLanguageChange: (() => void) | null = null;
+    let unsubscribeServersRefresh: (() => void) | null = null;
 
     // Server Group Management Functions
-    let serverGroupManagementInitialized = false;
     let serverGroupAutoRefreshTimer: ReturnType<typeof setInterval> | null = null;
 
     // ServerListManager实例
@@ -117,29 +146,24 @@ declare global {
     // ServerDetailOverlay实例
     let serverDetailOverlayManager: ServerDetailOverlay | null = null;
 
-    // safeShowToast 已从 @/utils 导入，不再需要本地实现
-
-    // setLocalizedText保留，因为某些地方可能还在使用
-    function setLocalizedText(element: HTMLElement | null, zh: string, en: string) {
-        if (!element) {
-            return;
-        }
-        const zhValue = zh || "";
-        const enValue = en || "";
-        element.setAttribute("data-i18n-zh", zhValue);
-        element.setAttribute("data-i18n-en", enValue);
-        const lang = getCurrentLanguage();
-        element.textContent =
-            lang === "en" ? enValue || zhValue || "--" : zhValue || enValue || "--";
-    }
-
     function initServerGroupManagement() {
         if (!unsubscribeLanguageChange) {
             unsubscribeLanguageChange = eventBus.on("language:changed", () =>
                 handleLanguageChange()
             );
         }
-        
+
+        if (!unsubscribeServersRefresh) {
+            unsubscribeServersRefresh = eventBus.on("servers:refresh", async () => {
+                if (typeof window.refreshServerList === "function") {
+                    await window.refreshServerList();
+                } else if (serverListManager) {
+                    await serverListManager.load({ applyFilter: true });
+                    updateServerGroupLastUpdateTime();
+                }
+            });
+        }
+
         const container = document.querySelector(".server-group-management");
         if (!container) {
             console.log("Server group management container not found, skipping...");
@@ -147,7 +171,7 @@ declare global {
         }
 
         // 检查是否已经初始化（通过检查container上的标记）
-        if (container.hasAttribute('data-initialized')) {
+        if (container.hasAttribute("data-initialized")) {
             console.log("Server group management already initialized, skipping...");
             return;
         }
@@ -159,41 +183,45 @@ declare global {
         startServerGroupAutoRefresh();
 
         // 在DOM元素上标记已初始化
-        container.setAttribute('data-initialized', 'true');
-        serverGroupManagementInitialized = true;
+        container.setAttribute("data-initialized", "true");
         console.log("Server group management initialized");
     }
 
     function cleanupServerGroupManagement() {
         console.log("Cleaning up server group management...");
-        
+
         if (unsubscribeLanguageChange) {
             unsubscribeLanguageChange();
             unsubscribeLanguageChange = null;
+        }
+
+        if (unsubscribeServersRefresh) {
+            unsubscribeServersRefresh();
+            unsubscribeServersRefresh = null;
         }
 
         // 清理ServerListManager
         if (serverListManager) {
             serverListManager.cleanup();
             serverListManager = null;
-            delete (window as any).serverListManager;
+            window.serverListManager = undefined;
         }
 
         // 清理ServerDetailOverlay
         if (serverDetailOverlayManager) {
             serverDetailOverlayManager.teardown();
             serverDetailOverlayManager = null;
-            delete (window as any).serverDetailOverlay;
+            window.serverDetailOverlay = undefined;
         }
 
         stopServerGroupAutoRefresh();
-        
+
         // 清除DOM上的初始化标记
         const container = document.querySelector(".server-group-management");
         if (container) {
             container.removeAttribute("data-initialized");
         }
-        
+
         console.log("Server group management cleaned up");
     }
 
@@ -220,7 +248,7 @@ declare global {
             });
 
             // 将实例暴露到window供HTML onclick调用
-            (window as any).serverListManager = serverListManager;
+            window.serverListManager = serverListManager;
         }
 
         // 初始化ServerListManager
@@ -246,7 +274,7 @@ declare global {
             });
 
             // 将实例暴露到window供HTML onclick调用
-            (window as any).serverDetailOverlay = serverDetailOverlayManager;
+            window.serverDetailOverlay = serverDetailOverlayManager;
         }
 
         // 初始化ServerDetailOverlay
@@ -392,7 +420,6 @@ declare global {
         // ServerDetailOverlay会自动处理语言切换
     }
 
-    const serverGroupListCache = [];
     let healthTrendChart: Chart | null = null;
     let loadDistributionChart: Chart | null = null;
     let appDistributionChart: Chart | null = null;
@@ -418,7 +445,7 @@ declare global {
             const response = await fetch(`/admin/server-groups/api/health-trend?hours=${hours}`);
             if (!response.ok) throw new Error("Failed to load health trend");
 
-            const data = await response.json();
+            const data = (await response.json()) as HealthTrendResponse;
 
             if (placeholder) placeholder.classList.add("hidden");
             container.classList.add("active");
@@ -430,7 +457,7 @@ declare global {
             if (!ctx) return;
 
             // 使用 utils/chart.ts 的 createTimeSeriesChartConfig
-            const datasets = (data.servers || []).map((server: any, index: number) => ({
+            const datasets = (data.servers ?? []).map((server, index) => ({
                 label: server.serverName,
                 data: server.healthScores,
                 borderColor: getChartColor(index),
@@ -438,7 +465,7 @@ declare global {
                 fill: true
             }));
 
-            const chartConfig: any = createTimeSeriesChartConfig(data.timePoints || [], datasets, {
+            const chartConfig = createTimeSeriesChartConfig(data.timePoints ?? [], datasets, {
                 plugins: {
                     legend: {
                         display: true,
@@ -471,8 +498,9 @@ declare global {
         } catch (error) {
             console.error("Failed to load health trend chart:", error);
             if (placeholder) {
+                const language = getCurrentLanguage();
                 placeholder.textContent =
-                    currentLanguage === "en" ? "Failed to load chart data" : "加载图表数据失败";
+                    language === "en" ? "Failed to load chart data" : "加载图表数据失败";
                 placeholder.classList.remove("hidden");
             }
         } finally {
@@ -502,7 +530,7 @@ declare global {
             const response = await fetch("/admin/server-groups/api/load-distribution");
             if (!response.ok) throw new Error("Failed to load distribution");
 
-            const data = await response.json();
+            const data = (await response.json()) as LoadDistributionResponse;
 
             if (placeholder) placeholder.classList.add("hidden");
             container.classList.add("active");
@@ -514,18 +542,19 @@ declare global {
             if (!ctx) return;
 
             // 使用 utils/chart.ts 的 createBarChartConfig
-            const datasets = (data.metrics || []).map((metric: any, index: number) => ({
-                label: safeT(metric.label, "chart"), // 使用国际化函数翻译标签
-                data: metric.servers.map((s: any) => s.value),
+            const datasets = (data.metrics ?? []).map((metric, index) => ({
+                label: safeT(metric.label, "chart"),
+                data: metric.servers.map((server) => server.value),
                 backgroundColor: getChartColor(index, 0.8),
                 borderColor: getChartColor(index)
             }));
 
-            const labels = ((data.metrics && data.metrics[0]?.servers) || []).map((_: any, i: number) =>
-                currentLanguage === "en" ? `Server ${i + 1}` : `服务器 ${i + 1}`
-            );
+            const labels = (data.metrics?.[0]?.servers ?? []).map((_, index) => {
+                const language = getCurrentLanguage();
+                return language === "en" ? `Server ${index + 1}` : `服务器 ${index + 1}`;
+            });
 
-            const chartConfig: any = createBarChartConfig(labels, datasets, {
+            const chartConfig = createBarChartConfig(labels, datasets, {
                 plugins: {
                     legend: {
                         display: true,
@@ -548,8 +577,9 @@ declare global {
         } catch (error) {
             console.error("Failed to load load distribution chart:", error);
             if (placeholder) {
+                const language = getCurrentLanguage();
                 placeholder.textContent =
-                    currentLanguage === "en" ? "Failed to load chart data" : "加载图表数据失败";
+                    language === "en" ? "Failed to load chart data" : "加载图表数据失败";
                 placeholder.classList.remove("hidden");
             }
         } finally {
@@ -579,7 +609,7 @@ declare global {
             const response = await fetch("/admin/server-groups/api/app-distribution");
             if (!response.ok) throw new Error("Failed to load app distribution");
 
-            const data = await response.json();
+            const data = (await response.json()) as AppDistributionResponse;
 
             if (placeholder) placeholder.classList.add("hidden");
             container.classList.add("active");
@@ -591,14 +621,14 @@ declare global {
             if (!ctx) return;
 
             // 使用 utils/chart.ts 的 createBarChartConfig
-            const datasets = (data.appTypes || []).map((appType: any) => ({
-                label: safeT(appType.label, "chart"), // 使用国际化函数翻译标签
+            const datasets = (data.appTypes ?? []).map((appType) => ({
+                label: safeT(appType.label, "chart"),
                 data: appType.data,
                 backgroundColor: appType.color || "#6366f1",
                 borderColor: "#ffffff"
             }));
 
-            const chartConfig: any = createBarChartConfig(data.servers || [], datasets, {
+            const chartConfig = createBarChartConfig(data.servers ?? [], datasets, {
                 plugins: {
                     legend: {
                         display: true,
@@ -623,8 +653,9 @@ declare global {
         } catch (error) {
             console.error("Failed to load app distribution chart:", error);
             if (placeholder) {
+                const language = getCurrentLanguage();
                 placeholder.textContent =
-                    currentLanguage === "en" ? "Failed to load chart data" : "加载图表数据失败";
+                    language === "en" ? "Failed to load chart data" : "加载图表数据失败";
                 placeholder.classList.remove("hidden");
             }
         } finally {
@@ -634,42 +665,6 @@ declare global {
 
     // loadServerGroupList 已被 ServerListManager.load() 替代
     // renderServerGroupList 已被 ServerListManager.render() 替代
-
-    // 注意：这个函数返回CSS类名，与utils.getUsageClass不同
-    function getUsageFillClass(value: number | undefined) {
-        if (!value) return "usage-fill--low";
-        if (value < 50) return "usage-fill--low";
-        if (value < 70) return "usage-fill--medium";
-        if (value < 85) return "usage-fill--high";
-        return "usage-fill--critical";
-    }
-
-    // getChartColor 已从 @/utils 导入，不再需要本地实现
-
-    // filterServerList 已被 ServerListManager.filter() 替代
-    // switchServerView 已被 ServerListManager.switchView() 替代
-    // attachServerCheckboxEvents 已内置在 ServerListManager 中
-    // toggleSelectAllServers 已被 ServerListManager.selectAll() 替代
-
-    function updateBatchActionBar() {
-        const checkboxes = document.querySelectorAll(".server-checkbox:checked");
-        const count = checkboxes.length;
-        const batchBar = document.getElementById("batchActionBar");
-        const countElement = document.getElementById("selectedCount");
-
-        if (batchBar) {
-            batchBar.style.display = count > 0 ? "flex" : "none";
-        }
-        if (countElement) {
-            countElement.textContent = String(count);
-        }
-
-        const selectAll = document.getElementById("selectAllServers") as HTMLInputElement | null;
-        if (selectAll) {
-            const allCheckboxes = document.querySelectorAll(".server-checkbox");
-            selectAll.checked = count > 0 && count === allCheckboxes.length;
-        }
-    }
 
     // batchRefreshServers 已被 ServerListManager.batchRefresh() 替代
     // clearServerSelection 已被 ServerListManager.deselectAll() 替代
@@ -702,8 +697,10 @@ declare global {
 
             console.log("Auto-refreshing server group data...");
 
-            const healthTrendRange = document.getElementById("healthTrendRange") as HTMLSelectElement | null;
-            const hours = healthTrendRange ? parseInt(healthTrendRange.value) : 24;
+            const healthTrendRange = document.getElementById(
+                "healthTrendRange"
+            ) as HTMLSelectElement | null;
+            const hours = healthTrendRange ? parseInt(healthTrendRange.value, 10) : 24;
 
             const tasks = [
                 {
@@ -750,15 +747,13 @@ declare global {
         const timeElement = document.getElementById("serverGroupUpdateTime");
         if (timeElement) {
             const now = new Date();
-            const timeString = now.toLocaleTimeString(
-                currentLanguage === "en" ? "en-US" : "zh-CN",
-                {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit"
-                }
-            );
-            const label = currentLanguage === "en" ? "Last updated" : "最后更新";
+            const language = getCurrentLanguage();
+            const timeString = now.toLocaleTimeString(language === "en" ? "en-US" : "zh-CN", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit"
+            });
+            const label = language === "en" ? "Last updated" : "最后更新";
             timeElement.textContent = `${label}: ${timeString}`;
         }
     }
@@ -781,7 +776,7 @@ declare global {
             console.error("Server modal not available");
             console.error(
                 "window object keys:",
-                Object.keys(window).filter((k) => k.includes("server") || k.includes("modal"))
+                Object.keys(window).filter((key) => key.includes("server") || key.includes("modal"))
             );
             alert("无法打开服务器添加弹窗，请刷新页面后重试");
         }
@@ -789,7 +784,7 @@ declare global {
 
     function openServerImportModal() {
         console.log("openServerImportModal called from server-group-management");
-        
+
         // 使用全局函数，与addNewServer保持一致的调用方式
         if (typeof window.openServerImportModal === "function") {
             console.log("Calling window.openServerImportModal()");
@@ -798,7 +793,10 @@ declare global {
             console.error("Server import modal not available");
             console.error(
                 "window object keys:",
-                Object.keys(window).filter((k) => k.includes("server") || k.includes("import") || k.includes("modal"))
+                Object.keys(window).filter(
+                    (key) =>
+                        key.includes("server") || key.includes("import") || key.includes("modal")
+                )
             );
             alert("无法打开服务器导入弹窗，请刷新页面后重试");
         }
@@ -810,7 +808,7 @@ declare global {
             await serverListManager.load({ applyFilter: true });
             updateServerGroupLastUpdateTime();
             safeShowMessage(
-                currentLanguage === "en" ? "Server list refreshed" : "服务器列表已刷新",
+                getCurrentLanguage() === "en" ? "Server list refreshed" : "服务器列表已刷新",
                 "success"
             );
         }
@@ -847,15 +845,16 @@ declare global {
                 const response = await fetch("/admin/server-groups/api/list");
                 if (!response.ok) throw new Error("Failed to fetch server list");
 
-                const data = await response.json();
-                const servers = data.servers || [];
+                const data = (await response.json()) as { servers?: Server[] };
+                const servers = data.servers ?? [];
+                const numericId = Number(serverId);
 
                 // 静默更新列表（不显示加载状态）
                 // renderServerGroupList已被ServerListManager.render()替代，这里直接更新缓存
                 // ServerListManager会在下次refresh时自动更新
 
                 // 检查该服务器的指标是否已有数据
-                const server = servers.find((s: any) => s.id === serverId);
+                const server = servers.find((item) => item.id === numericId);
                 if (
                     server &&
                     server.cpuUsage != null &&
@@ -866,7 +865,9 @@ declare global {
                     clearInterval(intervalId);
                     pollingIntervals.delete(serverId);
                     safeShowMessage(
-                        currentLanguage === "en" ? "Server metrics loaded" : "服务器监控数据已加载",
+                        getCurrentLanguage() === "en"
+                            ? "Server metrics loaded"
+                            : "服务器监控数据已加载",
                         "success"
                     );
                 } else if (attemptCount >= maxAttempts) {
@@ -874,7 +875,7 @@ declare global {
                     clearInterval(intervalId);
                     pollingIntervals.delete(serverId);
                     safeShowMessage(
-                        currentLanguage === "en"
+                        getCurrentLanguage() === "en"
                             ? "Metrics collection timeout"
                             : "监控数据收集超时",
                         "warning"
@@ -889,11 +890,6 @@ declare global {
 
         pollingIntervals.set(serverId, intervalId);
     };
-
-    // 获取当前语言，带默认值
-    function getCurrentLanguage(): string {
-        return typeof currentLanguage !== "undefined" ? currentLanguage : "zh";
-    }
 
     function isServerDetailOpen() {
         return serverDetailOverlayManager?.isOpen() || false;

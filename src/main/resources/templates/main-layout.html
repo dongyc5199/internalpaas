@@ -2660,7 +2660,12 @@ function initDashboardRealTimeUpdates() {
                 const addServerBtn = document.getElementById('addServerBtn');
                 if (addServerBtn) {
                     addServerBtn.addEventListener('click', () => {
-                        emit('spa:navigate', { route: 'servers' });
+                        if (typeof window.openServerModal === 'function') {
+                            window.openServerModal();
+                        } else {
+                            console.warn('openServerModal not found, falling back to navigation');
+                            emit('spa:navigate', { route: 'servers' });
+                        }
                     });
                 }
             }
