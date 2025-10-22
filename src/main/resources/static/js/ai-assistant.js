@@ -210,52 +210,68 @@ class AiAssistant {
                 </div>
             </div>
 
-            <!-- 输入区域（模仿 ai-panel 的 composer 样式） -->
+            <!-- 输入区域（Composer） -->
             <div class="ai-composer">
                 <div class="ai-input-shell">
+                    <!-- 附件/上下文行（与截图一致的顶栏） -->
+                    <div class="ai-attach-row" id="aiAttachRow">
+                        <button class="ai-attach-btn" id="btnAttach" title="添加附件">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.44 11.05l-8.49 8.49a5.5 5.5 0 1 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.55 9.55a1.5 1.5 0 0 1-2.12-2.12l8.84-8.84"/>
+                            </svg>
+                        </button>
+                        <div class="ai-attach-list" id="aiAttachList"></div>
+                        <button class="ai-attach-add" id="btnAttachAdd" title="添加">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                        </button>
+                        <input type="file" id="aiFilePicker" style="display:none" multiple />
+                    </div>
+
                     <!-- 上下文标签区域 -->
                     <div class="ai-context-chips" id="aiContextChips"></div>
+
                     <!-- 输入框 -->
                     <textarea id="aiChatInput" class="ai-chat-input" placeholder="添加上下文(#)、扩展(@)、命令(/)" rows="2"></textarea>
+
                     <!-- # 上下文选择弹出菜单 -->
                     <div class="ai-hashtag-popup" id="aiHashtagPopup" style="display: none;">
                         <div class="ai-hashtag-title">选择SSH会话作为上下文</div>
                         <ul class="ai-hashtag-list" id="aiHashtagList"></ul>
                     </div>
-                </div>
-                <div class="ai-bottom-row">
-                    <div class="ai-left-controls">
-                        <!-- 模式选择器（下拉框） -->
-                        <div class="ai-mode-selector">
-                            <select id="aiModeSelector" class="ai-mode-select">
-                                <option value="ask">💬 Ask 模式</option>
-                                <option value="agent" disabled>🤖 Agent 模式（即将上线）</option>
-                            </select>
+                    <!-- 输入框工具条（移入输入壳内部） -->
+                    <div class="ai-bottom-row ai-input-toolbar">
+                        <div class="ai-left-controls">
+                            <!-- 模式选择器 -->
+                            <div class="ai-mode-selector">
+                                <select id="aiModeSelector" class="ai-mode-select">
+                                    <option value="ask">Ask 模式</option>
+                                    <option value="agent" disabled>Agent 模式</option>
+                                </select>
+                            </div>
+                            <!-- 模型选择器 -->
+                            <div class="ai-models">
+                                <select id="aiModelSelector" class="ai-model-select">
+                                    <option value="kimi-k2-0905-preview">Kimi K2</option>
+                                    <option value="echo">Echo (测试)</option>
+                                </select>
+                            </div>
                         </div>
-                        <!-- 模型选择器 -->
-                        <div class="ai-models">
-                            <select id="aiModelSelector" class="ai-model-select">
-                                <option value="kimi-k2-0905-preview">Kimi K2</option>
-                                <option value="echo">Echo (测试)</option>
-                            </select>
+                        <div class="ai-right-controls">
+                            <button class="ai-btn-voice icon-only" id="btnVoice" title="语音输入">
+                                <span class="voice-dot"></span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                </svg>
+                            </button>
+                            <button class="ai-btn-send icon-only" id="aiSendBtn" title="发送 (Ctrl+Enter)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <polygon points="5 3 19 12 5 21 5 3"/>
+                                </svg>
+                            </button>
                         </div>
-                    </div>
-                    <div class="ai-right-controls">
-                        <button class="ai-btn-voice" id="btnVoice" title="语音输入">
-                            <span class="voice-dot"></span>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                                <line x1="12" y1="19" x2="12" y2="23"/>
-                                <line x1="8" y1="23" x2="16" y2="23"/>
-                            </svg>
-                            <span>语音</span>
-                        </button>
-                        <button class="ai-btn-send" id="aiSendBtn">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                <polygon points="5 3 19 12 5 21 5 3"/>
-                            </svg>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -296,15 +312,44 @@ class AiAssistant {
             this.switchMode(e.target.value);
         });
 
-        // 语音输入按钮（占位符功能）
-        document.getElementById('btnVoice').addEventListener('click', () => {
-            // TODO: 实现语音输入功能
-            alert('语音输入功能即将上线！');
+        // 附件：触发文件选择
+        const filePicker = document.getElementById('aiFilePicker');
+        const attachHandler = () => filePicker.click();
+        document.getElementById('btnAttach').addEventListener('click', attachHandler);
+        document.getElementById('btnAttachAdd').addEventListener('click', attachHandler);
+
+        // 附件：选择后渲染为 Chip
+        filePicker.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files || []);
+            if (!files.length) return;
+
+            const list = document.getElementById('aiAttachList');
+            files.forEach(f => {
+                const chip = document.createElement('div');
+                chip.className = 'ai-attachment-chip';
+                chip.title = f.name;
+                chip.innerHTML = `
+                    <span class="chip-file-icon">📄</span>
+                    <span class="chip-file-name">${this.escapeHtml(f.name)}</span>
+                    <button class="chip-remove" title="移除" aria-label="移除">×</button>
+                `;
+                chip.querySelector('.chip-remove').addEventListener('click', () => chip.remove());
+                list.appendChild(chip);
+            });
+
+            // 重置 input 以便可以选择相同文件
+            filePicker.value = '';
         });
 
         // 发送按钮事件
         document.getElementById('aiSendBtn').addEventListener('click', () => {
             this.sendMessage();
+        });
+
+        // 语音输入按钮（占位符功能）
+        document.getElementById('btnVoice').addEventListener('click', () => {
+            // TODO: 实现语音输入功能
+            alert('语音输入功能即将上线！');
         });
 
         // 输入框事件
