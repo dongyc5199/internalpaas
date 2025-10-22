@@ -1,2 +1,18 @@
-/mvnw text eol=lf
+# Force LF line endings for text files
+* text=auto eol=lf
+
+# Binary files (no line ending conversion)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.jar binary
+*.war binary
+*.class binary
+*.zip binary
+*.pdf binary
+
+# Special cases for Windows-specific files
 *.cmd text eol=crlf
+/mvnw text eol=lf
