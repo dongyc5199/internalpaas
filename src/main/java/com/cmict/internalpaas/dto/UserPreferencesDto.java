@@ -24,7 +24,11 @@ public class UserPreferencesDto {
     private String terminalTheme = "dark"; // dark, light
     private Integer terminalFontSize = 14;
     private String terminalFontFamily = "Monaco";
-    
+
+    // AI 聊天流式输出设置
+    private Boolean aiStreamingEnabled = true; // 默认启用打字机效果
+    private String aiStreamingSpeed = "normal"; // slow, normal, fast
+
     // 语言设置
     private String language = "zh_CN"; // zh_CN, en_US
     private String timeZone = "Asia/Shanghai";
@@ -74,4 +78,20 @@ public class UserPreferencesDto {
     
     public String getTimeZone() { return timeZone; }
     public void setTimeZone(String timeZone) { this.timeZone = timeZone; }
+
+    public Boolean getAiStreamingEnabled() { return aiStreamingEnabled; }
+    public void setAiStreamingEnabled(Boolean aiStreamingEnabled) { this.aiStreamingEnabled = aiStreamingEnabled; }
+
+    public String getAiStreamingSpeed() { return aiStreamingSpeed; }
+    public void setAiStreamingSpeed(String aiStreamingSpeed) {
+        // 验证速度值，仅接受 slow, normal, fast
+        if ("slow".equals(aiStreamingSpeed) ||
+            "normal".equals(aiStreamingSpeed) ||
+            "fast".equals(aiStreamingSpeed)) {
+            this.aiStreamingSpeed = aiStreamingSpeed;
+        } else {
+            // 无效值回退到默认值
+            this.aiStreamingSpeed = "normal";
+        }
+    }
 }

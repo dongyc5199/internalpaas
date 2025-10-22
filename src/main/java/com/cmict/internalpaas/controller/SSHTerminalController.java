@@ -107,6 +107,29 @@ public class SSHTerminalController {
             return "terminal/ai-assist-demo";
         }
     }
+
+    /**
+     * AI 面板原型页面（依据线框图）
+     */
+    @GetMapping("/ai-panel")
+    public String aiPanel(Model model) {
+        try {
+            List<Server> servers = serverService.getActiveServers();
+            model.addAttribute("servers", servers);
+            return "terminal/ai-panel";
+        } catch (Exception e) {
+            model.addAttribute("error", "加载 AI 面板原型失败: " + e.getMessage());
+            return "terminal/ai-panel";
+        }
+    }
+
+    /**
+     * AI 功能管理（模型配置）页面
+     */
+    @GetMapping("/ai-models")
+    public String aiModels(Model model) {
+        return "terminal/ai-models";
+    }
     
     /**
      * 获取服务器列表API

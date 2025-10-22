@@ -3,6 +3,8 @@ package com.cmict.internalpaas.controller;
 import com.cmict.internalpaas.ai.moonshot.MoonshotProperties;
 import com.cmict.internalpaas.ai.ollama.OllamaProperties;
 import com.cmict.internalpaas.ai.client.AiClientRegistry;
+import com.cmict.internalpaas.ai.model.ModelConfig;
+import com.cmict.internalpaas.ai.service.AiModelRegistry;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,13 +22,16 @@ public class AiModelController {
     private final MoonshotProperties moonshotProperties;
     private final OllamaProperties ollamaProperties;
     private final AiClientRegistry clientRegistry;
+    private final AiModelRegistry modelRegistry;
 
     public AiModelController(MoonshotProperties moonshotProperties,
                              OllamaProperties ollamaProperties,
-                             AiClientRegistry clientRegistry) {
+                             AiClientRegistry clientRegistry,
+                             AiModelRegistry modelRegistry) {
         this.moonshotProperties = moonshotProperties;
         this.ollamaProperties = ollamaProperties;
         this.clientRegistry = clientRegistry;
+        this.modelRegistry = modelRegistry;
     }
 
     @GetMapping("/models")
@@ -59,5 +64,19 @@ public class AiModelController {
         set.add("echo");
 
         return ResponseEntity.ok(new ArrayList<>(set));
+    }
+
+    @GetMapping("/models/detailed")
+    public ResponseEntity<List<ModelConfig>> modelsDetailed() {
+        return ResponseEntity.ok(modelRegistry.listDetailed());
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/models")
+    public ResponseEntity<List<ModelConfig>> add(@org.springframework.web.bind.annotation.RequestBody java.util.Map<String, String> body) {
+        String provider = body.getOrDefault("provider", "");
+        String model = body.getOrDefault("model", "");
+        String apiKey = body.getOrDefault("apiKey", "");
+        modelRegistry.add(provider, model, apiKey);
+        return ResponseEntity.ok(modelRegistry.listDetailed());
     }
 }
