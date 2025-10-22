@@ -75,7 +75,9 @@
       "Bash(npm run test:run:*)",
       "Bash(npm run lint:*)",
       "Bash(tee:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(npx prettier:*)",
+      "Read(//e/**)"
     ],
     "deny": [],
     "ask": []

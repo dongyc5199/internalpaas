@@ -183,7 +183,7 @@ export interface ServerDetailDependencies {
     showError: (message: string) => void;
 
     // Chart.js
-    Chart: any;
+    Chart: typeof import("chart.js").Chart;
 
     // 外部函数
     connectToServer?: (serverId: number) => void;
