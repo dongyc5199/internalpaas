@@ -1,0 +1,152 @@
+248
+            body.innerHTML = mdToHtml(acc);
+            try { if (window.Prism) Prism.highlightAllUnder(aiEl); } catch(e){}
+            list?.scrollTo({ top: list.scrollHeight });
+          } else if (event === 'error') {
+            acc += `\n[错误] ${data}`;
+            body.innerHTML = mdToHtml(acc);
+          } else if (event === 'done') {
+            addCodeActions(aiEl);
+            persistCurrentSession();
+          }
+        }
+      }
+      persistCurrentSession();
+    } catch (err){
+      body.textContent += `\n[异常] ${err?.message || err}`;
+      persistCurrentSession();
+    }
+  }
+
+  // Simplified AI answer modes
+  function getAiReply(text){
+    const modes = [
+      (t)=>({type:'text', content:`好的，我来帮你：${t}`}),
+      ()=>({type:'steps', steps:['分析问题','生成方案','给出建议']}),
+      ()=>({type:'code', lang:'js', code:'function demo(){\n  // TODO\n}'}),
+      ()=>({type:'info', content:'已切换模型到 '+selectedModel})
+    ];
+    const pick = modes[Math.floor(Math.random()*modes.length)];
+    return renderAiMessage(pick());
+  }
+  function renderAiMessage(payload){
+    if (typeof payload === 'string') return payload;
+    if (payload.type === 'text') return payload.content;
+    if (payload.type === 'steps') return '建议步骤：\n- ' + payload.steps.join('\n- ');
+    if (payload.type === 'code') return `代码示例(${payload.lang})\n\n`+payload.code;
+    if (payload.type === 'info') return payload.content;
+    return '收到。';
+  }
+
+  // History persistence (localStorage)
+  const LS_KEY_CUR = 'ai.chat.current';
+253
+            body.innerHTML = mdToHtml(acc);
+          } else if (event === 'done') {
+            addCodeActions(aiEl);
+            persistCurrentSession();
+          }
+        }
+      }
+      persistCurrentSession();
+    } catch (err){
+      body.textContent += `\n[异常] ${err?.message || err}`;
+      persistCurrentSession();
+    }
+  }
+
+  // Simplified AI answer modes
+  function getAiReply(text){
+    const modes = [
+      (t)=>({type:'text', content:`好的，我来帮你：${t}`}),
+      ()=>({type:'steps', steps:['分析问题','生成方案','给出建议']}),
+      ()=>({type:'code', lang:'js', code:'function demo(){\n  // TODO\n}'}),
+      ()=>({type:'info', content:'已切换模型到 '+selectedModel})
+    ];
+    const pick = modes[Math.floor(Math.random()*modes.length)];
+    return renderAiMessage(pick());
+  }
+  function renderAiMessage(payload){
+    if (typeof payload === 'string') return payload;
+    if (payload.type === 'text') return payload.content;
+    if (payload.type === 'steps') return '建议步骤：\n- ' + payload.steps.join('\n- ');
+    if (payload.type === 'code') return `代码示例(${payload.lang})\n\n`+payload.code;
+    if (payload.type === 'info') return payload.content;
+    return '收到。';
+  }
+
+  // History persistence (localStorage)
+  const LS_KEY_CUR = 'ai.chat.current';
+  const LS_KEY_HIST = 'ai.chat.history';
+  function loadCurrentSession(){
+    try { return JSON.parse(localStorage.getItem(LS_KEY_CUR)||'[]'); } catch { return []; }
+  }
+  function persistCurrentSession(){
+387
+  function mdToHtml(md){
+    const lines = (md||'').split(/\r?\n/);
+    let html = '';
+    let inCode = false, codeLang = 'text', codeLines = [];
+    let inList = null; // 'ul' | 'ol'
+    let para = [];
+    function flushCode(){ if (!inCode) return; html += `<pre class="code"><code class="language-${codeLang}">${escapeHtml(codeLines.join('\n'))}</code></pre>`; inCode=false; codeLines=[]; codeLang='text'; }
+    function flushList(){ if (!inList) return; html += `</${inList}>`; inList=null; }
+    function flushPara(){ if (!para.length) return; html += `<p>${mdInline(escapeHtml(para.join('\n'))).replace(/\n/g,'<br>')}</p>`; para=[]; }
+    for (let raw of lines){
+      const line = raw;
+      const fence = line.match(/^```(\w+)?\s*$/);
+      if (fence){
+        if (inCode){ flushCode(); }
+        else { flushPara(); flushList(); inCode = true; codeLang = fence[1] || 'text'; }
+        continue;
+      }
+      if (inCode){ codeLines.push(line); continue; }
+      if (/^\s*$/.test(line)){ flushPara(); flushList(); continue; }
+      // headings
+      let m;
+      if ((m = line.match(/^###\s+(.*)$/))){ flushPara(); flushList(); html += `<h3>${mdInline(escapeHtml(m[1]))}</h3>`; continue; }
+      if ((m = line.match(/^##\s+(.*)$/))){ flushPara(); flushList(); html += `<h2>${mdInline(escapeHtml(m[1]))}</h2>`; continue; }
+      if ((m = line.match(/^#\s+(.*)$/))){ flushPara(); flushList(); html += `<h1>${mdInline(escapeHtml(m[1]))}</h1>`; continue; }
+      // lists
+      if ((m = line.match(/^\s*[-*]\s+(.*)$/))){
+        flushPara(); if (!inList) { inList='ul'; html += '<ul>'; }
+        html += `<li>${mdInline(escapeHtml(m[1]))}</li>`; continue;
+      }
+      if ((m = line.match(/^\s*\d+\.\s+(.*)$/))){
+        flushPara(); if (!inList) { inList='ol'; html += '<ol>'; }
+        html += `<li>${mdInline(escapeHtml(m[1]))}</li>`; continue;
+      }
+      // paragraph line
+      para.push(line);
+    }
+    if (inCode) flushCode();
+    flushPara(); flushList();
+    return html;
+  }
+  function appendMessage(role, text) {
+432
+    if (role === 'ai') { body.innerHTML = mdToHtml(text); try { if (window.Prism) Prism.highlightAllUnder(el); } catch(e){} addCodeActions(el); }
+    else { body.textContent = text; }
+    list?.appendChild(el);
+    list?.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
+  }
+  function addCodeActions(scope){
+    scope.querySelectorAll('pre code').forEach(code => {
+      const bar = document.createElement('div');
+      bar.style.display='flex'; bar.style.justifyContent='flex-end'; bar.style.gap='6px'; bar.style.marginTop='6px';
+      const btnCopy = document.createElement('button'); btnCopy.className='btn sm'; btnCopy.textContent='复制'; btnCopy.addEventListener('click', ()=>{ navigator.clipboard?.writeText(code.textContent||''); announce('已复制'); });
+      const btnInsert = document.createElement('button'); btnInsert.className='btn sm'; btnInsert.textContent='插入'; btnInsert.addEventListener('click', ()=>{ applySuggestion('\n'+(code.textContent||'')+'\n'); });
+      bar.appendChild(btnCopy); bar.appendChild(btnInsert);
+      code.parentElement.insertAdjacentElement('afterend', bar);
+    });
+  }
+
+  // Bootstrap: focus input + load current session
+  window.addEventListener('DOMContentLoaded', () => {
+    composer?.focus();
+    const cur = loadCurrentSession();
+    if (cur.length) cur.forEach(m => appendMessage(m.role, m.text));
+    loadModels();
+  });
+})();
+

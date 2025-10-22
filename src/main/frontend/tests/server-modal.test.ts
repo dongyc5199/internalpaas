@@ -42,7 +42,7 @@ describe("ServerModal", () => {
 
     it("提交成功后触发列表刷新与指标轮询", async () => {
         vi.useFakeTimers();
-        const modal = new ServerModal();
+        new ServerModal(); // Initialize but don't need reference
         const form = document.getElementById("serverAddForm") as HTMLFormElement;
 
         (document.getElementById("serverName") as HTMLInputElement).value = "demo-server";
@@ -82,7 +82,7 @@ describe("ServerModal", () => {
     });
 
     it("测试连接失败时展示错误 Toast", async () => {
-        const modal = new ServerModal();
+        new ServerModal(); // Initialize but don't need reference
 
         (document.getElementById("serverHostname") as HTMLInputElement).value = "1.1.1.1";
         (document.getElementById("serverPort") as HTMLInputElement).value = "22";

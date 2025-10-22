@@ -706,6 +706,7 @@ export class SSHConfigImportWizard {
             // TODO: 显示加载动画
 
             // 准备请求体（移除前端扩展字段）
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const serversToImport = this.selectedServers.map(
                 ({ selected, editing, ...server }) => server
             );
@@ -1218,7 +1219,6 @@ export class SSHConfigImportWizard {
         if (!summaryCard) return;
 
         const { successCount, failedCount } = this.importResult;
-        const total = successCount + failedCount;
 
         // 判断状态：全部成功 / 部分成功 / 全部失败
         let status: "success" | "partial-success" | "failure";

@@ -1,0 +1,309 @@
+
+> internalpaas@1.0.0 lint
+> eslint "src/main/frontend/**/*.{ts,tsx}"
+
+
+E:\work\code\internalpaas\src\main\frontend\modules\SSHConfigImportWizard-old.ts
+   142:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   171:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   217:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   243:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   287:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   310:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   328:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   383:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   393:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   710:20  error    'selected' is defined but never used        @typescript-eslint/no-unused-vars
+   710:30  error    'editing' is defined but never used         @typescript-eslint/no-unused-vars
+  1109:45  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  1135:39  warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1141:41  warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1147:41  warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1221:15  error    'total' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  1371:37  warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1380:41  warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1393:35  warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1428:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1445:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1466:12  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  1466:45  warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1473:12  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  1474:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+
+E:\work\code\internalpaas\src\main\frontend\modules\SSHConfigImportWizard.ts
+   143:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   172:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   218:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   241:55  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+   337:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   367:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   411:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   434:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   672:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   780:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+   888:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1052:20  error    'selected' is defined but never used        @typescript-eslint/no-unused-vars
+  1052:30  error    'editing' is defined but never used         @typescript-eslint/no-unused-vars
+  1465:45  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  1491:39  warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1497:41  warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1503:41  warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1577:15  error    'total' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  1727:37  warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1736:41  warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1749:35  warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1784:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1801:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1822:12  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  1822:45  warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+  1829:12  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  1830:5   warning  Missing return type on function             @typescript-eslint/explicit-function-return-type
+
+E:\work\code\internalpaas\src\main\frontend\modules\ServerDetailOverlay.ts
+   35:21  error  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+   38:28  error  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+   44:28  error  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+   45:30  error  Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+  375:29  error  'detail' is defined but never used         @typescript-eslint/no-unused-vars
+  383:27  error  'detail' is defined but never used         @typescript-eslint/no-unused-vars
+  412:15  error  'lang' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+E:\work\code\internalpaas\src\main\frontend\modules\server-group-management.ts
+  136:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  149:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  190:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  228:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  239:17  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  240:17  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  241:17  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  246:17  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  247:17  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  263:17  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  267:17  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  268:17  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  272:17  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  273:17  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  289:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  407:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  428:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  513:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  592:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  672:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  684:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  738:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  746:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  761:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  766:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  785:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  806:32  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  821:40  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  894:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  898:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  906:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  916:5   warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+
+E:\work\code\internalpaas\src\main\frontend\modules\server-modal.ts
+  597:29  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+
+E:\work\code\internalpaas\src\main\frontend\modules\tab-version-methods.ts
+  9:4  error  Parsing error: Declaration or statement expected
+
+E:\work\code\internalpaas\src\main\frontend\modules\theme.ts
+  124:33  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+
+E:\work\code\internalpaas\src\main\frontend\tests\ServerDetailOverlay.test.ts
+   62:1   warning  Missing return type on function           @typescript-eslint/explicit-function-return-type
+  173:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  189:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  201:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  216:45  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  217:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  230:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  248:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  285:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  308:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  327:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  360:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  375:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  393:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  414:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  443:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  461:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  477:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  493:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  510:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  528:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  544:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  559:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  576:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  587:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  599:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  616:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  638:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  655:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+E:\work\code\internalpaas\src\main\frontend\tests\ServerListManager.test.ts
+   10:1   warning  Missing return type on function                         @typescript-eslint/explicit-function-return-type
+  102:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  122:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  134:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  143:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  155:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  168:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  176:19  error    'initialHTML' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  203:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  244:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  278:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  286:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  299:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  365:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  375:19  error    'selectAllCheckbox' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  385:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  397:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  411:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  421:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  438:45  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  440:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  449:45  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  451:30  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+
+E:\work\code\internalpaas\src\main\frontend\tests\chart.test.ts
+  5:32  error  'beforeEach' is defined but never used  @typescript-eslint/no-unused-vars
+
+E:\work\code\internalpaas\src\main\frontend\tests\http.test.ts
+   35:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   56:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   83:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  103:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  118:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  135:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  155:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  161:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  171:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  177:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  187:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  194:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  215:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  225:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  233:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  254:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  266:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  274:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  297:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  307:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  317:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  327:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  334:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  346:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  356:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  365:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  377:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  387:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  395:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  409:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  416:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  426:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  436:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  444:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  459:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  474:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  491:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+E:\work\code\internalpaas\src\main\frontend\tests\i18n.test.ts
+   19:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   34:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   53:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  134:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  137:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  142:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  170:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  174:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  199:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  212:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+E:\work\code\internalpaas\src\main\frontend\tests\notification.test.ts
+   19:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   20:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   21:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   30:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   39:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   51:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   74:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   83:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   92:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  101:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  112:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  127:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  148:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  159:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  168:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  177:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+E:\work\code\internalpaas\src\main\frontend\tests\server-modal.test.ts
+  45:15  error  'modal' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  85:15  error  'modal' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+E:\work\code\internalpaas\src\main\frontend\tests\storage.test.ts
+  16:13  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  17:13  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  20:13  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  23:13  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  28:13  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+
+E:\work\code\internalpaas\src\main\frontend\tests\websocket.test.ts
+    6:45  error  'WebSocketMessage' is defined but never used  @typescript-eslint/no-unused-vars
+   33:10  error  'data' is defined but never used              @typescript-eslint/no-unused-vars
+   62:9   error  'mockWebSocket' is defined but never used     @typescript-eslint/no-unused-vars
+   66:45  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   98:34  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   99:34  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  100:34  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  160:34  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  179:18  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  211:27  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  234:27  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  239:27  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  254:31  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  259:34  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  284:18  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  394:38  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  440:38  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  492:38  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  512:34  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  526:34  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  562:34  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  611:38  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  628:18  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  657:34  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  658:34  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  659:34  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  660:34  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  675:34  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+
+E:\work\code\internalpaas\src\main\frontend\types\server-management.ts
+  186:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+E:\work\code\internalpaas\src\main\frontend\utils\chart.ts
+  114:8   warning  Missing return type on function           @typescript-eslint/explicit-function-return-type
+  123:29  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  161:8   warning  Missing return type on function           @typescript-eslint/explicit-function-return-type
+  164:29  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  192:8   warning  Missing return type on function           @typescript-eslint/explicit-function-return-type
+  200:29  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  230:37  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  240:39  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  252:12  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+E:\work\code\internalpaas\src\main\frontend\utils\i18n.ts
+   29:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   89:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  120:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+E:\work\code\internalpaas\src\main\frontend\utils\notification.ts
+  13:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  14:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  19:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  29:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 262 problems (179 errors, 83 warnings)
+

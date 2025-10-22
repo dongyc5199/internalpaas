@@ -173,8 +173,6 @@ describe("ServerListManager", () => {
         });
 
         it("应该切换到卡片视图", () => {
-            const initialHTML = document.getElementById("serverTableBody")?.innerHTML;
-
             manager.switchView("card");
 
             // 验证switchView被调用（不会报错）
@@ -372,9 +370,6 @@ describe("ServerListManager", () => {
         it("应该更新全选复选框状态", () => {
             manager.selectAll();
 
-            const selectAllCheckbox = document.getElementById(
-                "selectAllServers"
-            ) as HTMLInputElement;
             // 无法在测试中验证checkbox state，因为updateSelectAllCheckbox是私有方法
             expect(manager.getSelected().length).toBe(mockServers.length);
         });

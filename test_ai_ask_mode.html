@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI助手Ask模式 - 快速测试</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #0e639c;
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #0e639c;
+            padding-bottom: 10px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.pending {
+            background: #ffa500;
+            color: white;
+        }
+        .status.success {
+            background: #4caf50;
+            color: white;
+        }
+        .status.fail {
+            background: #f44336;
+            color: white;
+        }
+        .test-item {
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #ddd;
+            background: #f9f9f9;
+        }
+        .test-item:hover {
+            background: #f0f0f0;
+        }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1177bb;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        a {
+            color: #0e639c;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-card">
+        <h1>🤖 AI助手Ask模式 - 快速测试</h1>
+        <p>使用此页面快速验证AI助手Ask模式的核心功能。</p>
+    </div>
+
+    <div class="test-card">
+        <h2>📋 测试前准备</h2>
+        <div class="test-item">
+            <strong>1. 确认应用运行</strong><br>
+            应用应在 <a href="http://localhost:9090" target="_blank">http://localhost:9090</a> 运行
+            <div id="serverCheck"></div>
+            <button onclick="checkServer()">检查服务器</button>
+        </div>
+        <div class="test-item">
+            <strong>2. 打开终端管理器</strong><br>
+            <a href="http://localhost:9090/terminal/manager" target="_blank">点击打开终端管理器</a>
+        </div>
+        <div class="test-item">
+            <strong>3. 查看浏览器控制台</strong><br>
+            按F12打开开发者工具，查看Console标签
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🧪 核心功能测试</h2>
+
+        <div class="test-item">
+            <strong>测试1: 静态资源加载</strong>
+            <span class="status pending" id="status1">待测试</span><br>
+            验证CSS和JS文件是否正确加载
+            <div id="result1"></div>
+            <button onclick="testStaticResources()">运行测试</button>
+        </div>
+
+        <div class="test-item">
+            <strong>测试2: API端点可用性</strong>
+            <span class="status pending" id="status2">待测试</span><br>
+            测试 /ai/chat/stream 端点是否可访问
+            <div id="result2"></div>
+            <button onclick="testApiEndpoint()">运行测试</button>
+        </div>
+
+        <div class="test-item">
+            <strong>测试3: Echo客户端测试</strong>
+            <span class="status pending" id="status3">待测试</span><br>
+            发送测试消息到Echo客户端
+            <div id="result3"></div>
+            <button onclick="testEchoClient()">运行测试</button>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>📚 文档资源</h2>
+        <ul>
+            <li><a href="./docs/AI_ASK_MODE_IMPLEMENTATION.md">实施报告</a></li>
+            <li><a href="./docs/AI_ASK_MODE_TEST_GUIDE.md">测试指南</a></li>
+            <li><a href="./docs/AI_ASK_MODE_COMPLETION_SUMMARY.md">完成总结</a></li>
+        </ul>
+    </div>
+
+    <div class="test-card">
+        <h2>✅ 手动测试清单</h2>
+        <div class="test-item">
+            <input type="checkbox" id="check1"> 右下角显示蓝色浮动按钮
+        </div>
+        <div class="test-item">
+            <input type="checkbox" id="check2"> 点击按钮，面板从右侧滑入
+        </div>
+        <div class="test-item">
+            <input type="checkbox" id="check3"> 按Ctrl+Shift+A切换面板
+        </div>
+        <div class="test-item">
+            <input type="checkbox" id="check4"> 输入消息并发送
+        </div>
+        <div class="test-item">
+            <input type="checkbox" id="check5"> 查看流式回复
+        </div>
+        <div class="test-item">
+            <input type="checkbox" id="check6"> 代码块正确渲染
+        </div>
+        <div class="test-item">
+            <input type="checkbox" id="check7"> 复制按钮功能正常
+        </div>
+    </div>
+
+    <script>
+        async function checkServer() {
+            const resultDiv = document.getElementById('serverCheck');
+            resultDiv.innerHTML = '<div class="result">正在检查...</div>';
+
+            try {
+                const response = await fetch('http://localhost:9090/');
+                if (response.ok) {
+                    resultDiv.innerHTML = '<div class="result success">✅ 服务器正常运行</div>';
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ 服务器响应异常: ${response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ 无法连接到服务器: ${error.message}</div>`;
+            }
+        }
+
+        async function testStaticResources() {
+            const statusEl = document.getElementById('status1');
+            const resultDiv = document.getElementById('result1');
+
+            statusEl.textContent = '测试中...';
+            statusEl.className = 'status pending';
+
+            let results = [];
+
+            // 测试CSS
+            try {
+                const cssResponse = await fetch('http://localhost:9090/css/ai-assistant.css');
+                if (cssResponse.ok) {
+                    results.push('✅ CSS文件加载成功');
+                } else {
+                    results.push(`❌ CSS文件加载失败: ${cssResponse.status}`);
+                }
+            } catch (error) {
+                results.push(`❌ CSS文件加载失败: ${error.message}`);
+            }
+
+            // 测试JS
+            try {
+                const jsResponse = await fetch('http://localhost:9090/js/ai-assistant.js');
+                if (jsResponse.ok) {
+                    results.push('✅ JS文件加载成功');
+                } else {
+                    results.push(`❌ JS文件加载失败: ${jsResponse.status}`);
+                }
+            } catch (error) {
+                results.push(`❌ JS文件加载失败: ${error.message}`);
+            }
+
+            const allSuccess = results.every(r => r.startsWith('✅'));
+            statusEl.textContent = allSuccess ? '通过' : '失败';
+            statusEl.className = allSuccess ? 'status success' : 'status fail';
+
+            resultDiv.innerHTML = '<div class="result">' + results.join('\n') + '</div>';
+        }
+
+        async function testApiEndpoint() {
+            const statusEl = document.getElementById('status2');
+            const resultDiv = document.getElementById('result2');
+
+            statusEl.textContent = '测试中...';
+            statusEl.className = 'status pending';
+
+            try {
+                const response = await fetch('http://localhost:9090/ai/chat/stream', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chatId: 'test-' + Date.now(),
+                        message: 'ping',
+                        terminalTail: '',
+                        model: null
+                    })
+                });
+
+                if (response.ok) {
+                    statusEl.textContent = '通过';
+                    statusEl.className = 'status success';
+                    resultDiv.innerHTML = '<div class="result success">✅ API端点可用，响应状态: ' + response.status + '</div>';
+                } else {
+                    statusEl.textContent = '失败';
+                    statusEl.className = 'status fail';
+                    resultDiv.innerHTML = '<div class="result error">❌ API响应异常: ' + response.status + '</div>';
+                }
+            } catch (error) {
+                statusEl.textContent = '失败';
+                statusEl.className = 'status fail';
+                resultDiv.innerHTML = '<div class="result error">❌ API请求失败: ' + error.message + '</div>';
+            }
+        }
+
+        async function testEchoClient() {
+            const statusEl = document.getElementById('status3');
+            const resultDiv = document.getElementById('result3');
+
+            statusEl.textContent = '测试中...';
+            statusEl.className = 'status pending';
+            resultDiv.innerHTML = '<div class="result">正在发送测试消息...</div>';
+
+            try {
+                const response = await fetch('http://localhost:9090/ai/chat/stream', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chatId: 'test-echo-' + Date.now(),
+                        message: '你好，这是一条测试消息',
+                        terminalTail: 'test terminal output',
+                        model: null
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                // 读取流式响应
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let fullResponse = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        if (line.startsWith('data:')) {
+                            const data = line.substring(5).trim();
+                            if (data) {
+                                fullResponse += data;
+                            }
+                        }
+                    }
+                }
+
+                if (fullResponse) {
+                    statusEl.textContent = '通过';
+                    statusEl.className = 'status success';
+                    resultDiv.innerHTML = '<div class="result success">✅ Echo客户端响应正常\n\n收到的响应:\n' + fullResponse + '</div>';
+                } else {
+                    statusEl.textContent = '警告';
+                    statusEl.className = 'status pending';
+                    resultDiv.innerHTML = '<div class="result">⚠️ 未收到响应数据（可能是超时或客户端配置问题）</div>';
+                }
+            } catch (error) {
+                statusEl.textContent = '失败';
+                statusEl.className = 'status fail';
+                resultDiv.innerHTML = '<div class="result error">❌ Echo客户端测试失败: ' + error.message + '</div>';
+            }
+        }
+
+        // 页面加载时自动检查服务器
+        window.addEventListener('load', () => {
+            checkServer();
+        });
+    </script>
+</body>
+</html>

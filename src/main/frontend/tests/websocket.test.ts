@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { WebSocketManager, WebSocketConfig, WebSocketMessage } from "../utils/websocket";
+import { WebSocketManager, WebSocketConfig } from "../utils/websocket";
 
 // Mock WebSocket
 class MockWebSocket {
@@ -30,7 +30,7 @@ class MockWebSocket {
         }, 10);
     }
 
-    send(data: string): void {
+    send(_data: string): void {
         if (this.readyState !== MockWebSocket.OPEN) {
             throw new Error("WebSocket is not open");
         }
@@ -59,7 +59,6 @@ class MockWebSocket {
 
 describe("WebSocketManager", () => {
     let wsManager: WebSocketManager;
-    let mockWebSocket: MockWebSocket;
 
     beforeEach(() => {
         // 替换全局 WebSocket
