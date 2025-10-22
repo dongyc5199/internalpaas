@@ -44,29 +44,29 @@ export interface ServerImportPreview {
     sshKeyPath?: string | null;
 
     // 可选字段
-    port?: number;                    // 应用端口，默认8080
+    port?: number; // 应用端口，默认8080
     baseWorkDirectory?: string | null;
     description?: string | null;
     serverType?: "DEVELOPMENT" | "TESTING" | "STAGING" | "PRODUCTION" | null;
 
     // 验证状态
-    valid: boolean;                   // 是否有效（必填字段齐全）
-    duplicate: boolean;               // 是否重复（与现有服务器冲突）
-    missingFields: string[];          // 缺失字段列表
+    valid: boolean; // 是否有效（必填字段齐全）
+    duplicate: boolean; // 是否重复（与现有服务器冲突）
+    missingFields: string[]; // 缺失字段列表
 
     // 前端扩展字段
-    selected?: boolean;               // 是否勾选
-    editing?: boolean;                // 是否正在编辑
+    selected?: boolean; // 是否勾选
+    editing?: boolean; // 是否正在编辑
 }
 
 /**
  * SSH配置解析结果（对应Java: SSHConfigParseResult）
  */
 export interface SSHConfigParseResult {
-    totalHosts: number;               // 解析到的Host数量
-    servers: ServerImportPreview[];   // 转换后的服务器列表
-    warnings: string[];               // 警告信息（如ProxyJump、Include等）
-    errors: string[];                 // 错误信息
+    totalHosts: number; // 解析到的Host数量
+    servers: ServerImportPreview[]; // 转换后的服务器列表
+    warnings: string[]; // 警告信息（如ProxyJump、Include等）
+    errors: string[]; // 错误信息
 }
 
 /**
@@ -82,14 +82,15 @@ export interface ImportFailure {
  * 服务器导入结果（对应Java: ServerImportResult）
  */
 export interface ServerImportResult {
-    successCount: number;             // 成功数量
-    failedCount: number;              // 失败数量
-    successServers: {                 // 成功服务器列表
+    successCount: number; // 成功数量
+    failedCount: number; // 失败数量
+    successServers: {
+        // 成功服务器列表
         id: number;
         name: string;
         hostname: string;
     }[];
-    failures: ImportFailure[];        // 失败详情
+    failures: ImportFailure[]; // 失败详情
 }
 
 /**
@@ -106,8 +107,8 @@ export interface DefaultPathInfo {
 export class SSHConfigImportWizard {
     // 私有属性
     private modal: HTMLElement | null = null;
-    private step: number = 1;                            // 当前步骤：1=选择文件, 2=预览列表, 3=导入结果
-    private servers: ServerImportPreview[] = [];         // 解析出的服务器列表
+    private step: number = 1; // 当前步骤：1=选择文件, 2=预览列表, 3=导入结果
+    private servers: ServerImportPreview[] = []; // 解析出的服务器列表
     private selectedServers: ServerImportPreview[] = []; // 勾选的服务器列表
     private importResult: ServerImportResult | null = null;
 
@@ -196,7 +197,10 @@ export class SSHConfigImportWizard {
             }
 
             // 点击遮罩层关闭
-            if (target.id === "sshConfigImportModal" && target.classList.contains("modal-overlay")) {
+            if (
+                target.id === "sshConfigImportModal" &&
+                target.classList.contains("modal-overlay")
+            ) {
                 console.log("SSH Config Import Modal: Overlay clicked");
                 this.close();
                 return;
@@ -432,7 +436,7 @@ export class SSHConfigImportWizard {
             // 4. 调用 POST /api/ssh-config-import/upload
             const response = await fetch("/api/ssh-config-import/upload", {
                 method: "POST",
-                body: formData,
+                body: formData
                 // 不设置Content-Type，让浏览器自动设置multipart/form-data边界
             });
 
@@ -455,7 +459,7 @@ export class SSHConfigImportWizard {
             }
 
             // 初始化服务器列表（添加前端扩展字段）
-            this.servers = result.servers.map(server => ({
+            this.servers = result.servers.map((server) => ({
                 ...server,
                 selected: server.valid && !server.duplicate, // 默认选中有效且不重复的服务器
                 editing: false
@@ -467,18 +471,19 @@ export class SSHConfigImportWizard {
             // 显示警告信息（如果有）
             if (result.warnings && result.warnings.length > 0) {
                 console.warn("Parse warnings:", result.warnings);
-                result.warnings.forEach(warning => {
+                result.warnings.forEach((warning) => {
                     safeShowToast(warning, "warning");
                 });
             }
 
             // 显示成功消息
-            showSuccess(`文件上传成功！解析到 ${result.totalHosts} 个Host，${this.servers.filter(s => s.valid && !s.duplicate).length} 个可导入`);
+            showSuccess(
+                `文件上传成功！解析到 ${result.totalHosts} 个Host，${this.servers.filter((s) => s.valid && !s.duplicate).length} 个可导入`
+            );
 
             // 6. 进入步骤2（预览）
             this.step = 2;
             this.updateStepDisplay();
-
         } catch (error) {
             console.error("File upload failed:", error);
             const errorMessage = error instanceof Error ? error.message : "文件上传失败，请重试";
@@ -539,7 +544,7 @@ export class SSHConfigImportWizard {
             }
 
             // 初始化服务器列表（添加前端扩展字段）
-            this.servers = result.servers.map(server => ({
+            this.servers = result.servers.map((server) => ({
                 ...server,
                 selected: server.valid && !server.duplicate,
                 editing: false
@@ -551,21 +556,23 @@ export class SSHConfigImportWizard {
             // 显示警告信息（如果有）
             if (result.warnings && result.warnings.length > 0) {
                 console.warn("Parse warnings:", result.warnings);
-                result.warnings.forEach(warning => {
+                result.warnings.forEach((warning) => {
                     safeShowToast(warning, "warning");
                 });
             }
 
             // 显示成功消息
-            showSuccess(`本地扫描成功！解析到 ${result.totalHosts} 个Host，${this.servers.filter(s => s.valid && !s.duplicate).length} 个可导入`);
+            showSuccess(
+                `本地扫描成功！解析到 ${result.totalHosts} 个Host，${this.servers.filter((s) => s.valid && !s.duplicate).length} 个可导入`
+            );
 
             // 4. 进入步骤2（预览）
             this.step = 2;
             this.updateStepDisplay();
-
         } catch (error) {
             console.error("Local scan failed:", error);
-            const errorMessage = error instanceof Error ? error.message : "本地配置扫描失败，请重试";
+            const errorMessage =
+                error instanceof Error ? error.message : "本地配置扫描失败，请重试";
             showError(errorMessage);
         }
     }
@@ -594,12 +601,15 @@ export class SSHConfigImportWizard {
             // TODO: 显示加载动画
 
             // 3. 调用 POST /api/ssh-config-import/parse-local?path={path}
-            const response = await fetch(`/api/ssh-config-import/parse-local?path=${encodeURIComponent(trimmedPath)}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
+            const response = await fetch(
+                `/api/ssh-config-import/parse-local?path=${encodeURIComponent(trimmedPath)}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
                 }
-            });
+            );
 
             if (!response.ok) {
                 // 处理HTTP错误状态
@@ -634,7 +644,7 @@ export class SSHConfigImportWizard {
             }
 
             // 初始化服务器列表（添加前端扩展字段）
-            this.servers = result.servers.map(server => ({
+            this.servers = result.servers.map((server) => ({
                 ...server,
                 selected: server.valid && !server.duplicate,
                 editing: false
@@ -646,21 +656,23 @@ export class SSHConfigImportWizard {
             // 显示警告信息（如果有）
             if (result.warnings && result.warnings.length > 0) {
                 console.warn("Parse warnings:", result.warnings);
-                result.warnings.forEach(warning => {
+                result.warnings.forEach((warning) => {
                     safeShowToast(warning, "warning");
                 });
             }
 
             // 显示成功消息
-            showSuccess(`解析成功！解析到 ${result.totalHosts} 个Host，${this.servers.filter(s => s.valid && !s.duplicate).length} 个可导入`);
+            showSuccess(
+                `解析成功！解析到 ${result.totalHosts} 个Host，${this.servers.filter((s) => s.valid && !s.duplicate).length} 个可导入`
+            );
 
             // 5. 进入步骤2（预览）
             this.step = 2;
             this.updateStepDisplay();
-
         } catch (error) {
             console.error("Custom path parse failed:", error);
-            const errorMessage = error instanceof Error ? error.message : "配置文件解析失败，请重试";
+            const errorMessage =
+                error instanceof Error ? error.message : "配置文件解析失败，请重试";
             showError(errorMessage);
         }
     }
@@ -694,7 +706,9 @@ export class SSHConfigImportWizard {
             // TODO: 显示加载动画
 
             // 准备请求体（移除前端扩展字段）
-            const serversToImport = this.selectedServers.map(({ selected, editing, ...server }) => server);
+            const serversToImport = this.selectedServers.map(
+                ({ selected, editing, ...server }) => server
+            );
 
             // 5. 调用 POST /api/ssh-config-import/batch
             const response = await fetch("/api/ssh-config-import/batch", {
@@ -737,7 +751,6 @@ export class SSHConfigImportWizard {
 
             // 触发服务器列表刷新事件
             eventBus.emit("servers:refresh");
-
         } catch (error) {
             console.error("Import failed:", error);
             const errorMessage = error instanceof Error ? error.message : "批量导入失败，请重试";
@@ -783,7 +796,9 @@ export class SSHConfigImportWizard {
 
             // 4. 收集错误信息
             if (serverErrors.length > 0) {
-                errors.push(`服务器 "${server.name || server.hostname || '未知'}" 缺少必填字段：${serverErrors.join(", ")}`);
+                errors.push(
+                    `服务器 "${server.name || server.hostname || "未知"}" 缺少必填字段：${serverErrors.join(", ")}`
+                );
             }
         }
 
@@ -800,7 +815,7 @@ export class SSHConfigImportWizard {
         console.log("selectAll called");
 
         // 1. 遍历servers，设置selected=true
-        this.servers.forEach(server => {
+        this.servers.forEach((server) => {
             server.selected = true;
         });
 
@@ -821,7 +836,7 @@ export class SSHConfigImportWizard {
         console.log("selectValid called");
 
         // 1. 遍历servers，过滤valid=true且duplicate=false的服务器
-        this.servers.forEach(server => {
+        this.servers.forEach((server) => {
             if (server.valid && !server.duplicate) {
                 server.selected = true;
             } else {
@@ -846,7 +861,7 @@ export class SSHConfigImportWizard {
         console.log("deselectAll called");
 
         // 1. 遍历servers，设置selected=false
-        this.servers.forEach(server => {
+        this.servers.forEach((server) => {
             server.selected = false;
         });
 
@@ -866,8 +881,10 @@ export class SSHConfigImportWizard {
      * 根据servers数组中selected=true的项更新selectedServers
      */
     private updateSelectedServers(): void {
-        this.selectedServers = this.servers.filter(server => server.selected === true);
-        console.log(`Updated selected servers: ${this.selectedServers.length}/${this.servers.length}`);
+        this.selectedServers = this.servers.filter((server) => server.selected === true);
+        console.log(
+            `Updated selected servers: ${this.selectedServers.length}/${this.servers.length}`
+        );
     }
 
     /**
@@ -880,7 +897,7 @@ export class SSHConfigImportWizard {
         // 1. 更新全选复选框状态
         const selectAllCheckbox = document.getElementById("selectAllCheckbox") as HTMLInputElement;
         if (selectAllCheckbox) {
-            const allSelected = this.servers.length > 0 && this.servers.every(s => s.selected);
+            const allSelected = this.servers.length > 0 && this.servers.every((s) => s.selected);
             selectAllCheckbox.checked = allSelected;
         }
 
@@ -1081,12 +1098,16 @@ export class SSHConfigImportWizard {
             }
 
             // 可编辑字段
-            if (target.classList.contains("editable-field") || target.classList.contains("editable-select")) {
+            if (
+                target.classList.contains("editable-field") ||
+                target.classList.contains("editable-select")
+            ) {
                 const index = parseInt(target.dataset.index || "-1");
                 const field = target.dataset.field;
                 if (index >= 0 && index < this.servers.length && field) {
                     const value = (target as HTMLInputElement | HTMLSelectElement).value;
-                    (this.servers[index] as any)[field] = field === "sshPort" ? parseInt(value) : value;
+                    (this.servers[index] as any)[field] =
+                        field === "sshPort" ? parseInt(value) : value;
                 }
             }
         });
@@ -1278,7 +1299,7 @@ export class SSHConfigImportWizard {
         failureTableBody.innerHTML = "";
 
         // 渲染每一行失败记录
-        this.importResult.failures.forEach(failure => {
+        this.importResult.failures.forEach((failure) => {
             const row = document.createElement("tr");
 
             // 服务器名称
@@ -1318,7 +1339,7 @@ export class SSHConfigImportWizard {
         successGrid.innerHTML = "";
 
         // 渲染每个成功服务器的卡片
-        this.importResult.successServers.forEach(server => {
+        this.importResult.successServers.forEach((server) => {
             const card = document.createElement("div");
             card.className = "success-server-card";
 
@@ -1442,7 +1463,7 @@ export function getSSHConfigImportWizard(): SSHConfigImportWizard {
 }
 
 // 全局函数供HTML调用
-(window as any).openSSHConfigImportWizard = function() {
+(window as any).openSSHConfigImportWizard = function () {
     console.log("Global openSSHConfigImportWizard called");
     const wizard = getSSHConfigImportWizard();
     wizard.open();

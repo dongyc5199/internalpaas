@@ -30,15 +30,18 @@ src/main/frontend/
 ## 第三方库管理
 
 ### 已安装的npm包
+
 - **chart.js**: 图表库 (v4.5.0)
 
 ### 使用方式
+
 ```typescript
 // 通过npm安装并导入
-import { Chart } from 'chart.js';
+import { Chart } from "chart.js";
 ```
 
 ### 添加新的第三方库
+
 ```bash
 # 安装为生产依赖
 npm install <package-name>
@@ -70,57 +73,67 @@ npm install -D <package-name>
 ## 工具模块使用
 
 ### HTTP客户端
+
 ```typescript
-import { http } from '@/utils';
+import { http } from "@/utils";
 
 // GET请求
-const { data } = await http.get('/api/servers');
+const { data } = await http.get("/api/servers");
 
 // POST请求
-await http.post('/api/servers', { name: 'server-1' });
+await http.post("/api/servers", { name: "server-1" });
 ```
 
 ### 事件总线
+
 ```typescript
-import { eventBus } from '@/utils';
+import { eventBus } from "@/utils";
 
 // 订阅事件
-const unsubscribe = eventBus.on('server:created', (data) => {
-    console.log('Server created:', data);
+const unsubscribe = eventBus.on("server:created", (data) => {
+    console.log("Server created:", data);
 });
 
 // 发布事件
-eventBus.emit('server:created', { id: '123' });
+eventBus.emit("server:created", { id: "123" });
 
 // 取消订阅
 unsubscribe();
 ```
 
 ### 存储管理
+
 ```typescript
-import { localStorage, sessionStorage } from '@/utils';
+import { localStorage, sessionStorage } from "@/utils";
 
 // 设置(带过期时间)
-localStorage.set('token', 'abc123', { expires: 3600000 }); // 1小时后过期
+localStorage.set("token", "abc123", { expires: 3600000 }); // 1小时后过期
 
 // 获取
-const token = localStorage.get<string>('token');
+const token = localStorage.get<string>("token");
 
 // 移除
-localStorage.remove('token');
+localStorage.remove("token");
 ```
 
 ### 格式化工具
+
 ```typescript
-import { formatBytes, formatUptime, formatPercentage, formatTimestamp, formatNumber } from '@/utils';
+import {
+    formatBytes,
+    formatUptime,
+    formatPercentage,
+    formatTimestamp,
+    formatNumber
+} from "@/utils";
 
 // 格式化字节
-formatBytes(1024);        // "1 KB"
-formatBytes(1048576);     // "1 MB"
+formatBytes(1024); // "1 KB"
+formatBytes(1048576); // "1 MB"
 
 // 格式化运行时间
-formatUptime(3600);       // "1小时 0分钟"
-formatUptime(90000);      // "1天 1小时"
+formatUptime(3600); // "1小时 0分钟"
+formatUptime(90000); // "1天 1小时"
 
 // 格式化百分比
 formatPercentage(85.678); // "85.7%"
@@ -133,24 +146,26 @@ formatNumber(1234567.89, 2); // "1,234,567.89"
 ```
 
 ### 国际化工具
+
 ```typescript
-import { setLocalizedText, updateMetricSummaryText, refreshContainerI18n } from '@/utils';
+import { setLocalizedText, updateMetricSummaryText, refreshContainerI18n } from "@/utils";
 
 // 设置元素本地化文本
-const element = document.getElementById('title');
+const element = document.getElementById("title");
 setLocalizedText(element, "服务器", "Server");
 
 // 更新指标摘要文本
-const container = document.getElementById('metrics');
-updateMetricSummaryText(container, '.cpu-usage', "CPU: 75%", "CPU: 75%");
+const container = document.getElementById("metrics");
+updateMetricSummaryText(container, ".cpu-usage", "CPU: 75%", "CPU: 75%");
 
 // 刷新容器内所有i18n元素
-refreshContainerI18n(document.body, 'en');
+refreshContainerI18n(document.body, "en");
 ```
 
 ### 通知工具
+
 ```typescript
-import { safeShowToast, showSuccess, showError, showProgressNotification } from '@/utils';
+import { safeShowToast, showSuccess, showError, showProgressNotification } from "@/utils";
 
 // 显示通知
 safeShowToast("操作成功", "success");
@@ -164,9 +179,10 @@ showProgressNotification("上传中", 7, 10, "info"); // "上传中 (7/10 - 70%)
 ```
 
 ### 图表工具
+
 ```typescript
-import { getChartColor, createTimeSeriesChartConfig, createPieChartConfig } from '@/utils';
-import Chart from 'chart.js/auto';
+import { getChartColor, createTimeSeriesChartConfig, createPieChartConfig } from "@/utils";
+import Chart from "chart.js/auto";
 
 // 获取图表颜色
 const color = getChartColor(0); // "rgba(99, 102, 241, 1)"
@@ -174,32 +190,32 @@ const transparentColor = getChartColor(0, 0.5); // "rgba(99, 102, 241, 0.5)"
 
 // 创建时间序列图表
 const config = createTimeSeriesChartConfig(
-  ["1月", "2月", "3月"],
-  [{ label: "销售额", data: [100, 200, 300] }]
+    ["1月", "2月", "3月"],
+    [{ label: "销售额", data: [100, 200, 300] }]
 );
 const chart = new Chart(ctx, config);
 
 // 创建饼图
-const pieConfig = createPieChartConfig(
-  ["A", "B", "C"],
-  [10, 20, 30]
-);
+const pieConfig = createPieChartConfig(["A", "B", "C"], [10, 20, 30]);
 const pieChart = new Chart(ctx, pieConfig);
 ```
 
 ## 开发规范
 
 ### TypeScript
+
 - 所有新代码必须使用TypeScript
 - 禁止使用`any`类型,使用`unknown`替代
 - 导出的函数/类必须添加JSDoc注释
 
 ### 样式
+
 - 使用设计令牌系统
 - 避免内联样式
 - CSS类名使用kebab-case
 
 ### 测试
+
 - 每个模块都应有对应的测试文件
 - 测试覆盖率目标: 70%+
 - 运行测试: `npm test`

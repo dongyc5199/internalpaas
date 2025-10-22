@@ -126,7 +126,7 @@
 .tab.active {
     background: white;
     color: #667eea;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 /* Tab内容区域 */
@@ -195,8 +195,12 @@
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 /* 进度条 */
@@ -218,8 +222,13 @@
 }
 
 @keyframes shimmer {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
 }
 
 /* 扫描步骤 */
@@ -266,7 +275,9 @@
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* 扫描结果 */
@@ -522,7 +533,7 @@
     flex: 1;
     font-size: 12px;
     color: #666;
-    font-family: 'Consolas', monospace;
+    font-family: "Consolas", monospace;
 }
 
 /* 解析结果面板 */

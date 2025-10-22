@@ -608,8 +608,9 @@ class Dashboard {
             case "notification":
                 // 通知消息
                 if (message.data && "message" in message.data) {
-                    const notifType = ("notificationType" in message.data ?
-                        message.data.notificationType : "info") as NotificationType;
+                    const notifType = (
+                        "notificationType" in message.data ? message.data.notificationType : "info"
+                    ) as NotificationType;
                     this.showNotification(String(message.data.message), notifType);
                 }
                 break;

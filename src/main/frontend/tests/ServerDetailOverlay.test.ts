@@ -28,11 +28,34 @@ const mockServerDetail: ServerDetail = {
     networkOutHistory: [500000, 510000, 512000, 508000, 512000],
     timestamps: ["10:00", "10:01", "10:02", "10:03", "10:04"],
     processes: [
-        { pid: 1234, name: "nginx", user: "root", cpuUsage: 25.5, memoryUsage: 10.2, status: "running", command: "nginx" },
-        { pid: 5678, name: "node", user: "www", cpuUsage: 15.3, memoryUsage: 8.5, status: "running", command: "node app.js" }
+        {
+            pid: 1234,
+            name: "nginx",
+            user: "root",
+            cpuUsage: 25.5,
+            memoryUsage: 10.2,
+            status: "running",
+            command: "nginx"
+        },
+        {
+            pid: 5678,
+            name: "node",
+            user: "www",
+            cpuUsage: 15.3,
+            memoryUsage: 8.5,
+            status: "running",
+            command: "node app.js"
+        }
     ],
     applications: [{ id: 1, name: "Web App", status: "running", port: 8080 }],
-    users: [{ username: "admin", terminal: "pts/0", loginTime: "2025-10-13 10:00", from: "192.168.1.100" }]
+    users: [
+        {
+            username: "admin",
+            terminal: "pts/0",
+            loginTime: "2025-10-13 10:00",
+            from: "192.168.1.100"
+        }
+    ]
 };
 
 // Mock DOM环境
