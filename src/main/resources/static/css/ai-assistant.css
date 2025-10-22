@@ -572,8 +572,9 @@
 .ai-mini-topbar {
     position: sticky;
     top: 0;
-    background: linear-gradient(135deg, #1a1f2e 0%, #252b3d 100%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    /* 与聊天区域融为一体：使用透明背景并去掉分隔线 */
+    background: transparent;
+    border-bottom: none;
     z-index: 10;
     display: flex;
     align-items: center;
@@ -1340,6 +1341,12 @@
     align-items: center;
 }
 
+/* 让原生选择控件遵循暗色配色（Chromium/Firefox 支持） */
+.ai-mode-selector select,
+.ai-models select {
+    color-scheme: dark;
+}
+
 /* 纯文本外观的下拉 */
 .ai-mode-select,
 .ai-model-select {
@@ -1379,6 +1386,26 @@
     color: rgba(255, 255, 255, 0.6);
     font-size: 12px;
     pointer-events: none;
+}
+
+/* 下拉面板项颜色（尽可能覆盖原生样式，系统高亮仍可能接管） */
+.ai-model-select option {
+    background: #1a1f2e;
+    color: rgba(255, 255, 255, 0.92);
+}
+.ai-model-select optgroup {
+    background: #1a1f2e;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Windows/High-Contrast 回退：尽力避免白底白字 */
+@media (forced-colors: active) {
+  .ai-model-select,
+  .ai-model-select option {
+    forced-color-adjust: none;
+    background: #1a1f2e;
+    color: #ffffff;
+  }
 }
 
 /* 响应式调整 */
