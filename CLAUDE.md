@@ -392,11 +392,33 @@ mvn clean package -DskipTests
 ```
 
 ### 5. 代码规范
+
+#### Java代码规范
 - **命名**: 使用驼峰命名法，类名首字母大写
 - **注释**: 所有公共方法必须有JavaDoc注释
 - **异常**: 使用统一的异常处理机制
 - **日志**: 使用SLF4J，合理设置日志级别
 - **事务**: 需要事务的方法添加@Transactional注解
+
+#### TypeScript代码规范 ⭐ **强制执行**
+**详细规范**: 📘 [TypeScript编码规范](./docs/development/TYPESCRIPT_CODING_STANDARDS.md)
+
+**核心要求**:
+- ❌ **严格禁止** 使用 `any` 类型 (生产代码)
+- ✅ **必须** 为导出函数添加返回类型
+- ✅ **必须** 遵循推荐的类型安全模式
+
+**快速参考**:
+- [Window全局属性类型化](./docs/development/TYPESCRIPT_CODING_STANDARDS.md#1-window全局属性类型化)
+- [第三方库类型集成](./docs/development/TYPESCRIPT_CODING_STANDARDS.md#2-第三方库类型集成)
+- [动态属性访问](./docs/development/TYPESCRIPT_CODING_STANDARDS.md#3-动态属性访问类型化)
+- [联合类型+类型守卫](./docs/development/TYPESCRIPT_CODING_STANDARDS.md#4-联合类型--类型守卫)
+
+**ESLint配置**:
+```javascript
+"@typescript-eslint/no-explicit-any": "error", // 禁止any
+"@typescript-eslint/explicit-function-return-type": "warn" // 返回类型
+```
 
 ## 部署指南
 
