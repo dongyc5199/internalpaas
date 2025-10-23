@@ -5,18 +5,33 @@
 export type NotificationType = "success" | "error" | "warning" | "info";
 
 /**
+ * 扩展Window接口以包含通知系统
+ */
+interface WindowWithNotifications extends Window {
+    showToast?: (message: string, type: NotificationType) => void;
+    AppShell?: {
+        emit?: (event: string, data: unknown) => void;
+    };
+    dashboard?: {
+        showNotification?: (message: string, type: NotificationType) => void;
+    };
+}
+
+/**
  * 安全地显示Toast通知
  * 兼容多种通知系统：showToast函数、AppShell事件、控制台输出
  */
 export function safeShowToast(message: string, type: NotificationType = "info"): void {
+    const win = window as unknown as WindowWithNotifications;
+
     // 尝试使用全局showToast函数
-    if (typeof (window as any).showToast === "function") {
-        (window as any).showToast(message, type);
+    if (typeof win.showToast === "function") {
+        win.showToast(message, type);
         return;
     }
 
     // 尝试使用AppShell事件系统
-    const appShell = (window as any).AppShell;
+    const appShell = win.AppShell;
     if (appShell && typeof appShell.emit === "function") {
         appShell.emit("notification:show", {
             message,
@@ -26,7 +41,7 @@ export function safeShowToast(message: string, type: NotificationType = "info"):
     }
 
     // 尝试使用dashboard通知系统
-    const dashboard = (window as any).dashboard;
+    const dashboard = win.dashboard;
     if (dashboard && typeof dashboard.showNotification === "function") {
         dashboard.showNotification(message, type);
         return;
