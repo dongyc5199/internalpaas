@@ -14,6 +14,18 @@
 import { safeShowToast, showSuccess, showError } from "@/utils";
 import { eventBus } from "@/utils/event-bus";
 
+// ==================== Window接口扩展 ====================
+
+/**
+ * 扩展Window接口以包含SSH Config Wizard全局函数
+ */
+interface WindowWithSSHWizard extends Window {
+    openSSHConfigImportWizard?: () => void;
+    sshConfigWizard?: {
+        close: () => void;
+    };
+}
+
 // ==================== TypeScript接口定义 ====================
 
 /**
@@ -237,8 +249,8 @@ export class SSHConfigImportWizard {
                         const tabName =
                             (tab.dataset.tab as "auto-scan" | "upload" | "manual") ||
                             tab.getAttribute("data-tab");
-                        if (tabName) {
-                            this.switchTab(tabName as any);
+                        if (tabName && (tabName === "auto-scan" || tabName === "upload" || tabName === "manual")) {
+                            this.switchTab(tabName);
                         }
                     });
                 });
@@ -1463,7 +1475,7 @@ export class SSHConfigImportWizard {
                 const field = target.dataset.field;
                 if (index >= 0 && index < this.servers.length && field) {
                     const value = (target as HTMLInputElement | HTMLSelectElement).value;
-                    (this.servers[index] as any)[field] =
+                    (this.servers[index] as Record<string, string | number>)[field] =
                         field === "sshPort" ? parseInt(value) : value;
                 }
             }
@@ -1819,14 +1831,15 @@ export function getSSHConfigImportWizard(): SSHConfigImportWizard {
 }
 
 // 全局函数供HTML调用
-(window as any).openSSHConfigImportWizard = function () {
+const win = window as unknown as WindowWithSSHWizard;
+win.openSSHConfigImportWizard = function () {
     console.log("Global openSSHConfigImportWizard called");
     const wizard = getSSHConfigImportWizard();
     wizard.open();
 };
 
 // 暴露wizard实例给全局,供HTML关闭按钮调用
-(window as any).sshConfigWizard = {
+win.sshConfigWizard = {
     close: () => {
         console.log("Global sshConfigWizard.close() called");
         getSSHConfigImportWizard().close();
