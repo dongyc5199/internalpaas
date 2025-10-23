@@ -2,6 +2,8 @@
  * 图表工具函数模块
  */
 
+import type { Chart, ChartConfiguration } from "chart.js";
+
 /**
  * 预定义的图表颜色集合
  */
@@ -120,8 +122,8 @@ export function createTimeSeriesChartConfig(
         backgroundColor?: string;
         fill?: boolean;
     }>,
-    options: Record<string, any> = {}
-) {
+    options: Partial<ChartConfiguration["options"]> = {}
+): ChartConfiguration {
     return {
         type: "line" as const,
         data: {
@@ -161,8 +163,8 @@ export function createTimeSeriesChartConfig(
 export function createPieChartConfig(
     labels: string[],
     data: number[],
-    options: Record<string, any> = {}
-) {
+    options: Partial<ChartConfiguration["options"]> = {}
+): ChartConfiguration {
     return {
         type: "pie" as const,
         data: {
@@ -197,8 +199,8 @@ export function createBarChartConfig(
         backgroundColor?: string;
         borderColor?: string;
     }>,
-    options: Record<string, any> = {}
-) {
+    options: Partial<ChartConfiguration["options"]> = {}
+): ChartConfiguration {
     return {
         type: "bar" as const,
         data: {
@@ -227,7 +229,7 @@ export function createBarChartConfig(
  * 销毁图表实例
  * @param chart - Chart.js实例
  */
-export function destroyChart(chart: any): void {
+export function destroyChart(chart: Chart | null | undefined): void {
     if (chart && typeof chart.destroy === "function") {
         chart.destroy();
     }
@@ -237,7 +239,7 @@ export function destroyChart(chart: any): void {
  * 批量销毁图表实例
  * @param charts - Chart.js实例数组
  */
-export function destroyCharts(charts: any[]): void {
+export function destroyCharts(charts: Array<Chart | null | undefined>): void {
     charts.forEach((chart) => destroyChart(chart));
     charts.length = 0; // 清空数组
 }
@@ -249,7 +251,7 @@ export function destroyCharts(charts: any[]): void {
  * @param newLabels - 新标签（可选）
  */
 export function updateChartData(
-    chart: any,
+    chart: Chart | null | undefined,
     newData: number[] | number[][],
     newLabels?: string[]
 ): void {
