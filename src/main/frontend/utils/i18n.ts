@@ -3,6 +3,13 @@
  */
 
 /**
+ * 扩展Window接口以包含国际化配置
+ */
+interface WindowWithI18n extends Window {
+    currentLanguage?: string;
+}
+
+/**
  * 设置元素的本地化文本
  * @param element - DOM元素
  * @param zh - 中文文本
@@ -26,7 +33,7 @@ export function setLocalizedText(
     element.setAttribute("data-i18n-en", enValue);
 
     // 如果未提供当前语言，尝试从全局变量获取
-    const lang = currentLang || (window as any).currentLanguage || "zh";
+    const lang = currentLang || (window as unknown as WindowWithI18n).currentLanguage || "zh";
 
     element.textContent = lang === "en" ? enValue || zhValue || "--" : zhValue || enValue || "--";
 }
@@ -86,7 +93,7 @@ export function setLocalizedTextBatch(
  * @param currentLang - 当前语言
  */
 export function getLocalizedText(zh: string, en: string, currentLang?: string): string {
-    const lang = currentLang || (window as any).currentLanguage || "zh";
+    const lang = currentLang || (window as unknown as WindowWithI18n).currentLanguage || "zh";
     return lang === "en" ? en || zh : zh || en;
 }
 
@@ -117,7 +124,7 @@ export function refreshLocalizedText(element: HTMLElement | null, currentLang?: 
 
     const zh = element.getAttribute("data-i18n-zh") || "";
     const en = element.getAttribute("data-i18n-en") || "";
-    const lang = currentLang || (window as any).currentLanguage || "zh";
+    const lang = currentLang || (window as unknown as WindowWithI18n).currentLanguage || "zh";
 
     element.textContent = lang === "en" ? en || zh || "--" : zh || en || "--";
 }
