@@ -14,6 +14,7 @@ import type {
     ServerDetailDependencies,
     ServerDetailOverlayAPI
 } from "../types/server-management";
+import type { Chart } from "chart.js";
 
 export class ServerDetailOverlay implements ServerDetailOverlayAPI {
     // 私有属性 - DOM元素
@@ -32,17 +33,17 @@ export class ServerDetailOverlay implements ServerDetailOverlayAPI {
     private scrollHandler: (() => void) | null = null;
 
     // 私有属性 - 图表相关
-    private charts: any[] = [];
+    private charts: Array<Chart | null> = [];
     private chartTimer: number | null = null;
     private chartsPaused: boolean = false;
-    private timeFormatter: any = null;
+    private timeFormatter: Intl.DateTimeFormat | null = null;
 
     // 私有属性 - 数据和状态
     private currentServer: ServerDetail | null = null;
     private previousFocus: HTMLElement | null = null;
     private bodyOverflowBackup: string = "";
-    private currentDetail: any = null;
-    private chartSeriesData: any[] = [];
+    private currentDetail: ServerDetail | null = null;
+    private chartSeriesData: Array<{ time: string; cpu: number; memory: number }> = [];
     private activeSection: string = "";
     private processSort: string = "cpu";
     private processSortButtons: HTMLElement[] = [];
