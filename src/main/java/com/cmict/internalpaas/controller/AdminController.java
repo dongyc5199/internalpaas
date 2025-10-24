@@ -323,6 +323,14 @@ public class AdminController {
     @ResponseBody
     public ResponseEntity<?> createServerApi(@ModelAttribute Server server) {
         try {
+            // 基本字段校验：hostname 必填
+            if (server.getHostname() == null || server.getHostname().trim().isEmpty()) {
+                Map<String, String> error = new HashMap<>();
+                error.put("status", "error");
+                error.put("message", "hostname is required");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+            }
+
             // 设置默认端口值（如果未提供）
             if (server.getPort() == null) {
                 server.setPort(8080); // 默认应用端口

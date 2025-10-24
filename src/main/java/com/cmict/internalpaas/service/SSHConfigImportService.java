@@ -315,9 +315,12 @@ public class SSHConfigImportService {
             errors.add("缺少SSH用户名");
         }
 
-        // 注意：允许认证凭证为空，用户可能稍后补充或使用其他认证方式
-        // 不再强制要求密码或私钥，提升导入灵活性
-        
+        // 检查认证凭证：密码或私钥至少存在一个
+        if ((dto.getSshPassword() == null || dto.getSshPassword().trim().isEmpty()) &&
+            (dto.getSshKeyPath() == null || dto.getSshKeyPath().trim().isEmpty())) {
+            errors.add("缺少认证凭证");
+        }
+
         return errors;
     }
 

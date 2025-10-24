@@ -208,9 +208,12 @@ public class SSHConfigMapper {
             missingFields.add("sshUsername");
         }
 
-        // 注意：不再强制要求认证凭证（密码或私钥）
-        // 允许用户稍后补充，提升导入灵活性
-        
+        // 检查认证凭证：密码或私钥至少存在一个
+        if ((dto.getSshPassword() == null || dto.getSshPassword().trim().isEmpty()) &&
+            (dto.getSshKeyPath() == null || dto.getSshKeyPath().trim().isEmpty())) {
+            missingFields.add("sshPassword/sshKeyPath");
+        }
+
         return missingFields;
     }
 

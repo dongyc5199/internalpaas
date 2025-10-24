@@ -11,6 +11,7 @@ class ServerStatusManager {
         this.websocket = null;
         this.retryCount = 0;
         this.maxRetries = 3;
+        this.serverListReloadPending = false;
         
         this.init();
     }
@@ -291,6 +292,34 @@ class ServerStatusManager {
         }
     }
     
+    findServerCard(serverId) {
+        return document.querySelector('[data-server-id="' + serverId + '"]') ||
+               document.querySelector('[data-id="' + serverId + '"]');
+    }
+
+    reloadServerList(serverId) {
+        if (this.serverListReloadPending) {
+            return;
+        }
+
+        this.serverListReloadPending = true;
+
+        const refreshEvent = new CustomEvent('serverList:refresh', {
+            bubbles: true,
+            detail: { serverId, reason: 'SERVER_CREATED' }
+        });
+        window.dispatchEvent(refreshEvent);
+
+        setTimeout(() => {
+            const card = this.findServerCard(serverId);
+            if (!card) {
+                window.location.reload();
+            } else {
+                this.serverListReloadPending = false;
+            }
+        }, 500);
+    }
+
     /**
      * 渲染错误状态
      */
@@ -390,10 +419,20 @@ class ServerStatusManager {
      * 处理状态更新
      */
     handleStatusUpdate(statusUpdate) {
-        if (statusUpdate.serverId) {
-            // 刷新特定服务器状态
-            this.loadServerStatus(statusUpdate.serverId);
+        if (!statusUpdate || !statusUpdate.serverId) {
+            return;
         }
+
+        const serverId = statusUpdate.serverId;
+        const existingCard = this.findServerCard(serverId);
+
+        if (!existingCard && statusUpdate.type === 'SERVER_CREATED_STATUS_UPDATED') {
+            this.reloadServerList(serverId);
+            return;
+        }
+
+        // 刷新特定服务器状态
+        this.loadServerStatus(serverId);
     }
     
     /**

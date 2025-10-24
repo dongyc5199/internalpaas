@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -93,27 +95,50 @@ public class SshFileTransferService {
      * @return 是否成功
      */
     public boolean uploadFileContent(Server server, String content, String remotePath) {
+        Objects.requireNonNull(content, "content");
+        byte[] data = content.getBytes(StandardCharsets.UTF_8);
+        return uploadFileBytes(server, data, remotePath);
+    }
+
+    /**
+     * 上传二进制文件内容
+     *
+     * @param server     目标服务器
+     * @param data       文件字节内容
+     * @param remotePath 远程文件路径
+     * @return 是否成功
+     */
+    public boolean uploadFileBytes(Server server, byte[] data, String remotePath) {
+        Objects.requireNonNull(data, "data");
+
+        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data)) {
+            return uploadStream(server, inputStream, remotePath, data.length);
+        } catch (IOException e) {
+            logger.error("二进制流上传失败 - serverId: {}, error: {}", server.getId(), e.getMessage(), e);
+            return false;
+        }
+    }
+
+    private boolean uploadStream(Server server,
+                                  InputStream inputStream,
+                                  String remotePath,
+                                  long size) {
         logger.info("开始上传文件内容 - serverId: {}, remote: {}, size: {} bytes",
-                server.getId(), remotePath, content.length());
+                server.getId(), remotePath, size);
 
         JSch jsch = new JSch();
         Session session = null;
         ChannelSftp sftpChannel = null;
 
         try {
-            // 创建SSH会话
             session = createSession(jsch, server);
             session.connect(CONNECTION_TIMEOUT);
 
-            // 打开SFTP通道
             Channel channel = session.openChannel("sftp");
             channel.connect(CONNECTION_TIMEOUT);
             sftpChannel = (ChannelSftp) channel;
 
-            // 上传内容
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(content.getBytes("UTF-8"));
             sftpChannel.put(inputStream, remotePath, ChannelSftp.OVERWRITE);
-            inputStream.close();
 
             logger.info("✅ 文件内容上传成功 - serverId: {}", server.getId());
             return true;

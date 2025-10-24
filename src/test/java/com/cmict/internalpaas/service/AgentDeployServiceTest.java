@@ -9,12 +9,22 @@ import com.cmict.internalpaas.repository.AgentDeploymentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -73,6 +83,8 @@ class AgentDeployServiceTest {
         ReflectionTestUtils.setField(agentDeployService, "otlpEndpoint", "http://localhost:4317");
         ReflectionTestUtils.setField(agentDeployService, "minDiskSpaceMB", 100);
         ReflectionTestUtils.setField(agentDeployService, "deployTimeoutMinutes", 10);
+        ReflectionTestUtils.setField(agentDeployService, "agentBinaryPath", "agent/otelcol-linux-amd64.tar.gz");
+        ReflectionTestUtils.setField(agentDeployService, "agentBinaryDownloadUrl", "");
     }
 
     /**
@@ -207,9 +219,9 @@ class AgentDeployServiceTest {
         verify(remoteCommandService, times(5)).executeCommand(eq(testServer), anyString());
         verify(remoteCommandService).executeCommand(eq(testServer), contains("systemctl stop"));
         verify(remoteCommandService).executeCommand(eq(testServer), contains("systemctl disable"));
-        verify(remoteCommandService).executeCommand(eq(testServer), contains("rm -rf"));
+        verify(remoteCommandService).executeCommand(eq(testServer), contains("/opt/metrics-agent"));
         verify(remoteCommandService).executeCommand(eq(testServer), contains("daemon-reload"));
-        verify(remoteCommandService).executeCommand(eq(testServer), contains("rm -f /tmp"));
+        verify(remoteCommandService).executeCommand(eq(testServer), contains("metrics-agent-install"));
     }
 
     /**
@@ -240,7 +252,7 @@ class AgentDeployServiceTest {
     @Test
     void testRenderOtelConfig() throws Exception {
         // Arrange
-        java.lang.reflect.Method method = AgentDeployService.class.getDeclaredMethod(
+        Method method = AgentDeployService.class.getDeclaredMethod(
                 "renderOtelConfig", Server.class);
         method.setAccessible(true);
 
@@ -255,5 +267,91 @@ class AgentDeployServiceTest {
         assertTrue(config.contains("value: \"Test Server\""), "配置应包含服务器名称标签");
         assertTrue(config.contains("value: \"192.168.1.100\""), "配置应包含主机名标签");
         assertTrue(config.contains("endpoint: \"http://localhost:4317\""), "配置应包含OTLP endpoint");
+    }
+
+    @Test
+    void testUploadAgentFiles_WithPackagedBinary() throws Exception {
+        ReflectionTestUtils.setField(agentDeployService, "agentBinaryPath", "agent/test-agent.bin");
+        ReflectionTestUtils.setField(agentDeployService, "agentBinaryDownloadUrl", "");
+
+        mockSuccessfulUploadPrerequisites();
+        when(sshFileTransferService.uploadFileBytes(eq(testServer), any(byte[].class), anyString())).thenReturn(true);
+
+        Method method = AgentDeployService.class.getDeclaredMethod("uploadAgentFiles", Server.class, AgentDeployment.class);
+        method.setAccessible(true);
+
+        boolean result = (boolean) method.invoke(agentDeployService, testServer, testDeployment);
+
+        assertTrue(result, "打包的Agent二进制应该上传成功");
+        verify(sshFileTransferService).uploadFileBytes(eq(testServer), any(byte[].class), eq("/tmp/metrics-agent-install/agent.tar.gz"));
+    }
+
+    @Test
+    void testUploadAgentFiles_DownloadFallback() throws Exception {
+        ReflectionTestUtils.setField(agentDeployService, "agentBinaryPath", "agent/missing-agent.bin");
+
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        byte[] payload = "downloaded-agent".getBytes(StandardCharsets.UTF_8);
+        server.createContext("/agent.tar.gz", new FixedResponseHandler(payload));
+        server.start();
+        try {
+            String url = "http://localhost:" + server.getAddress().getPort() + "/agent.tar.gz";
+            ReflectionTestUtils.setField(agentDeployService, "agentBinaryDownloadUrl", url);
+
+            mockSuccessfulUploadPrerequisites();
+
+            when(sshFileTransferService.uploadFileBytes(eq(testServer), any(byte[].class), anyString()))
+                    .thenReturn(true);
+
+            Method method = AgentDeployService.class.getDeclaredMethod("uploadAgentFiles", Server.class, AgentDeployment.class);
+            method.setAccessible(true);
+
+            boolean result = (boolean) method.invoke(agentDeployService, testServer, testDeployment);
+
+            assertTrue(result, "下载获取的Agent二进制应该上传成功");
+            ArgumentCaptor<byte[]> binaryCaptor = ArgumentCaptor.forClass(byte[].class);
+            verify(sshFileTransferService).uploadFileBytes(eq(testServer), binaryCaptor.capture(), eq("/tmp/metrics-agent-install/agent.tar.gz"));
+            assertArrayEquals(payload, binaryCaptor.getValue());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void testUploadAgentFiles_NoBinaryConfigured() throws Exception {
+        ReflectionTestUtils.setField(agentDeployService, "agentBinaryPath", "agent/missing-agent.bin");
+        ReflectionTestUtils.setField(agentDeployService, "agentBinaryDownloadUrl", "");
+
+        mockSuccessfulUploadPrerequisites();
+
+        Method method = AgentDeployService.class.getDeclaredMethod("uploadAgentFiles", Server.class, AgentDeployment.class);
+        method.setAccessible(true);
+
+        boolean result = (boolean) method.invoke(agentDeployService, testServer, testDeployment);
+
+        assertFalse(result, "缺少Agent二进制时应返回失败");
+        verify(sshFileTransferService, never()).uploadFileBytes(eq(testServer), any(byte[].class), anyString());
+    }
+
+    private void mockSuccessfulUploadPrerequisites() {
+        RemoteCommandService.CommandResult successResult = new RemoteCommandService.CommandResult(0, "OK", "");
+        when(remoteCommandService.executeCommand(eq(testServer), contains("mkdir -p"))).thenReturn(successResult);
+        when(sshFileTransferService.uploadFileContent(eq(testServer), anyString(), anyString())).thenReturn(true);
+    }
+
+    private static class FixedResponseHandler implements HttpHandler {
+        private final byte[] payload;
+
+        private FixedResponseHandler(byte[] payload) {
+            this.payload = payload;
+        }
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            exchange.sendResponseHeaders(200, payload.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(payload);
+            }
+        }
     }
 }

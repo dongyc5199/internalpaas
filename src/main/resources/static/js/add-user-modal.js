@@ -116,7 +116,7 @@
                                                 <button
                                                     type="button"
                                                     class="user-modal-password-toggle"
-                                                    id="passwordToggle"
+                                                    id="userPasswordToggle"
                                                     aria-label="显示/隐藏密码"
                                                 >
                                                     <i class="fas fa-eye"></i>
@@ -181,14 +181,14 @@
                                     <button
                                         type="button"
                                         class="user-modal-advanced-toggle"
-                                        id="advancedToggle"
+                                        id="userAdvancedToggle"
                                         aria-expanded="false"
                                     >
                                         <i class="fas fa-cog"></i>
                                         高级选项
                                         <i class="fas fa-chevron-down user-modal-toggle-icon"></i>
                                     </button>
-                                    <div class="user-modal-advanced-content" id="advancedContent">
+                                    <div class="user-modal-advanced-content" id="userAdvancedContent">
                                         <div class="user-modal-form-group">
                                             <label class="user-modal-form-label">工作目录</label>
                                             <div class="user-modal-input-wrapper">
@@ -265,11 +265,11 @@
             });
 
             // 密码显示/隐藏
-            document.getElementById('passwordToggle').addEventListener('click', () => this.togglePasswordVisibility('password'));
+            document.getElementById('userPasswordToggle').addEventListener('click', () => this.togglePasswordVisibility('password', 'userPasswordToggle'));
             document.getElementById('confirmPasswordToggle').addEventListener('click', () => this.togglePasswordVisibility('confirmPassword'));
 
             // 高级选项折叠
-            document.getElementById('advancedToggle').addEventListener('click', this.toggleAdvanced.bind(this));
+            document.getElementById('userAdvancedToggle').addEventListener('click', this.toggleAdvanced.bind(this));
 
             // 角色选择
             const roleMatrix = document.getElementById('roleMatrix');
@@ -368,8 +368,8 @@
             this.updateValidation('roles', '', true);
 
             // 重置高级选项折叠状态
-            const advancedContent = document.getElementById('advancedContent');
-            const advancedToggle = document.getElementById('advancedToggle');
+            const advancedContent = document.getElementById('userAdvancedContent');
+            const advancedToggle = document.getElementById('userAdvancedToggle');
             const icon = advancedToggle.querySelector('.user-modal-toggle-icon');
             advancedContent.classList.remove('show');
             advancedContent.style.maxHeight = '0';
@@ -412,9 +412,9 @@
         /**
          * 切换密码显示/隐藏
          */
-        togglePasswordVisibility(inputId) {
+        togglePasswordVisibility(inputId, toggleId) {
             const passwordInput = document.getElementById(inputId);
-            const toggleButton = document.getElementById(`${inputId}Toggle`);
+            const toggleButton = document.getElementById(toggleId || `${inputId}Toggle`);
             const icon = toggleButton.querySelector('i');
 
             if (passwordInput.type === 'password') {
@@ -433,7 +433,7 @@
          */
         toggleAdvanced(e) {
             const toggle = e.currentTarget;
-            const content = document.getElementById('advancedContent');
+            const content = document.getElementById('userAdvancedContent');
             const icon = toggle.querySelector('.user-modal-toggle-icon');
             const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
 
