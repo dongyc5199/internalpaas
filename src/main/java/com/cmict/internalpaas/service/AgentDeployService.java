@@ -85,6 +85,12 @@ public class AgentDeployService {
     @Value("${agent.binary.download-url:}")
     private String agentBinaryDownloadUrl;
 
+    @Value("${agent.binary.download-timeout-minutes:5}")
+    private int downloadTimeoutMinutes;
+
+    @Value("${agent.binary.cache-enabled:true}")
+    private boolean cacheEnabled;
+
     @Value("${agent.pre-check.min-disk-mb:100}")
     private int minDiskSpaceMB;
 
@@ -94,6 +100,12 @@ public class AgentDeployService {
     private final HttpClient httpClient = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
+
+    // T004: 二进制文件缓存（key: downloadUrl, value: 文件字节数组）
+    private final Map<String, byte[]> binaryCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+    // T005: 下载同步锁（避免并发重复下载）
+    private final Object downloadLock = new Object();
 
     /**
      * 部署Agent到指定服务器（异步）
@@ -524,28 +536,84 @@ public class AgentDeployService {
         }
     }
 
+    /**
+     * T010-T018: 解析并获取Agent二进制文件（带缓存支持）
+     * 优先级顺序：缓存 → 资源文件 → HTTP下载
+     */
     private byte[] resolveAgentBinary(AgentDeployment deployment) {
-        byte[] packagedBinary = loadBinaryFromResource(deployment);
-        if (packagedBinary != null) {
-            return packagedBinary;
-        }
-
-        if (StringUtils.hasText(agentBinaryDownloadUrl)) {
-            deployment.appendLog(String.format("[上传] 通过下载地址获取Agent二进制: %s", agentBinaryDownloadUrl));
-            try {
-                byte[] downloaded = downloadAgentBinary();
-                double sizeMb = downloaded.length / 1024.0 / 1024.0;
-                deployment.appendLog(String.format(Locale.ROOT,
-                        "[上传] ✅ 下载Agent二进制成功 (%.2f MB)", sizeMb));
-                return downloaded;
-            } catch (Exception e) {
-                deployment.appendLog("[上传] ❌ 下载Agent二进制失败: " + e.getMessage());
-                logger.error("下载Agent二进制失败 - url: {}", agentBinaryDownloadUrl, e);
-                return null;
+        // T010: 优先检查缓存
+        if (cacheEnabled && StringUtils.hasText(agentBinaryDownloadUrl)) {
+            byte[] cached = binaryCache.get(agentBinaryDownloadUrl);
+            if (cached != null) {
+                // T014: 缓存命中日志
+                deployment.appendLog("[上传] 使用已缓存的Agent二进制");
+                logger.debug("使用缓存的Agent二进制 - url: {}", agentBinaryDownloadUrl);
+                return cached;
             }
         }
 
-        deployment.appendLog(String.format("[上传] ⚠️ 未找到Agent二进制 (路径: %s)，且未配置下载地址", agentBinaryPath));
+        // T009: 尝试从资源文件加载（增强日志）
+        byte[] packagedBinary = loadBinaryFromResource(deployment);
+        if (packagedBinary != null) {
+            // T015: 资源加载日志（已在loadBinaryFromResource中实现）
+            return packagedBinary;
+        }
+
+        // T011-T012: 尝试HTTP下载（带并发控制）
+        if (StringUtils.hasText(agentBinaryDownloadUrl)) {
+            // T011: 并发下载控制（synchronized块 + 双重检查）
+            synchronized (downloadLock) {
+                // 双重检查：可能其他线程已下载
+                if (cacheEnabled) {
+                    byte[] cached = binaryCache.get(agentBinaryDownloadUrl);
+                    if (cached != null) {
+                        deployment.appendLog("[上传] 使用已缓存的Agent二进制");
+                        return cached;
+                    }
+                }
+
+                // T016: 下载开始日志（使用sanitizeUrl脱敏）
+                deployment.appendLog(String.format("[上传] 通过下载地址获取Agent二进制: %s",
+                    sanitizeUrl(agentBinaryDownloadUrl)));
+
+                try {
+                    byte[] downloaded = downloadAgentBinary();
+
+                    // 验证下载的文件
+                    if (!validateBinary(downloaded)) {
+                        // T032: 文件验证失败日志
+                        deployment.appendLog(String.format("[上传] ❌ 文件验证失败，大小：%d bytes",
+                            downloaded.length));
+                        return null;
+                    }
+
+                    // T017: 下载成功日志
+                    double sizeMb = downloaded.length / 1024.0 / 1024.0;
+                    deployment.appendLog(String.format(Locale.ROOT,
+                            "[上传] ✅ 下载Agent二进制成功 (%.2f MB)", sizeMb));
+
+                    // T018: 文件验证通过日志
+                    deployment.appendLog("[上传] ✅ 文件验证通过");
+
+                    // T012: 缓存写入（验证通过后）
+                    if (cacheEnabled) {
+                        binaryCache.put(agentBinaryDownloadUrl, downloaded);
+                        logger.debug("Agent二进制已缓存 - url: {}", agentBinaryDownloadUrl);
+                    }
+
+                    return downloaded;
+                } catch (Exception e) {
+                    // T030: 下载失败错误日志
+                    deployment.appendLog("[上传] ❌ 下载Agent二进制失败: " + e.getMessage());
+                    logger.error("下载Agent二进制失败 - url: {}", agentBinaryDownloadUrl, e);
+                    return null;
+                }
+            }
+        }
+
+        // T031: 所有方法失败，记录详细错误
+        deployment.appendLog(String.format("[上传] ❌ 未能获取Agent二进制文件，请检查配置（路径: %s）",
+            agentBinaryPath));
         logger.warn("Agent二进制缺失 - path: {}, downloadUrl: {}", agentBinaryPath, agentBinaryDownloadUrl);
         return null;
     }
@@ -575,18 +643,82 @@ public class AgentDeployService {
     }
 
     private byte[] downloadAgentBinary() throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(agentBinaryDownloadUrl))
-                .GET()
-                .build();
+        // T008: 增强HTTP下载逻辑（超时、重定向、错误处理）
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(agentBinaryDownloadUrl))
+                    .timeout(java.time.Duration.ofMinutes(downloadTimeoutMinutes))
+                    .GET()
+                    .build();
 
-        HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
-        int status = response.statusCode();
-        if (status >= 200 && status < 300) {
-            return response.body();
+            HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            int status = response.statusCode();
+
+            if (status >= 200 && status < 300) {
+                return response.body();
+            } else if (status >= 400 && status < 500) {
+                throw new IOException("下载失败（文件不存在或无权限），HTTP状态码：" + status);
+            } else {
+                throw new IOException("下载服务器错误，HTTP状态码：" + status + "，请稍后重试");
+            }
+        } catch (java.net.http.HttpTimeoutException e) {
+            logger.error("Agent二进制下载超时 - url: {}", agentBinaryDownloadUrl, e);
+            throw new IOException("下载超时（" + downloadTimeoutMinutes + "分钟限制），文件可能过大或网络过慢", e);
+        } catch (java.net.ConnectException e) {
+            logger.error("无法连接到下载服务器 - url: {}", agentBinaryDownloadUrl, e);
+            throw new IOException("无法连接到下载服务器，请检查网络或URL配置", e);
+        }
+    }
+
+    /**
+     * T006: 验证二进制文件是否为有效的tar.gz格式
+     *
+     * @param data 文件字节数组
+     * @return true表示验证通过，false表示无效
+     */
+    private boolean validateBinary(byte[] data) {
+        // 检查null和最小长度
+        if (data == null || data.length < 2) {
+            logger.error("二进制数据为空或过短");
+            return false;
         }
 
-        throw new IOException("HTTP状态码: " + status);
+        // 1. 最小文件大小检查（至少1MB，避免HTML错误页）
+        if (data.length < 1_048_576) { // 1 MB
+            logger.error("二进制文件过小 ({} bytes)，可能不是有效的tar.gz文件", data.length);
+            return false;
+        }
+
+        // 2. Gzip魔数检查（前两个字节：0x1f, 0x8b）
+        if (data[0] != 0x1f || (data[1] & 0xff) != 0x8b) {
+            logger.error("文件签名不匹配，不是有效的gzip文件 (魔数: 0x{} 0x{})",
+                Integer.toHexString(data[0] & 0xff),
+                Integer.toHexString(data[1] & 0xff));
+            return false;
+        }
+
+        // 3. 最大文件大小检查（防止内存溢出）
+        if (data.length > 104_857_600) { // 100 MB
+            double sizeMB = data.length / 1_048_576.0;
+            logger.error("文件过大 ({} MB)，超过100MB限制", String.format(Locale.ROOT, "%.2f", sizeMB));
+            return false;
+        }
+
+        logger.debug("二进制文件验证通过 - 大小: {} MB, 魔数正确",
+            String.format(Locale.ROOT, "%.2f", data.length / 1_048_576.0));
+        return true;
+    }
+
+    /**
+     * T007: URL脱敏（移除认证信息）
+     *
+     * @param url 原始URL
+     * @return 脱敏后的URL
+     */
+    private String sanitizeUrl(String url) {
+        if (url == null) return "";
+        // 移除 ://user:password@ 格式的认证信息
+        return url.replaceAll("://([^:]+):([^@]+)@", "://***:***@");
     }
 
     /**
