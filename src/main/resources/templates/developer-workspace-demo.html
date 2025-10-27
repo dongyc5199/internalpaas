@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Developer Workspace Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --bg-surface: #f4f5fb;
+            --bg-card: #ffffff;
+            --bg-card-glass: rgba(255, 255, 255, 0.82);
+            --accent-solid: #5663ff;
+            --accent-soft: rgba(86, 99, 255, 0.12);
+            --text-primary: #1f2937;
+            --text-secondary: #475569;
+            --text-muted: #6b7280;
+            --status-success: #22c55e;
+            --status-warn: #f59e0b;
+            --status-danger: #ef4444;
+            --radius-lg: 14px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg-surface);
+            color: var(--text-primary);
+        }
+        a { color: inherit; text-decoration: none; }
+
+        .workspace {
+            display: grid;
+            grid-template-rows: 60px 1fr;
+            min-height: 100vh;
+        }
+        .workspace__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 22px;
+            background: linear-gradient(135deg, rgba(108, 99, 255, 0.85), rgba(61, 139, 255, 0.85));
+            color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+        }
+        .header__left,
+        .header__right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: "Poppins", sans-serif;
+            font-weight: 600;
+        }
+        .brand__logo {
+            width: 30px;
+            height: 30px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.28);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        .search-bar {
+            position: relative;
+            width: 240px;
+        }
+        .search-bar input {
+            width: 100%;
+            height: 34px;
+            padding: 0 36px 0 14px;
+            border: none;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.18);
+            color: #fff;
+            font-size: 13px;
+        }
+        .search-bar input::placeholder { color: rgba(255, 255, 255, 0.7); }
+        .search-bar span {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            padding: 1px 6px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.18);
+            font-size: 11px;
+        }
+        .header__pill {
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.16);
+            font-size: 12px;
+        }
+        .avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.28);
+        }
+        .workspace__body {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+        }
+        .sidebar {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            padding: 18px 16px 16px;
+            border-right: 1px solid rgba(15, 23, 42, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .sidebar__nav { display: grid; gap: 6px; }
+        .sidebar__item {
+            padding: 9px 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .sidebar__item--active {
+            background: var(--accent-soft);
+            color: var(--accent-solid);
+            font-weight: 600;
+        }
+        .chip-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 10px;
+            border-radius: 9px;
+            background: var(--accent-soft);
+            color: var(--accent-solid);
+            font-size: 12px;
+        }
+        .main {
+            padding: 20px 24px 28px;
+            display: grid;
+            gap: 16px;
+        }
+        .section {
+            border-radius: var(--radius-lg);
+            background: #fff;
+            border: 1px solid rgba(15, 23, 42, 0.05);
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.05);
+        }
+        .section--glass { background: var(--bg-card-glass); backdrop-filter: blur(14px); }
+        .section__inner { padding: 16px 18px; display: grid; gap: 16px; }
+        .top-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .service-picker {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+        .service-dropdown { position: relative; }
+        .service-dropdown select {
+            appearance: none;
+            padding: 6px 24px 6px 12px;
+            font-size: 13px;
+            border: none;
+            border-radius: 9px;
+            background: transparent;
+            color: var(--text-primary);
+        }
+        .service-dropdown::after {
+            content: "\25BC";
+            position: absolute;
+            right: 7px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: var(--accent-solid);
+            pointer-events: none;
+        }
+        .pill-group {
+            display: inline-flex;
+            gap: 5px;
+            padding: 3px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+        }
+        .pill-group button {
+            border: none;
+            background: transparent;
+            padding: 5px 11px;
+            border-radius: 999px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        .pill-group button.is-active {
+            background: #fff;
+            color: var(--accent-solid);
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(86, 99, 255, 0.18);
+        }
+        .badge {
+            padding: 5px 11px;
+            border-radius: 999px;
+            background: rgba(34, 197, 94, 0.16);
+            color: var(--status-success);
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .toolbar-actions { display: inline-flex; gap: 8px; }
+        .btn {
+            padding: 7px 14px;
+            border-radius: 9px;
+            border: 1px solid transparent;
+            background: var(--accent-soft);
+            color: var(--accent-solid);
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .btn--primary { background: var(--accent-solid); color: #fff; }
+        .btn--ghost {
+            background: transparent;
+            border: 1px solid rgba(86, 99, 255, 0.18);
+            color: var(--accent-solid);
+        }
+        .shortcut-hint { font-size: 12px; color: var(--text-secondary); }
+        .shortcut-hint kbd {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 24px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 6px;
+            background: var(--accent-soft);
+            border: 1px solid rgba(86, 99, 255, 0.22);
+            font-size: 11px;
+            color: var(--accent-solid);
+        }
+        .service-stats {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(150px, 1fr);
+            gap: 12px;
+            width: 100%;
+        }
+        .service-stat {
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: var(--accent-soft);
+            border: 1px solid rgba(86, 99, 255, 0.12);
+            display: grid;
+            gap: 4px;
+        }
+        .service-stat--alert { background: rgba(244, 114, 182, 0.12); border-color: rgba(244, 114, 182, 0.24); }
+        .service-stat__label { font-size: 12px; color: var(--text-secondary); }
+        .service-stat__value { font-size: 18px; font-weight: 600; color: var(--accent-solid); }
+        .service-stat--alert .service-stat__value { color: #f97316; }
+        .service-stat__meta { font-size: 11px; color: var(--text-muted); }
+        .debug-area { display: flex; gap: 12px; }
+        .debug-panel { flex: 1 1 0; background: #fff; border-radius: var(--radius-lg); border: 1px solid rgba(15, 23, 42, 0.05); box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08); display: flex; flex-direction: column; }
+        .panel__header { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid rgba(15,23,42,0.06); }
+        .panel__meta { display: inline-flex; align-items: center; gap: 8px; }
+        .panel__title { font-size: 13px; font-weight: 600; }
+        .panel__actions { display: inline-flex; align-items: center; gap: 6px; }
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            border: 1px solid rgba(86, 99, 255, 0.18);
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--accent-solid);
+            cursor: pointer;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-icon:hover { box-shadow: 0 4px 12px rgba(86, 99, 255, 0.18); }
+        .btn-icon svg { width: 14px; height: 14px; fill: currentColor; }
+        .panel__content { flex: 1; padding: 0 16px 16px; display: flex; flex-direction: column; overflow: hidden; }
+        .log-toolbar { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); }
+        .log-toolbar input,
+        .log-toolbar select { height: 30px; padding: 0 8px; border-radius: 8px; border: 1px solid rgba(15,23,42,0.12); font-size: 12px; }
+        .log-stream {
+            margin-top: 12px;
+            background: #111827;
+            color: #f9fafb;
+            border-radius: var(--radius-md);
+            padding: 12px;
+            font-family: "JetBrains Mono", monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            flex: 1;
+            overflow: auto;
+            box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.35);
+        }
+        .log-line { display: grid; grid-template-columns: 58px 68px 1fr; gap: 10px; align-items: baseline; }
+        .log-level { font-weight: 600; }
+        .log-level--info { color: #38bdf8; }
+        .log-level--warn { color: var(--status-warn); }
+        .log-level--error { color: var(--status-danger); }
+        .terminal-warning { margin: 0; padding: 10px 12px; background: rgba(234, 179, 8, 0.14); border-left: 3px solid #d97706; border-radius: var(--radius-md); font-size: 12px; color: #92400e; }
+        .terminal { margin-top: 12px; background: #f8fafc; border-radius: var(--radius-md); border: 1px solid rgba(15,23,42,0.08); display: flex; flex-direction: column; flex: 1; }
+        .terminal__toolbar { padding: 10px 14px; display: flex; flex-wrap: wrap; gap: 8px; background: var(--accent-soft); color: var(--accent-solid); font-size: 12px; }
+        .shortcut-chip { display: inline-flex; align-items: center; border-radius: 999px; border: 1px solid rgba(86,99,255,0.18); padding: 5px 10px; background: rgba(255,255,255,0.95); }
+        .terminal__body { padding: 14px; font-family: "JetBrains Mono", monospace; font-size: 12px; color: #1f2937; flex: 1; overflow: auto; background: #fff; }
+        .terminal__input { display: flex; gap: 8px; align-items: center; padding: 12px 14px; border-top: 1px solid rgba(15,23,42,0.08); background: #f8fafc; }
+        .terminal__input input { flex: 1; border: none; background: transparent; font-size: 12px; }
+        .supporting-zone { border-radius: var(--radius-lg); border: 1px solid rgba(15,23,42,0.05); background: #fff; box-shadow: 0 12px 24px rgba(15,23,42,0.05); }
+        .supporting-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; padding: 20px 22px 22px; }
+        .support-card { border-radius: var(--radius-md); background: rgba(255,255,255,0.95); border: 1px solid rgba(15,23,42,0.06); padding: 16px; display: grid; gap: 10px; }
+        .support-card__title { font-size: 13px; font-weight: 600; }
+        .support-card__list { display: grid; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+        .support-card--timeline .support-card__list { position: relative; padding-left: 16px; }
+        .support-card--timeline .support-card__list span::before { content: ""; position: absolute; left: -16px; top: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-solid); box-shadow: 0 0 0 4px rgba(86,99,255,0.12); }
+        .support-card--timeline .support-card__list::before { content: ""; position: absolute; left: -13px; top: 6px; bottom: 6px; width: 2px; background: rgba(86,99,255,0.12); }
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.55); display: none; align-items: center; justify-content: center; z-index: 50; }
+        .modal { width: min(360px, 92vw); background: #fff; border-radius: var(--radius-lg); box-shadow: 0 18px 36px rgba(15,23,42,0.12); padding: 20px; display: grid; gap: 12px; }
+        .modal__title { font-size: 15px; font-weight: 600; }
+        .modal__actions { display: flex; justify-content: flex-end; gap: 8px; }
+        .field { display: grid; gap: 6px; font-size: 12px; }
+        .field textarea { min-height: 80px; border-radius: 10px; border: 1px solid rgba(15,23,42,0.12); padding: 10px 12px; }
+        .toast { position: fixed; right: 20px; bottom: 20px; background: #1f2937; color: #fff; padding: 10px 16px; border-radius: 9px; box-shadow: 0 10px 24px rgba(15,23,42,0.25); font-size: 12px; display: none; }
+        .viewer-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
+            padding: 20px;
+        }
+        .viewer {
+            width: min(1100px, 94vw);
+            max-height: min(720px, 90vh);
+            background: #fff;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 22px 44px rgba(15,23,42,0.18);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .viewer__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(15,23,42,0.08);
+        }
+        .viewer__title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+        .viewer__body {
+            padding: 20px;
+            background: var(--bg-surface);
+            flex: 1;
+            min-height: 520px;
+            max-height: min(560px, 70vh);
+            overflow: auto;
+        }
+        .viewer__body .debug-panel {
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(15,23,42,0.08);
+            box-shadow: 0 12px 24px rgba(15,23,42,0.08);
+        }
+        .viewer__body .panel__content {
+            padding: 0 16px 16px;
+            max-height: min(520px, 65vh);
+            overflow: auto;
+        }
+        .viewer__close {
+            background: transparent;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        .viewer__close:hover { background: rgba(15,23,42,0.06); color: var(--text-primary); }
+        body.is-modal-open { overflow: hidden; }
+        @media (max-width: 1280px) {
+            .workspace__body { grid-template-columns: 190px 1fr; }
+            .debug-area { flex-direction: column; }
+            .service-stats { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 1024px) {
+            .workspace__body { grid-template-columns: 1fr; }
+            .sidebar { position: sticky; top: 60px; flex-direction: row; overflow-x: auto; gap: 10px; padding: 12px 14px; }
+            .sidebar__nav { display: inline-flex; gap: 8px; }
+            .sidebar__footer { display: none; }
+            .main { padding: 18px 16px 26px; }
+            .search-bar { display: none; }
+            .service-stats { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="workspace">
+        <header class="workspace__header">
+            <div class="header__left">
+                <div class="brand">
+                    <span class="brand__logo">DW</span>
+                    <span>Developer Workspace</span>
+                </div>
+                <div class="search-bar">
+                    <input type="search" placeholder="搜索服务 / 操作">
+                    <span>Ctrl + K</span>
+                </div>
+            </div>
+            <div class="header__right">
+                <span class="header__pill">当前集群 DEV</span>
+                <span class="header__pill">告警 2</span>
+                <span class="header__pill">ZH | 开发者</span>
+                <div class="avatar" aria-label="用户头像" role="img"></div>
+            </div>
+        </header>
+        <div class="workspace__body">
+            <aside class="sidebar">
+                <nav class="sidebar__nav">
+                    <a class="sidebar__item" href="#">工作概览</a>
+                    <a class="sidebar__item sidebar__item--active" href="#">应用服务调试</a>
+                    <a class="sidebar__item" href="#">部署历史</a>
+                    <a class="sidebar__item" href="#">配置管理</a>
+                    <a class="sidebar__item" href="#">个人设置</a>
+                </nav>
+                <div class="sidebar__footer">
+                    <a class="chip-link" href="#">帮助中心</a>
+                    <a class="chip-link" href="#">反馈建议</a>
+                </div>
+            </aside>
+            <main class="main">
+                <section class="section section--glass">
+                    <div class="section__inner">
+                        <div class="top-toolbar">
+                            <div class="service-picker">
+                                <div class="service-dropdown">
+                                    <select aria-label="选择应用服务">
+                                        <option>dev-portal-service</option>
+                                        <option>metric-hub-service</option>
+                                        <option>agent-gateway</option>
+                                    </select>
+                                </div>
+                                <div class="pill-group" role="group" aria-label="环境切换">
+                                    <button class="is-active">DEV</button>
+                                    <button>STG</button>
+                                    <button>PROD</button>
+                                </div>
+                                <span class="badge">运行中 · 4 实例</span>
+                            </div>
+                            <div class="toolbar-actions">
+                                <button class="btn js-action" data-action="restart">重启实例</button>
+                                <button class="btn js-action" data-action="redeploy">重新部署</button>
+                                <button class="btn btn--ghost js-insights" type="button" data-insights="true">运行洞察</button>
+                                <button class="btn btn--primary js-action" data-action="config">打开配置</button>
+                            </div>
+                        </div>
+                        <div class="shortcut-hint">
+                            快捷键：<kbd>Shift</kbd> + <kbd>L</kbd> 聚焦日志，<kbd>Shift</kbd> + <kbd>T</kbd> 聚焦终端
+                        </div>
+                        <div class="service-stats">
+                            <div class="service-stat">
+                                <div class="service-stat__label">CPU 占用</div>
+                                <div class="service-stat__value">62%</div>
+                                <div class="service-stat__meta">目标上限 75%</div>
+                            </div>
+                            <div class="service-stat">
+                                <div class="service-stat__label">内存占用</div>
+                                <div class="service-stat__value">48%</div>
+                                <div class="service-stat__meta">昨日 +5%</div>
+                            </div>
+                            <div class="service-stat">
+                                <div class="service-stat__label">硬盘占用</div>
+                                <div class="service-stat__value">73%</div>
+                                <div class="service-stat__meta">可用空间 220 GB</div>
+                            </div>
+                            <div class="service-stat service-stat--alert">
+                                <div class="service-stat__label">错误 & 告警</div>
+                                <div class="service-stat__value">2 告警</div>
+                                <div class="service-stat__meta">最近 15 分钟</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="debug-area" aria-label="调试主面板">
+                    <article class="debug-panel" id="logPanel">
+                        <div class="panel__header">
+                            <div class="panel__meta">
+                                <div class="panel__title">实时日志</div>
+                                <div class="panel__actions">
+                                    <button class="btn-icon js-popout" type="button" data-panel="logPanel" aria-label="弹出实时日志面板">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M9 5a1 1 0 1 0 0 2h7.59l-9.3 9.29a1 1 0 0 0 1.42 1.42L18 8.41V16a1 1 0 1 0 2 0V5a1 1 0 0 0-1-1H9z"/>
+                                            <path d="M5 7a2 2 0 0 1 2-2h2a1 1 0 1 1 0 2H7v10h10v-2a1 1 0 1 1 2 0v2a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="log-toolbar">
+                                <input type="search" placeholder="搜索 traceId / 关键字" aria-label="搜索日志">
+                                <select aria-label="日志级别过滤">
+                                    <option>全部级别</option>
+                                    <option>INFO</option>
+                                    <option>WARN</option>
+                                    <option>ERROR</option>
+                                </select>
+                                <select aria-label="时间范围筛选">
+                                    <option>最近 15 分钟</option>
+                                    <option>最近 1 小时</option>
+                                    <option>自定义范围</option>
+                                </select>
+                                <button class="btn btn--ghost" type="button">暂停滚动</button>
+                            </div>
+                        </div>
+                        <div class="panel__content" id="logStreamWrapper">
+                            <div class="log-stream" id="logStream" aria-live="polite">
+                                <div class="log-line"><span>15:42:18</span><span class="log-level log-level--info">INFO</span><span>[traceId=2d98c] 请求完成 status=200 latency=96ms</span></div>
+                                <div class="log-line"><span>15:42:15</span><span class="log-level log-level--warn">WARN</span><span>[traceId=0af33] 上游 Redis 响应延迟 453ms</span></div>
+                                <div class="log-line"><span>15:42:12</span><span class="log-level log-level--info">INFO</span><span>[traceId=901cf] 调用 MetricsHub 成功 job=sync-agent</span></div>
+                                <div class="log-line"><span>15:42:07</span><span class="log-level log-level--error">ERROR</span><span>[traceId=557fa] WebSocket 握手失败 code=403 user=ci-bot</span></div>
+                                <div class="log-line"><span>15:42:01</span><span class="log-level log-level--info">INFO</span><span>[traceId=744ce] 触发缓存预热 action=refresh-app-config</span></div>
+                                <div class="log-line"><span>15:41:55</span><span class="log-level log-level--info">INFO</span><span>[traceId=19bd3] 构建成功 package=app-service:1.4.2</span></div>
+                            </div>
+                        </div>
+                    </article>
+                    <div class="resize-handle" id="resizeHandle" aria-hidden="true"></div>
+                    <article class="debug-panel" id="terminalPanel">
+                        <div class="panel__header">
+                            <div class="panel__meta">
+                                <div class="panel__title">SSH 终端</div>
+                                <div class="panel__actions">
+                                    <button class="btn-icon js-popout" type="button" data-panel="terminalPanel" aria-label="弹出 SSH 终端面板">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M9 5a1 1 0 1 0 0 2h7.59l-9.3 9.29a1 1 0 0 0 1.42 1.42L18 8.41V16a1 1 0 1 0 2 0V5a1 1 0 0 0-1-1H9z"/>
+                                            <path d="M5 7a2 2 0 0 1 2-2h2a1 1 0 1 1 0 2H7v10h10v-2a1 1 0 1 1 2 0v2a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="log-toolbar">
+                                <span>工作目录：/home/devops/workspaces/dev-portal</span>
+                            </div>
+                        </div>
+                        <div class="panel__content">
+                            <p class="terminal-warning">终端仅允许访问当前工作目录及子目录，高危命令会被拦截并记录审计。</p>
+                            <div class="terminal">
+                                <div class="terminal__toolbar">
+                                    <span class="shortcut-chip">tail -f logs/app.log</span>
+                                    <span class="shortcut-chip">kubectl get pods</span>
+                                    <span class="shortcut-chip">ls -lah</span>
+                                </div>
+                                <div class="terminal__body" id="terminalBody">
+                                    <p>dev@node-01:~/workspaces/dev-portal$ ls -lah</p>
+                                    <p>total 128K</p>
+                                    <p>drwxr-xr-x  8 dev dev 4.0K Oct 26 15:20 .</p>
+                                    <p>drwxr-xr-x 12 dev dev 4.0K Oct 24 09:18 ..</p>
+                                    <p>-rw-r--r--  1 dev dev  12K Oct 25 21:12 application.yml</p>
+                                    <p>-rw-r--r--  1 dev dev  28K Oct 26 14:42 deployment.yaml</p>
+                                    <p>drwxr-xr-x  3 dev dev 4.0K Oct 26 14:58 releases</p>
+                                    <br>
+                                    <p>dev@node-01:~/workspaces/dev-portal$ tail -n 3 logs/app.log</p>
+                                    <p>[INFO] 15:41:58 Job MetricsSync finished in 1.8s</p>
+                                    <p>[WARN] 15:41:49 Cache warming exceeded SLA (472ms)</p>
+                                    <p>[INFO] 15:41:38 Session cleanup done</p>
+                                </div>
+                                <div class="terminal__input">
+                                    <span>dev@node-01:$</span>
+                                    <input type="text" placeholder="输入命令，回车执行..." aria-label="输入终端命令">
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <template id="insightsTemplate">
+        <div class="supporting-zone">
+            <div class="supporting-grid">
+                <div class="support-card">
+                    <div class="support-card__title">配置文件</div>
+                    <div class="support-card__list">
+                        <span>application.yml · 上次编辑：王然 · 2025-10-25 21:12</span>
+                        <span>deployment.yaml · 上次编辑：CI Bot · 2025-10-26 14:42</span>
+                        <a class="chip-link" href="#">查看所有配置 diff</a>
+                    </div>
+                </div>
+                <div class="support-card">
+                    <div class="support-card__title">最近部署</div>
+                    <div class="support-card__list">
+                        <span>v1.4.2 · 成功 · 00:04:32 · by you.huang</span>
+                        <span>v1.4.1 · 回滚 · 00:03:12 · by ci-bot</span>
+                        <a class="chip-link" href="#">跳转部署历史</a>
+                    </div>
+                </div>
+                <div class="support-card support-card--timeline">
+                    <div class="support-card__title">审计摘录</div>
+                    <div class="support-card__list">
+                        <span>15:30 · tail -f logs/app.log · 终端</span>
+                        <span>14:55 · 重启实例 node-02 · 成功</span>
+                        <span>14:20 · 编辑 application.yml · 审批通过</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <div class="viewer-backdrop" id="viewerBackdrop" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
+        <div class="viewer">
+            <div class="viewer__header">
+                <div class="viewer__title" id="viewerTitle">面板预览</div>
+                <button class="viewer__close" type="button" id="viewerClose" aria-label="关闭弹窗">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M7.05 7.05a1 1 0 0 1 1.4 0L12 10.59l3.55-3.54a1 1 0 0 1 1.41 1.41L13.41 12l3.55 3.55a1 1 0 0 1-1.41 1.41L12 13.41l-3.55 3.55a1 1 0 0 1-1.41-1.41L10.59 12 7.05 8.45a1 1 0 0 1 0-1.4z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="viewer__body" id="viewerBody" role="document"></div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal" role="form" aria-labelledby="modalTitle">
+            <div class="modal__title" id="modalTitle">确认操作</div>
+            <p id="modalDescription">请填写操作备注，确认后将记录到审计并通知相关人员。</p>
+            <div class="field">
+                <label for="remarkInput">备注说明</label>
+                <textarea id="remarkInput" placeholder="说明操作原因、影响范围及回滚计划"></textarea>
+            </div>
+            <div class="modal__actions">
+                <button class="btn btn--ghost" type="button" id="cancelAction">取消</button>
+                <button class="btn btn--primary" type="button" id="confirmAction">确认执行</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">操作已提交，正在调度任务...</div>
+
+    <script>
+        (function () {
+            const logPanel = document.getElementById("logPanel");
+            const terminalPanel = document.getElementById("terminalPanel");
+            const handle = document.getElementById("resizeHandle");
+            const logStream = document.getElementById("logStream");
+            const modalBackdrop = document.getElementById("modalBackdrop");
+            const remarkInput = document.getElementById("remarkInput");
+            const toast = document.getElementById("toast");
+            const viewerBackdrop = document.getElementById("viewerBackdrop");
+            const viewerBody = document.getElementById("viewerBody");
+            const viewerTitle = document.getElementById("viewerTitle");
+            const viewerClose = document.getElementById("viewerClose");
+            const insightsTemplate = document.getElementById("insightsTemplate");
+
+            let resizing = false;
+            if (handle) {
+                handle.addEventListener("mousedown", (evt) => {
+                    resizing = true;
+                    document.body.style.userSelect = "none";
+                    document.body.style.cursor = "col-resize";
+                    evt.preventDefault();
+                });
+                window.addEventListener("mousemove", (evt) => {
+                    if (!resizing) return;
+                    const rect = logPanel.parentElement.getBoundingClientRect();
+                    const percent = Math.min(Math.max((evt.clientX - rect.left) / rect.width, 0.3), 0.7);
+                    logPanel.style.flex = `0 0 ${percent * 100}%`;
+                    terminalPanel.style.flex = "1 1 0";
+                });
+                window.addEventListener("mouseup", () => {
+                    if (!resizing) return;
+                    resizing = false;
+                    document.body.style.userSelect = "";
+                    document.body.style.cursor = "";
+                });
+            }
+
+            window.addEventListener("keydown", (evt) => {
+                if (evt.shiftKey && (evt.key === "L" || evt.key === "l")) {
+                    evt.preventDefault();
+                    logPanel.querySelector("input[type='search']")?.focus();
+                }
+                if (evt.shiftKey && (evt.key === "T" || evt.key === "t")) {
+                    evt.preventDefault();
+                    terminalPanel.querySelector(".terminal__input input")?.focus();
+                }
+            });
+
+            let pendingAction = "";
+            document.querySelectorAll(".js-action").forEach(button => {
+                button.addEventListener("click", () => {
+                    pendingAction = button.dataset.action || "";
+                    modalBackdrop.style.display = "flex";
+                    modalBackdrop.setAttribute("aria-hidden", "false");
+                    remarkInput.value = "";
+                    remarkInput.focus();
+                    const mapping = {
+                        restart: "确认重启实例",
+                        redeploy: "确认重新部署",
+                        config: "确认打开配置"
+                    };
+                    document.getElementById("modalTitle").textContent = mapping[pendingAction] || "确认操作";
+                });
+            });
+
+            document.getElementById("cancelAction").addEventListener("click", closeModal);
+            modalBackdrop.addEventListener("click", (evt) => {
+                if (evt.target === modalBackdrop) closeModal();
+            });
+            document.getElementById("confirmAction").addEventListener("click", () => {
+                closeModal();
+                showToast(`已受理操作：${getActionLabel(pendingAction)}。备注已记录。`);
+            });
+
+            function closeModal() {
+                modalBackdrop.style.display = "none";
+                modalBackdrop.setAttribute("aria-hidden", "true");
+                pendingAction = "";
+            }
+
+            function getActionLabel(key) {
+                switch (key) {
+                    case "restart": return "重启实例";
+                    case "redeploy": return "重新部署";
+                    case "config": return "打开配置";
+                    default: return "未知操作";
+                }
+            }
+
+            let toastTimer;
+            function showToast(message) {
+                toast.textContent = message;
+                toast.style.display = "block";
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => {
+                    toast.style.display = "none";
+                }, 2400);
+            }
+
+            const observer = new MutationObserver(() => {
+                logStream.scrollTop = logStream.scrollHeight;
+            });
+            observer.observe(logStream, { childList: true });
+
+            if (viewerBackdrop && viewerBody && viewerTitle) {
+                document.querySelectorAll(".js-popout").forEach(button => {
+                    button.addEventListener("click", () => {
+                        const panelId = button.dataset.panel;
+                        const panel = document.getElementById(panelId);
+                        if (!panel) return;
+                        const title = panel.querySelector(".panel__title")?.textContent?.trim() || "弹出视图";
+                        viewerTitle.textContent = title;
+                        viewerBody.innerHTML = "";
+                        const panelClone = panel.cloneNode(true);
+                        panelClone.removeAttribute("id");
+                        panelClone.querySelectorAll("[id]").forEach(node => node.removeAttribute("id"));
+                        panelClone.querySelectorAll(".js-popout").forEach(node => node.remove());
+                        panelClone.querySelectorAll(".panel__actions").forEach(actions => {
+                            if (!actions.children.length) {
+                                actions.remove();
+                            }
+                        });
+                        panelClone.querySelectorAll(".panel__title").forEach(title => title.remove());
+                        panelClone.querySelectorAll(".panel__meta").forEach(meta => {
+                            if (!meta.children.length && !meta.textContent.trim()) {
+                                meta.remove();
+                            }
+                        });
+                        if (panelClone instanceof HTMLElement) {
+                            const warning = panelClone.querySelector(".terminal-warning");
+                            if (warning) {
+                                const meta = panelClone.querySelector(".panel__header");
+                                if (meta) {
+                                    meta.appendChild(warning);
+                                }
+                            }
+                            viewerBody.appendChild(panelClone);
+                        } else {
+                            const fallback = document.createElement("p");
+                            fallback.textContent = "暂无法展示该内容。";
+                            viewerBody.appendChild(fallback);
+                        }
+                        viewerBackdrop.style.display = "flex";
+                        viewerBackdrop.setAttribute("aria-hidden", "false");
+                        document.body.classList.add("is-modal-open");
+                        viewerBackdrop.focus();
+                    });
+                });
+
+                function closeViewer() {
+                    viewerBackdrop.style.display = "none";
+                    viewerBackdrop.setAttribute("aria-hidden", "true");
+                        viewerBody.innerHTML = "";
+                        document.body.classList.remove("is-modal-open");
+                }
+
+                viewerClose?.addEventListener("click", closeViewer);
+                viewerBackdrop.addEventListener("click", (evt) => {
+                    if (evt.target === viewerBackdrop) closeViewer();
+                });
+                window.addEventListener("keydown", (evt) => {
+                    if (evt.key === "Escape" && viewerBackdrop.getAttribute("aria-hidden") === "false") {
+                        closeViewer();
+                    }
+                });
+                document.querySelectorAll(".js-insights").forEach(button => {
+                    button.addEventListener("click", () => {
+                        if (!insightsTemplate) return;
+                        viewerTitle.textContent = "运行洞察";
+                        viewerBody.innerHTML = "";
+                        const clone = insightsTemplate.content.cloneNode(true);
+                        viewerBody.appendChild(clone);
+                        viewerBackdrop.style.display = "flex";
+                        viewerBackdrop.setAttribute("aria-hidden", "false");
+                        document.body.classList.add("is-modal-open");
+                        viewerBackdrop.focus();
+                    });
+                });
+            }
+        })();
+    </script>
+</body>
+</html>
+
