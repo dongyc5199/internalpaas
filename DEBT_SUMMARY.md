@@ -51,6 +51,14 @@
 
 ---
 
+## 🆕 2025-10-25 技术债补充
+
+- 🟠 **P1 | Agent 下载日志未脱敏** — `src/main/java/com/cmict/internalpaas/service/AgentDeployService.java:550`、`:566` 等处直接输出 `agentBinaryDownloadUrl`，若 URL 含凭据会泄漏敏感信息。需统一通过 `sanitizeUrl` 处理后再写日志。
+- 🟡 **P2 | Agent 部署文档未同步** — `docs/design/agent-deployment/testing-guide.md` 与 `CLAUDE.md` 尚未记录缓存/下载策略与新增测试任务，规格 T054/T058 要求的文档更新缺失，导致交接信息不完整。
+- 🟢 **P3 | 方法命名与规格不一致** — `AgentDeployService` 仍使用 `resolveAgentBinary`，而规格与测试命名均为 `resolveAgentBinaryWithCache`（见 `specs/004-fix-agent-binary-deployment/tasks.md:64`）。应重命名或添加别名以避免后续协作困惑。
+
+---
+
 ## 快速操作
 
 ```bash
