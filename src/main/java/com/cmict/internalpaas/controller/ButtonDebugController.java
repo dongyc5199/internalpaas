@@ -17,4 +17,14 @@ public class ButtonDebugController {
     public String debugServerButtons() {
         return "debug/server-buttons-test";
     }
+
+    @GetMapping("/react-mfe")
+    public String reactMicroFrontendDemo() {
+        return "debug/react-mfe-demo";
+    }
+
+    @GetMapping("/react-query-test")
+    public String reactQueryTest() {
+        return "debug/react-query-test";
+    }
 }

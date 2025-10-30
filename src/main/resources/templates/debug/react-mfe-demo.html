@@ -1,0 +1,92 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React 微前端演示 - Deployment Platform</title>
+
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <link rel="stylesheet" href="/css/design-tokens.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            background: #f4f6fb;
+            color: #1f2933;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: #253858;
+            color: #fff;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        #deploy-platform-root {
+            width: 100%;
+            max-width: 640px;
+        }
+
+        footer {
+            padding: 1rem 2rem;
+            font-size: 0.875rem;
+            color: #6b778c;
+            background: #ebeff6;
+            border-top: 1px solid rgba(9, 30, 66, 0.08);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>React 微前端演示</h1>
+        <p>用于验证部署管理薄控制平面的 React 脚手架挂载逻辑。</p>
+    </header>
+    <main>
+        <div id="deploy-platform-root" data-auth-endpoint="/debug/mock-deploy-token"></div>
+    </main>
+    <footer>
+        访问路径：<code>/debug/react-mfe</code>，用于功能验证与回归测试。
+    </footer>
+
+    <script type="module" src="/dist/assets/deploy-platform.js"></script>
+    <script>
+        (function () {
+            const expectedOrigin = window.location.origin;
+            const originalFetch = window.fetch.bind(window);
+            window.fetch = async (input, init) => {
+                if (typeof input === "string" && input.endsWith("/debug/mock-deploy-token")) {
+                    return new Response(
+                        JSON.stringify({
+                            accessToken: "debug-access-token",
+                            expiresIn: 1800,
+                            issuer: expectedOrigin,
+                            audience: "deploy-platform",
+                            signature: "debug-signature"
+                        }),
+                        {
+                            status: 200,
+                            headers: {
+                                "Content-Type": "application/json"
+                            }
+                        }
+                    );
+                }
+                return originalFetch(input, init);
+            };
+        })();
+    </script>
+</body>
+</html>

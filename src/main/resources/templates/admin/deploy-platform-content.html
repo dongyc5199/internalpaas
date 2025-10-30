@@ -1,0 +1,92 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <title>Deployment Platform</title>
+</head>
+<body>
+<main class="content-framework admin-theme deploy-platform" role="main" th:fragment="deploy-platform-content">
+    <div class="content-scrollable">
+        <div class="page-header">
+            <div class="page-title-group">
+                <div aria-hidden="true" class="page-icon">
+                    <i>🚀</i>
+                </div>
+                <div class="page-title-content">
+                    <h1 class="page-title">
+                        <span data-i18n-zh="部署管理平台" data-i18n-en="Deployment Management Platform">
+                            Deployment Management Platform
+                        </span>
+                    </h1>
+                    <p class="page-description">
+                        <span data-i18n-zh="统一调度 CI/CD、灰度发布、审批与审计，透视全链路部署健康" data-i18n-en="Orchestrate CI/CD, canary rollout, approvals and audits with full deployment visibility">
+                            Orchestrate CI/CD, canary rollout, approvals and audits with full deployment visibility
+                        </span>
+                    </p>
+                </div>
+            </div>
+            <div class="page-actions">
+                <button class="btn btn-secondary" type="button" data-i18n-zh="刷新面板" data-i18n-en="Refresh Panel" onclick="if (window.loadDeployPlatformMfe) { window.loadDeployPlatformMfe(); }">
+                    <i aria-hidden="true">🔄</i>
+                    <span data-i18n-zh="刷新面板" data-i18n-en="Refresh Panel">Refresh Panel</span>
+                </button>
+            </div>
+        </div>
+
+        <section class="card deploy-platform-summary">
+            <div class="card-body">
+                <ul class="feature-list">
+                    <li>
+                        <strong data-i18n-zh="一键生成部署/回滚 PR" data-i18n-en="Generate deployment/rollback PRs">Generate deployment/rollback PRs</strong>
+                        <span data-i18n-zh="仅修改镜像 tag、Helm values 或 IaC 变量，保障 GitOps 规范" data-i18n-en="Restrict changes to image tags, Helm values or IaC variables to keep GitOps compliant">Restrict changes to image tags, Helm values or IaC variables to keep GitOps compliant</span>
+                    </li>
+                    <li>
+                        <strong data-i18n-zh="金丝雀灰度与指标门禁" data-i18n-en="Canary rollout with metric guardrails">Canary rollout with metric guardrails</strong>
+                        <span data-i18n-zh="结合 Prometheus 指标自动推进 / 回滚，支持人工越权留痕" data-i18n-en="Advance or rollback based on Prometheus metrics, with manual override traceability">Advance or rollback based on Prometheus metrics, with manual override traceability</span>
+                    </li>
+                    <li>
+                        <strong data-i18n-zh="完整审计材料包" data-i18n-en="Complete audit bundle">Complete audit bundle</strong>
+                        <span data-i18n-zh="导出变更 diff、构建信息、放量轨迹、指标曲线与数据校验报告" data-i18n-en="Export change diff, build info, rollout timeline, metrics and validation reports">Export change diff, build info, rollout timeline, metrics and validation reports</span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="deploy-platform-panel">
+            <script>
+                window.__DEPLOY_PLATFORM_DEFER_AUTO_MOUNT__ = false;
+            </script>
+            <div id="deploy-platform-root"
+                 class="deploy-platform-host"
+                 data-auth-endpoint="/api/deploy-platform/token"
+                 data-i18n-zh="正在加载部署管理面板…"
+                 data-i18n-en="Loading deployment console...">
+                Loading deployment console...
+            </div>
+                <style>
+            .deploy-platform-summary .feature-list {
+                margin: 0;
+                padding: 0 0 0 1rem;
+            }
+            .deploy-platform-summary .feature-list li {
+                margin-bottom: 12px;
+                line-height: 1.6;
+            }
+            .deploy-platform-host {
+                min-height: 420px;
+                border-radius: 12px;
+                border: 1px dashed rgba(79, 70, 229, 0.35);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(79, 70, 229, 0.06);
+                font-size: 16px;
+                color: #475569;
+                padding: 24px;
+            }
+        </style>
+    </section>
+    </div>
+</main>
+</body>
+</html>

@@ -77,7 +77,19 @@
       "Bash(tee:*)",
       "Bash(npx eslint:*)",
       "Bash(npx prettier:*)",
-      "Read(//e/**)"
+      "Read(//e/**)",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File .specify/scripts/powershell/create-new-feature.ps1 -Json \"修复agent文件:agent/otelcol-linux-amd64.tar.gz不存在的问题,以及完善agent部署\" -ShortName \"fix-agent-binary-deployment\")",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File .specify/scripts/powershell/create-new-feature.ps1 -Json \"完成阶段1的剩余20%工作量。\" -ShortName \"complete-phase1-infrastructure\")",
+      "WebSearch",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -Command \"if (Test-Path ''E:\\work\\code\\internalpaas\\specs\\005-complete-phase1-infrastructure\\checklists'') { Get-ChildItem ''E:\\work\\code\\internalpaas\\specs\\005-complete-phase1-infrastructure\\checklists'' -Filter *.md | ForEach-Object { $content = Get-Content $_.FullName -Raw; $total = ([regex]::Matches($content, ''- \\[([ Xx])\\]'')).Count; $completed = ([regex]::Matches($content, ''- \\[[Xx]\\]'')).Count; $incomplete = $total - $completed; [PSCustomObject]@{File=$_.Name; Total=$total; Completed=$completed; Incomplete=$incomplete} } | ConvertTo-Json -AsArray } else { Write-Output ''NO_CHECKLISTS'' }\")",
+      "Bash(git rev-parse:*)",
+      "Bash(node --version:*)",
+      "Bash(npm:*)",
+      "Bash(timeout 90 npm run test:run:*)",
+      "Bash(pkill:*)",
+      "Bash(npx storybook@latest init:*)",
+      "Bash(npx storybook:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

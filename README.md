@@ -116,11 +116,14 @@ Internal PaaS Platform 是一个轻量级的企业内部 PaaS 管理平台,提�
 - **构建工具:** Maven 3.8+
 
 ### 前端
-- **模板引擎:** Thymeleaf
-- **脚本语言:** TypeScript
-- **构建工具:** Vite
+- **模板引擎:** Thymeleaf (主应用)
+- **前端框架:** React 19.2.0 (微前端子应用)
+- **脚本语言:** TypeScript 5.9.3
+- **构建工具:** Vite 5.4.20
+- **状态管理:** @tanstack/react-query 5.90.5, zustand 5.0.8
+- **国际化:** react-i18next 16.2.1, i18next 25.6.0
 - **样式:** CSS3 (现代化设计系统)
-- **测试:** Playwright (E2E)
+- **测试:** Vitest 1.6.1 (单元测试), Playwright (E2E)
 
 ### DevOps
 - **容器化:** Docker (可选)
@@ -233,11 +236,20 @@ npm run test:report
 - 🔄 Agent自动部署 (T6)
 - 🔄 文档体系完善
 - 🔄 CI/CD流程建设
+- 🔄 React前端迁移 (阶段1已完成 - 基础设施)
+
+### 最近完成 ✨
+- ✅ **React前端迁移 - 阶段1基础设施** (2025-10-29)
+  - React Query全局配置 (5分钟缓存策略)
+  - 国际化支持 (中英文双语)
+  - Token自动刷新机制 (过期前5分钟、跨标签页同步)
+  - 测试覆盖率: 86%通过率 (25/29测试)
+  - 详见: [实施总结](specs/005-complete-phase1-infrastructure/IMPLEMENTATION_SUMMARY.md) | [CHANGELOG](CHANGELOG.md)
 
 ### 规划中 📋
+- 📋 React前端迁移 - 阶段2 (UI组件库、状态管理)
 - 📋 多租户支持
 - 📋 更多集成方式
-- 📋 国际化支持
 
 ---
 

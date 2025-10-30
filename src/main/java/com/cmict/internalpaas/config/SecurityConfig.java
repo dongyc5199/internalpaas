@@ -31,16 +31,17 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, UserDetailsService userDetailsService)
             throws Exception {
         http
-            .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/css/**", "/js/**", "/dist/**", "/vendor/**", "/register", "/debug/**", "/h2-console/**", "/ws/**", "/test/**").permitAll() // 允许访问静态资源、注册页面、H2控制台、WebSocket端点和测试页面
-                .requestMatchers("/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN") // 管理员和超级管理员才能访问管理页面
-                .requestMatchers("/developer/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN") // 开发者、管理员和超级管理员都能访问研发工作台
-                .requestMatchers("/terminal/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN") // 所有认证用户都能访问SSH终端
-                .requestMatchers("/ai/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN") // 认证用户可访问AI能力
-                .anyRequest().authenticated() // 其他所有请求都需要认证
+                        .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers("/css/**", "/js/**", "/dist/**", "/vendor/**", "/register", "/debug/**", "/h2-console/**", "/ws/**", "/test/**").permitAll()
+                .requestMatchers("/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
+                .requestMatchers("/developer/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/terminal/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/ai/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/api/deploy-platform/token").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .anyRequest().authenticated()
             )
             .formLogin(form -> form
-                .loginPage("/login").permitAll() // 自定义登录页面
+                .loginPage("/login").permitAll() // 自定义登录页?
                 .defaultSuccessUrl("/", true) // 登录成功后跳转到主页
                 .failureUrl("/login?error") // 登录失败时返回登录页面并显示错误
             )
@@ -56,17 +57,18 @@ public class SecurityConfig {
                     "/api/server-user-groups/**", "/api/permission-test/**",
                     "/api/ssh-config-import/**", // SSH配置导入API
                     "/terminal/api/**", "/user-operations/api/**",
+                    "/api/deploy-platform/**", // 部署平台API
                     "/ai/**") // 禁用H2控制台、WebSocket、测试接口、监控接口、用户操作接口、终端API和AI API的CSRF保护
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // 使用Cookie存储CSRF token
             )
             .headers(headers -> headers
-                .frameOptions(frameOptions -> frameOptions.disable()) // 禁用frame限制，允许H2控制台在iframe中运行
+                .frameOptions(frameOptions -> frameOptions.disable()) // 禁用frame限制，允许H2控制台在iframe中运?
             )
             .sessionManagement(session -> session
-                .maximumSessions(10) // 允许每个用户最多10个并发会话
-                .sessionRegistry(sessionRegistry()) // 设置会话注册表
+                .maximumSessions(10) // 允许每个用户最?0个并发会?
+                .sessionRegistry(sessionRegistry()) // 设置会话注册?
                 .maxSessionsPreventsLogin(false) // 允许新登录挑出旧会话
-                .expiredUrl("/login?expired") // 会话过期时重定向到登录页面
+                .expiredUrl("/login?expired") // 会话过期时重定向到登录页?
             )
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(ajaxAwareAuthenticationEntryPoint()) // 设置自定义认证入口点
@@ -99,7 +101,7 @@ public class SecurityConfig {
     }
     
     /**
-     * 自定义认证入口点，用于处理AJAX请求的会话超时
+     * 自定义认证入口点，用于处理AJAX请求的会话超?
      */
     @Bean
     public AuthenticationEntryPoint ajaxAwareAuthenticationEntryPoint() {
@@ -118,7 +120,7 @@ public class SecurityConfig {
                                       (contentType != null && contentType.contains("application/json")) ||
                                       request.getRequestURI().contains("/api/");
                 
-                // 检查是否是会话过期（存在session但已失效）
+                // 检查是否是会话过期（存在session但已失效?
                 boolean isSessionExpired = false;
                 String sessionId = null;
                 
@@ -132,7 +134,7 @@ public class SecurityConfig {
                     }
                 }
                 
-                // 如果有sessionId但session已失效,则认为是过期
+                // 如果有sessionId但session已失?则认为是过期
                 if (sessionId != null) {
                     jakarta.servlet.http.HttpSession session = request.getSession(false);
                     isSessionExpired = (session == null || !sessionId.equals(session.getId()));
@@ -148,7 +150,7 @@ public class SecurityConfig {
                         response.getWriter().write("{\"error\":\"authentication_required\",\"message\":\"需要登录\",\"redirect\":\"/login\"}");
                     }
                 } else {
-                    // 普通请求重定向到登录页面
+                    // 普通请求重定向到登录页?
                     if (isSessionExpired) {
                         response.sendRedirect("/login?expired");
                     } else {

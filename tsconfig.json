@@ -12,6 +12,7 @@
         "strict": true,
         "skipLibCheck": true,
         "baseUrl": ".",
+        "jsx": "react-jsx",
         "paths": {
             "@/*": [
                 "src/main/frontend/*"

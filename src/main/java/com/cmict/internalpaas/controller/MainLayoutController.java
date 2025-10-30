@@ -200,6 +200,7 @@ public class MainLayoutController {
                             createMenuItem("工作区概览", "overview", "overview", "OV", true),
                             //createMenuItem("服务器群组", "servers", "servers", "SV", false),
                             createMenuItem("服务器群组管理", "server-groups", "server-groups", "SG", false),
+                            createMenuItem("部署管理平台", "deploy-platform", "deploy-platform", "DP", false),
                             createMenuItem("用户与权限", "users", "users", "US", false),
                             createMenuItem("系统设置", "settings", "settings", "SC", false)
                         ))

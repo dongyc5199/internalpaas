@@ -61,3 +61,6 @@ screenshots/
 nul
 infra/perf/otlp_load_gen.sh
 .env
+
+*storybook.log
+storybook-static

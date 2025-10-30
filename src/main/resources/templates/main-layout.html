@@ -1472,6 +1472,7 @@
                         'applications': '我的应用',
                         'servers': '服务器管理',
                         'server-groups': '服务器群组',
+                        'deploy-platform': '部署管理平台',
                         'users': '用户与权限',
                         'monitoring': '监控中心',
                         'logs': '日志中心',
@@ -1484,6 +1485,7 @@
                         'applications': 'My Applications',
                         'servers': 'Server Management',
                         'server-groups': 'Server Groups',
+                        'deploy-platform': 'Deployment Platform',
                         'users': 'Users & Permissions',
                         'monitoring': 'Monitoring',
                         'logs': 'Logs',
@@ -1805,6 +1807,9 @@
                             case 'server-groups':
                                 apiUrl = '/admin/server-groups/content';
                                 break;
+                            case 'deploy-platform':
+                                apiUrl = '/admin/deploy-platform/content';
+                                break;
                             case 'users':
                                 apiUrl = '/admin/api/users-content';
                                 break;
@@ -1821,6 +1826,9 @@
                             const content = await response.text();
                             outlet.innerHTML = content;
                             applyLanguage(currentLanguage, false);
+                            if (route === 'deploy-platform' && typeof window.loadDeployPlatformMfe === 'function') {
+                                window.loadDeployPlatformMfe();
+                            }
                         } else {
                             outlet.innerHTML = '<div class="spa-placeholder" data-i18n-zh="加载失败，请重试" data-i18n-en="Failed to load, please retry">加载失败，请重试</div>';
                             applyLanguage(currentLanguage, false);

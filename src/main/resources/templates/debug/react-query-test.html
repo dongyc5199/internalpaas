@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Query 测试 - Phase 6 手动测试</title>
+
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .test-section h2 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .test-instructions {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 4px;
+        }
+
+        .test-instructions h3 {
+            color: #667eea;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .test-instructions ol {
+            margin-left: 1.5rem;
+        }
+
+        .test-instructions li {
+            margin-bottom: 0.5rem;
+        }
+
+        .policies-container {
+            margin-top: 1.5rem;
+        }
+
+        .policy-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+
+        .policy-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .policy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .policy-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #1f2937;
+        }
+
+        .policy-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .policy-status.active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .policy-status.inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .policy-description {
+            color: #6b7280;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .policy-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.875rem;
+            color: #9ca3af;
+            margin-bottom: 1rem;
+        }
+
+        .policy-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #d1d5db;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #dc2626;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid #dc2626;
+        }
+
+        .devtools-hint {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .devtools-hint-icon {
+            font-size: 1.5rem;
+        }
+
+        .checklist {
+            list-style: none;
+            margin-top: 1rem;
+        }
+
+        .checklist li {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: #f9fafb;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .checklist li::before {
+            content: '☐';
+            font-size: 1.2rem;
+            color: #9ca3af;
+        }
+
+        .checklist li.completed::before {
+            content: '☑';
+            color: #10b981;
+        }
+
+        .success-message {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid #10b981;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧪 React Query 测试页面</h1>
+            <p>Phase 6 手动测试 - T069 (缓存策略) & T070 (乐观更新)</p>
+        </header>
+
+        <!-- T069 测试区域 -->
+        <div class="test-section">
+            <h2>📋 T069: 验证5分钟缓存策略</h2>
+
+            <div class="test-instructions">
+                <h3>测试步骤：</h3>
+                <ol>
+                    <li>打开浏览器开发者工具 (F12)</li>
+                    <li>切换到 <strong>Network</strong> 标签</li>
+                    <li>点击页面左下角的 <strong>React Query DevTools</strong> (花朵图标)</li>
+                    <li>观察初始的 <code>/api/deploy-platform/policies</code> 请求</li>
+                    <li>刷新页面 (F5) - 预期：<strong>没有</strong>新的网络请求</li>
+                    <li>5分钟后再刷新 - 预期：触发新请求（数据变为stale）</li>
+                </ol>
+            </div>
+
+            <div class="devtools-hint">
+                <span class="devtools-hint-icon">💡</span>
+                <div>
+                    <strong>提示：</strong>在 React Query DevTools 中查看 <code>['policies', ...]</code> 查询的状态。
+                    Fresh状态表示缓存有效，Stale表示需要刷新。
+                </div>
+            </div>
+
+            <ul class="checklist">
+                <li>初始加载显示数据</li>
+                <li>5分钟内刷新页面无新请求 (缓存命中)</li>
+                <li>不同筛选条件触发新请求 (查询键隔离)</li>
+                <li>5分钟后数据标记为 stale</li>
+            </ul>
+        </div>
+
+        <!-- T070 测试区域 -->
+        <div class="test-section">
+            <h2>🎯 T070: 验证乐观更新</h2>
+
+            <div class="test-instructions">
+                <h3>测试步骤：</h3>
+                <ol>
+                    <li>点击任意策略的 <strong>切换状态</strong> 按钮</li>
+                    <li>观察：状态徽章<strong>立即</strong>更新 (无需等待)</li>
+                    <li>等待1秒后，服务器确认更新</li>
+                    <li>在DevTools Network中设置 <strong>Offline</strong> 模式</li>
+                    <li>再次点击 <strong>切换状态</strong></li>
+                    <li>观察：状态先更新，然后自动回滚并显示错误</li>
+                </ol>
+            </div>
+
+            <div class="devtools-hint">
+                <span class="devtools-hint-icon">⚠️</span>
+                <div>
+                    <strong>测试失败场景：</strong>在 Network 标签勾选 <strong>Offline</strong>，
+                    然后点击切换状态按钮，应该看到UI先更新后回滚。
+                </div>
+            </div>
+
+            <ul class="checklist">
+                <li>点击按钮时 UI 立即更新 (无延迟)</li>
+                <li>DevTools 显示数据立即变化</li>
+                <li>成功时：服务器响应后数据保持一致</li>
+                <li>失败时：显示错误消息</li>
+                <li>失败时：UI 自动回滚到原始状态</li>
+            </ul>
+
+            <div class="success-message" id="success-message">
+                ✅ 操作成功！状态已更新。
+            </div>
+        </div>
+
+        <!-- 策略列表 -->
+        <div class="test-section">
+            <h2>📚 策略列表</h2>
+            <div id="policies-container" class="policies-container">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>加载中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- React Query DevTools 会自动注入 -->
+    <script type="module" src="/dist/assets/deploy-platform.js"></script>
+    <script type="module">
+        import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from 'https://cdn.jsdelivr.net/npm/@tanstack/react-query@5.62.11/+esm';
+        import { ReactQueryDevtools } from 'https://cdn.jsdelivr.net/npm/@tanstack/react-query-devtools@5.62.11/+esm';
+        import React from 'https://cdn.jsdelivr.net/npm/react@19.0.0/+esm';
+        import ReactDOM from 'https://cdn.jsdelivr.net/npm/react-dom@19.0.0/+esm';
+
+        // 创建QueryClient（5分钟缓存）
+        const queryClient = new QueryClient({
+            defaultOptions: {
+                queries: {
+                    staleTime: 5 * 60 * 1000, // 5分钟
+                    gcTime: 10 * 60 * 1000, // 10分钟
+                    retry: 1,
+                },
+            },
+        });
+
+        // Policies列表组件
+        function PoliciesList() {
+            const queryClient = useQueryClient();
+
+            // 获取policies列表
+            const { data, isLoading, error } = useQuery({
+                queryKey: ['policies'],
+                queryFn: async () => {
+                    const response = await fetch('/api/deploy-platform/policies');
+                    if (!response.ok) throw new Error('Failed to fetch policies');
+                    return response.json();
+                },
+            });
+
+            // 切换状态mutation（带乐观更新）
+            const toggleMutation = useMutation({
+                mutationFn: async (policyId) => {
+                    const response = await fetch(`/api/deploy-platform/policies/${policyId}/toggle-status`, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                    });
+                    if (!response.ok) throw new Error('Failed to toggle status');
+                    return response.json();
+                },
+                // 乐观更新
+                onMutate: async (policyId) => {
+                    // 取消正在进行的查询
+                    await queryClient.cancelQueries({ queryKey: ['policies'] });
+
+                    // 保存当前数据（用于回滚）
+                    const previousData = queryClient.getQueryData(['policies']);
+
+                    // 乐观更新
+                    queryClient.setQueryData(['policies'], (old) => {
+                        if (!old) return old;
+                        return {
+                            ...old,
+                            data: old.data.map((policy) =>
+                                policy.id === policyId
+                                    ? { ...policy, status: policy.status === 'active' ? 'inactive' : 'active' }
+                                    : policy
+                            ),
+                        };
+                    });
+
+                    return { previousData };
+                },
+                // 成功后显示提示
+                onSuccess: () => {
+                    const msg = document.getElementById('success-message');
+                    msg.classList.add('show');
+                    setTimeout(() => msg.classList.remove('show'), 3000);
+                },
+                // 失败时回滚
+                onError: (err, policyId, context) => {
+                    queryClient.setQueryData(['policies'], context.previousData);
+                    alert(`更新失败: ${err.message}\n\n已自动回滚到原始状态。`);
+                },
+                // 始终刷新数据
+                onSettled: () => {
+                    queryClient.invalidateQueries({ queryKey: ['policies'] });
+                },
+            });
+
+            if (isLoading) {
+                return React.createElement('div', { className: 'loading' },
+                    React.createElement('div', { className: 'loading-spinner' }),
+                    React.createElement('p', null, '加载中...')
+                );
+            }
+
+            if (error) {
+                return React.createElement('div', { className: 'error' },
+                    `错误: ${error.message}`
+                );
+            }
+
+            const policies = data?.data || [];
+
+            return React.createElement('div', null,
+                policies.map((policy) =>
+                    React.createElement('div', { key: policy.id, className: 'policy-card' },
+                        React.createElement('div', { className: 'policy-header' },
+                            React.createElement('div', { className: 'policy-name' }, policy.name),
+                            React.createElement('span', {
+                                className: `policy-status ${policy.status}`
+                            }, policy.status === 'active' ? '激活' : '停用')
+                        ),
+                        React.createElement('div', { className: 'policy-description' }, policy.description),
+                        React.createElement('div', { className: 'policy-meta' },
+                            React.createElement('span', null, `环境: ${policy.environment}`),
+                            React.createElement('span', null, `顺序: ${policy.order}`)
+                        ),
+                        React.createElement('div', { className: 'policy-actions' },
+                            React.createElement('button', {
+                                className: policy.status === 'active' ? 'btn btn-danger' : 'btn btn-success',
+                                onClick: () => toggleMutation.mutate(policy.id),
+                                disabled: toggleMutation.isPending
+                            }, policy.status === 'active' ? '❌ 停用' : '✅ 激活'),
+                            React.createElement('button', {
+                                className: 'btn btn-secondary',
+                                disabled: true
+                            }, '📝 编辑')
+                        )
+                    )
+                )
+            );
+        }
+
+        // App组件
+        function App() {
+            return React.createElement(QueryClientProvider, { client: queryClient },
+                React.createElement(PoliciesList),
+                React.createElement(ReactQueryDevtools, { initialIsOpen: false })
+            );
+        }
+
+        // 渲染到页面
+        const container = document.getElementById('policies-container');
+        const root = ReactDOM.createRoot(container);
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>

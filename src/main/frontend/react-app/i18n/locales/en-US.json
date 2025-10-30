@@ -1,0 +1,86 @@
+{
+  "app": {
+    "title": "Deployment Platform",
+    "loading": "Loading...",
+    "error": "Failed to load",
+    "retry": "Retry"
+  },
+  "navigation": {
+    "overview": "Overview",
+    "releases": "Releases",
+    "policies": "Policies",
+    "settings": "Settings"
+  },
+  "overview": {
+    "title": "Overview",
+    "totalReleases": "Total Releases",
+    "activeReleases": "Active Releases",
+    "recentActivity": "Recent Activity",
+    "noData": "No data available"
+  },
+  "releases": {
+    "title": "Release Management",
+    "releaseDetails": "Release Details",
+    "status": "Status",
+    "version": "Version",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "actions": "Actions",
+    "deploy": "Deploy",
+    "rollback": "Rollback",
+    "delete": "Delete",
+    "noReleases": "No releases available"
+  },
+  "policies": {
+    "title": "Policy Management",
+    "policyName": "Policy Name",
+    "description": "Description",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "noPolicies": "No policies configured"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "submit": "Submit",
+    "reset": "Reset",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "refresh": "Refresh",
+    "loading": "Loading...",
+    "success": "Operation successful",
+    "error": "Operation failed",
+    "warning": "Warning",
+    "info": "Info"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "username": "Username",
+    "password": "Password",
+    "tokenExpiring": "Session expiring soon",
+    "tokenRefreshed": "Session refreshed",
+    "sessionExpired": "Session expired, please login again"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email format",
+    "invalidFormat": "Invalid format",
+    "minLength": "Minimum {{min}} characters required",
+    "maxLength": "Maximum {{max}} characters allowed"
+  },
+  "language": {
+    "zh-CN": "简体中文",
+    "en-US": "English"
+  }
+}

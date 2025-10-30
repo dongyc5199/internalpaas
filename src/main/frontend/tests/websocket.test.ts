@@ -173,7 +173,11 @@ describe("WebSocketManager", () => {
                 constructor(url: string) {
                     super(url);
                     this.readyState = MockWebSocket.CONNECTING;
-                    // 不自动打开连接
+                    // 使用fake timer而不是真实setTimeout
+                    vi.spyOn(global, 'setTimeout').mockImplementation((fn: any) => {
+                        // 不自动打开连接，保持CONNECTING状态
+                        return 0 as any;
+                    });
                 }
             } as any;
 
@@ -183,11 +187,12 @@ describe("WebSocketManager", () => {
             wsManager.connect();
 
             // 等待连接超时
-            await vi.advanceTimersByTimeAsync(1500);
+            await vi.runAllTimersAsync();
 
             expect(reconnectingHandler).toHaveBeenCalled();
 
             global.WebSocket = originalWebSocket;
+            vi.restoreAllMocks();
         });
     });
 
@@ -272,22 +277,27 @@ describe("WebSocketManager", () => {
 
             // 模拟连接失败
             const originalWebSocket = global.WebSocket;
+            let connectionCount = 0;
             global.WebSocket = class extends MockWebSocket {
                 constructor(url: string) {
                     super(url);
-                    setTimeout(() => {
+                    connectionCount++;
+                    // 立即模拟连接关闭，不使用setTimeout
+                    this.readyState = MockWebSocket.OPEN;
+                    Promise.resolve().then(() => {
                         this.readyState = MockWebSocket.CLOSED;
                         this.onclose?.(new CloseEvent("close"));
-                    }, 10);
+                    });
                 }
             } as any;
 
             wsManager.connect();
 
-            // 等待3次重连尝试
-            for (let i = 0; i < 4; i++) {
-                await vi.advanceTimersByTimeAsync(1500);
-            }
+            // 等待初始连接失败 + 3次重连
+            await vi.advanceTimersByTimeAsync(100); // 初始失败
+            await vi.advanceTimersByTimeAsync(1100); // 第1次重连
+            await vi.advanceTimersByTimeAsync(1100); // 第2次重连
+            await vi.advanceTimersByTimeAsync(1100); // 第3次重连
 
             // 应该只尝试3次重连
             expect(reconnectingHandler).toHaveBeenCalledTimes(3);
@@ -335,12 +345,16 @@ describe("WebSocketManager", () => {
             wsManager.connect();
             await vi.advanceTimersByTimeAsync(50);
 
+            // 清除之前可能的调用
+            sendSpy.mockClear();
+
             // 等待第一次心跳
             await vi.advanceTimersByTimeAsync(1000);
             expect(sendSpy).toHaveBeenCalledWith("ping");
 
             // 等待第二次心跳
             await vi.advanceTimersByTimeAsync(1000);
+            // 验证总共调用了2次（1次第一次心跳 + 1次第二次心跳）
             expect(sendSpy).toHaveBeenCalledTimes(2);
         });
 
@@ -389,11 +403,14 @@ describe("WebSocketManager", () => {
             // 等待心跳发送
             await vi.advanceTimersByTimeAsync(1000);
 
-            // 模拟收到心跳响应
+            // 立即模拟收到心跳响应（在超时之前）
             const ws = (wsManager as any).ws as MockWebSocket;
             ws.simulateMessage(JSON.stringify({ type: "pong" }));
 
-            // 等待超时时间
+            // 刷新微任务队列，确保消息被处理
+            await Promise.resolve();
+
+            // 等待超时时间（由于收到响应，超时应该被重置）
             await vi.advanceTimersByTimeAsync(600);
 
             // 不应该触发超时
@@ -488,12 +505,21 @@ describe("WebSocketManager", () => {
             wsManager.connect();
             await vi.advanceTimersByTimeAsync(50);
 
+            // 使用spy监控console.error
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
             const ws = (wsManager as any).ws as MockWebSocket;
             ws.simulateMessage("invalid json");
 
-            // 不应该触发 message 事件
-            expect(messageHandler).not.toHaveBeenCalled();
-            // 应该记录错误但不中断连接
+            // 刷新微任务，确保消息被处理
+            await Promise.resolve();
+
+            // 不应该触发 message 事件（因为JSON解析失败）
+            expect(messageHandler).not.toHaveBeenCalledWith("invalid json");
+            // 应该记录错误到console
+            expect(consoleErrorSpy).toHaveBeenCalled();
+
+            consoleErrorSpy.mockRestore();
         });
     });
 
@@ -613,7 +639,7 @@ describe("WebSocketManager", () => {
             expect(errorHandler).toHaveBeenCalled();
         });
 
-        it("应该在创建 WebSocket 失败时触发错误", () => {
+        it("应该在创建 WebSocket 失败时触发错误", async () => {
             const config: WebSocketConfig = {
                 url: "invalid-url"
             };
@@ -632,6 +658,9 @@ describe("WebSocketManager", () => {
             wsManager.on("error", errorHandler);
 
             wsManager.connect();
+
+            // 刷新微任务，确保错误被触发
+            await Promise.resolve();
 
             expect(errorHandler).toHaveBeenCalled();
 

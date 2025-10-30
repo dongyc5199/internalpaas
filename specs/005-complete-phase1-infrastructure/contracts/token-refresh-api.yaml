@@ -1,0 +1,277 @@
+openapi: 3.1.0
+info:
+  title: Token Refresh API
+  version: 1.0.0
+  description: |
+    BFF (Backend-for-Frontend) endpoint for refreshing JWT access tokens before expiration.
+    Used by React micro-frontend to maintain authenticated sessions.
+
+    **Usage Pattern**:
+    1. React app schedules refresh 5 minutes before token expiry
+    2. Sends current token to validate session
+    3. Receives new token with extended expiration
+    4. Broadcasts new token to all browser tabs via BroadcastChannel
+
+    **Security**:
+    - Requires valid HTTP session cookie (JSESSIONID)
+    - Validates token issuer and audience
+    - Rate limited to prevent abuse (10 requests/minute per session)
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://internalpaas.cmict.com
+    description: Production
+
+tags:
+  - name: Authentication
+    description: Token lifecycle management
+
+paths:
+  /api/deploy-platform/token/refresh:
+    post:
+      summary: Refresh access token
+      description: |
+        Refreshes an expiring access token by validating the current session.
+        Returns a new token with extended validity (typically +30 minutes).
+
+        **Error Scenarios**:
+        - 401: Session expired or invalid token (user must re-login)
+        - 429: Too many refresh requests (wait 60 seconds)
+        - 500: Token generation failed (server error)
+      operationId: refreshToken
+      tags:
+        - Authentication
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentToken:
+                  type: string
+                  description: |
+                    Current JWT access token (used to validate session continuity).
+                    Can be omitted if JSESSIONID cookie is valid.
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              required: []
+            examples:
+              withToken:
+                summary: Refresh with current token
+                value:
+                  currentToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTczODMyMTIwMCwiZXhwIjoxNzM4MzI0ODAwfQ.Xy3Z9Q7R5T8U6V0W1X2Y3Z4A5B6C7D8E9F0G1H2I3J4"
+              withoutToken:
+                summary: Refresh using session cookie only
+                value: {}
+
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              examples:
+                success:
+                  summary: Successful refresh
+                  value:
+                    accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTczODMyNDgwMCwiZXhwIjoxNzM4MzI4NDAwfQ.A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0U1V2"
+                    expiresAt: 1738328400000
+                    issuer: "internalpaas"
+                    audience: "deploy-platform"
+
+        '401':
+          description: Unauthorized - Session expired or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                sessionExpired:
+                  summary: Session expired
+                  value:
+                    error: "UNAUTHORIZED"
+                    message: "Session expired or invalid. Please login again."
+                    timestamp: 1738324800000
+                invalidToken:
+                  summary: Invalid token
+                  value:
+                    error: "UNAUTHORIZED"
+                    message: "Invalid token format or signature mismatch."
+                    timestamp: 1738324800000
+
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying
+              schema:
+                type: integer
+                example: 60
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                rateLimitExceeded:
+                  summary: Rate limit hit
+                  value:
+                    error: "RATE_LIMIT_EXCEEDED"
+                    message: "Too many refresh requests. Please wait 60 seconds."
+                    timestamp: 1738324800000
+
+        '500':
+          description: Internal Server Error - Token generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                serverError:
+                  summary: Token generation failure
+                  value:
+                    error: "INTERNAL_SERVER_ERROR"
+                    message: "Failed to generate new token. Please try again later."
+                    timestamp: 1738324800000
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+      description: Spring Session ID cookie (automatically sent by browser)
+
+  schemas:
+    TokenResponse:
+      type: object
+      description: Successful token refresh response
+      required:
+        - accessToken
+        - expiresAt
+        - issuer
+        - audience
+      properties:
+        accessToken:
+          type: string
+          description: |
+            New JWT access token (header.payload.signature format).
+            Valid for 30 minutes from issuance.
+          pattern: '^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$'
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        expiresAt:
+          type: integer
+          format: int64
+          description: |
+            Token expiration timestamp (Unix epoch in milliseconds).
+            Client should schedule next refresh at (expiresAt - 5 minutes).
+          example: 1738328400000
+        issuer:
+          type: string
+          description: Token issuer (who signed the token)
+          enum:
+            - internalpaas
+          example: "internalpaas"
+        audience:
+          type: string
+          description: Intended audience (who should accept the token)
+          enum:
+            - deploy-platform
+          example: "deploy-platform"
+
+    ErrorResponse:
+      type: object
+      description: Standard error response format
+      required:
+        - error
+        - message
+        - timestamp
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code
+          enum:
+            - UNAUTHORIZED
+            - RATE_LIMIT_EXCEEDED
+            - INTERNAL_SERVER_ERROR
+          example: "UNAUTHORIZED"
+        message:
+          type: string
+          description: Human-readable error message (localized in future)
+          example: "Session expired or invalid. Please login again."
+        timestamp:
+          type: integer
+          format: int64
+          description: Error occurrence timestamp (Unix epoch in milliseconds)
+          example: 1738324800000
+
+  examples:
+    TokenResponseExample:
+      summary: Typical successful response
+      value:
+        accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZXZlbG9wZXIxIiwicm9sZSI6IkRFVkVMT1BFUiIsImlhdCI6MTczODMyNDgwMCwiZXhwIjoxNzM4MzI4NDAwfQ.ABCDEFGHIJKLMNOPQRSTUVWXYZ123456"
+        expiresAt: 1738328400000
+        issuer: "internalpaas"
+        audience: "deploy-platform"
+
+# Implementation Notes for Backend Team
+#
+# Backend Implementation Checklist:
+#
+# 1. Validate session cookie (JSESSIONID)
+#    - Check if HTTP session exists and is valid
+#    - Verify session has authenticated user
+#
+# 2. Validate current token (optional parameter)
+#    - Decode JWT and verify signature
+#    - Check issuer matches "internalpaas"
+#    - Check audience matches "deploy-platform"
+#    - Verify token belongs to session user
+#
+# 3. Generate new token
+#    - Create JWT with claims: sub (username), role, iat, exp
+#    - Set expiration: current time + 30 minutes
+#    - Sign with application secret key
+#
+# 4. Rate limiting
+#    - Track refresh requests per session ID
+#    - Limit to 10 requests/minute
+#    - Return 429 if exceeded
+#
+# 5. Logging
+#    - Log all refresh attempts (success/failure)
+#    - Include user, timestamp, IP address
+#    - Monitor for suspicious patterns (rapid refreshes, invalid tokens)
+#
+# Example Spring Boot Controller:
+#
+# @PostMapping("/api/deploy-platform/token/refresh")
+# public ResponseEntity<TokenResponse> refreshToken(
+#     @RequestBody(required = false) TokenRefreshRequest request,
+#     HttpSession session
+# ) {
+#     // 1. Validate session
+#     if (session == null || session.getAttribute("user") == null) {
+#         return ResponseEntity.status(401).body(errorResponse("UNAUTHORIZED", "Session expired"));
+#     }
+#
+#     // 2. Check rate limit
+#     if (rateLimiter.isExceeded(session.getId())) {
+#         return ResponseEntity.status(429).body(errorResponse("RATE_LIMIT_EXCEEDED", "Too many requests"));
+#     }
+#
+#     // 3. Generate new token
+#     User user = (User) session.getAttribute("user");
+#     Token newToken = jwtService.generateToken(user);
+#
+#     // 4. Return response
+#     return ResponseEntity.ok(new TokenResponse(
+#         newToken.getAccessToken(),
+#         newToken.getExpiresAt(),
+#         "internalpaas",
+#         "deploy-platform"
+#     ));
+# }
