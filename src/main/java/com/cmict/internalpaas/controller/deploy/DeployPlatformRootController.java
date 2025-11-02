@@ -22,8 +22,8 @@ public class DeployPlatformRootController {
      */
     @GetMapping({"/overview", "/overview/**"})
     public String overview() {
-        log.info("Direct access to /overview - serving React app container");
-        return "admin/deploy-platform-content";
+        log.info("Direct access to /overview - serving React app");
+        return "admin/deploy-platform";
     }
 
     /**
@@ -32,8 +32,8 @@ public class DeployPlatformRootController {
      */
     @GetMapping({"/releases", "/releases/**"})
     public String releases() {
-        log.info("Direct access to /releases - serving React app container");
-        return "admin/deploy-platform-content";
+        log.info("Direct access to /releases - serving React app");
+        return "admin/deploy-platform";
     }
 
     /**
@@ -42,7 +42,7 @@ public class DeployPlatformRootController {
      */
     @GetMapping({"/settings/policies", "/settings/policies/**"})
     public String policies() {
-        log.info("Direct access to /settings/policies - serving React app container");
-        return "admin/deploy-platform-content";
+        log.info("Direct access to /settings/policies - serving React app");
+        return "admin/deploy-platform";
     }
 }
