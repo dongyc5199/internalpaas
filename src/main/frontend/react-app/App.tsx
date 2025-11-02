@@ -4,7 +4,8 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { I18nextProvider } from "react-i18next";
 
 import "./index.css";
-import { ShellLayout } from "./layout/ShellLayout";
+import { LayoutProvider } from "./providers/LayoutProvider";
+import { LayoutSelector } from "./components/LayoutSelector";
 import { OverviewPage } from "./pages/OverviewPage";
 import { ReleaseDetailsPlaceholder, ReleasesPage } from "./pages/ReleasesPage";
 import { ReleaseDetailsPage } from "./pages/ReleaseDetailsPage";
@@ -35,7 +36,7 @@ const resolveBasename = (): string => {
 
 export function AppRoutes(): JSX.Element {
     return (
-        <ShellLayout>
+        <LayoutSelector>
             <Routes>
                 <Route path="/" element={<Navigate to="/overview" replace />} />
                 <Route path="/overview" element={<OverviewPage />} />
@@ -46,7 +47,7 @@ export function AppRoutes(): JSX.Element {
                 <Route path="/settings/policies" element={<PoliciesPage />} />
                 <Route path="*" element={<Navigate to="/overview" replace />} />
             </Routes>
-        </ShellLayout>
+        </LayoutSelector>
     );
 }
 
@@ -59,9 +60,11 @@ export function App({ basename }: AppProps = {}): JSX.Element {
     return (
         <QueryClientProvider client={queryClient}>
             <I18nextProvider i18n={i18n}>
-                <BrowserRouter basename={base}>
-                    <AppRoutes />
-                </BrowserRouter>
+                <LayoutProvider>
+                    <BrowserRouter basename={base}>
+                        <AppRoutes />
+                    </BrowserRouter>
+                </LayoutProvider>
             </I18nextProvider>
             <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
