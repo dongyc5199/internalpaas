@@ -6734,5 +6734,22 @@ function initDashboardRealTimeUpdates() {
 
         <!-- Navigation Synchronization Script -->
         <script th:src="@{/js/navigation-sync.js}"></script>
+
+        <!-- Conditional React Script Loading for Embedded Mode -->
+        <script>
+        (function() {
+            // Check if we're on a deploy-platform route or if the container exists
+            const needsReactApp = window.location.pathname.includes('/admin/deploy-platform') ||
+                                  document.getElementById('deploy-platform-root');
+
+            if (needsReactApp) {
+                console.log('[main-layout] Conditionally loading React app for embedded mode');
+                const script = document.createElement('script');
+                script.type = 'module';
+                script.src = '/dist/assets/index.js';
+                document.body.appendChild(script);
+            }
+        })();
+        </script>
 </body>
 </html>

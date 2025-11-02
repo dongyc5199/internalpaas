@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Query 测试 - Phase 6 手动测试</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .test-section h2 {
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .test-instructions {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 4px;
+        }
+
+        .test-instructions ol {
+            margin-left: 1.5rem;
+        }
+
+        .policy-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+
+        .policy-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .policy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .policy-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .policy-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .policy-status.active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .policy-status.inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .policy-description {
+            color: #6b7280;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .success-message {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .cache-info {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+        }
+
+        .cache-info strong {
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧪 React Query 测试页面（简化版）</h1>
+            <p>Phase 6 手动测试 - T069 (缓存策略) & T070 (乐观更新)</p>
+        </header>
+
+        <!-- T069 测试区域 -->
+        <div class="test-section">
+            <h2>📋 T069: 验证5分钟缓存策略</h2>
+            <div class="test-instructions">
+                <h3>测试步骤：</h3>
+                <ol>
+                    <li>打开浏览器开发者工具 (F12) → Network标签</li>
+                    <li>观察下方显示的<strong>请求计数器</strong></li>
+                    <li>点击"重新加载策略"按钮</li>
+                    <li>5分钟内多次点击 → 预期：<strong>请求计数不增加</strong>（缓存生效）</li>
+                    <li>5分钟后点击 → 预期：<strong>请求计数增加</strong>（缓存过期）</li>
+                </ol>
+            </div>
+
+            <div class="cache-info">
+                <strong>缓存状态：</strong>
+                <div id="cache-status">等待首次加载...</div>
+                <div><strong>API请求次数：</strong> <span id="request-count">0</span></div>
+                <div><strong>最后请求时间：</strong> <span id="last-request">未请求</span></div>
+            </div>
+
+            <button class="btn btn-success" onclick="loadPolicies(false)" style="margin-top: 1rem;">
+                🔄 重新加载策略（测试缓存）
+            </button>
+        </div>
+
+        <!-- T070 测试区域 -->
+        <div class="test-section">
+            <h2>🎯 T070: 验证乐观更新</h2>
+            <div class="test-instructions">
+                <h3>测试步骤：</h3>
+                <ol>
+                    <li>点击策略的<strong>切换状态</strong>按钮</li>
+                    <li>观察：状态<strong>立即</strong>改变（不等待）</li>
+                    <li>1秒后，服务器确认更新，显示成功消息</li>
+                    <li>在Network标签勾选<strong>Offline</strong>模式</li>
+                    <li>再次点击按钮 → 观察：状态先变化，然后回滚并显示错误</li>
+                </ol>
+            </div>
+
+            <div id="success-message" class="success-message">
+                ✅ 操作成功！状态已更新。
+            </div>
+            <div id="error-message" class="error-message">
+                ❌ 更新失败！已自动回滚。
+            </div>
+        </div>
+
+        <!-- 策略列表 -->
+        <div class="test-section">
+            <h2>📚 策略列表</h2>
+            <div id="policies-list">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 简单的缓存管理
+        let policiesCache = null;
+        let cacheTime = null;
+        let requestCount = 0;
+        const CACHE_DURATION = 5 * 60 * 1000; // 5分钟
+
+        // 检查缓存是否有效
+        function isCacheValid() {
+            if (!policiesCache || !cacheTime) return false;
+            return (Date.now() - cacheTime) < CACHE_DURATION;
+        }
+
+        // 更新缓存状态显示
+        function updateCacheStatus() {
+            const statusEl = document.getElementById('cache-status');
+            const countEl = document.getElementById('request-count');
+            const lastEl = document.getElementById('last-request');
+
+            if (isCacheValid()) {
+                const remaining = Math.ceil((CACHE_DURATION - (Date.now() - cacheTime)) / 1000);
+                statusEl.innerHTML = `✅ 缓存有效（剩余 ${remaining} 秒）`;
+                statusEl.style.color = '#065f46';
+            } else {
+                statusEl.innerHTML = '❌ 缓存已过期或无缓存';
+                statusEl.style.color = '#991b1b';
+            }
+
+            countEl.textContent = requestCount;
+            lastEl.textContent = cacheTime ? new Date(cacheTime).toLocaleTimeString() : '未请求';
+        }
+
+        // 加载策略列表
+        async function loadPolicies(useCache = true) {
+            // 检查缓存
+            if (useCache && isCacheValid()) {
+                console.log('[Cache] 使用缓存数据，跳过网络请求');
+                renderPolicies(policiesCache);
+                updateCacheStatus();
+                return;
+            }
+
+            try {
+                console.log('[Network] 发起新的API请求...');
+                requestCount++;
+
+                const response = await fetch('/api/deploy-platform/policies');
+                if (!response.ok) throw new Error('请求失败');
+
+                const data = await response.json();
+
+                // 更新缓存
+                policiesCache = data.data;
+                cacheTime = Date.now();
+
+                renderPolicies(policiesCache);
+                updateCacheStatus();
+
+                console.log('[Cache] 数据已缓存，5分钟内有效');
+            } catch (error) {
+                document.getElementById('policies-list').innerHTML =
+                    `<div style="color: red;">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 渲染策略列表
+        function renderPolicies(policies) {
+            const container = document.getElementById('policies-list');
+
+            if (!policies || policies.length === 0) {
+                container.innerHTML = '<div>暂无数据</div>';
+                return;
+            }
+
+            container.innerHTML = policies.map(policy => `
+                <div class="policy-card" data-id="${policy.id}">
+                    <div class="policy-header">
+                        <div class="policy-name">${policy.name}</div>
+                        <span class="policy-status ${policy.status}">
+                            ${policy.status === 'active' ? '激活' : '停用'}
+                        </span>
+                    </div>
+                    <div class="policy-description">${policy.description}</div>
+                    <div>
+                        <button
+                            class="btn ${policy.status === 'active' ? 'btn-danger' : 'btn-success'}"
+                            onclick="toggleStatus(${policy.id}, '${policy.status}')"
+                        >
+                            ${policy.status === 'active' ? '❌ 停用' : '✅ 激活'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 切换策略状态（乐观更新）
+        async function toggleStatus(policyId, currentStatus) {
+            const card = document.querySelector(`[data-id="${policyId}"]`);
+            const statusBadge = card.querySelector('.policy-status');
+            const button = card.querySelector('button');
+
+            // 保存原始状态
+            const originalStatus = currentStatus;
+            const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+
+            // 1. 乐观更新UI（立即）
+            console.log('[Optimistic] 立即更新UI...');
+            statusBadge.textContent = newStatus === 'active' ? '激活' : '停用';
+            statusBadge.className = `policy-status ${newStatus}`;
+            button.disabled = true;
+            button.textContent = '更新中...';
+
+            // 同时更新缓存
+            if (policiesCache) {
+                const policy = policiesCache.find(p => p.id === policyId);
+                if (policy) policy.status = newStatus;
+            }
+
+            try {
+                // 2. 发送请求到服务器
+                const response = await fetch(`/api/deploy-platform/policies/${policyId}/toggle-status`, {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) throw new Error('网络请求失败');
+
+                // 3. 成功：显示成功消息
+                console.log('[Success] 服务器确认更新');
+                showMessage('success', '✅ 操作成功！状态已更新。');
+
+                // 重新加载以确保数据一致
+                await loadPolicies(false);
+
+            } catch (error) {
+                // 4. 失败：回滚UI
+                console.log('[Rollback] 更新失败，回滚到原始状态');
+                statusBadge.textContent = originalStatus === 'active' ? '激活' : '停用';
+                statusBadge.className = `policy-status ${originalStatus}`;
+
+                // 回滚缓存
+                if (policiesCache) {
+                    const policy = policiesCache.find(p => p.id === policyId);
+                    if (policy) policy.status = originalStatus;
+                }
+
+                showMessage('error', `❌ 更新失败: ${error.message}\n\n已自动回滚到原始状态。`);
+            } finally {
+                // 恢复按钮
+                button.disabled = false;
+                button.className = `btn ${newStatus === 'active' ? 'btn-danger' : 'btn-success'}`;
+                button.textContent = newStatus === 'active' ? '❌ 停用' : '✅ 激活';
+            }
+        }
+
+        // 显示消息
+        function showMessage(type, text) {
+            const messageId = type === 'success' ? 'success-message' : 'error-message';
+            const el = document.getElementById(messageId);
+            el.textContent = text;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+
+        // 定期更新缓存状态显示
+        setInterval(updateCacheStatus, 1000);
+
+        // 页面加载时自动加载数据
+        loadPolicies(true);
+    </script>
+</body>
+</html>

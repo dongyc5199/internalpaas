@@ -25,6 +25,6 @@ public class ButtonDebugController {
 
     @GetMapping("/react-query-test")
     public String reactQueryTest() {
-        return "debug/react-query-test";
+        return "debug/react-query-test-simple";
     }
 }

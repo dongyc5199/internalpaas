@@ -1,37 +1,41 @@
 import { PropsWithChildren, ReactNode } from "react";
 import { NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "../components/LanguageSwitcher/LanguageSwitcher";
 
 type NavItem = {
     path: string;
-    label: string;
-    description: string;
+    labelKey: string;
+    descriptionKey: string;
     icon: ReactNode;
     exact?: boolean;
 };
 
-const navItems: NavItem[] = [
-    {
-        path: "/overview",
-        label: "总览",
-        description: "实时掌握部署健康度与待办",
-        icon: "📊",
-        exact: true
-    },
-    {
-        path: "/releases",
-        label: "发布",
-        description: "查看发布流水线与审批进度",
-        icon: "🚀"
-    },
-    {
-        path: "/settings/policies",
-        label: "策略",
-        description: "配置金丝雀、审批与门禁策略",
-        icon: "🛡️"
-    }
-];
-
 export function ShellLayout({ children }: PropsWithChildren): JSX.Element {
+    const { t } = useTranslation();
+
+    const navItems: NavItem[] = [
+        {
+            path: "/overview",
+            labelKey: "navigation.overviewLabel",
+            descriptionKey: "navigation.overviewDesc",
+            icon: "📊",
+            exact: true
+        },
+        {
+            path: "/releases",
+            labelKey: "navigation.releasesLabel",
+            descriptionKey: "navigation.releasesDesc",
+            icon: "🚀"
+        },
+        {
+            path: "/settings/policies",
+            labelKey: "navigation.policiesLabel",
+            descriptionKey: "navigation.policiesDesc",
+            icon: "🛡️"
+        }
+    ];
+
     return (
         <div className="dp-shell" data-testid="deploy-platform-shell">
             <aside className="dp-shell__sidebar">
@@ -40,12 +44,12 @@ export function ShellLayout({ children }: PropsWithChildren): JSX.Element {
                         🚀
                     </span>
                     <div className="dp-shell__brand-text">
-                        <h1>部署管理平台</h1>
-                        <p>统一发布 · 灰度 · 审批 · 审计</p>
+                        <h1>{t('shell.brandTitle')}</h1>
+                        <p>{t('shell.brandSubtitle')}</p>
                     </div>
                 </header>
 
-                <nav className="dp-shell__nav" aria-label="部署管理导航">
+                <nav className="dp-shell__nav" aria-label={t('shell.navLabel')}>
                     {navItems.map((item) => (
                         <NavLink
                             key={item.path}
@@ -65,8 +69,8 @@ export function ShellLayout({ children }: PropsWithChildren): JSX.Element {
                                 {item.icon}
                             </span>
                             <span className="dp-shell__nav-body">
-                                <span className="dp-shell__nav-label">{item.label}</span>
-                                <span className="dp-shell__nav-description">{item.description}</span>
+                                <span className="dp-shell__nav-label">{t(item.labelKey)}</span>
+                                <span className="dp-shell__nav-description">{t(item.descriptionKey)}</span>
                             </span>
                         </NavLink>
                     ))}
@@ -76,17 +80,18 @@ export function ShellLayout({ children }: PropsWithChildren): JSX.Element {
             <section className="dp-shell__content">
                 <header className="dp-shell__toolbar">
                     <div>
-                        <h2 className="dp-shell__toolbar-title">部署活动总览</h2>
+                        <h2 className="dp-shell__toolbar-title">{t('shell.toolbarTitle')}</h2>
                         <p className="dp-shell__toolbar-subtitle">
-                            聚合部署、灰度、审批与数据作业的实时态势
+                            {t('shell.toolbarSubtitle')}
                         </p>
                     </div>
                     <div className="dp-shell__toolbar-actions">
+                        <LanguageSwitcher />
                         <button type="button" className="dp-btn dp-btn--secondary">
-                            刷新数据
+                            {t('shell.refreshData')}
                         </button>
                         <button type="button" className="dp-btn dp-btn--primary">
-                            新建发布
+                            {t('shell.newRelease')}
                         </button>
                     </div>
                 </header>

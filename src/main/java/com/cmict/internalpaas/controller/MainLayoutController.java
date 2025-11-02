@@ -6,6 +6,7 @@ import com.cmict.internalpaas.dto.NavigationFooterLinkDto;
 import com.cmict.internalpaas.dto.NavigationItemDto;
 import com.cmict.internalpaas.dto.NavigationMetaEntryDto;
 import com.cmict.internalpaas.dto.NavigationSectionDto;
+import com.cmict.internalpaas.dto.NavigationSubItemDto;
 import com.cmict.internalpaas.model.Server;
 import com.cmict.internalpaas.model.User;
 import com.cmict.internalpaas.service.DashboardService;
@@ -200,7 +201,11 @@ public class MainLayoutController {
                             createMenuItem("工作区概览", "overview", "overview", "OV", true),
                             //createMenuItem("服务器群组", "servers", "servers", "SV", false),
                             createMenuItem("服务器群组管理", "server-groups", "server-groups", "SG", false),
-                            createMenuItem("部署管理平台", "deploy-platform", "deploy-platform", "DP", false),
+                            createMenuItemWithSubmenu("部署管理平台", "deploy-platform", "deploy-platform", "DP", false, Arrays.asList(
+                                createSubMenuItem("概览总览", "deploy-platform/overview", "📊", false),
+                                createSubMenuItem("发布管理", "deploy-platform/releases", "🚀", false),
+                                createSubMenuItem("策略配置", "deploy-platform/policies", "🛡️", false)
+                            )),
                             createMenuItem("用户与权限", "users", "users", "US", false),
                             createMenuItem("系统设置", "settings", "settings", "SC", false)
                         ))
@@ -252,6 +257,26 @@ public class MainLayoutController {
             .route(route)
             .page(page)
             .badge(badge)
+            .active(active)
+            .build();
+    }
+
+    private NavigationItemDto createMenuItemWithSubmenu(String label, String route, String page, String badge, boolean active, List<NavigationSubItemDto> submenu) {
+        return NavigationItemDto.builder()
+            .label(label)
+            .route(route)
+            .page(page)
+            .badge(badge)
+            .active(active)
+            .submenu(submenu)
+            .build();
+    }
+
+    private NavigationSubItemDto createSubMenuItem(String label, String route, String icon, boolean active) {
+        return NavigationSubItemDto.builder()
+            .label(label)
+            .route(route)
+            .icon(icon)
             .active(active)
             .build();
     }

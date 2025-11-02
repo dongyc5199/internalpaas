@@ -7,16 +7,46 @@
   },
   "navigation": {
     "overview": "概览",
+    "overviewLabel": "总览",
+    "overviewDesc": "实时掌握部署健康度与待办",
     "releases": "发布列表",
+    "releasesLabel": "发布",
+    "releasesDesc": "查看发布流水线与审批进度",
     "policies": "策略管理",
+    "policiesLabel": "策略",
+    "policiesDesc": "配置金丝雀、审批与门禁策略",
     "settings": "设置"
+  },
+  "shell": {
+    "brandTitle": "部署管理平台",
+    "brandSubtitle": "统一发布 · 灰度 · 审批 · 审计",
+    "navLabel": "部署管理导航",
+    "toolbarTitle": "部署活动总览",
+    "toolbarSubtitle": "聚合部署、灰度、审批与数据作业的实时态势",
+    "refreshData": "刷新数据",
+    "newRelease": "新建发布"
   },
   "overview": {
     "title": "概览",
+    "pageTitle": "发布实时总览",
+    "pageDescription": "查看关键指标、待处理发布与风险提示。",
+    "lastUpdated": "最近更新：",
+    "justNow": "刚刚",
+    "loading": "正在加载最新的部署指标与发布动态…",
+    "loadError": "获取部署总览失败：",
+    "metricsSection": "关键指标",
+    "highlightsSection": "重点关注",
+    "noHighlights": "暂无待处理的发布或风险。",
     "totalReleases": "总发布数",
     "activeReleases": "活跃发布",
     "recentActivity": "最近活动",
-    "noData": "暂无数据"
+    "noData": "暂无数据",
+    "pendingReleasesCount": "待审批发布 {{count}} 条",
+    "runningCanaryCount": "运行中金丝雀 {{count}} 条",
+    "statusHealthy": "健康",
+    "statusWarning": "告警",
+    "statusFailed": "失败",
+    "statusPending": "待处理"
   },
   "releases": {
     "title": "发布管理",
@@ -81,6 +111,7 @@
   },
   "language": {
     "zh-CN": "简体中文",
-    "en-US": "English"
+    "en-US": "English",
+    "switchLanguage": "切换语言"
   }
 }

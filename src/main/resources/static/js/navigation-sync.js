@@ -126,26 +126,83 @@
       // 设置同步标志
       this.setSyncFlag(true);
 
-      // 发送导航事件到React应用
-      const navEvent = new CustomEvent('main-nav-change', {
-        detail: {
-          route: route,
-          source: 'main-app',
-          timestamp: Date.now()
+      // 检查React容器是否存在,如果不存在则先加载页面
+      const reactContainer = document.getElementById('deploy-platform-root');
+      if (!reactContainer) {
+        if (window.__DEPLOY_PLATFORM_DEBUG__) {
+          console.log('[NavigationSync] React container not found, loading content first');
         }
-      });
 
-      window.dispatchEvent(navEvent);
+        // 先加载包含React容器的页面
+        this.loadDeployPlatformContent().then(() => {
+          // 等待React应用挂载
+          setTimeout(() => {
+            // 发送导航事件到React应用
+            this.dispatchNavigationEvent(route, menuId);
+          }, 500); // 给React应用500ms初始化时间
+        });
+      } else {
+        // React容器已存在,直接发送导航事件
+        this.dispatchNavigationEvent(route, menuId);
+      }
+    }
 
-      // 更新当前路由
-      this.currentRoute = route;
+    /**
+     * 加载部署平台内容页面
+     * @returns {Promise}
+     */
+    loadDeployPlatformContent() {
+      return fetch('/admin/deploy-platform/content')
+        .then(response => response.text())
+        .then(html => {
+          // 将内容加载到主内容区
+          const contentArea = document.getElementById('spaOutlet');
+          if (contentArea) {
+            contentArea.innerHTML = html;
+          }
+        })
+        .catch(error => {
+          console.error('[NavigationSync] Failed to load deploy platform content:', error);
+        });
+    }
 
-      // 更新侧边栏高亮 (在同步标志下)
-      this.updateSidebarHighlight(menuId);
+    /**
+     * 发送导航事件
+     * @param {string} route - React路由路径
+     * @param {string} menuId - 菜单项ID
+     */
+    dispatchNavigationEvent(route, menuId) {
+      // First, trigger the React app mount event (for lazy-mount mode)
+      const mountEvent = new CustomEvent('deploy-platform-loaded');
+      window.dispatchEvent(mountEvent);
 
       if (window.__DEPLOY_PLATFORM_DEBUG__) {
-        console.log('[NavigationSync] Dispatched main-nav-change:', navEvent.detail);
+        console.log('[NavigationSync] Dispatched deploy-platform-loaded event');
       }
+
+      // Wait a bit for React to mount, then send navigation event
+      setTimeout(() => {
+        // 发送导航事件到React应用
+        const navEvent = new CustomEvent('main-nav-change', {
+          detail: {
+            route: route,
+            source: 'main-app',
+            timestamp: Date.now()
+          }
+        });
+
+        window.dispatchEvent(navEvent);
+
+        // 更新当前路由
+        this.currentRoute = route;
+
+        // 更新侧边栏高亮 (在同步标志下)
+        this.updateSidebarHighlight(menuId);
+
+        if (window.__DEPLOY_PLATFORM_DEBUG__) {
+          console.log('[NavigationSync] Dispatched main-nav-change:', navEvent.detail);
+        }
+      }, 800); // Increased timeout to 800ms to give React more time to mount
     }
 
     /**

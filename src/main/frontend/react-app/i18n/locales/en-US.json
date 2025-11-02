@@ -7,16 +7,46 @@
   },
   "navigation": {
     "overview": "Overview",
+    "overviewLabel": "Overview",
+    "overviewDesc": "Real-time deployment health and tasks",
     "releases": "Releases",
+    "releasesLabel": "Releases",
+    "releasesDesc": "View release pipelines and approval progress",
     "policies": "Policies",
+    "policiesLabel": "Policies",
+    "policiesDesc": "Configure canary, approval and gate policies",
     "settings": "Settings"
+  },
+  "shell": {
+    "brandTitle": "Deployment Platform",
+    "brandSubtitle": "Unified Release · Canary · Approval · Audit",
+    "navLabel": "Deployment navigation",
+    "toolbarTitle": "Deployment Activity Overview",
+    "toolbarSubtitle": "Aggregated deployment, canary, approval and data job status",
+    "refreshData": "Refresh Data",
+    "newRelease": "New Release"
   },
   "overview": {
     "title": "Overview",
+    "pageTitle": "Real-time Deployment Overview",
+    "pageDescription": "View key metrics, pending releases, and risk alerts.",
+    "lastUpdated": "Last updated: ",
+    "justNow": "just now",
+    "loading": "Loading latest deployment metrics and release activity…",
+    "loadError": "Failed to fetch deployment overview: ",
+    "metricsSection": "Key Metrics",
+    "highlightsSection": "Focus Items",
+    "noHighlights": "No pending releases or risks.",
     "totalReleases": "Total Releases",
     "activeReleases": "Active Releases",
     "recentActivity": "Recent Activity",
-    "noData": "No data available"
+    "noData": "No data available",
+    "pendingReleasesCount": "{{count}} pending release(s)",
+    "runningCanaryCount": "{{count}} running canary deployment(s)",
+    "statusHealthy": "Healthy",
+    "statusWarning": "Warning",
+    "statusFailed": "Failed",
+    "statusPending": "Pending"
   },
   "releases": {
     "title": "Release Management",
@@ -81,6 +111,7 @@
   },
   "language": {
     "zh-CN": "简体中文",
-    "en-US": "English"
+    "en-US": "English",
+    "switchLanguage": "Switch Language"
   }
 }

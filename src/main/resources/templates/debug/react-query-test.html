@@ -390,13 +390,24 @@
         </div>
     </div>
 
-    <!-- React Query DevTools 会自动注入 -->
-    <script type="module" src="/dist/assets/deploy-platform.js"></script>
-    <script type="module">
-        import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from 'https://cdn.jsdelivr.net/npm/@tanstack/react-query@5.62.11/+esm';
-        import { ReactQueryDevtools } from 'https://cdn.jsdelivr.net/npm/@tanstack/react-query-devtools@5.62.11/+esm';
-        import React from 'https://cdn.jsdelivr.net/npm/react@19.0.0/+esm';
-        import ReactDOM from 'https://cdn.jsdelivr.net/npm/react-dom@19.0.0/+esm';
+    <!-- 加载React和相关库 -->
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tanstack/query-core@5.62.11/build/umd/index.production.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tanstack/react-query@5.62.11/build/umd/index.production.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tanstack/react-query-devtools@5.62.11/build/umd/index.production.js"></script>
+
+    <script>
+        console.log('Window libraries loaded:', {
+            React: typeof window.React,
+            ReactDOM: typeof window.ReactDOM,
+            ReactQuery: typeof window.ReactQuery,
+            ReactQueryDevtools: typeof window.ReactQueryDevtools
+        });
+
+        // 使用全局变量
+        const { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } = window.ReactQuery || {};
+        const { ReactQueryDevtools } = window.ReactQueryDevtools || {};
 
         // 创建QueryClient（5分钟缓存）
         const queryClient = new QueryClient({
@@ -521,15 +532,19 @@
         // App组件
         function App() {
             return React.createElement(QueryClientProvider, { client: queryClient },
-                React.createElement(PoliciesList),
-                React.createElement(ReactQueryDevtools, { initialIsOpen: false })
+                React.createElement('div', null,
+                    React.createElement(PoliciesList),
+                    React.createElement(ReactQueryDevtools, {
+                        initialIsOpen: false,
+                        buttonPosition: 'bottom-left'
+                    })
+                )
             );
         }
 
-        // 渲染到页面
+        // 渲染到页面 (React 18 使用 ReactDOM.render)
         const container = document.getElementById('policies-container');
-        const root = ReactDOM.createRoot(container);
-        root.render(React.createElement(App));
+        ReactDOM.render(React.createElement(App), container);
     </script>
 </body>
 </html>

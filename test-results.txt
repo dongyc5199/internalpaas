@@ -1,0 +1,532 @@
+
+> internalpaas@1.0.0 test:run
+> vitest run --coverage
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mE:/work/code/internalpaas/src/main/frontend[39m
+[2m      Coverage enabled with [22m[33mv8[39m
+
+ [33m❯[39m tests/react-app/components/Table.test.tsx [2m ([22m[2m0 test[22m[2m)[22m
+ [33m❯[39m tests/websocket.test.ts [2m ([22m[2m29 tests[22m [2m|[22m [31m4 failed[39m[2m)[22m[33m 386[2mms[22m[39m
+[31m   [33m❯[31m tests/websocket.test.ts[2m > [22mWebSocketManager[2m > [22m连接管理[2m > [22m应该在连接超时后重连[39m
+[31m     → Aborting after running 10000 timers, assuming an infinite loop![39m
+[31m   [33m❯[31m tests/websocket.test.ts[2m > [22mWebSocketManager[2m > [22m心跳机制[2m > [22m应该在收到心跳响应后重置超时[39m
+[31m     → expected "spy" to not be called at all, but actually been called 1 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      undefined,
+    ]
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[31m   [33m❯[31m tests/websocket.test.ts[2m > [22mWebSocketManager[2m > [22m消息处理[2m > [22m应该能够处理无效的 JSON 消息[39m
+[31m     → expected "spy" to not be called with arguments: [ 'invalid json' ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2mCompared values have no visual difference.[22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[31m   [33m❯[31m tests/websocket.test.ts[2m > [22mWebSocketManager[2m > [22m错误处理[2m > [22m应该在创建 WebSocket 失败时触发错误[39m
+[31m     → expected "spy" to be called at least once[39m
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m初始化和清理[2m > [22m[2m应该正确初始化[22m[39m
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m初始化和清理[2m > [22m[2m应该在DOM元素不存在时发出警告[22m[39m
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m初始化和清理[2m > [22m[2m应该正确清理资源[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m查看服务器详情[2m > [22m[2m应该成功加载和显示服务器详情[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m查看服务器详情[2m > [22m[2m应该在加载失败时显示错误[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstderr[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m查看服务器详情[2m > [22m[2m应该在加载失败时显示错误[22m[39m
+Failed to fetch server detail: Error: Failed to fetch server detail
+    at ServerDetailOverlay.fetchDetail [90m(E:\work\code\internalpaas\[39msrc\main\frontend\modules\ServerDetailOverlay.ts:290:37[90m)[39m
+    at ServerDetailOverlay.view [90m(E:\work\code\internalpaas\[39msrc\main\frontend\modules\ServerDetailOverlay.ts:137:28[90m)[39m
+    at [90mE:\work\code\internalpaas\[39msrc\main\frontend\tests\ServerDetailOverlay.test.ts:194:13
+    at runTest [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:781:11[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runFiles [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:958:5[90m)[39m
+    at startTests [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:967:3[90m)[39m
+    at [90mfile:///E:/work/code/internalpaas/[39mnode_modules/[4mvitest[24m/dist/chunks/runtime-runBaseTests.oAvMKtQC.js:116:7
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m查看服务器详情[2m > [22m[2m应该在网络错误时显示错误[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m查看服务器详情[2m > [22m[2m应该使用英文错误消息（当语言为en时）[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstderr[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m查看服务器详情[2m > [22m[2m应该使用英文错误消息（当语言为en时）[22m[39m
+Failed to fetch server detail: Error: Failed to fetch server detail
+    at ServerDetailOverlay.fetchDetail [90m(E:\work\code\internalpaas\[39msrc\main\frontend\modules\ServerDetailOverlay.ts:290:37[90m)[39m
+    at ServerDetailOverlay.view [90m(E:\work\code\internalpaas\[39msrc\main\frontend\modules\ServerDetailOverlay.ts:137:28[90m)[39m
+    at [90mE:\work\code\internalpaas\[39msrc\main\frontend\tests\ServerDetailOverlay.test.ts:222:13
+    at runTest [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:781:11[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runFiles [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:958:5[90m)[39m
+    at startTests [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:967:3[90m)[39m
+    at [90mfile:///E:/work/code/internalpaas/[39mnode_modules/[4mvitest[24m/dist/chunks/runtime-runBaseTests.oAvMKtQC.js:116:7
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m关闭弹窗[2m > [22m[2m应该关闭弹窗并重置状态[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m关闭弹窗[2m > [22m[2m应该恢复body滚动[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m关闭弹窗[2m > [22m[2m应该支持静默关闭[22m[39m
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m关闭弹窗[2m > [22m[2m应该在没有初始化时不报错[22m[39m
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m刷新数据[2m > [22m[2m应该刷新服务器详情数据[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m刷新数据[2m > [22m[2m应该在自动刷新时不显示成功消息[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m刷新数据[2m > [22m[2m应该在刷新失败时静默处理（自动刷新）[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m刷新数据[2m > [22m[2m应该在没有当前服务器时不执行刷新[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m图表控制[2m > [22m[2m应该暂停图表更新[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m图表控制[2m > [22m[2m应该恢复图表更新[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m滚动到section[2m > [22m[2m应该滚动到指定section[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m滚动到section[2m > [22m[2m应该在section不存在时不报错[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m滚动到section[2m > [22m[2m应该在body不存在时不报错[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2misOpen状态检查[2m > [22m[2m应该在关闭时返回false[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2misOpen状态检查[2m > [22m[2m应该在打开时返回true[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2misOpen状态检查[2m > [22m[2m应该在没有初始化时返回false[22m[39m
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m按钮交互[2m > [22m[2m应该切换刷新状态[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m按钮交互[2m > [22m[2m应该切换图表折叠状态[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m按钮交互[2m > [22m[2m应该通过关闭按钮关闭弹窗[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m数据渲染[2m > [22m[2m应该更新工具栏信息[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m数据渲染[2m > [22m[2m应该处理空进程列表[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m数据渲染[2m > [22m[2m应该处理空应用列表[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m数据渲染[2m > [22m[2m应该处理空用户列表[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m边界条件[2m > [22m[2m应该处理无效的serverId[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstderr[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m边界条件[2m > [22m[2m应该处理无效的serverId[22m[39m
+Failed to fetch server detail: Error: Failed to fetch server detail
+    at ServerDetailOverlay.fetchDetail [90m(E:\work\code\internalpaas\[39msrc\main\frontend\modules\ServerDetailOverlay.ts:290:37[90m)[39m
+    at ServerDetailOverlay.view [90m(E:\work\code\internalpaas\[39msrc\main\frontend\modules\ServerDetailOverlay.ts:137:28[90m)[39m
+    at [90mE:\work\code\internalpaas\[39msrc\main\frontend\tests\ServerDetailOverlay.test.ts:581:13
+    at runTest [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:781:11[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runFiles [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:958:5[90m)[39m
+    at startTests [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:967:3[90m)[39m
+    at [90mfile:///E:/work/code/internalpaas/[39mnode_modules/[4mvitest[24m/dist/chunks/runtime-runBaseTests.oAvMKtQC.js:116:7
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m边界条件[2m > [22m[2m应该处理null响应数据[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m边界条件[2m > [22m[2m应该处理多次快速打开关闭[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m边界条件[2m > [22m[2m应该在teardown后不能再使用[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstderr[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m边界条件[2m > [22m[2m应该在teardown后不能再使用[22m[39m
+Failed to fetch server detail: TypeError: Cannot read properties of undefined (reading 'ok')
+    at ServerDetailOverlay.fetchDetail [90m(E:\work\code\internalpaas\[39msrc\main\frontend\modules\ServerDetailOverlay.ts:290:27[90m)[39m
+    at ServerDetailOverlay.view [90m(E:\work\code\internalpaas\[39msrc\main\frontend\modules\ServerDetailOverlay.ts:137:28[90m)[39m
+    at [90mE:\work\code\internalpaas\[39msrc\main\frontend\tests\ServerDetailOverlay.test.ts:626:13
+    at runTest [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:781:11[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runFiles [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:958:5[90m)[39m
+    at startTests [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:967:3[90m)[39m
+    at [90mfile:///E:/work/code/internalpaas/[39mnode_modules/[4mvitest[24m/dist/chunks/runtime-runBaseTests.oAvMKtQC.js:116:7
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m焦点管理[2m > [22m[2m应该在打开时保存当前焦点[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+[90mstdout[2m | tests/ServerDetailOverlay.test.ts[2m > [22m[2mServerDetailOverlay[2m > [22m[2m焦点管理[2m > [22m[2m应该在关闭时恢复焦点[22m[39m
+[ServerDetailOverlay] Initialized
+[ServerDetailOverlay] Opened
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Closed
+[ServerDetailOverlay] Torn down
+
+ [32m✓[39m tests/ServerDetailOverlay.test.ts [2m ([22m[2m36 tests[22m[2m)[22m[33m 941[2mms[22m[39m
+ [32m✓[39m tests/http.test.ts [2m ([22m[2m28 tests[22m[2m)[22m[90m 254[2mms[22m[39m
+ [33m❯[39m tests/react-app/components/Modal.test.tsx [2m ([22m[2m0 test[22m[2m)[22m
+ [33m❯[39m tests/react-app/components/Select.test.tsx [2m ([22m[2m0 test[22m[2m)[22m
+ [33m❯[39m tests/stores/authStore.test.ts [2m ([22m[2m0 test[22m[2m)[22m
+[90mstderr[2m | tests/ServerListManager.test.ts[2m > [22m[2mServerListManager[2m > [22m[2m加载服务器列表[2m > [22m[2m应该处理加载失败的情况[22m[39m
+Failed to load server list: Error: Network error
+    at [90mE:\work\code\internalpaas\[39msrc\main\frontend\tests\ServerListManager.test.ts:134:57
+    at [90mfile:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:135:14
+    at [90mfile:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:60:26
+    at runTest [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:781:17[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runFiles [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:958:5[90m)[39m
+    at startTests [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:967:3[90m)[39m
+    at [90mfile:///E:/work/code/internalpaas/[39mnode_modules/[4mvitest[24m/dist/chunks/runtime-runBaseTests.oAvMKtQC.js:116:7
+
+[90mstderr[2m | tests/ServerListManager.test.ts[2m > [22m[2mServerListManager[2m > [22m[2m国际化[2m > [22m[2m应该根据语言显示正确的文本（中文）[22m[39m
+Failed to load server list: Error: Network error
+    at [90mE:\work\code\internalpaas\[39msrc\main\frontend\tests\ServerListManager.test.ts:435:57
+    at [90mfile:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:135:14
+    at [90mfile:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:60:26
+    at runTest [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:781:17[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runFiles [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:958:5[90m)[39m
+    at startTests [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:967:3[90m)[39m
+    at [90mfile:///E:/work/code/internalpaas/[39mnode_modules/[4mvitest[24m/dist/chunks/runtime-runBaseTests.oAvMKtQC.js:116:7
+
+[90mstderr[2m | tests/ServerListManager.test.ts[2m > [22m[2mServerListManager[2m > [22m[2m国际化[2m > [22m[2m应该根据语言显示正确的文本（英文）[22m[39m
+Failed to load server list: Error: Network error
+    at [90mE:\work\code\internalpaas\[39msrc\main\frontend\tests\ServerListManager.test.ts:446:57
+    at [90mfile:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:135:14
+    at [90mfile:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:60:26
+    at runTest [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:781:17[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runFiles [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:958:5[90m)[39m
+    at startTests [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:967:3[90m)[39m
+    at [90mfile:///E:/work/code/internalpaas/[39mnode_modules/[4mvitest[24m/dist/chunks/runtime-runBaseTests.oAvMKtQC.js:116:7
+
+ [32m✓[39m tests/ServerListManager.test.ts [2m ([22m[2m29 tests[22m[2m)[22m[33m 747[2mms[22m[39m
+ [32m✓[39m tests/storage.test.ts [2m ([22m[2m37 tests[22m[2m)[22m[90m 57[2mms[22m[39m
+ [33m❯[39m tests/react-app/components/Input.test.tsx [2m ([22m[2m0 test[22m[2m)[22m
+ [33m❯[39m tests/hooks/useTokenRefresh.test.ts [2m ([22m[2m0 test[22m[2m)[22m
+ [33m❯[39m tests/react-app/components/Button.test.tsx [2m ([22m[2m0 test[22m[2m)[22m
+ [32m✓[39m tests/event-bus.test.ts [2m ([22m[2m23 tests[22m[2m)[22m[90m 59[2mms[22m[39m
+ [32m✓[39m tests/chart.test.ts [2m ([22m[2m27 tests[22m[2m)[22m[90m 53[2mms[22m[39m
+ [32m✓[39m tests/format.test.ts [2m ([22m[2m39 tests[22m[2m)[22m[90m 30[2mms[22m[39m
+ [32m✓[39m tests/i18n.test.ts [2m ([22m[2m19 tests[22m[2m)[22m[90m 128[2mms[22m[39m
+ [32m✓[39m tests/notification.test.ts [2m ([22m[2m15 tests[22m[2m)[22m[90m 41[2mms[22m[39m
+[90mstdout[2m | modules\server-modal.ts:594:13[22m[39m
+[ServerModal] 已完成初始化
+
+[90mstderr[2m | tests/server-modal.test.ts[2m > [22m[2mServerModal[2m > [22m[2m测试连接失败时展示错误 Toast[22m[39m
+[ServerModal] Connection test error: Error: network down
+    at [90mE:\work\code\internalpaas\[39msrc\main\frontend\tests\server-modal.test.ts:94:32
+    at [90mfile:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:135:14
+    at [90mfile:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:60:26
+    at runTest [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:781:17[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runSuite [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:909:15[90m)[39m
+    at runFiles [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:958:5[90m)[39m
+    at startTests [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:967:3[90m)[39m
+    at [90mfile:///E:/work/code/internalpaas/[39mnode_modules/[4mvitest[24m/dist/chunks/runtime-runBaseTests.oAvMKtQC.js:116:7
+    at withEnv [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4mvitest[24m/dist/chunks/runtime-runBaseTests.oAvMKtQC.js:83:5[90m)[39m
+
+ [32m✓[39m tests/server-modal.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[33m 751[2mms[22m[39m
+[90mstderr[2m | tests/react-app/token-bridge.test.tsx[2m > [22m[2mtoken-bridge[2m > [22m[2mreports origin mismatch error[22m[39m
+[deploy-platform] Unexpected token origin https://evil.example.com
+
+[90mstdout[2m | ..\..\..\initDashboard (E:\work\code\internalpaas\src\main\frontend\modules\dashboard.ts:702:17)[22m[39m
+[Dashboard] 已完成初始化
+
+ [32m✓[39m tests/react-app/token-bridge.test.tsx [2m ([22m[2m2 tests[22m[2m)[22m[90m 38[2mms[22m[39m
+[90mstdout[2m | tests/dashboard.test.ts[2m > [22m[2mDashboard[2m > [22m[2m销毁实例[22m[39m
+[Dashboard] 实例已销毁
+
+ [33m❯[39m tests/dashboard.test.ts [2m ([22m[2m9 tests[22m [2m|[22m [31m1 failed[39m[2m)[22m[90m 146[2mms[22m[39m
+[31m   [33m❯[31m tests/dashboard.test.ts[2m > [22mDashboard[2m > [22m自动刷新统计数据[39m
+[31m     → expected "spy" to be called at least once[39m
+ [33m❯[39m tests/modules/deploy-platform-auth.test.ts [2m ([22m[2m0 test[22m[2m)[22m
+[90mstdout[2m | ..\..\..\initThemeManager (E:\work\code\internalpaas\src\main\frontend\modules\theme.ts:140:17)[22m[39m
+[ThemeManager] 已完成初始化
+
+ [32m✓[39m tests/theme.test.ts [2m ([22m[2m8 tests[22m[2m)[22m[90m 29[2mms[22m[39m
+ [33m❯[39m tests/react-app/hooks/useDeploymentSummary.test.tsx [2m ([22m[2m0 test[22m[2m)[22m
+ [33m❯[39m tests/react-app/OverviewPage.test.tsx [2m ([22m[2m0 test[22m[2m)[22m
+[90mstderr[2m | tests/mfe/deploy-platform-loader.test.ts[2m > [22m[2mdeploy-platform loader[2m > [22m[2mignores when container missing[22m[39m
+__setRemoteLoaderForTest is deprecated with direct entry loading
+
+[90mstderr[2m | tests/mfe/deploy-platform-loader.test.ts[2m > [22m[2mdeploy-platform loader[2m > [22m[2mloads remote module when container present[22m[39m
+__setRemoteLoaderForTest is deprecated with direct entry loading
+__setRemoteLoaderForTest is deprecated with direct entry loading
+
+[90mstderr[2m | tests/mfe/deploy-platform-loader.test.ts[2m > [22m[2mdeploy-platform loader[2m > [22m[2mloads remote module when container present[22m[39m
+[deploy-platform] failed to load entry Error: Failed to load url /dist/assets/deploy-platform.js (resolved id: /dist/assets/deploy-platform.js). Does the file exist?
+    at loadAndTransform [90m(file:///E:/work/code/internalpaas/[39mnode_modules/[4mvite[24m/dist/node/chunks/dep-D_zLpgQd.js:51968:17[90m)[39m
+
+ [33m❯[39m tests/mfe/deploy-platform-loader.test.ts [2m ([22m[2m2 tests[22m [2m|[22m [31m1 failed[39m[2m)[22m[90m 72[2mms[22m[39m
+[31m   [33m❯[31m tests/mfe/deploy-platform-loader.test.ts[2m > [22mdeploy-platform loader[2m > [22mloads remote module when container present[39m
+[31m     → expected "spy" to be called at least once[39m
+ [33m❯[39m tests/react-app/App.test.tsx [2m ([22m[2m0 test[22m[2m)[22m
+ [32m✓[39m tests/bootstrap.test.ts [2m ([22m[2m1 test[22m[2m)[22m[90m 5[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[1m[7m Failed Suites 11 [27m[22m⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/hooks/useTokenRefresh.test.ts [2m[ tests/hooks/useTokenRefresh.test.ts ][22m
+[31m[1m[7m FAIL [27m[22m[39m tests/react-app/App.test.tsx [2m[ tests/react-app/App.test.tsx ][22m
+[31m[1m[7m FAIL [27m[22m[39m tests/react-app/OverviewPage.test.tsx [2m[ tests/react-app/OverviewPage.test.tsx ][22m
+[31m[1m[7m FAIL [27m[22m[39m tests/stores/authStore.test.ts [2m[ tests/stores/authStore.test.ts ][22m
+[31m[1m[7m FAIL [27m[22m[39m tests/react-app/components/Button.test.tsx [2m[ tests/react-app/components/Button.test.tsx ][22m
+[31m[1m[7m FAIL [27m[22m[39m tests/react-app/components/Input.test.tsx [2m[ tests/react-app/components/Input.test.tsx ][22m
+[31m[1m[7m FAIL [27m[22m[39m tests/react-app/components/Modal.test.tsx [2m[ tests/react-app/components/Modal.test.tsx ][22m
+[31m[1m[7m FAIL [27m[22m[39m tests/react-app/components/Select.test.tsx [2m[ tests/react-app/components/Select.test.tsx ][22m
+[31m[1m[7m FAIL [27m[22m[39m tests/react-app/components/Table.test.tsx [2m[ tests/react-app/components/Table.test.tsx ][22m
+[31m[1m[7m FAIL [27m[22m[39m tests/react-app/hooks/useDeploymentSummary.test.tsx [2m[ tests/react-app/hooks/useDeploymentSummary.test.tsx ][22m
+[31m[1mError[22m: Cannot find module '@testing-library/dom'
+Require stack:
+- E:\work\code\internalpaas\node_modules\@testing-library\react\dist\pure.js[39m
+[90m [2m❯[22m TracingChannel.traceSync ../../../node:diagnostics_channel:[2m322:14[22m[39m
+[90m [2m❯[22m Object.<anonymous> ../../../node_modules/@testing-library/react/dist/pure.js:[2m46:12[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22m[39m
+[31m[1mSerialized Error:[22m[39m [90m{ code: 'MODULE_NOT_FOUND', requireStack: [ 'E:\work\code\internalpaas\node_modules\@testing-library\react\dist\pure.js' ] }[39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/17]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/modules/deploy-platform-auth.test.ts [2m[ tests/modules/deploy-platform-auth.test.ts ][22m
+[31m[1mError[22m: Failed to resolve import "@testing-library/dom" from "src/main/frontend/tests/modules/deploy-platform-auth.test.ts". Does the file exist?[39m
+[90m [2m❯[22m TransformPluginContext._formatError ../../../node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:[2m49258:41[22m[39m
+[90m [2m❯[22m TransformPluginContext.error ../../../node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:[2m49253:16[22m[39m
+[90m [2m❯[22m normalizeUrl ../../../node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:[2m64306:23[22m[39m
+[90m [2m❯[22m ../../../async file:/E:/work/code/internalpaas/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:[2m64438:39[22m[39m
+[90m [2m❯[22m TransformPluginContext.transform ../../../node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:[2m64365:7[22m[39m
+[90m [2m❯[22m PluginContainer.transform ../../../node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:[2m49099:18[22m[39m
+[90m [2m❯[22m loadAndTransform ../../../node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:[2m51977:27[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/17]⎯[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 6 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/dashboard.test.ts[2m > [22mDashboard[2m > [22m自动刷新统计数据
+[31m[1mAssertionError[22m: expected "spy" to be called at least once[39m
+[36m [2m❯[22m tests/dashboard.test.ts:[2m58:23[22m[39m
+    [90m 56| [39m        [35mawait[39m [33mPromise[39m[33m.[39m[34mresolve[39m()[33m;[39m
+    [90m 57| [39m
+    [90m 58| [39m        [34mexpect[39m(fetch)[33m.[39m[34mtoHaveBeenCalled[39m()[33m;[39m
+    [90m   | [39m                      [31m^[39m
+    [90m 59| [39m
+    [90m 60| [39m        dashboard[33m.[39m[34mstopAutoRefresh[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/17]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/websocket.test.ts[2m > [22mWebSocketManager[2m > [22m连接管理[2m > [22m应该在连接超时后重连
+[31m[1mError[22m: Aborting after running 10000 timers, assuming an infinite loop![39m
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/17]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/websocket.test.ts[2m > [22mWebSocketManager[2m > [22m心跳机制[2m > [22m应该在收到心跳响应后重置超时
+[31m[1mAssertionError[22m: expected "spy" to not be called at all, but actually been called 1 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      undefined,
+    ]
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[36m [2m❯[22m tests/websocket.test.ts:[2m417:49[22m[39m
+    [90m415| [39m
+    [90m416| [39m            [90m// 不应该触发超时[39m
+    [90m417| [39m            [34mexpect[39m(heartbeatTimeoutHandler)[33m.[39mnot[33m.[39m[34mtoHaveBeenCalled[39m()[33m;[39m
+    [90m   | [39m                                                [31m^[39m
+    [90m418| [39m        })[33m;[39m
+    [90m419| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/17]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/websocket.test.ts[2m > [22mWebSocketManager[2m > [22m消息处理[2m > [22m应该能够处理无效的 JSON 消息
+[31m[1mAssertionError[22m: expected "spy" to not be called with arguments: [ 'invalid json' ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2mCompared values have no visual difference.[22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[36m [2m❯[22m tests/websocket.test.ts:[2m518:40[22m[39m
+    [90m516| [39m
+    [90m517| [39m            [90m// 不应该触发 message 事件（因为JSON解析失败）[39m
+    [90m518| [39m            [34mexpect[39m(messageHandler)[33m.[39mnot[33m.[39m[34mtoHaveBeenCalledWith[39m([32m"invalid j[39m…
+    [90m   | [39m                                       [31m^[39m
+    [90m519| [39m            [90m// 应该记录错误到console[39m
+    [90m520| [39m            [34mexpect[39m(consoleErrorSpy)[33m.[39m[34mtoHaveBeenCalled[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/17]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/websocket.test.ts[2m > [22mWebSocketManager[2m > [22m错误处理[2m > [22m应该在创建 WebSocket 失败时触发错误
+[31m[1mAssertionError[22m: expected "spy" to be called at least once[39m
+[36m [2m❯[22m tests/websocket.test.ts:[2m665:34[22m[39m
+    [90m663| [39m            [35mawait[39m [33mPromise[39m[33m.[39m[34mresolve[39m()[33m;[39m
+    [90m664| [39m
+    [90m665| [39m            [34mexpect[39m(errorHandler)[33m.[39m[34mtoHaveBeenCalled[39m()[33m;[39m
+    [90m   | [39m                                 [31m^[39m
+    [90m666| [39m
+    [90m667| [39m            global[33m.[39m[33mWebSocket[39m [33m=[39m originalWebSocket[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/17]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/mfe/deploy-platform-loader.test.ts[2m > [22mdeploy-platform loader[2m > [22mloads remote module when container present
+[31m[1mAssertionError[22m: expected "spy" to be called at least once[39m
+[36m [2m❯[22m tests/mfe/deploy-platform-loader.test.ts:[2m34:23[22m[39m
+    [90m 32| [39m        [35mawait[39m [34mloadDeployPlatformMfe[39m()[33m;[39m
+    [90m 33| [39m
+    [90m 34| [39m        [34mexpect[39m(mount)[33m.[39m[34mtoHaveBeenCalled[39m()[33m;[39m
+    [90m   | [39m                      [31m^[39m
+    [90m 35| [39m    })[33m;[39m
+    [90m 36| [39m})[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/17]⎯[22m[39m
+
+[2m Test Files [22m [1m[31m14 failed[39m[22m[2m | [22m[1m[32m13 passed[39m[22m[90m (27)[39m
+[2m      Tests [22m [1m[31m6 failed[39m[22m[2m | [22m[1m[32m301 passed[39m[22m[90m (307)[39m
+[2m   Start at [22m 09:24:47
+[2m   Duration [22m 53.13s[2m (transform 3.76s, setup 17.93s, collect 3.78s, tests 3.74s, environment 83.70s, prepare 21.21s)[22m
+

@@ -1,14 +1,8 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 import { useDeploymentSummary } from "../hooks/useDeploymentSummary";
 import type { DeploymentSummaryItem } from "../overview/api";
-
-const statusLabelMap: Record<DeploymentSummaryItem["status"], string> = {
-    healthy: "健康",
-    warning: "告警",
-    failed: "失败",
-    pending: "待处理"
-};
 
 const resolveSummaryEndpoint = (): string | undefined => {
     if (typeof document === "undefined") {
@@ -20,6 +14,7 @@ const resolveSummaryEndpoint = (): string | undefined => {
 };
 
 export function OverviewPage(): JSX.Element {
+    const { t } = useTranslation();
     const summary = useDeploymentSummary({
         endpoint: resolveSummaryEndpoint()
     });
@@ -31,37 +26,47 @@ export function OverviewPage(): JSX.Element {
         return summary.data.highlights ?? [];
     }, [summary]);
 
+    const getStatusLabel = (status: DeploymentSummaryItem["status"]): string => {
+        const statusMap: Record<DeploymentSummaryItem["status"], string> = {
+            healthy: t('overview.statusHealthy'),
+            warning: t('overview.statusWarning'),
+            failed: t('overview.statusFailed'),
+            pending: t('overview.statusPending')
+        };
+        return statusMap[status];
+    };
+
     return (
         <section className="dp-page" data-testid="overview-page">
             <header className="dp-page__header">
                 <div>
-                    <h3 className="dp-page__title">发布实时总览</h3>
+                    <h3 className="dp-page__title">{t('overview.pageTitle')}</h3>
                     <p className="dp-page__description">
-                        查看关键指标、待处理发布与风险提示。
+                        {t('overview.pageDescription')}
                     </p>
                 </div>
                 {summary.status === "success" && (
                     <span className="dp-overview__last-updated">
-                        最近更新：{summary.data.highlights?.[0]?.lastUpdated ?? "刚刚"}
+                        {t('overview.lastUpdated')}{summary.data.highlights?.[0]?.lastUpdated ?? t('overview.justNow')}
                     </span>
                 )}
             </header>
 
             {summary.status === "loading" && (
                 <div className="dp-page__placeholder" data-testid="overview-loading">
-                    正在加载最新的部署指标与发布动态…
+                    {t('overview.loading')}
                 </div>
             )}
 
             {summary.status === "error" && (
                 <div className="dp-page__placeholder dp-page__placeholder--error" data-testid="overview-error">
-                    获取部署总览失败：{summary.error.message}
+                    {t('overview.loadError')}{summary.error.message}
                 </div>
             )}
 
             {summary.status === "success" && (
                 <>
-                    <section className="dp-overview__metrics" aria-label="关键指标">
+                    <section className="dp-overview__metrics" aria-label={t('overview.metricsSection')}>
                         {summary.data.metrics.map((metric) => (
                             <article
                                 key={metric.id}
@@ -85,10 +90,10 @@ export function OverviewPage(): JSX.Element {
                         ))}
                     </section>
 
-                    <section className="dp-overview__highlights" aria-label="重点关注">
-                        <header className="dp-section__title">重点关注</header>
+                    <section className="dp-overview__highlights" aria-label={t('overview.highlightsSection')}>
+                        <header className="dp-section__title">{t('overview.highlightsSection')}</header>
                         {highlightColumns.length === 0 ? (
-                            <p className="dp-page__placeholder">暂无待处理的发布或风险。</p>
+                            <p className="dp-page__placeholder">{t('overview.noHighlights')}</p>
                         ) : (
                             <ul className="dp-overview__highlight-list">
                                 {highlightColumns.map((item, index) => (
@@ -97,10 +102,10 @@ export function OverviewPage(): JSX.Element {
                                             {item.application} · {item.environment}
                                         </span>
                                         <span className={`dp-overview__highlight-status dp-status--${item.status}`}>
-                                            {statusLabelMap[item.status]}
+                                            {getStatusLabel(item.status)}
                                         </span>
                                         <span className="dp-overview__highlight-meta">
-                                            待审批发布 {item.pendingReleases} 条 · 运行中金丝雀 {item.runningCanary} 条
+                                            {t('overview.pendingReleasesCount', { count: item.pendingReleases })} · {t('overview.runningCanaryCount', { count: item.runningCanary })}
                                         </span>
                                     </li>
                                 ))}
