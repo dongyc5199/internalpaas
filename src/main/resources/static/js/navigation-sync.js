@@ -26,11 +26,11 @@
       this.isSyncing = false;
       this.syncTimeout = null;
 
-      // 路由映射: 主应用菜单项ID → React路由路径
+      // 路由映射: 主应用子菜单data-route → React路由路径
       this.routeMap = {
-        'deploy-platform-overview': '/overview',
-        'deploy-platform-releases': '/releases',
-        'deploy-platform-policies': '/settings/policies',
+        'deploy-platform/overview': '/overview',
+        'deploy-platform/releases': '/releases',
+        'deploy-platform/policies': '/settings/policies',
         // 未来可扩展更多路由
       };
 
@@ -86,7 +86,7 @@
         return;
       }
 
-      // 查找被点击的菜单项 (向上遍历DOM树)
+      // 查找被点击的菜单项或子菜单项 (向上遍历DOM树)
       let target = event.target;
       while (target && !target.dataset.route) {
         target = target.parentElement;
@@ -215,20 +215,24 @@
 
     /**
      * 更新侧边栏高亮状态
-     * @param {string} activeMenuId - 要激活的菜单项ID
+     * @param {string} activeMenuId - 要激活的菜单项ID (可以是主菜单或子菜单的data-route值)
      */
     updateSidebarHighlight(activeMenuId) {
-      // 移除所有菜单项的激活状态
-      document.querySelectorAll('[data-route]').forEach(item => {
-        item.classList.remove('active', 'bg-blue-50', 'text-blue-600');
-        item.classList.add('text-gray-700');
+      // 移除所有子菜单项的激活状态
+      document.querySelectorAll('.submenu-item').forEach(item => {
+        item.classList.remove('active');
       });
 
-      // 激活指定菜单项
-      const activeItem = document.querySelector(`[data-route="${activeMenuId}"]`);
-      if (activeItem) {
-        activeItem.classList.remove('text-gray-700');
-        activeItem.classList.add('active', 'bg-blue-50', 'text-blue-600');
+      // 激活指定子菜单项
+      const activeSubmenuItem = document.querySelector(`.submenu-item[data-route="${activeMenuId}"]`);
+      if (activeSubmenuItem) {
+        activeSubmenuItem.classList.add('active');
+
+        // 确保父菜单项展开
+        const parentMenuItem = activeSubmenuItem.closest('.menu-item.has-submenu');
+        if (parentMenuItem) {
+          parentMenuItem.classList.add('expanded');
+        }
       }
     }
 
