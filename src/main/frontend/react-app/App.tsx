@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { I18nextProvider } from "react-i18next";
@@ -13,6 +13,7 @@ import { PoliciesPage } from "./pages/PoliciesPage";
 import { queryClient } from "./config/queryClient";
 import i18n from "./i18n/i18n";
 import { useTokenRefresh } from "./hooks/useTokenRefresh";
+import { useNavSync } from "./hooks/useNavSync";
 
 type AppProps = {
     basename?: string;
@@ -35,6 +36,12 @@ const resolveBasename = (): string => {
 };
 
 export function AppRoutes(): JSX.Element {
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    // Enable navigation synchronization with main app
+    useNavSync(navigate, location);
+
     return (
         <LayoutSelector>
             <Routes>

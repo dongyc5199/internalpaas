@@ -26,6 +26,8 @@
     <link rel="stylesheet" href="/css/user-permission-management.css">
     <link rel="stylesheet" href="/css/server-modal.css">
     <link rel="stylesheet" href="/css/ssh-config-import-wizard.css">
+    <!-- React Deploy Platform Styles -->
+    <link rel="stylesheet" href="/dist/assets/__federation_expose_App.css">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="icon" type="image/svg+xml" sizes="16x16" href="/favicon-16x16.svg">
     <link rel="icon" type="image/svg+xml" sizes="32x32" href="/favicon-32x32.svg">
@@ -1013,6 +1015,120 @@
             position: relative;
             z-index: 10;
         }
+
+        /* ===== 二级菜单样式 ===== */
+        /* 有子菜单的菜单项 */
+        .menu-item.has-submenu .meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        /* 子菜单展开指示器 */
+        .submenu-indicator {
+            display: inline-flex;
+            align-items: center;
+            margin-left: auto;
+            padding-left: 8px;
+            transition: transform 0.2s ease;
+            opacity: 0.6;
+        }
+
+        .menu-item.has-submenu.expanded .submenu-indicator {
+            transform: rotate(180deg);
+        }
+
+        /* 子菜单容器 */
+        .submenu-container {
+            display: block;
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.3s ease, opacity 0.2s ease;
+            padding-left: 12px;
+            margin-top: 4px;
+        }
+
+        .menu-item.has-submenu.expanded + .submenu-container {
+            max-height: 500px;
+            opacity: 1;
+            display: block;
+        }
+
+        /* 子菜单项 */
+        .submenu-item {
+            padding: 8px 12px 8px 16px;
+            margin: 2px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            color: var(--shell-text-primary);
+            font-size: 14px;
+        }
+
+        .submenu-item:hover {
+            background: rgba(148, 163, 184, 0.1);
+            color: var(--shell-text-primary);
+        }
+
+        .submenu-item.active {
+            background: linear-gradient(135deg, rgba(47, 155, 255, 0.12), rgba(59, 198, 184, 0.08));
+            color: var(--primary-color, #2F9BFF);
+            font-weight: 600;
+        }
+
+        .submenu-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .submenu-icon {
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-size: 14px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(59, 130, 246, 0.08));
+            border: 1px solid rgba(99, 102, 241, 0.12);
+        }
+
+        .submenu-text {
+            flex: 1;
+            font-weight: 500;
+            color: inherit;
+        }
+
+        /* 暗黑模式适配 */
+        [data-theme="dark"] .submenu-item {
+            color: rgba(226, 232, 240, 0.92);
+        }
+
+        [data-theme="dark"] .submenu-item:hover {
+            background: rgba(148, 163, 184, 0.15);
+            color: #F9FAFB;
+        }
+
+        [data-theme="dark"] .submenu-item.active {
+            background: linear-gradient(135deg, rgba(47, 155, 255, 0.18), rgba(59, 198, 184, 0.12));
+            color: #60A5FA;
+        }
+
+        [data-theme="dark"] .submenu-icon {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(59, 130, 246, 0.15));
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+
+        [data-theme="dark"] .submenu-text {
+            color: rgba(226, 232, 240, 0.92);
+        }
     </style>
 </head>
 <body class="layout-shell">
@@ -1176,17 +1292,38 @@
                 </div>
                 <div class="menu-group" th:each="section : ${navSections}"
                      th:if="${section.items != null and !#lists.isEmpty(section.items)}">
-                    <div class="menu-item"
-                         th:each="menu : ${section.items}"
-                         th:classappend="${menu.active} ? ' selected' : ''"
-                         th:attr="data-route=${menu.route}, data-page=${menu.page != null ? menu.page : menu.route}"
-                         th:aria-current="${menu.active} ? 'page' : null">
-                        <span class="meta">
-                            <span class="menu-icon"
-                                  th:text="${menu.badge}">OV</span>
-                            <span class="text" th:text="${menu.label}">工作区概览</span>
-                        </span>
-                        <span class="nav-tooltip" th:text="${menu.label}">工作区概览</span>
+                    <div th:each="menu : ${section.items}">
+                        <!-- 主菜单项 -->
+                        <div class="menu-item"
+                             th:classappend="(${menu.active} ? 'selected' : '') + (${menu.hasSubmenu()} ? ' has-submenu' : '')"
+                             th:attr="data-route=${menu.route}, data-page=${menu.page != null ? menu.page : menu.route}, data-has-submenu=${menu.hasSubmenu()}"
+                             th:aria-current="${menu.active} ? 'page' : null">
+                            <span class="meta">
+                                <span class="menu-icon"
+                                      th:text="${menu.badge}">OV</span>
+                                <span class="text" th:text="${menu.label}">工作区概览</span>
+                                <!-- 子菜单展开指示器 -->
+                                <span class="submenu-indicator" th:if="${menu.hasSubmenu()}">
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                                        <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                    </svg>
+                                </span>
+                            </span>
+                            <span class="nav-tooltip" th:text="${menu.label}">工作区概览</span>
+                        </div>
+
+                        <!-- 子菜单容器 -->
+                        <div class="submenu-container" th:if="${menu.hasSubmenu()}">
+                            <div class="submenu-item"
+                                 th:each="submenu : ${menu.submenu}"
+                                 th:classappend="${submenu.active} ? ' active' : ''"
+                                 th:attr="data-route=${submenu.route}">
+                                <span class="submenu-meta">
+                                    <span class="submenu-icon" th:text="${submenu.icon}">📊</span>
+                                    <span class="submenu-text" th:text="${submenu.label}">概览总览</span>
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="footer-block" th:if="${(sidebarFooterLinks != null and !#lists.isEmpty(sidebarFooterLinks)) or (sidebarFooterMeta != null and !#lists.isEmpty(sidebarFooterMeta))}">
@@ -6405,6 +6542,88 @@ function initDashboardRealTimeUpdates() {
         })();
         </script>
 
+        <!-- 二级菜单交互脚本 -->
+        <script>
+        (function() {
+            'use strict';
+
+            // 初始化子菜单功能
+            function initSubmenuFeature() {
+                const menuItems = document.querySelectorAll('.menu-item.has-submenu');
+
+                menuItems.forEach(menuItem => {
+                    // 点击菜单项切换展开/折叠
+                    menuItem.addEventListener('click', function(e) {
+                        // 如果点击的是主菜单项（不是子菜单项）
+                        if (e.target.closest('.submenu-item')) {
+                            return; // 让子菜单项的点击事件正常触发
+                        }
+
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const isExpanded = this.classList.contains('expanded');
+
+                        // 关闭其他展开的菜单项（可选：单选模式）
+                        // menuItems.forEach(item => {
+                        //     if (item !== this) {
+                        //         item.classList.remove('expanded');
+                        //     }
+                        // });
+
+                        // 切换当前菜单项的展开状态
+                        this.classList.toggle('expanded');
+                    });
+                });
+
+                // 处理子菜单项点击
+                const submenuItems = document.querySelectorAll('.submenu-item');
+                submenuItems.forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const route = this.dataset.route;
+                        if (route) {
+                            // 移除其他子菜单项的active状态
+                            submenuItems.forEach(si => si.classList.remove('active'));
+
+                            // 添加当前项的active状态
+                            this.classList.add('active');
+
+                            // 触发路由导航
+                            console.log('[Submenu] Navigating to:', route);
+                            navigateToRoute(route);
+                        }
+                    });
+                });
+
+                console.log('[Submenu] Initialized', menuItems.length, 'menu items with submenu');
+            }
+
+            // 路由导航函数
+            function navigateToRoute(route) {
+                // 触发主应用的路由系统
+                const spa = window.spa || window.loadPageDynamically;
+                if (typeof spa === 'function') {
+                    spa(route);
+                } else if (window.loadPageDynamically) {
+                    window.loadPageDynamically(route);
+                } else {
+                    console.warn('[Submenu] Navigation system not found, falling back to location');
+                    window.location.href = '/' + route;
+                }
+            }
+
+            // DOM加载完成后初始化
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initSubmenuFeature);
+            } else {
+                initSubmenuFeature();
+            }
+        })();
+        </script>
+
         <!-- Inline compact spinner styles (small & lively, non-intrusive) -->
         <style>
         /* Compact bouncing dots spinner used inside the scan button */
@@ -6502,5 +6721,8 @@ function initDashboardRealTimeUpdates() {
 
         <!-- Include SSH Config Import Wizard Modal -->
         <div th:replace="~{fragments/ssh-config-import-wizard :: ssh-config-import-wizard}"></div>
+
+        <!-- Navigation Synchronization Script -->
+        <script th:src="@{/static/js/navigation-sync.js}"></script>
 </body>
 </html>
