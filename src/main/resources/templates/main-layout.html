@@ -6580,10 +6580,20 @@ function initDashboardRealTimeUpdates() {
                 const submenuItems = document.querySelectorAll('.submenu-item');
                 submenuItems.forEach(item => {
                     item.addEventListener('click', function(e) {
+                        const route = this.dataset.route;
+
+                        // 如果是部署平台路由,让navigation-sync.js处理,不阻止冒泡
+                        if (route && route.startsWith('deploy-platform/')) {
+                            e.preventDefault();
+                            // 不调用 e.stopPropagation(),让事件冒泡到navigation-sync.js
+                            console.log('[Submenu] Deploy platform route, delegating to navigation-sync:', route);
+                            return;
+                        }
+
+                        // 其他路由使用原有逻辑
                         e.preventDefault();
                         e.stopPropagation();
 
-                        const route = this.dataset.route;
                         if (route) {
                             // 移除其他子菜单项的active状态
                             submenuItems.forEach(si => si.classList.remove('active'));
@@ -6723,6 +6733,6 @@ function initDashboardRealTimeUpdates() {
         <div th:replace="~{fragments/ssh-config-import-wizard :: ssh-config-import-wizard}"></div>
 
         <!-- Navigation Synchronization Script -->
-        <script th:src="@{/static/js/navigation-sync.js}"></script>
+        <script th:src="@{/js/navigation-sync.js}"></script>
 </body>
 </html>
