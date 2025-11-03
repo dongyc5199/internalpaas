@@ -118,8 +118,8 @@
 
 ### 实施任务 (User Story 3)
 
-- [ ] T033 [US3] 验证ShellLayout在独立模式渲染 - 检查 src/main/frontend/react-app/layout/ShellLayout.tsx 存在且功能正常
-- [ ] T034 [US3] 确保独立访问无嵌入标记 - 验证直接访问 /admin/deploy-platform 时容器无 data-embedded 属性
+- [x] T033 [US3] 验证ShellLayout在独立模式渲染 - src/main/frontend/tests/react-app/integration/standaloneShellLayout.test.tsx ✅
+- [x] T034 [US3] 确保独立访问无嵌入标记 - admin/deploy-platform.html 无 data-embedded 属性 ✅
 - [ ] T035 [US3] 测试独立模式UI完整性 - 手动测试：独立访问时React侧边栏、路由、所有功能正常
 - [ ] T036 [US3] 测试模式切换 - 手动测试：在嵌入和独立URL间切换，布局正确响应
 
