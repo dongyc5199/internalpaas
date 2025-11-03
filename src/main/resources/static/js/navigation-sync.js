@@ -164,37 +164,60 @@
      * @param {string} menuId - 菜单项ID
      */
     dispatchNavigationEvent(route, menuId) {
-      // First, trigger the React app mount event (for lazy-mount mode)
-      const mountEvent = new CustomEvent('deploy-platform-loaded');
-      window.dispatchEvent(mountEvent);
-
-      if (window.__DEPLOY_PLATFORM_DEBUG__) {
-        console.log('[NavigationSync] Dispatched deploy-platform-loaded event');
-      }
-
-      // Wait a bit for React to mount, then send navigation event
-      setTimeout(() => {
-        // 发送导航事件到React应用
-        const navEvent = new CustomEvent('main-nav-change', {
-          detail: {
-            route: route,
-            source: 'main-app',
-            timestamp: Date.now()
-          }
-        });
-
-        window.dispatchEvent(navEvent);
-
-        // 更新当前路由
-        this.currentRoute = route;
-
-        // 更新侧边栏高亮 (在同步标志下)
-        this.updateSidebarHighlight(menuId);
+      const dispatchEvents = () => {
+        // First, trigger the React app mount event (for lazy-mount mode)
+        const mountEvent = new CustomEvent('deploy-platform-loaded');
+        window.dispatchEvent(mountEvent);
 
         if (window.__DEPLOY_PLATFORM_DEBUG__) {
-          console.log('[NavigationSync] Dispatched main-nav-change:', navEvent.detail);
+          console.log('[NavigationSync] Dispatched deploy-platform-loaded event');
         }
-      }, 800); // Increased timeout to 800ms to give React more time to mount
+
+        // Wait a bit for React to mount, then send navigation event
+        setTimeout(() => {
+          // 发送导航事件到React应用
+          const navEvent = new CustomEvent('main-nav-change', {
+            detail: {
+              route: route,
+              source: 'main-app',
+              timestamp: Date.now()
+            }
+          });
+
+          window.dispatchEvent(navEvent);
+
+          // 更新当前路由
+          this.currentRoute = route;
+
+          // 更新侧边栏高亮 (在同步标志下)
+          this.updateSidebarHighlight(menuId);
+
+          if (window.__DEPLOY_PLATFORM_DEBUG__) {
+            console.log('[NavigationSync] Dispatched main-nav-change:', navEvent.detail);
+          }
+        }, 800); // Increased timeout to 800ms to give React more time to mount
+      };
+
+      if (typeof window.loadDeployPlatformMfe === 'function') {
+        try {
+          const maybePromise = window.loadDeployPlatformMfe();
+          if (maybePromise && typeof maybePromise.then === 'function') {
+            maybePromise
+              .then(() => {
+                dispatchEvents();
+              })
+              .catch(error => {
+                console.error('[NavigationSync] Failed to load deploy platform entry:', error);
+              });
+            return;
+          }
+        } catch (error) {
+          console.error('[NavigationSync] Failed to load deploy platform entry:', error);
+          return;
+        }
+      }
+
+      dispatchEvents();
     }
 
     /**
