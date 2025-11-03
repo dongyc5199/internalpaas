@@ -27,7 +27,7 @@ describe("Integration Test: Main App to React Navigation", () => {
 
     beforeEach(() => {
         // Mock navigate function
-        navigate = vi.fn();
+        navigate = vi.fn() as unknown as NavigateFunction;
 
         // Mock location object
         mockLocation = {

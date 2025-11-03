@@ -1,4 +1,43 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
+
+type EmbedSignals = {
+    hasSpringContext: boolean;
+    hasEmbedFlag: boolean;
+    hasWindowFlag: boolean;
+};
+
+const collectEmbedSignals = (): EmbedSignals => {
+    if (typeof document === "undefined") {
+        return {
+            hasSpringContext: false,
+            hasEmbedFlag: false,
+            hasWindowFlag:
+                typeof window !== "undefined" && window.__DEPLOY_PLATFORM_EMBEDDED__ === true
+        };
+    }
+
+    const container = document.getElementById("deploy-platform-root");
+
+    if (!container) {
+        return {
+            hasSpringContext: false,
+            hasEmbedFlag: false,
+            hasWindowFlag:
+                typeof window !== "undefined" && window.__DEPLOY_PLATFORM_EMBEDDED__ === true
+        };
+    }
+
+    return {
+        hasSpringContext: container.getAttribute("data-spring-context") === "true",
+        hasEmbedFlag: container.getAttribute("data-embedded") === "true",
+        hasWindowFlag: typeof window !== "undefined" && window.__DEPLOY_PLATFORM_EMBEDDED__ === true
+    };
+};
+
+export const detectEmbedMode = (): boolean => {
+    const signals = collectEmbedSignals();
+    return signals.hasSpringContext || signals.hasEmbedFlag || signals.hasWindowFlag;
+};
 
 /**
  * 嵌入模式检测Hook
@@ -24,42 +63,22 @@ import { useState, useEffect } from 'react';
  * ```
  */
 export function useEmbedMode(): boolean {
-  const [isEmbedded, setIsEmbedded] = useState(false);
+    const [isEmbedded, setIsEmbedded] = useState<boolean>(() => detectEmbedMode());
 
-  useEffect(() => {
-    // 信号1: 检查容器元素（必要条件）
-    const container = document.getElementById('deploy-platform-root');
+    useEffect(() => {
+        const signals = collectEmbedSignals();
+        const embedded = signals.hasSpringContext || signals.hasEmbedFlag || signals.hasWindowFlag;
 
-    if (!container) {
-      // 容器不存在，认为是独立模式
-      setIsEmbedded(false);
-      return;
-    }
+        setIsEmbedded(embedded);
 
-    // 信号2: 检查Spring Boot上下文标志（主信号）
-    const hasSpringContext = container.getAttribute('data-spring-context') === 'true';
+        // 调试日志（生产环境通过window.__DEPLOY_PLATFORM_DEBUG__控制）
+        if (window.__DEPLOY_PLATFORM_DEBUG__) {
+            console.log("[useEmbedMode] Detection signals:", {
+                ...signals,
+                result: embedded
+            });
+        }
+    }, []);
 
-    // 信号3: 检查显式嵌入标记（增强信号）
-    const hasEmbedFlag = container.getAttribute('data-embedded') === 'true';
-
-    // 信号4: 检查Window全局标记（补充信号）
-    const hasWindowFlag = window.__DEPLOY_PLATFORM_EMBEDDED__ === true;
-
-    // 综合判断：任一信号为true即认为是嵌入模式
-    const embedded = hasSpringContext || hasEmbedFlag || hasWindowFlag;
-
-    setIsEmbedded(embedded);
-
-    // 调试日志（生产环境通过window.__DEPLOY_PLATFORM_DEBUG__控制）
-    if (window.__DEPLOY_PLATFORM_DEBUG__) {
-      console.log('[useEmbedMode] Detection signals:', {
-        hasSpringContext,
-        hasEmbedFlag,
-        hasWindowFlag,
-        result: embedded
-      });
-    }
-  }, []);
-
-  return isEmbedded;
+    return isEmbedded;
 }

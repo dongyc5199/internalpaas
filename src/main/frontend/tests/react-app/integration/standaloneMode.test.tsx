@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import type { PropsWithChildren } from "react";
+import type { PropsWithChildren, ReactElement } from "react";
 
 import { LayoutProvider } from "../../../react-app/providers/LayoutProvider";
 import { useLayout } from "../../../react-app/contexts/layoutContext";
@@ -31,7 +31,7 @@ describe("Integration: Standalone Mode Behaviour", () => {
     });
 
     it("should expose standalone layout context with shell mode", () => {
-        const wrapper = ({ children }: PropsWithChildren): JSX.Element => (
+        const wrapper = ({ children }: PropsWithChildren): ReactElement => (
             <LayoutProvider>{children}</LayoutProvider>
         );
 

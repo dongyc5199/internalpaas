@@ -106,14 +106,6 @@
         return;
       }
 
-      // 去重: 如果目标路由与当前路由相同,忽略
-      if (route === this.currentRoute) {
-        if (window.__DEPLOY_PLATFORM_DEBUG__) {
-          console.log('[NavigationSync] Ignoring sidebar click (same route):', route);
-        }
-        return;
-      }
-
       // 调试日志
       if (window.__DEPLOY_PLATFORM_DEBUG__) {
         console.log('[NavigationSync] Sidebar clicked:', {
