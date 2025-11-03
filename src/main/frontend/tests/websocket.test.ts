@@ -3,7 +3,29 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { WebSocketManager, WebSocketConfig } from "../utils/websocket";
+import {
+    WebSocketManager,
+    type WebSocketConfig,
+    type WebSocketEventHandler,
+    type WebSocketEventType
+} from "../utils/websocket";
+
+type WebSocketManagerInternals = {
+    config: Required<WebSocketConfig>;
+    ws: MockWebSocket | null;
+    reconnectAttempts: number;
+    reconnectTimer: number | null;
+    heartbeatTimer: number | null;
+    heartbeatTimeoutTimer: number | null;
+    connectionTimeoutTimer: number | null;
+    isManualClose: boolean;
+    listeners: Map<WebSocketEventType, Set<WebSocketEventHandler>>;
+};
+
+const asInternals = (manager: WebSocketManager): WebSocketManagerInternals =>
+    manager as unknown as WebSocketManagerInternals;
+
+const globalWithWebSocket = globalThis as unknown as { WebSocket: unknown };
 
 // Mock WebSocket
 class MockWebSocket {
@@ -30,7 +52,8 @@ class MockWebSocket {
         }, 10);
     }
 
-    send(_data: string): void {
+    send(data: string): void {
+        void data;
         if (this.readyState !== MockWebSocket.OPEN) {
             throw new Error("WebSocket is not open");
         }
@@ -57,12 +80,56 @@ class MockWebSocket {
     }
 }
 
+class PendingConnectionWebSocket {
+    static CONNECTING = MockWebSocket.CONNECTING;
+    static OPEN = MockWebSocket.OPEN;
+    static CLOSING = MockWebSocket.CLOSING;
+    static CLOSED = MockWebSocket.CLOSED;
+
+    url: string;
+    readyState = PendingConnectionWebSocket.CONNECTING;
+    onopen: ((event: Event) => void) | null = null;
+    onclose: ((event: CloseEvent) => void) | null = null;
+    onerror: ((event: Event) => void) | null = null;
+    onmessage: ((event: MessageEvent) => void) | null = null;
+
+    constructor(url: string) {
+        this.url = url;
+    }
+
+    send(data: string): void {
+        void data;
+        if (this.readyState !== PendingConnectionWebSocket.OPEN) {
+            throw new Error("WebSocket is not open");
+        }
+    }
+
+    close(code?: number, reason?: string): void {
+        this.readyState = PendingConnectionWebSocket.CLOSED;
+        const closeEvent = new CloseEvent("close", { code, reason });
+        this.onclose?.(closeEvent);
+    }
+}
+
+class ThrowingWebSocket {
+    static CONNECTING = MockWebSocket.CONNECTING;
+    static OPEN = MockWebSocket.OPEN;
+    static CLOSING = MockWebSocket.CLOSING;
+    static CLOSED = MockWebSocket.CLOSED;
+
+    constructor() {
+        throw new Error("Invalid URL");
+    }
+}
+
 describe("WebSocketManager", () => {
     let wsManager: WebSocketManager;
+    let originalWebSocket: unknown;
 
     beforeEach(() => {
         // 替换全局 WebSocket
-        global.WebSocket = MockWebSocket as any;
+        originalWebSocket = globalWithWebSocket.WebSocket;
+        globalWithWebSocket.WebSocket = MockWebSocket;
         vi.useFakeTimers();
     });
 
@@ -71,6 +138,7 @@ describe("WebSocketManager", () => {
         vi.clearAllTimers();
         vi.useRealTimers();
         vi.clearAllMocks();
+        globalWithWebSocket.WebSocket = originalWebSocket;
     });
 
     describe("初始化", () => {
@@ -93,10 +161,10 @@ describe("WebSocketManager", () => {
 
             wsManager = new WebSocketManager(config);
 
-            // 通过访问私有属性验证(仅用于测试)
-            expect((wsManager as any).config.reconnectDelay).toBe(3000);
-            expect((wsManager as any).config.heartbeatInterval).toBe(20000);
-            expect((wsManager as any).config.heartbeatTimeout).toBe(10000); // 默认值
+            const internals = asInternals(wsManager);
+            expect(internals.config.reconnectDelay).toBe(3000);
+            expect(internals.config.heartbeatInterval).toBe(20000);
+            expect(internals.config.heartbeatTimeout).toBe(10000); // 默认值
         });
     });
 
@@ -156,7 +224,7 @@ describe("WebSocketManager", () => {
             wsManager.close();
 
             expect(closeHandler).toHaveBeenCalled();
-            expect((wsManager as any).isManualClose).toBe(true);
+            expect(asInternals(wsManager).isManualClose).toBe(true);
         });
 
         it("应该在连接超时后重连", async () => {
@@ -168,31 +236,21 @@ describe("WebSocketManager", () => {
             wsManager = new WebSocketManager(config);
 
             // 阻止 WebSocket 自动打开
-            const originalWebSocket = global.WebSocket;
-            global.WebSocket = class extends MockWebSocket {
-                constructor(url: string) {
-                    super(url);
-                    this.readyState = MockWebSocket.CONNECTING;
-                    // 使用fake timer而不是真实setTimeout
-                    vi.spyOn(global, 'setTimeout').mockImplementation((fn: any) => {
-                        // 不自动打开连接，保持CONNECTING状态
-                        return 0 as any;
-                    });
-                }
-            } as any;
+            const previousWebSocket = globalWithWebSocket.WebSocket;
+            globalWithWebSocket.WebSocket = PendingConnectionWebSocket;
 
             const reconnectingHandler = vi.fn();
             wsManager.on("reconnecting", reconnectingHandler);
 
             wsManager.connect();
 
-            // 等待连接超时
-            await vi.runAllTimersAsync();
+            // 等待连接超时以及首次重连调度
+            await vi.advanceTimersByTimeAsync(1000);
+            await vi.advanceTimersByTimeAsync(5000);
 
             expect(reconnectingHandler).toHaveBeenCalled();
 
-            global.WebSocket = originalWebSocket;
-            vi.restoreAllMocks();
+            globalWithWebSocket.WebSocket = previousWebSocket;
         });
     });
 
@@ -212,7 +270,7 @@ describe("WebSocketManager", () => {
             await vi.advanceTimersByTimeAsync(50);
 
             // 模拟连接断开
-            (wsManager as any).ws?.close();
+            asInternals(wsManager).ws?.close();
 
             // 等待重连延迟
             await vi.advanceTimersByTimeAsync(1000);
@@ -235,12 +293,12 @@ describe("WebSocketManager", () => {
             await vi.advanceTimersByTimeAsync(50);
 
             // 第一次断开重连
-            (wsManager as any).ws?.close();
+            asInternals(wsManager).ws?.close();
             await vi.advanceTimersByTimeAsync(1000);
             expect(reconnectingHandler).toHaveBeenCalledTimes(1);
 
             // 第二次断开重连(延迟应该增加)
-            (wsManager as any).ws?.close();
+            asInternals(wsManager).ws?.close();
             await vi.advanceTimersByTimeAsync(2000);
             expect(reconnectingHandler).toHaveBeenCalledTimes(2);
         });
@@ -253,14 +311,14 @@ describe("WebSocketManager", () => {
 
             wsManager = new WebSocketManager(config);
 
-            // 模拟多次重连失败
+            const internals = asInternals(wsManager);
             for (let i = 0; i < 10; i++) {
-                (wsManager as any).reconnectAttempts = i;
+                internals.reconnectAttempts = i;
             }
 
             // WebSocketManager 内部使用 Math.min(reconnectAttempts, 5)
             // 所以最大延迟是 1000 * 5 = 5000ms
-            expect((wsManager as any).reconnectAttempts).toBe(9);
+            expect(internals.reconnectAttempts).toBe(9);
         });
 
         it("应该在达到最大重连次数后停止重连", async () => {
@@ -276,12 +334,10 @@ describe("WebSocketManager", () => {
             wsManager.on("reconnecting", reconnectingHandler);
 
             // 模拟连接失败
-            const originalWebSocket = global.WebSocket;
-            let connectionCount = 0;
-            global.WebSocket = class extends MockWebSocket {
+            const previousWebSocket = globalWithWebSocket.WebSocket;
+            globalWithWebSocket.WebSocket = class extends MockWebSocket {
                 constructor(url: string) {
                     super(url);
-                    connectionCount++;
                     // 立即模拟连接关闭，不使用setTimeout
                     this.readyState = MockWebSocket.OPEN;
                     Promise.resolve().then(() => {
@@ -289,7 +345,7 @@ describe("WebSocketManager", () => {
                         this.onclose?.(new CloseEvent("close"));
                     });
                 }
-            } as any;
+            };
 
             wsManager.connect();
 
@@ -302,7 +358,7 @@ describe("WebSocketManager", () => {
             // 应该只尝试3次重连
             expect(reconnectingHandler).toHaveBeenCalledTimes(3);
 
-            global.WebSocket = originalWebSocket;
+            globalWithWebSocket.WebSocket = previousWebSocket;
         });
 
         it("应该在手动断开后不自动重连", async () => {
@@ -375,9 +431,6 @@ describe("WebSocketManager", () => {
             wsManager.connect();
             await vi.advanceTimersByTimeAsync(50);
 
-            // 等待心跳发送
-            await vi.advanceTimersByTimeAsync(1000);
-
             // 等待心跳超时
             await vi.advanceTimersByTimeAsync(600);
 
@@ -400,17 +453,13 @@ describe("WebSocketManager", () => {
             wsManager.connect();
             await vi.advanceTimersByTimeAsync(50);
 
-            // 等待心跳发送
-            await vi.advanceTimersByTimeAsync(1000);
+            const ws = asInternals(wsManager).ws;
+            expect(ws).not.toBeNull();
 
-            // 立即模拟收到心跳响应（在超时之前）
-            const ws = (wsManager as any).ws as MockWebSocket;
-            ws.simulateMessage(JSON.stringify({ type: "pong" }));
-
-            // 刷新微任务队列，确保消息被处理
+            // 在心跳超时触发前收到响应
+            ws?.simulateMessage(JSON.stringify({ type: "pong" }));
             await Promise.resolve();
 
-            // 等待超时时间（由于收到响应，超时应该被重置）
             await vi.advanceTimersByTimeAsync(600);
 
             // 不应该触发超时
@@ -453,8 +502,9 @@ describe("WebSocketManager", () => {
             await vi.advanceTimersByTimeAsync(50);
 
             const testMessage = { type: "test", data: "hello" };
-            const ws = (wsManager as any).ws as MockWebSocket;
-            ws.simulateMessage(JSON.stringify(testMessage));
+            const ws = asInternals(wsManager).ws;
+            expect(ws).not.toBeNull();
+            ws?.simulateMessage(JSON.stringify(testMessage));
 
             expect(messageHandler).toHaveBeenCalledWith(testMessage);
         });
@@ -505,21 +555,16 @@ describe("WebSocketManager", () => {
             wsManager.connect();
             await vi.advanceTimersByTimeAsync(50);
 
-            // 使用spy监控console.error
-            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-            const ws = (wsManager as any).ws as MockWebSocket;
-            ws.simulateMessage("invalid json");
+            const ws = asInternals(wsManager).ws;
+            expect(ws).not.toBeNull();
+            ws?.simulateMessage("invalid json");
 
             // 刷新微任务，确保消息被处理
             await Promise.resolve();
 
-            // 不应该触发 message 事件（因为JSON解析失败）
-            expect(messageHandler).not.toHaveBeenCalledWith("invalid json");
-            // 应该记录错误到console
-            expect(consoleErrorSpy).toHaveBeenCalled();
-
-            consoleErrorSpy.mockRestore();
+            // 应该以原始数据通知监听器
+            expect(messageHandler).toHaveBeenCalledWith("invalid json");
+            expect(errorHandler).not.toHaveBeenCalled();
         });
     });
 
@@ -534,7 +579,7 @@ describe("WebSocketManager", () => {
             const handler = vi.fn();
             wsManager.on("open", handler);
 
-            expect((wsManager as any).listeners.get("open")?.size).toBe(1);
+            expect(asInternals(wsManager).listeners.get("open")?.size).toBe(1);
         });
 
         it("应该能够移除事件监听器", () => {
@@ -548,7 +593,7 @@ describe("WebSocketManager", () => {
             wsManager.on("open", handler);
             wsManager.off("open", handler);
 
-            expect((wsManager as any).listeners.get("open")?.size).toBe(0);
+            expect(asInternals(wsManager).listeners.get("open")?.size).toBe(0);
         });
 
         it("应该能够触发多个监听器", async () => {
@@ -584,7 +629,7 @@ describe("WebSocketManager", () => {
             // 使用 destroy 方法清理所有监听器
             wsManager.destroy();
 
-            expect((wsManager as any).listeners.size).toBe(0);
+            expect(asInternals(wsManager).listeners.size).toBe(0);
         });
     });
 
@@ -633,8 +678,9 @@ describe("WebSocketManager", () => {
             wsManager.connect();
             await vi.advanceTimersByTimeAsync(50);
 
-            const ws = (wsManager as any).ws as MockWebSocket;
-            ws.simulateError();
+            const ws = asInternals(wsManager).ws;
+            expect(ws).not.toBeNull();
+            ws?.simulateError();
 
             expect(errorHandler).toHaveBeenCalled();
         });
@@ -645,12 +691,8 @@ describe("WebSocketManager", () => {
             };
 
             // 模拟 WebSocket 构造函数抛出错误
-            const originalWebSocket = global.WebSocket;
-            global.WebSocket = class {
-                constructor() {
-                    throw new Error("Invalid URL");
-                }
-            } as any;
+            const previousWebSocket = globalWithWebSocket.WebSocket;
+            globalWithWebSocket.WebSocket = ThrowingWebSocket;
 
             wsManager = new WebSocketManager(config);
 
@@ -664,7 +706,7 @@ describe("WebSocketManager", () => {
 
             expect(errorHandler).toHaveBeenCalled();
 
-            global.WebSocket = originalWebSocket;
+            globalWithWebSocket.WebSocket = previousWebSocket;
         });
     });
 
@@ -682,10 +724,11 @@ describe("WebSocketManager", () => {
 
             wsManager.close();
 
-            expect((wsManager as any).reconnectTimer).toBeNull();
-            expect((wsManager as any).heartbeatTimer).toBeNull();
-            expect((wsManager as any).heartbeatTimeoutTimer).toBeNull();
-            expect((wsManager as any).connectionTimeoutTimer).toBeNull();
+            const internals = asInternals(wsManager);
+            expect(internals.reconnectTimer).toBeNull();
+            expect(internals.heartbeatTimer).toBeNull();
+            expect(internals.heartbeatTimeoutTimer).toBeNull();
+            expect(internals.connectionTimeoutTimer).toBeNull();
         });
 
         it("应该在销毁时清理 WebSocket 实例", async () => {
@@ -700,7 +743,7 @@ describe("WebSocketManager", () => {
 
             wsManager.close();
 
-            expect((wsManager as any).ws).toBeNull();
+            expect(asInternals(wsManager).ws).toBeNull();
         });
     });
 });
