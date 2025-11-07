@@ -1,242 +1,243 @@
-# 前端工程化目录说明
+# Dev Debug Platform - React Frontend
 
-## 目录结构
+React 18 + TypeScript 5 + Vite 5 前端应用
 
-```
-src/main/frontend/
-├── assets/          # 静态资源 (图标、字体等)
-├── modules/         # 功能模块
-│   ├── server-modal.ts
-│   └── server-group-management.ts
-├── styles/          # 样式文件
-│   ├── tokens/      # 设计令牌系统
-│   │   ├── colors.css
-│   │   ├── typography.css
-│   │   ├── spacing.css
-│   │   ├── shadows.css
-│   │   └── index.css
-│   └── main.css     # 主样式入口
-├── utils/           # 工具模块
-│   ├── http.ts      # HTTP客户端
-│   ├── event-bus.ts # 事件总线
-│   ├── storage.ts   # 存储封装
-│   └── index.ts     # 统一导出
-├── tests/           # 测试用例
-│   ├── bootstrap.test.ts
-│   └── server-modal.test.ts
-└── main.ts          # 主入口文件
-```
+## 📋 前置要求
 
-## 第三方库管理
+- **Node.js**: v18.x 或更高版本
+- **npm**: v9.x 或更高版本  
+- **Java**: JDK 17+ (运行后端)
 
-### 已安装的npm包
+## 🚀 快速开始
 
-- **chart.js**: 图表库 (v4.5.0)
-
-### 使用方式
-
-```typescript
-// 通过npm安装并导入
-import { Chart } from "chart.js";
-```
-
-### 添加新的第三方库
+### 开发模式
 
 ```bash
-# 安装为生产依赖
-npm install <package-name>
+# 安装依赖
+npm install
 
-# 安装为开发依赖
-npm install -D <package-name>
+# 启动开发服务器 (端口 5173)
+npm run dev
 ```
 
-## 设计令牌系统
+访问 http://localhost:5173 查看应用
 
-项目使用CSS变量实现设计令牌系统,所有样式应使用令牌而非硬编码值:
+### 生产构建
 
-```css
-/* ✅ 推荐 */
-.button {
-    color: var(--color-primary);
-    padding: var(--spacing-4);
-    border-radius: var(--radius-md);
-}
+```bash
+# 构建前端
+npm run build
 
-/* ❌ 不推荐 */
-.button {
-    color: #6366f1;
-    padding: 16px;
-    border-radius: 8px;
-}
+# 或使用Maven构建
+cd ../../..
+./mvnw.cmd clean package
 ```
 
-## 工具模块使用
+## 🛠️ 可用脚本
 
-### HTTP客户端
+- `npm run dev` - 启动开发服务器
+- `npm run build` - 生产构建
+- `npm run lint` - 代码检查
+- `npm run lint:fix` - 自动修复代码问题
+- `npm run format` - 格式化代码
+- `npm run test` - 运行测试
+- `npm run test:coverage` - 测试覆盖率报告
+- `npm run type-check` - TypeScript类型检查
 
+## 🏗️ 架构设计
+
+### 从现有 react-app 继承的模式
+
+本项目复用了 `src/main/frontend/react-app` (部署平台模块) 的经过验证的架构模式:
+
+#### 1. Session-based 认证 ✅
 ```typescript
-import { http } from "@/utils";
-
-// GET请求
-const { data } = await http.get("/api/servers");
-
-// POST请求
-await http.post("/api/servers", { name: "server-1" });
+// src/shared/api/fetcher.ts
+const defaultFetcher: Fetcher = async <T>(input, init) => {
+  const response = await fetch(input, {
+    credentials: 'same-origin', // 自动发送 JSESSIONID cookie
+    headers: { 'Content-Type': 'application/json', ...init?.headers },
+  });
+  // ...
+};
 ```
 
-### 事件总线
-
+#### 2. React Query 配置 ✅
 ```typescript
-import { eventBus } from "@/utils";
-
-// 订阅事件
-const unsubscribe = eventBus.on("server:created", (data) => {
-    console.log("Server created:", data);
+// src/shared/config/queryClient.ts
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,  // 5分钟数据保持新鲜
+      gcTime: 10 * 60 * 1000,     // 缓存保留10分钟
+      retry: 1,
+      refetchOnWindowFocus: import.meta.env.PROD,
+    },
+  },
 });
-
-// 发布事件
-eventBus.emit("server:created", { id: "123" });
-
-// 取消订阅
-unsubscribe();
 ```
 
-### 存储管理
-
+#### 3. 导航同步机制 ✅
 ```typescript
-import { localStorage, sessionStorage } from "@/utils";
-
-// 设置(带过期时间)
-localStorage.set("token", "abc123", { expires: 3600000 }); // 1小时后过期
-
-// 获取
-const token = localStorage.get<string>("token");
-
-// 移除
-localStorage.remove("token");
+// src/shared/hooks/useNavSync.ts
+export function useNavSync(navigate, location) {
+  // 双向同步:
+  // 1. 主应用 main-nav-change → React Router
+  // 2. React Router → 主应用 react-nav-change
+  // 防循环 + 智能去重
+}
 ```
 
-### 格式化工具
-
+#### 4. 嵌入模式检测 ✅
 ```typescript
-import {
-    formatBytes,
-    formatUptime,
-    formatPercentage,
-    formatTimestamp,
-    formatNumber
-} from "@/utils";
-
-// 格式化字节
-formatBytes(1024); // "1 KB"
-formatBytes(1048576); // "1 MB"
-
-// 格式化运行时间
-formatUptime(3600); // "1小时 0分钟"
-formatUptime(90000); // "1天 1小时"
-
-// 格式化百分比
-formatPercentage(85.678); // "85.7%"
-
-// 格式化时间戳
-formatTimestamp(Date.now()); // "2025-10-11 12:34:56"
-
-// 数字千分位格式化
-formatNumber(1234567.89, 2); // "1,234,567.89"
+// src/shared/hooks/useEmbedMode.ts
+export function useEmbedMode(): boolean {
+  // 多层验证:
+  // - Spring Boot上下文标志
+  // - 容器data-embedded属性
+  // - Window全局标记
+  return detectEmbedMode();
+}
 ```
 
-### 国际化工具
+详细架构分析请参考: [ARCHITECTURE_REFERENCE.md](../../specs/007-frontend-react-migration/ARCHITECTURE_REFERENCE.md)
 
-```typescript
-import { setLocalizedText, updateMetricSummaryText, refreshContainerI18n } from "@/utils";
+### 项目结构
 
-// 设置元素本地化文本
-const element = document.getElementById("title");
-setLocalizedText(element, "服务器", "Server");
-
-// 更新指标摘要文本
-const container = document.getElementById("metrics");
-updateMetricSummaryText(container, ".cpu-usage", "CPU: 75%", "CPU: 75%");
-
-// 刷新容器内所有i18n元素
-refreshContainerI18n(document.body, "en");
+```
+src/
+├── features/               # 功能模块 (按业务领域组织)
+│   ├── admin/             # 管理员功能
+│   ├── monitoring/        # 监控功能
+│   ├── terminal/          # 终端功能
+│   ├── profile/           # 用户档案
+│   ├── applications/      # 应用管理
+│   └── config/            # 配置管理
+├── shared/                # 共享资源
+│   ├── api/              # API客户端 ✅
+│   │   ├── client.ts     # API客户端实例
+│   │   └── fetcher.ts    # HTTP抽象层
+│   ├── components/       # 通用组件 ✅
+│   │   ├── Button/       # 按钮组件
+│   │   ├── Input/        # 输入框组件
+│   │   ├── Modal/        # 模态框组件
+│   │   ├── Table/        # 表格组件
+│   │   └── index.ts      # 统一导出
+│   ├── config/           # 配置 ✅
+│   │   └── queryClient.ts # React Query配置
+│   ├── hooks/            # 自定义Hooks ✅
+│   │   ├── useNavSync.ts     # 导航同步
+│   │   ├── useEmbedMode.ts   # 嵌入模式检测
+│   │   └── index.ts
+│   ├── stores/           # 状态管理 ✅
+│   │   ├── authStore.ts  # 认证状态
+│   │   └── index.ts
+│   ├── types/            # TypeScript类型 ✅
+│   │   ├── user.ts       # 用户类型
+│   │   ├── server.ts     # 服务器类型
+│   │   ├── application.ts # 应用类型
+│   │   ├── navigation.ts # 导航类型
+│   │   ├── auth.ts       # 认证类型
+│   │   ├── common.ts     # 通用类型
+│   │   └── index.ts
+│   ├── utils/            # 工具函数
+│   └── constants.ts      # 全局常量
+├── App.tsx               # 根组件 ✅
+├── main.tsx              # 应用入口
+└── vite-env.d.ts         # Vite环境类型 ✅
 ```
 
-### 通知工具
+## 📦 技术栈
 
-```typescript
-import { safeShowToast, showSuccess, showError, showProgressNotification } from "@/utils";
+### 核心框架
+- **React**: 18.3.1
+- **TypeScript**: 5.9.3
+- **Vite**: 5.4.21
 
-// 显示通知
-safeShowToast("操作成功", "success");
+### 状态与数据管理
+- **React Router**: 6.x - 路由管理
+- **Zustand**: 4.x - 轻量级状态管理
+- **TanStack Query**: 5.x - 服务端状态管理
 
-// 快捷方法
-showSuccess("保存成功");
-showError("操作失败");
+### 表单与验证
+- **React Hook Form**: 7.x - 表单管理
+- **Zod**: 3.x - 数据验证
 
-// 进度通知
-showProgressNotification("上传中", 7, 10, "info"); // "上传中 (7/10 - 70%)"
-```
+### 构建与集成
+- **Maven**: frontend-maven-plugin - 自动化构建集成
 
-### 图表工具
-
-```typescript
-import { getChartColor, createTimeSeriesChartConfig, createPieChartConfig } from "@/utils";
-import Chart from "chart.js/auto";
-
-// 获取图表颜色
-const color = getChartColor(0); // "rgba(99, 102, 241, 1)"
-const transparentColor = getChartColor(0, 0.5); // "rgba(99, 102, 241, 0.5)"
-
-// 创建时间序列图表
-const config = createTimeSeriesChartConfig(
-    ["1月", "2月", "3月"],
-    [{ label: "销售额", data: [100, 200, 300] }]
-);
-const chart = new Chart(ctx, config);
-
-// 创建饼图
-const pieConfig = createPieChartConfig(["A", "B", "C"], [10, 20, 30]);
-const pieChart = new Chart(ctx, pieConfig);
-```
-
-## 开发规范
+## 🔧 开发规范
 
 ### TypeScript
 
-- 所有新代码必须使用TypeScript
-- 禁止使用`any`类型,使用`unknown`替代
-- 导出的函数/类必须添加JSDoc注释
-
-### 样式
-
-- 使用设计令牌系统
-- 避免内联样式
-- CSS类名使用kebab-case
+- ✅ 启用严格模式 (`strict: true`)
+- ✅ 禁止 `any` 类型 (ESLint规则)
+- ✅ 要求显式函数返回类型
+- ✅ 使用路径别名: `@/*`, `@shared/*`
 
 ### 测试
 
-- 每个模块都应有对应的测试文件
-- 测试覆盖率目标: 70%+
-- 运行测试: `npm test`
+- 框架: Vitest + React Testing Library
+- 覆盖率要求: 70% (lines, functions, branches, statements)
 
-## 构建命令
+### 代码质量
 
 ```bash
-# 开发模式 (HMR)
-npm run dev
-
-# 生产构建
-npm run build
-
 # 代码检查
 npm run lint
-npm run lint:style
+
+# 自动修复
+npm run lint:fix
 
 # 代码格式化
 npm run format
-
-# 测试
-npm test
-npm run test:run  # 带覆盖率
 ```
+
+## 📝 开发进度
+
+查看完整任务列表: [tasks.md](../../specs/007-frontend-react-migration/tasks.md)
+
+### ✅ 已完成 (Phase 1 + Phase 2 部分)
+
+**Phase 1 - 项目初始化** (100%)
+- ✅ Vite + React 18 + TypeScript 5 项目搭建
+- ✅ ESLint + Prettier 代码规范
+- ✅ Vitest 测试框架
+- ✅ Maven 构建集成
+- ✅ 从 react-app 继承架构模式
+- ✅ API 客户端 (Session-based)
+- ✅ React Query 配置
+- ✅ 导航同步机制
+- ✅ 嵌入模式检测
+
+**Phase 2 - 核心基础设施** (60%)
+- ✅ React Router 6 集成
+- ✅ Zustand 认证状态管理
+- ✅ 基础组件库 (Button, Input, Modal, Table)
+- ⏳ 布局组件 (MainLayout, Header, Navigation)
+- ⏳ 认证页面 (Login, ProtectedRoute)
+- ⏳ i18n 国际化
+
+### 🎯 下一步任务 (Phase 2 剩余)
+
+1. **T011** - 实现 MainLayout 组件
+2. **T012** - 创建 Navigation 组件
+3. **T013** - 构建 Header 组件
+4. **T018** - 实现认证 API 客户端
+5. **T019** - 构建 ProtectedRoute 包装器
+6. **T020** - 创建 Login 页面组件
+
+### 📊 整体进度
+
+- **总任务数**: 120 (8个阶段)
+- **已完成**: 24 (~20%)
+- **当前阶段**: Phase 2 - 核心基础设施
+- **预计完成**: Phase 2 - Week 4
+
+## 🤝 参考资源
+
+- [架构参考文档](../../specs/007-frontend-react-migration/ARCHITECTURE_REFERENCE.md)
+- [规范文档](../../specs/007-frontend-react-migration/spec.md)
+- [实现计划](../../specs/007-frontend-react-migration/plan.md)
+
+**分支**: `007-frontend-react-migration`

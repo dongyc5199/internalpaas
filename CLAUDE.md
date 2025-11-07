@@ -347,6 +347,79 @@ app.debug.port.range.end=5999
 
 **详细说明请参考: [前端架构指南](./docs/architecture/frontend-architecture.md)**
 
+### React应用导航集成 🔗
+
+本项目中的**部署管理平台**使用React构建，与主应用采用**嵌入式集成**模式，实现了无缝的导航同步。
+
+#### 集成模式
+
+**嵌入模式 (Embedded Mode)**
+- React应用嵌入到主应用的内容区域
+- 使用主应用的侧边栏导航（无React侧边栏重复）
+- 主应用菜单点击 ↔ React Router 双向同步
+- 自动继承主应用CSS变量和主题
+
+**独立模式 (Standalone Mode)**
+- 直接访问 `/admin/deploy-platform` 可独立运行
+- 显示完整的React侧边栏和导航
+- 用于开发调试
+
+#### 导航同步机制
+
+**主应用 → React**
+```javascript
+// navigation-sync.js 监听侧边栏点击
+// 发送 CustomEvent: main-nav-change
+window.dispatchEvent(new CustomEvent('main-nav-change', {
+  detail: { route: '/overview', menuId: 'deploy-platform/overview' }
+}));
+```
+
+**React → 主应用**
+```typescript
+// useNavSync.ts 监听路由变化
+// 发送 CustomEvent: react-nav-change
+window.dispatchEvent(new CustomEvent('react-nav-change', {
+  detail: { route: '/releases' }
+}));
+```
+
+#### CSS变量继承
+
+React组件自动继承主应用的`--shell-*` CSS变量：
+
+```css
+/* React组件样式 */
+.button {
+  background-color: var(--shell-surface, #fff);
+  color: var(--shell-text-primary, #1f2937);
+  border: 1px solid var(--shell-border, rgba(0,0,0,0.1));
+}
+```
+
+主题切换时，React组件颜色会自动更新，无需手动处理。
+
+#### 调试模式
+
+启用调试日志：
+```javascript
+// 在浏览器控制台执行
+window.__DEPLOY_PLATFORM_DEBUG__ = true;
+```
+
+将显示详细的导航同步日志，包括：
+- 侧边栏点击事件
+- React路由变化
+- 同步状态标志
+- 错误信息
+
+#### 相关文件
+
+- **导航同步**: `src/main/resources/static/js/navigation-sync.js`
+- **React Hook**: `src/main/frontend/react-app/hooks/useNavSync.ts`
+- **布局检测**: `src/main/frontend/react-app/hooks/useEmbedMode.ts`
+- **布局提供者**: `src/main/frontend/react-app/providers/LayoutProvider.tsx`
+
 ## 开发指南
 
 ### 1. 环境要求

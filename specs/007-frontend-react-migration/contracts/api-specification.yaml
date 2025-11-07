@@ -1,0 +1,1439 @@
+openapi: 3.0.3
+info:
+  title: Dev Debug Platform API
+  description: |
+    REST API for Dev Debug Platform React SPA.
+
+    **Authentication**: Session-based using Spring Security
+    **Base URL**: `/api`
+    **WebSocket**: STOMP over WebSocket at `/ws`
+  version: 2.0.0
+  contact:
+    name: CMICT Internal PaaS Team
+
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+  - url: https://platform.example.com/api
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and session management
+  - name: Servers
+    description: Server CRUD operations and status monitoring
+  - name: Applications
+    description: Application lifecycle management
+  - name: Users
+    description: User management (admin only)
+  - name: Monitoring
+    description: Server metrics and monitoring data
+  - name: SSH
+    description: SSH terminal sessions
+  - name: Config
+    description: Application configuration management
+
+paths:
+  # ==================== Authentication ====================
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      description: Authenticate user and create session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: admin
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: User logout
+      description: Invalidate session and log out user
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: Logout successful
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/session:
+    get:
+      tags: [Authentication]
+      summary: Get current session info
+      description: Retrieve current user session and profile
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: Session info retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh session
+      description: Extend session expiry time
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: Session refreshed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ==================== Servers ====================
+  /servers:
+    get:
+      tags: [Servers]
+      summary: List all servers
+      description: Retrieve list of all servers with optional filtering
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ONLINE, OFFLINE, MAINTENANCE, ERROR, UNKNOWN]
+          description: Filter by server status
+        - name: groupId
+          in: query
+          schema:
+            type: integer
+          description: Filter by server group ID
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search by name or host
+      responses:
+        '200':
+          description: Server list retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Server'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Servers]
+      summary: Create new server
+      description: Add new server to platform (admin only)
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServerCreate'
+      responses:
+        '201':
+          description: Server created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Server'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /servers/{serverId}:
+    get:
+      tags: [Servers]
+      summary: Get server details
+      description: Retrieve detailed information about specific server
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ServerId'
+      responses:
+        '200':
+          description: Server details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      tags: [Servers]
+      summary: Update server
+      description: Update server configuration (admin only)
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ServerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServerUpdate'
+      responses:
+        '200':
+          description: Server updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Server'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    delete:
+      tags: [Servers]
+      summary: Delete server
+      description: Remove server from platform (admin only)
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ServerId'
+      responses:
+        '204':
+          description: Server deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /servers/{serverId}/status:
+    get:
+      tags: [Servers]
+      summary: Get server status
+      description: Retrieve current status and health check result
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ServerId'
+      responses:
+        '200':
+          description: Server status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    $ref: '#/components/schemas/ServerStatus'
+                  message:
+                    type: string
+                  lastCheckTime:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /servers/{serverId}/check:
+    post:
+      tags: [Servers]
+      summary: Trigger health check
+      description: Manually trigger server health check
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ServerId'
+      responses:
+        '200':
+          description: Health check completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    $ref: '#/components/schemas/ServerStatus'
+                  message:
+                    type: string
+                  checkTime:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /servers/{serverId}/metrics:
+    get:
+      tags: [Monitoring]
+      summary: Get server metrics
+      description: Retrieve current or historical server metrics
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ServerId'
+        - name: start
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Start time for historical data
+        - name: end
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: End time for historical data
+        - name: granularity
+          in: query
+          schema:
+            type: string
+            enum: [minute, hour, day]
+          description: Data aggregation granularity
+      responses:
+        '200':
+          description: Metrics retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsHistory'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Applications ====================
+  /applications:
+    get:
+      tags: [Applications]
+      summary: List user applications
+      description: Retrieve list of applications owned by current user
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: serverId
+          in: query
+          schema:
+            type: integer
+          description: Filter by server ID
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/ApplicationStatus'
+          description: Filter by application status
+      responses:
+        '200':
+          description: Application list retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Application'
+
+    post:
+      tags: [Applications]
+      summary: Upload application
+      description: Upload JAR file and create new application
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, serverId, name]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: JAR file to upload
+                serverId:
+                  type: integer
+                  description: Target server ID
+                name:
+                  type: string
+                  description: Application name
+                description:
+                  type: string
+                  description: Application description
+                port:
+                  type: integer
+                  minimum: 1024
+                  maximum: 65535
+                  description: Application port
+                debugPort:
+                  type: integer
+                  minimum: 5000
+                  maximum: 5999
+                  description: Debug port
+      responses:
+        '201':
+          description: Application created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /applications/{appId}:
+    get:
+      tags: [Applications]
+      summary: Get application details
+      description: Retrieve detailed information about application
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      responses:
+        '200':
+          description: Application details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Applications]
+      summary: Delete application
+      description: Remove application and its files from server
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      responses:
+        '204':
+          description: Application deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /applications/{appId}/start:
+    post:
+      tags: [Applications]
+      summary: Start application
+      description: Start the application process
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      responses:
+        '200':
+          description: Application start initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /applications/{appId}/stop:
+    post:
+      tags: [Applications]
+      summary: Stop application
+      description: Stop the running application
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      responses:
+        '200':
+          description: Application stop initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /applications/{appId}/restart:
+    post:
+      tags: [Applications]
+      summary: Restart application
+      description: Stop and start the application
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      responses:
+        '200':
+          description: Application restart initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /applications/{appId}/logs:
+    get:
+      tags: [Applications]
+      summary: Get application logs
+      description: Retrieve recent application logs
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+        - name: lines
+          in: query
+          schema:
+            type: integer
+            default: 100
+          description: Number of log lines to retrieve
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Only logs after this timestamp
+      responses:
+        '200':
+          description: Logs retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        timestamp:
+                          type: string
+                          format: date-time
+                        level:
+                          type: string
+                          enum: [DEBUG, INFO, WARN, ERROR]
+                        message:
+                          type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /applications/{appId}/config:
+    get:
+      tags: [Config]
+      summary: List application configurations
+      description: Retrieve all configuration versions for application
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      responses:
+        '200':
+          description: Configurations retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApplicationConfig'
+
+    post:
+      tags: [Config]
+      summary: Create configuration
+      description: Create new configuration version
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, content]
+              properties:
+                name:
+                  type: string
+                content:
+                  type: string
+                  description: Configuration file content
+      responses:
+        '201':
+          description: Configuration created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationConfig'
+
+  /applications/{appId}/config/{configId}/apply:
+    post:
+      tags: [Config]
+      summary: Apply configuration
+      description: Set configuration as active for application
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+        - name: configId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Configuration applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationConfig'
+
+  # ==================== Users ====================
+  /users:
+    get:
+      tags: [Users]
+      summary: List all users
+      description: Retrieve list of all users (admin only)
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: User list retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Users]
+      summary: Create new user
+      description: Create new user account (admin only)
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /users/{userId}:
+    get:
+      tags: [Users]
+      summary: Get user details
+      description: Retrieve user profile (admin or self)
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: User details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    put:
+      tags: [Users]
+      summary: Update user
+      description: Update user profile (admin or self)
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    delete:
+      tags: [Users]
+      summary: Delete user
+      description: Remove user account (admin only)
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '204':
+          description: User deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /users/{userId}/preferences:
+    put:
+      tags: [Users]
+      summary: Update user preferences
+      description: Update theme, language, and other preferences
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferences'
+      responses:
+        '200':
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{userId}/password:
+    put:
+      tags: [Users]
+      summary: Change password
+      description: Change user password (self only)
+      security:
+        - sessionAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                  format: password
+                newPassword:
+                  type: string
+                  format: password
+                  minLength: 8
+      responses:
+        '200':
+          description: Password changed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Current password incorrect
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ==================== SSH ====================
+  /ssh/sessions:
+    get:
+      tags: [SSH]
+      summary: List SSH sessions
+      description: Retrieve list of active SSH sessions for current user
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: SSH sessions retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SSHSession'
+
+    post:
+      tags: [SSH]
+      summary: Create SSH session
+      description: Initialize new SSH session for server
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [serverId]
+              properties:
+                serverId:
+                  type: integer
+                terminalType:
+                  type: string
+                  default: xterm-256color
+                rows:
+                  type: integer
+                  default: 24
+                cols:
+                  type: integer
+                  default: 80
+      responses:
+        '201':
+          description: SSH session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SSHSession'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Server not found
+
+  /ssh/sessions/{sessionId}:
+    get:
+      tags: [SSH]
+      summary: Get SSH session details
+      description: Retrieve SSH session information
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: SSH session retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SSHSession'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [SSH]
+      summary: Close SSH session
+      description: Terminate SSH session and disconnect
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: SSH session closed
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Monitoring ====================
+  /monitoring/servers:
+    get:
+      tags: [Monitoring]
+      summary: List server metrics
+      description: Retrieve current metrics for all servers
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: Server metrics retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServerMetrics'
+
+  /monitoring/thresholds:
+    get:
+      tags: [Monitoring]
+      summary: List alert thresholds
+      description: Retrieve configured alert thresholds
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: Thresholds retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AlertThreshold'
+
+    post:
+      tags: [Monitoring]
+      summary: Create alert threshold
+      description: Configure new alert threshold for server metric
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertThresholdCreate'
+      responses:
+        '201':
+          description: Threshold created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertThreshold'
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+
+  parameters:
+    ServerId:
+      name: serverId
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Server ID
+
+    ApplicationId:
+      name: appId
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Application ID
+
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: User ID
+
+  schemas:
+    # Authentication
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        isAuthenticated:
+          type: boolean
+        permissions:
+          type: array
+          items:
+            type: string
+
+    # User
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        displayName:
+          type: string
+        avatar:
+          type: string
+          format: uri
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+        createdAt:
+          type: string
+          format: date-time
+        lastLogin:
+          type: string
+          format: date-time
+
+    UserRole:
+      type: string
+      enum: [SUPER_ADMIN, ADMIN, DEVELOPER]
+
+    UserPreferences:
+      type: object
+      properties:
+        theme:
+          type: string
+          enum: [light, dark, auto]
+        language:
+          type: string
+          enum: [en, zh]
+        sidebarCollapsed:
+          type: boolean
+        defaultDashboard:
+          type: string
+
+    UserDetail:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            applicationCount:
+              type: integer
+            activeSessionCount:
+              type: integer
+
+    UserCreate:
+      type: object
+      required: [username, password, email, role]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+        password:
+          type: string
+          format: password
+          minLength: 8
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/UserRole'
+        displayName:
+          type: string
+
+    UserUpdate:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        avatar:
+          type: string
+          format: uri
+
+    # Server
+    Server:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        host:
+          type: string
+        port:
+          type: integer
+        username:
+          type: string
+        status:
+          $ref: '#/components/schemas/ServerStatus'
+        statusMessage:
+          type: string
+        lastHealthCheck:
+          type: string
+          format: date-time
+        tags:
+          type: array
+          items:
+            type: string
+        groupId:
+          type: integer
+        metrics:
+          $ref: '#/components/schemas/ServerMetrics'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ServerStatus:
+      type: string
+      enum: [ONLINE, OFFLINE, MAINTENANCE, ERROR, UNKNOWN]
+
+    ServerDetail:
+      allOf:
+        - $ref: '#/components/schemas/Server'
+        - type: object
+          properties:
+            applicationCount:
+              type: integer
+            activeSessionCount:
+              type: integer
+            applications:
+              type: array
+              items:
+                $ref: '#/components/schemas/Application'
+
+    ServerCreate:
+      type: object
+      required: [name, host, port, username, password]
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 50
+        host:
+          type: string
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+        tags:
+          type: array
+          items:
+            type: string
+        groupId:
+          type: integer
+
+    ServerUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        host:
+          type: string
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+        tags:
+          type: array
+          items:
+            type: string
+        groupId:
+          type: integer
+        status:
+          $ref: '#/components/schemas/ServerStatus'
+
+    ServerMetrics:
+      type: object
+      properties:
+        serverId:
+          type: integer
+        cpuUsage:
+          type: number
+          minimum: 0
+          maximum: 100
+        memoryUsage:
+          type: number
+          minimum: 0
+          maximum: 100
+        diskUsage:
+          type: number
+          minimum: 0
+          maximum: 100
+        networkIn:
+          type: number
+          description: Bytes per second
+        networkOut:
+          type: number
+          description: Bytes per second
+        timestamp:
+          type: string
+          format: date-time
+
+    MetricsHistory:
+      type: object
+      properties:
+        serverId:
+          type: integer
+        metricType:
+          type: string
+          enum: [CPU, MEMORY, DISK, NETWORK_IN, NETWORK_OUT]
+        timeRange:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date-time
+            end:
+              type: string
+              format: date-time
+            granularity:
+              type: string
+              enum: [minute, hour, day]
+        dataPoints:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              value:
+                type: number
+
+    # Application
+    Application:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        filePath:
+          type: string
+        fileName:
+          type: string
+        fileSize:
+          type: integer
+        serverId:
+          type: integer
+        userId:
+          type: integer
+        status:
+          $ref: '#/components/schemas/ApplicationStatus'
+        port:
+          type: integer
+        debugPort:
+          type: integer
+        pid:
+          type: integer
+        startedAt:
+          type: string
+          format: date-time
+        stoppedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ApplicationStatus:
+      type: string
+      enum: [STOPPED, STARTING, RUNNING, STOPPING, ERROR]
+
+    ApplicationDetail:
+      allOf:
+        - $ref: '#/components/schemas/Application'
+        - type: object
+          properties:
+            server:
+              $ref: '#/components/schemas/Server'
+            activeConfig:
+              $ref: '#/components/schemas/ApplicationConfig'
+
+    ApplicationConfig:
+      type: object
+      properties:
+        id:
+          type: integer
+        applicationId:
+          type: integer
+        name:
+          type: string
+        content:
+          type: string
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    # SSH
+    SSHSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        serverId:
+          type: integer
+        userId:
+          type: integer
+        status:
+          type: string
+          enum: [CONNECTING, CONNECTED, DISCONNECTED, ERROR]
+        terminalType:
+          type: string
+        rows:
+          type: integer
+        cols:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        lastActivity:
+          type: string
+          format: date-time
+
+    # Monitoring
+    AlertThreshold:
+      type: object
+      properties:
+        id:
+          type: integer
+        serverId:
+          type: integer
+        metricType:
+          type: string
+          enum: [CPU, MEMORY, DISK, NETWORK_IN, NETWORK_OUT]
+        warningThreshold:
+          type: number
+        criticalThreshold:
+          type: number
+        enabled:
+          type: boolean
+
+    AlertThresholdCreate:
+      type: object
+      required: [serverId, metricType, warningThreshold, criticalThreshold]
+      properties:
+        serverId:
+          type: integer
+        metricType:
+          type: string
+          enum: [CPU, MEMORY, DISK, NETWORK_IN, NETWORK_OUT]
+        warningThreshold:
+          type: number
+        criticalThreshold:
+          type: number
+        enabled:
+          type: boolean
+          default: true
+
+    # Error Response
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Bad Request
+            message: Validation failed for field 'name'
+            timestamp: '2025-01-04T10:30:00Z'
+            path: /api/servers
+
+    Unauthorized:
+      description: Authentication required or session expired
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Unauthorized
+            message: Session expired. Please log in again.
+            timestamp: '2025-01-04T10:30:00Z'
+            path: /api/servers
+
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Forbidden
+            message: Admin role required
+            timestamp: '2025-01-04T10:30:00Z'
+            path: /api/users
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Not Found
+            message: Server with ID 123 not found
+            timestamp: '2025-01-04T10:30:00Z'
+            path: /api/servers/123
+
+security:
+  - sessionAuth: []

@@ -32,7 +32,12 @@ public class SecurityConfig {
             throws Exception {
         http
                         .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/css/**", "/js/**", "/dist/**", "/vendor/**", "/register", "/debug/**", "/h2-console/**", "/ws/**", "/test/**").permitAll()
+                .requestMatchers("/css/**", "/js/**", "/dist/**", "/assets/**", "/vendor/**", "/register", "/debug/**", "/h2-console/**", "/ws/**", "/test/**").permitAll()
+                .requestMatchers("/app/login").permitAll()  // React 登录页
+                .requestMatchers("/api/auth/login", "/api/auth/check-username").permitAll()  // React 认证API - 登录和检查用户名
+                .requestMatchers("/api/auth/**").authenticated()  // React 其他认证API需要认证
+                .requestMatchers("/app/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN")  // React Admin 页面
+                .requestMatchers("/app/**").authenticated()  // React 其他页面需要认证
                 .requestMatchers("/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
                 .requestMatchers("/developer/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN")
                 .requestMatchers("/terminal/**").hasAnyRole("USER", "DEVELOPER", "ADMIN", "SUPER_ADMIN")
@@ -58,7 +63,8 @@ public class SecurityConfig {
                     "/api/ssh-config-import/**", // SSH配置导入API
                     "/terminal/api/**", "/user-operations/api/**",
                     "/api/deploy-platform/**", // 部署平台API
-                    "/ai/**") // 禁用H2控制台、WebSocket、测试接口、监控接口、用户操作接口、终端API和AI API的CSRF保护
+                    "/api/auth/**", // React 认证API
+                    "/ai/**") // 禁用H2控制台、WebSocket、测试接口、监控接口、用户操作接口、终端API、认证API和AI API的CSRF保护
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // 使用Cookie存储CSRF token
             )
             .headers(headers -> headers

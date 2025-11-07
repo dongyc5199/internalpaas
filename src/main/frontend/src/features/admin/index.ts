@@ -1,0 +1,8 @@
+// Export all admin module exports
+export { DashboardPage } from './pages/DashboardPage';
+export { ServersPage } from './pages/ServersPage';
+export { ServerDetailPage } from './pages/ServerDetailPage';
+export { UsersPage } from './pages/UsersPage';
+export { UserDetailPage } from './pages/UserDetailPage';
+export { ServerForm } from './components/ServerForm';
+export { UserForm } from './components/UserForm';

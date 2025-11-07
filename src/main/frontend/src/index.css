@@ -1,0 +1,193 @@
+/* Global styles and CSS Variables */
+
+:root {
+  /* Fonts */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* Light Theme Colors */
+  --shell-background: #f9fafb;
+  --shell-surface: #ffffff;
+  --shell-surface-hover: rgba(0, 0, 0, 0.05);
+
+  --shell-text-primary: #1f2937;
+  --shell-text-secondary: #6b7280;
+  --shell-text-tertiary: #9ca3af;
+
+  --shell-border: rgba(0, 0, 0, 0.1);
+
+  --shell-primary: #3b82f6;
+  --shell-primary-hover: #2563eb;
+  --shell-primary-light: rgba(59, 130, 246, 0.1);
+
+  --shell-sidebar: #ffffff;
+
+  /* Font Rendering */
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark Theme */
+[data-theme='dark'] {
+  --shell-background: #111827;
+  --shell-surface: #1f2937;
+  --shell-surface-hover: rgba(255, 255, 255, 0.1);
+
+  --shell-text-primary: #f9fafb;
+  --shell-text-secondary: #9ca3af;
+  --shell-text-tertiary: #6b7280;
+
+  --shell-border: rgba(255, 255, 255, 0.1);
+
+  --shell-primary: #3b82f6;
+  --shell-primary-hover: #60a5fa;
+  --shell-primary-light: rgba(59, 130, 246, 0.2);
+
+  --shell-sidebar: #1f2937;
+}
+
+/* Auto Dark Mode (based on system preference) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --shell-background: #111827;
+    --shell-surface: #1f2937;
+    --shell-surface-hover: rgba(255, 255, 255, 0.1);
+
+    --shell-text-primary: #f9fafb;
+    --shell-text-secondary: #9ca3af;
+    --shell-text-tertiary: #6b7280;
+
+    --shell-border: rgba(255, 255, 255, 0.1);
+
+    --shell-primary: #3b82f6;
+    --shell-primary-hover: #60a5fa;
+    --shell-primary-light: rgba(59, 130, 246, 0.2);
+
+    --shell-sidebar: #1f2937;
+  }
+}
+
+/* Reset Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--shell-background);
+  color: var(--shell-text-primary);
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--shell-text-primary);
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+}
+
+h3 {
+  font-size: 1.25rem;
+}
+
+h4 {
+  font-size: 1.125rem;
+}
+
+h5 {
+  font-size: 1rem;
+}
+
+h6 {
+  font-size: 0.875rem;
+}
+
+p {
+  margin: 0;
+  color: var(--shell-text-secondary);
+}
+
+a {
+  color: var(--shell-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--shell-primary-hover);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--shell-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--shell-text-secondary);
+}
+
+/* Focus Styles */
+*:focus {
+  outline: 2px solid var(--shell-primary);
+  outline-offset: 2px;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Selection */
+::selection {
+  background: var(--shell-primary-light);
+  color: var(--shell-text-primary);
+}
+
+/* Utilities */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

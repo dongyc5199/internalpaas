@@ -64,6 +64,65 @@ public class AdminDashboardController {
     }
 
     /**
+     * 获取仪表板数据 - React前端格式 (JSON)
+     * 路径: /admin/dashboard/data
+     * 返回符合React前端DashboardData类型的数据结构
+     */
+    @GetMapping("/data")
+    @ResponseBody
+    public ResponseEntity<?> getDashboardData() {
+        try {
+            AdminDashboardDto adminData = dashboardService.getDashboardOverview();
+
+            // 转换为React前端期望的格式
+            var response = new java.util.HashMap<String, Object>();
+
+            // overview部分
+            var overview = new java.util.HashMap<String, Object>();
+            overview.put("totalServers", adminData.getTotalServers());
+            overview.put("onlineServers", adminData.getActiveServers());
+            overview.put("totalApplications", adminData.getTotalApplications());
+            overview.put("runningApplications", adminData.getRunningApplications());
+            overview.put("totalUsers", adminData.getTotalUsers());
+            overview.put("activeUsers", adminData.getTodayActiveUsers());
+            overview.put("todayDeployments", 0); // 暂时返回0,后续可添加统计逻辑
+            response.put("overview", overview);
+
+            // serverDistribution部分
+            var serverDist = new java.util.HashMap<String, Object>();
+            serverDist.put("online", adminData.getActiveServers());
+            serverDist.put("offline", adminData.getInactiveServers());
+            serverDist.put("maintenance", adminData.getMonitoringServers());
+            serverDist.put("error", 0);
+            serverDist.put("unknown", 0);
+            response.put("serverDistribution", serverDist);
+
+            // recentActivities部分 - 转换ActivityRecord为前端期望的格式
+            var activities = new java.util.ArrayList<java.util.Map<String, Object>>();
+            if (adminData.getRecentActivities() != null) {
+                for (var activity : adminData.getRecentActivities()) {
+                    var act = new java.util.HashMap<String, Object>();
+                    act.put("id", activity.hashCode()); // 使用hashCode作为临时ID
+                    act.put("type", activity.getType() != null ? activity.getType() : "deployment");
+                    act.put("description", activity.getDescription());
+                    act.put("username", activity.getUser());
+                    act.put("timestamp", activity.getTimestamp());
+                    act.put("status", "success"); // 默认状态
+                    activities.add(act);
+                }
+            }
+            response.put("recentActivities", activities);
+
+            // resourceTrends部分 - 暂时返回空数组
+            response.put("resourceTrends", new java.util.ArrayList<>());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
      * 获取服务器摘要数据 (JSON)
      * 遵循现有API风格: /admin/dashboard/servers/summary
      */

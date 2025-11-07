@@ -1,0 +1,35 @@
+/* EmptyLayout Component Styles */
+
+.layout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--shell-background, #f9fafb);
+}
+
+.content {
+  width: 100%;
+  max-width: 480px;
+  padding: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .content {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: 1rem;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .layout {
+    background: var(--shell-background, #111827);
+  }
+}

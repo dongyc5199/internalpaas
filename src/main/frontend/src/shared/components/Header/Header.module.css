@@ -1,0 +1,301 @@
+/* Header Component Styles */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--shell-surface, #ffffff);
+  border-bottom: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 1.5rem;
+  max-width: 100%;
+}
+
+/* Left Section */
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.menuButton {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--shell-text-secondary, #6b7280);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.menuButton:hover {
+  background: var(--shell-surface-hover, rgba(0, 0, 0, 0.05));
+  color: var(--shell-text-primary, #1f2937);
+}
+
+/* Right Section */
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--shell-text-secondary, #6b7280);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.iconButton:hover {
+  background: var(--shell-surface-hover, rgba(0, 0, 0, 0.05));
+  color: var(--shell-text-primary, #1f2937);
+}
+
+/* User Menu */
+.userMenu {
+  position: relative;
+}
+
+.userMenuButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--shell-text-primary, #1f2937);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+}
+
+.userMenuButton:hover {
+  background: var(--shell-surface-hover, rgba(0, 0, 0, 0.05));
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--shell-primary, #3b82f6);
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.userName {
+  font-weight: 500;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+}
+
+.userMenuButton[aria-expanded='true'] .chevron {
+  transform: rotate(180deg);
+}
+
+/* User Dropdown */
+.userDropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 240px;
+  background: var(--shell-surface, #ffffff);
+  border: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  animation: dropdownFadeIn 0.2s ease;
+  z-index: 1000;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.userDropdownHeader {
+  padding: 1rem;
+  background: var(--shell-surface, #f9fafb);
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.userInfo .userName {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--shell-text-primary, #1f2937);
+  max-width: 100%;
+}
+
+.userEmail {
+  font-size: 0.75rem;
+  color: var(--shell-text-secondary, #6b7280);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.userDropdownDivider {
+  height: 1px;
+  background: var(--shell-border, rgba(0, 0, 0, 0.1));
+}
+
+.userDropdownMenu {
+  padding: 0.5rem;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--shell-text-primary, #1f2937);
+  font-size: 0.875rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.menuItem:hover {
+  background: var(--shell-surface-hover, rgba(0, 0, 0, 0.05));
+}
+
+.menuItem i {
+  width: 18px;
+  height: 18px;
+  color: var(--shell-text-secondary, #6b7280);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .menuButton {
+    display: flex;
+  }
+
+  .headerContent {
+    padding: 0 1rem;
+  }
+
+  .userName {
+    display: none;
+  }
+
+  .userMenuButton {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .userDropdown {
+    position: fixed;
+    top: auto;
+    right: 1rem;
+    left: 1rem;
+    min-width: auto;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .header {
+    background: rgba(31, 41, 55, 0.8);
+    border-bottom-color: var(--shell-border, rgba(255, 255, 255, 0.1));
+  }
+
+  .menuButton,
+  .iconButton {
+    color: var(--shell-text-secondary, #9ca3af);
+  }
+
+  .menuButton:hover,
+  .iconButton:hover {
+    background: var(--shell-surface-hover, rgba(255, 255, 255, 0.1));
+    color: var(--shell-text-primary, #f9fafb);
+  }
+
+  .userMenuButton {
+    color: var(--shell-text-primary, #f9fafb);
+  }
+
+  .userMenuButton:hover {
+    background: var(--shell-surface-hover, rgba(255, 255, 255, 0.1));
+  }
+
+  .userDropdown {
+    background: var(--shell-surface, #1f2937);
+    border-color: var(--shell-border, rgba(255, 255, 255, 0.1));
+  }
+
+  .userDropdownHeader {
+    background: var(--shell-surface, #374151);
+  }
+
+  .userInfo .userName {
+    color: var(--shell-text-primary, #f9fafb);
+  }
+
+  .userEmail {
+    color: var(--shell-text-secondary, #9ca3af);
+  }
+
+  .menuItem {
+    color: var(--shell-text-primary, #f9fafb);
+  }
+
+  .menuItem:hover {
+    background: var(--shell-surface-hover, rgba(255, 255, 255, 0.1));
+  }
+
+  .menuItem i {
+    color: var(--shell-text-secondary, #9ca3af);
+  }
+}
