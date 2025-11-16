@@ -46,21 +46,8 @@ body {
     display: block !important;
 }
 
-/* Override EmptyLayout's max-width constraint for login page */
-.auth-page ~ div,
-.login-view ~ div,
+/* LoginPage now renders directly without any layout wrapper */
 div[class*="_content_"] {
-    max-width: none !important;
-    width: 100% !important;
-    padding: 0 !important;
-}
-
-/* Target EmptyLayout wrapper specifically when it contains auth-page */
-div[class*="_layout_"] {
-    background: transparent !important;
-}
-
-div[class*="_layout_"] > div[class*="_content_"] {
     max-width: none !important;
     width: 100% !important;
     padding: 0 !important;

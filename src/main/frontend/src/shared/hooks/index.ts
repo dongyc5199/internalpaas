@@ -5,3 +5,5 @@
 
 export { useEmbedMode, detectEmbedMode } from './useEmbedMode';
 export { useNavSync } from './useNavSync';
+export { useWebSocket } from './useWebSocket';
+export type { UseWebSocketOptions, UseWebSocketReturn, WebSocketStatus } from './useWebSocket';

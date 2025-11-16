@@ -33,7 +33,7 @@ public class SecurityConfig {
         http
                         .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/css/**", "/js/**", "/dist/**", "/assets/**", "/vendor/**", "/register", "/debug/**", "/h2-console/**", "/ws/**", "/test/**").permitAll()
-                .requestMatchers("/app/login").permitAll()  // React 登录页
+                .requestMatchers("/login", "/app/login").permitAll()  // 登录页（传统和React）
                 .requestMatchers("/api/auth/login", "/api/auth/check-username").permitAll()  // React 认证API - 登录和检查用户名
                 .requestMatchers("/api/auth/**").authenticated()  // React 其他认证API需要认证
                 .requestMatchers("/app/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN")  // React Admin 页面
@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
-                .loginPage("/login").permitAll() // 自定义登录页?
+                .loginPage("/login") // 自定义登录页（已在上面permitAll）
                 .defaultSuccessUrl("/", true) // 登录成功后跳转到主页
                 .failureUrl("/login?error") // 登录失败时返回登录页面并显示错误
             )

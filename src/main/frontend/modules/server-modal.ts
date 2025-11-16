@@ -543,7 +543,16 @@ class ServerModal {
 
         setTimeout(() => {
             toast.classList.remove("show");
-            setTimeout(() => toast.remove(), 300);
+            setTimeout(() => {
+                // 添加DOM检查防止removeChild错误
+                if (toast.parentNode && document.body.contains(toast)) {
+                    try {
+                        toast.remove();
+                    } catch (err) {
+                        console.warn('[ServerModal] Failed to remove toast:', err);
+                    }
+                }
+            }, 300);
         }, 3000);
     }
 

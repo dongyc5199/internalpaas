@@ -1,0 +1,363 @@
+/**
+ * AlertThresholdConfig 组件样式
+ */
+
+.container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* 页面头部 */
+.header {
+  margin-bottom: 2rem;
+}
+
+.headerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--shell-text-secondary, #6b7280);
+}
+
+/* 指标卡片网格 */
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* 指标卡片 */
+.metricCard {
+  background: var(--shell-surface, #fff);
+  border: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  transition: all 0.2s;
+}
+
+.metricCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.metricHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+}
+
+.metricInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.metricIcon {
+  width: 2rem;
+  height: 2rem;
+  color: var(--shell-primary, #3b82f6);
+}
+
+.metricLabel {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+.metricUnit {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--shell-text-tertiary, #9ca3af);
+}
+
+/* 启用/禁用开关 */
+.metricStatus {
+  display: flex;
+  align-items: center;
+}
+
+.switchLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.switch {
+  width: 2.5rem;
+  height: 1.5rem;
+  position: relative;
+  cursor: pointer;
+  appearance: none;
+  background-color: var(--shell-muted, #d1d5db);
+  border-radius: 9999px;
+  transition: background-color 0.2s;
+}
+
+.switch:checked {
+  background-color: var(--shell-primary, #3b82f6);
+}
+
+.switch::before {
+  content: '';
+  position: absolute;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: white;
+  border-radius: 9999px;
+  transition: transform 0.2s;
+}
+
+.switch:checked::before {
+  transform: translateX(1rem);
+}
+
+.switchText {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--shell-text-secondary, #6b7280);
+}
+
+/* 编辑表单 */
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+.optional {
+  font-weight: 400;
+  color: var(--shell-text-tertiary, #9ca3af);
+}
+
+.formActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.errorText {
+  margin: 0;
+  padding: 0.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #ef4444;
+}
+
+/* 阈值显示模式 */
+.thresholdDisplay {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.thresholdItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--shell-surface-secondary, #f9fafb);
+  border-radius: 0.5rem;
+}
+
+.thresholdLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--shell-text-secondary, #6b7280);
+}
+
+.thresholdValue {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+}
+
+.thresholdValue.warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.thresholdValue.critical {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.emailText {
+  font-size: 0.875rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+.cardActions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+/* 空状态 */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.emptyState i {
+  width: 3rem;
+  height: 3rem;
+  color: var(--shell-text-tertiary, #9ca3af);
+  margin-bottom: 0.75rem;
+}
+
+.emptyText {
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+  color: var(--shell-text-secondary, #6b7280);
+}
+
+/* 帮助说明 */
+.helpText {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--shell-surface-secondary, #f9fafb);
+  border: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+  border-radius: 0.75rem;
+  margin-top: 2rem;
+}
+
+.helpText i {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--shell-primary, #3b82f6);
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.helpTitle {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+.helpList {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.helpList li {
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--shell-text-secondary, #6b7280);
+  line-height: 1.5;
+}
+
+.helpList li:last-child {
+  margin-bottom: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .metricsGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .titleGroup {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .formActions {
+    flex-direction: column;
+  }
+
+  .formActions button {
+    width: 100%;
+  }
+
+  .helpText {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .metricCard {
+    padding: 1rem;
+  }
+
+  .thresholdItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .cardActions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .cardActions button {
+    width: 100%;
+  }
+}

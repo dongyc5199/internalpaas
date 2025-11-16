@@ -1,0 +1,401 @@
+/**
+ * Terminal Manager Styles
+ * 移植自: src/main/resources/templates/terminal/manager.html
+ */
+
+/* 主容器 */
+.terminalManager {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #1a1a1a 0%, #242424 100%);
+  color: #ffffff;
+  overflow: hidden;
+}
+
+/* 顶部工具栏 */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(45, 45, 48, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  min-height: 60px;
+}
+
+.toolbarLeft {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: 1;
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.serverSelector {
+  min-width: 280px;
+  padding: 8px 12px;
+  background: rgba(62, 62, 66, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.serverSelector:hover {
+  background: rgba(72, 72, 76, 0.9);
+  border-color: rgba(0, 122, 204, 0.5);
+}
+
+.serverSelector:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbarBtn {
+  padding: 8px 16px;
+  background: rgba(0, 122, 204, 0.8);
+  border: 1px solid rgba(0, 122, 204, 0.5);
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbarBtn:hover:not(:disabled) {
+  background: rgba(0, 122, 204, 1);
+  box-shadow: 0 4px 12px rgba(0, 122, 204, 0.3);
+  transform: translateY(-1px);
+}
+
+.toolbarBtn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.toolbarBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: rgba(62, 62, 66, 0.6);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.aiBtn {
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.8), rgba(75, 0, 130, 0.8));
+  border-color: rgba(138, 43, 226, 0.5);
+}
+
+.aiBtn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(138, 43, 226, 1), rgba(75, 0, 130, 1));
+  box-shadow: 0 4px 12px rgba(138, 43, 226, 0.3);
+}
+
+.sessionCount {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.sessionCount strong {
+  color: #00a1f1;
+  font-weight: 600;
+}
+
+/* 标签栏 (移植自manager.html line 37-171) */
+.terminalTabs {
+  display: flex;
+  background: linear-gradient(135deg, #1a1a1a 0%, #242424 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  min-height: 42px;
+  padding: 8px 12px 0 12px;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.terminalTabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.terminalTabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.terminalTabs::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.terminalTab {
+  background: rgba(45, 45, 48, 0.6);
+  color: rgba(255, 255, 255, 0.7);
+  border: none;
+  padding: 10px 16px;
+  cursor: pointer;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px 8px 0 0;
+  min-width: 140px;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: none;
+  margin-bottom: -1px;
+  gap: 8px;
+}
+
+.terminalTab.active {
+  background: linear-gradient(135deg, #2d2d30 0%, #383838 100%);
+  color: #ffffff;
+  box-shadow: 0 -2px 8px rgba(0, 122, 204, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 122, 204, 0.5);
+  border-bottom: none;
+  transform: translateY(-2px);
+}
+
+.terminalTab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #007acc 0%, #00a1f1 100%);
+  border-radius: 1px;
+}
+
+.terminalTab:hover:not(.active) {
+  background: rgba(62, 62, 66, 0.8);
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.tabTitle {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabCloseBtn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.tabCloseBtn:hover {
+  background: rgba(255, 68, 68, 0.2);
+  color: #ff4444;
+}
+
+/* 状态指示器 (移植自manager.html line 126-171) */
+.statusIndicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.status-disconnected {
+  background: linear-gradient(135deg, #666 0%, #888 100%);
+  box-shadow: 0 0 0 0 rgba(102, 102, 102, 0);
+}
+
+.status-connecting {
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.status-connected {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  box-shadow: 0 0 8px 0 rgba(16, 185, 129, 0.6);
+}
+
+.status-error {
+  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  50% {
+    box-shadow: 0 0 12px 4px currentColor;
+  }
+}
+
+/* 终端内容区域 */
+.terminalContent {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #1e1e1e;
+}
+
+.terminalPane {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* 欢迎消息 (移植自manager.html line 231-329) */
+.welcomeMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 48px;
+  text-align: center;
+  background: linear-gradient(
+    135deg,
+    rgba(26, 26, 26, 0.95) 0%,
+    rgba(36, 36, 36, 0.95) 100%
+  );
+}
+
+.welcomeIcon {
+  font-size: 64px;
+  margin-bottom: 24px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.welcomeMessage h2 {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.welcomeMessage p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 32px 0;
+}
+
+.welcomeStats {
+  display: flex;
+  gap: 48px;
+  margin-top: 32px;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 32px;
+  background: rgba(62, 62, 66, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s;
+}
+
+.statItem:hover {
+  background: rgba(62, 62, 66, 0.6);
+  border-color: rgba(0, 122, 204, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 122, 204, 0.1);
+}
+
+.statLabel {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+.statValue {
+  font-size: 32px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #00a1f1 0%, #007acc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .toolbar {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .toolbarLeft {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .serverSelector {
+    width: 100%;
+  }
+
+  .toolbarBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .welcomeStats {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .terminalTab {
+    min-width: 120px;
+    max-width: 180px;
+  }
+}

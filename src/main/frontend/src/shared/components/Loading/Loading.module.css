@@ -1,0 +1,60 @@
+/**
+ * Loading 组件样式
+ */
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem 1rem;
+  min-height: 200px;
+}
+
+.fullScreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--shell-background, #ffffff);
+  z-index: 9999;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+  border-top-color: var(--shell-primary, #3b82f6);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.text {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--shell-text-secondary, #6b7280);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 暗黑模式 */
+@media (prefers-color-scheme: dark) {
+  .fullScreen {
+    background: var(--shell-background, #111827);
+  }
+
+  .spinner {
+    border-color: var(--shell-border, rgba(255, 255, 255, 0.1));
+    border-top-color: var(--shell-primary, #3b82f6);
+  }
+
+  .text {
+    color: var(--shell-text-secondary, #9ca3af);
+  }
+}

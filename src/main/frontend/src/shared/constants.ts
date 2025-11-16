@@ -6,9 +6,16 @@ export const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8
 // Query keys for React Query
 export const QUERY_KEYS = {
   SERVERS: 'servers',
+  SERVER: 'server',
   USERS: 'users',
   APPLICATIONS: 'applications',
   MONITORING: 'monitoring',
+  MONITORING_OVERVIEW: 'monitoring-overview',
+  SERVER_METRICS: 'server-metrics',
+  SERVER_METRICS_HISTORY: 'server-metrics-history',
+  ACTIVE_ALERTS: 'active-alerts',
+  ALERTS: 'alerts',
+  ALERT_THRESHOLDS: 'alert-thresholds',
   SSH_SESSIONS: 'sshSessions',
   PROFILE: 'profile',
   DASHBOARD: 'dashboard',

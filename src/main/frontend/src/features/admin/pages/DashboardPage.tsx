@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '../../../shared/api/dashboardApi';
 import { QUERY_KEYS } from '../../../shared/constants';
+import { Chart } from '../../../shared/components';
+import type { ChartDataPoint } from '../../../shared/components';
 import './admin-dashboard.css';
 
 /**
@@ -27,6 +29,31 @@ export function DashboardPage(): React.JSX.Element {
 
   const overview = data?.overview;
   const serverDist = data?.serverDistribution;
+
+  // 服务器状态分布数据 (饼图)
+  const serverStatusData: ChartDataPoint[] = [
+    { name: '在线', value: overview?.onlineServers ?? 0 },
+    { name: '维护', value: serverDist?.maintenance ?? 0 },
+    { name: '离线', value: serverDist?.offline ?? 0 },
+  ].filter((item) => item.value > 0);
+
+  // 系统资源使用率数据 (柱状图)
+  const resourceUsageData: ChartDataPoint[] = [
+    { resource: 'CPU', usage: 45 },
+    { resource: '内存', usage: 67 },
+    { resource: '磁盘', usage: 32 },
+    { resource: '网络', usage: 58 },
+  ];
+
+  // 实时资源监控数据 (折线图)
+  const realTimeData: ChartDataPoint[] = [
+    { time: '10:00', cpu: 45, memory: 67 },
+    { time: '10:05', cpu: 52, memory: 70 },
+    { time: '10:10', cpu: 48, memory: 68 },
+    { time: '10:15', cpu: 55, memory: 72 },
+    { time: '10:20', cpu: 50, memory: 69 },
+    { time: '10:25', cpu: 47, memory: 65 },
+  ];
 
   return (
     <main className="content-framework admin-theme admin-dashboard" role="main">
@@ -279,53 +306,46 @@ export function DashboardPage(): React.JSX.Element {
           {/* 图表可视化区域 */}
           <section aria-label="Dashboard charts" className="charts-section">
             <div className="charts-grid">
-              {/* 服务器状态饼图 - 占位 */}
+              {/* 服务器状态饼图 */}
               <div className="chart-container">
-                <div className="chart-header">
-                  <h3 className="chart-title">
-                    <i aria-hidden="true">📊</i>
-                    <span>服务器状态分布</span>
-                  </h3>
-                </div>
-                <div className="chart-body">
-                  <div className="chart-placeholder">图表数据加载中...</div>
-                </div>
+                <Chart
+                  type="pie"
+                  data={serverStatusData}
+                  xKey="name"
+                  yKey="value"
+                  title="服务器状态分布"
+                  height={280}
+                  loading={isLoading}
+                  colors={['#10b981', '#f59e0b', '#ef4444']}
+                />
               </div>
 
-              {/* 资源使用率柱状图 - 占位 */}
+              {/* 资源使用率柱状图 */}
               <div className="chart-container">
-                <div className="chart-header">
-                  <h3 className="chart-title">
-                    <i aria-hidden="true">📈</i>
-                    <span>系统资源使用率</span>
-                  </h3>
-                </div>
-                <div className="chart-body">
-                  <div className="chart-placeholder">图表数据加载中...</div>
-                </div>
+                <Chart
+                  type="bar"
+                  data={resourceUsageData}
+                  xKey="resource"
+                  yKey="usage"
+                  title="系统资源使用率"
+                  height={280}
+                  loading={isLoading}
+                  colors={['#3b82f6']}
+                />
               </div>
 
-              {/* 实时监控折线图 - 占位 */}
+              {/* 实时监控折线图 */}
               <div className="chart-container chart-container--wide">
-                <div className="chart-header">
-                  <h3 className="chart-title">
-                    <i aria-hidden="true">📉</i>
-                    <span>实时资源监控</span>
-                  </h3>
-                  <div className="chart-legend">
-                    <span className="legend-item">
-                      <span className="legend-dot" style={{ backgroundColor: 'rgb(54, 162, 235)' }}></span>
-                      <span>CPU使用率</span>
-                    </span>
-                    <span className="legend-item">
-                      <span className="legend-dot" style={{ backgroundColor: 'rgb(255, 99, 132)' }}></span>
-                      <span>内存使用率</span>
-                    </span>
-                  </div>
-                </div>
-                <div className="chart-body">
-                  <div className="chart-placeholder">图表数据加载中...</div>
-                </div>
+                <Chart
+                  type="line"
+                  data={realTimeData}
+                  xKey="time"
+                  yKey={['cpu', 'memory']}
+                  title="实时资源监控"
+                  height={280}
+                  loading={isLoading}
+                  colors={['#3b82f6', '#ef4444']}
+                />
               </div>
             </div>
           </section>

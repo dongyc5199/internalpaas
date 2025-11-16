@@ -20,3 +20,6 @@ export interface ErrorResponse {
   statusCode: number;
   timestamp: string;
 }
+
+// Alias for PaginatedResponse - used by monitoring API
+export type PageResponse<T> = PaginatedResponse<T>;

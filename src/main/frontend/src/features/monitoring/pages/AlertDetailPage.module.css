@@ -1,0 +1,492 @@
+/**
+ * AlertDetailPage 组件样式
+ */
+
+.container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* 页面头部 */
+.header {
+  margin-bottom: 2rem;
+}
+
+.headerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--shell-text-secondary, #6b7280);
+}
+
+.headerActions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.headerActions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 告警概览卡片 */
+.overviewCard {
+  background: var(--shell-surface, #fff);
+  border: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+  border-radius: 0.75rem;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.overviewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.statusBadges {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.levelBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.levelCritical {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.levelError {
+  background: #fed7aa;
+  color: #9a3412;
+}
+
+.levelWarning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.levelInfo {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.statusActive {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.statusAcknowledged {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.statusResolved {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.duration {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--shell-text-secondary, #6b7280);
+}
+
+.duration i {
+  width: 1rem;
+  height: 1rem;
+}
+
+.alertMessage {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--shell-text-primary, #1f2937);
+  line-height: 1.4;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+}
+
+.metricItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.metricLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--shell-text-tertiary, #9ca3af);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metricValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+/* 卡片通用样式 */
+.timelineCard,
+.actionsCard,
+.serverCard {
+  background: var(--shell-surface, #fff);
+  border: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+.cardTitle i {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--shell-primary, #3b82f6);
+}
+
+/* 时间线 */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  position: relative;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 1.125rem;
+  top: 2rem;
+  bottom: 2rem;
+  width: 2px;
+  background: var(--shell-border, rgba(0, 0, 0, 0.1));
+}
+
+.timelineItem {
+  display: flex;
+  gap: 1rem;
+  position: relative;
+}
+
+.timelineIcon {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background: var(--shell-surface-secondary, #f3f4f6);
+  border: 2px solid var(--shell-primary, #3b82f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.timelineIcon i {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--shell-primary, #3b82f6);
+}
+
+.timelineContent {
+  flex: 1;
+  padding-top: 0.25rem;
+}
+
+.timelineTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--shell-text-primary, #1f2937);
+  margin-bottom: 0.25rem;
+}
+
+.timelineTime {
+  font-size: 0.875rem;
+  color: var(--shell-text-tertiary, #9ca3af);
+  margin-bottom: 0.5rem;
+}
+
+.timelineDescription {
+  font-size: 0.875rem;
+  color: var(--shell-text-secondary, #6b7280);
+  line-height: 1.5;
+}
+
+/* 处理记录 */
+.actionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.actionItem {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--shell-surface-secondary, #f9fafb);
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+.actionItem:hover {
+  background: var(--shell-surface-hover, #f3f4f6);
+}
+
+.actionIcon {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  background: var(--shell-primary, #3b82f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.actionIcon i {
+  width: 1rem;
+  height: 1rem;
+  color: white;
+}
+
+.actionContent {
+  flex: 1;
+}
+
+.actionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  gap: 1rem;
+}
+
+.actionType {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+.actionTime {
+  font-size: 0.75rem;
+  color: var(--shell-text-tertiary, #9ca3af);
+}
+
+.actionUser {
+  font-size: 0.875rem;
+  color: var(--shell-text-secondary, #6b7280);
+  margin-bottom: 0.5rem;
+}
+
+.actionComment {
+  padding: 0.75rem;
+  background: var(--shell-surface, #fff);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--shell-text-primary, #1f2937);
+  line-height: 1.5;
+  border: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+}
+
+/* 服务器信息 */
+.serverInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.serverInfoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+}
+
+.serverInfoRow:not(:last-child) {
+  border-bottom: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+}
+
+.serverInfoLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--shell-text-secondary, #6b7280);
+}
+
+.serverInfoValue {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+.serverInfoRow button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 空状态 */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: var(--shell-surface, #fff);
+  border: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+  border-radius: 0.75rem;
+}
+
+.emptyState i {
+  width: 4rem;
+  height: 4rem;
+  color: var(--shell-text-tertiary, #9ca3af);
+  margin-bottom: 1rem;
+}
+
+.emptyState h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+.emptyState p {
+  margin: 0 0 1.5rem 0;
+  font-size: 0.875rem;
+  color: var(--shell-text-secondary, #6b7280);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .headerContent {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .headerActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .overviewCard {
+    padding: 1.5rem;
+  }
+
+  .alertMessage {
+    font-size: 1.25rem;
+  }
+
+  .metricsGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .timeline::before {
+    left: 0.875rem;
+  }
+
+  .timelineIcon {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .actionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .serverInfoRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .metricsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statusBadges {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

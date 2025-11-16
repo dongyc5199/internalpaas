@@ -1,0 +1,370 @@
+/**
+ * MonitoringHistory 组件样式
+ */
+
+.container {
+  padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* 页面头部 */
+.header {
+  margin-bottom: 2rem;
+}
+
+.headerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.titleGroup {
+  flex: 1;
+}
+
+.title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--shell-text-secondary, #6b7280);
+}
+
+/* 控制面板 */
+.controlPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: var(--shell-surface, #fff);
+  border: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+  border-radius: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.controlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.controlLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+.select {
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+  border-radius: 0.5rem;
+  background: var(--shell-surface, #fff);
+  color: var(--shell-text-primary, #1f2937);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  max-width: 400px;
+}
+
+.select:hover {
+  background: var(--shell-surface-hover, #f9fafb);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--shell-primary, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.timeRangeButtons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* 服务器信息 */
+.serverInfo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--shell-surface, #fff);
+  border: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.serverInfoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.serverInfoLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--shell-text-tertiary, #9ca3af);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.serverInfoValue {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+/* 指标选择器 */
+.metricsSelector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.metricButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1rem;
+  background: var(--shell-surface, #fff);
+  border: 2px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.metricButton:hover {
+  background: var(--shell-surface-hover, #f9fafb);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.metricButtonActive {
+  border-color: var(--metric-color);
+  background: color-mix(in srgb, var(--metric-color) 5%, white);
+}
+
+.metricButtonLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+.metricButtonUnit {
+  font-size: 0.75rem;
+  color: var(--shell-text-tertiary, #9ca3af);
+}
+
+/* 统计卡片 */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  background: var(--shell-surface, #fff);
+  border: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+  border-radius: 0.75rem;
+  transition: all 0.2s;
+}
+
+.statCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--shell-text-tertiary, #9ca3af);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+/* 图表容器 */
+.chartContainer {
+  background: var(--shell-surface, #fff);
+  border: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.chartHeader {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+}
+
+.chartTitle {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+.chartWrapper {
+  width: 100%;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* SVG图表样式 */
+.chartSvg {
+  width: 100%;
+  height: 100%;
+}
+
+.gridLine {
+  stroke: var(--shell-border, rgba(0, 0, 0, 0.1));
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.axisLabel {
+  fill: var(--shell-text-tertiary, #9ca3af);
+  font-size: 11px;
+  text-anchor: middle;
+}
+
+.chartArea {
+  fill-opacity: 0.1;
+}
+
+.chartLine {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chartPoint {
+  transition: r 0.2s;
+}
+
+.chartPoint:hover {
+  r: 5;
+}
+
+/* 空状态 */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: var(--shell-surface, #fff);
+  border: 1px solid var(--shell-border, rgba(0, 0, 0, 0.1));
+  border-radius: 0.75rem;
+}
+
+.emptyState i {
+  width: 4rem;
+  height: 4rem;
+  color: var(--shell-text-tertiary, #9ca3af);
+  margin-bottom: 1rem;
+}
+
+.emptyState h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--shell-text-primary, #1f2937);
+}
+
+.emptyState p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--shell-text-secondary, #6b7280);
+}
+
+.emptyChart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+}
+
+.emptyChart i {
+  width: 3rem;
+  height: 3rem;
+  color: var(--shell-text-tertiary, #9ca3af);
+  margin-bottom: 0.75rem;
+}
+
+.emptyChart p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--shell-text-secondary, #6b7280);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .controlPanel {
+    padding: 1rem;
+  }
+
+  .timeRangeButtons {
+    flex-direction: column;
+  }
+
+  .metricsSelector {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .chartWrapper {
+    height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .metricsSelector {
+    grid-template-columns: 1fr;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .serverInfo {
+    grid-template-columns: 1fr;
+  }
+}

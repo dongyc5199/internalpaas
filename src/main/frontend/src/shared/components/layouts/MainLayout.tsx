@@ -68,6 +68,7 @@ export function MainLayout({ children }: MainLayoutProps): React.JSX.Element {
 
   /**
    * 初始化 Lucide 图标
+   * 注意: 不依赖children,避免在重渲染时与React的DOM操作冲突
    */
   useEffect(() => {
     // 延迟初始化图标,确保DOM已渲染
@@ -78,7 +79,7 @@ export function MainLayout({ children }: MainLayoutProps): React.JSX.Element {
     }, 0);
 
     return () => { clearTimeout(timer); };
-  }, [children]); // 当内容变化时重新初始化图标
+  }, []); // 只在组件挂载时初始化一次
 
   /**
    * 切换侧边栏

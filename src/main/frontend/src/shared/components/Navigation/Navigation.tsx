@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { UserRole } from '../../types/user';
 import { useUser } from '../../stores/authStore';
 import { ROUTES } from '../../constants';
+import { Tooltip } from '../Tooltip';
+import { Badge } from '../Badge';
 import styles from './Navigation.module.css';
 
 /**
@@ -15,6 +17,8 @@ export interface NavItem {
   path?: string;
   roles?: UserRole[];
   children?: NavItem[];
+  badge?: number; // 徽章数字
+  badgeVariant?: 'primary' | 'success' | 'warning' | 'danger' | 'info';
 }
 
 /**
@@ -110,6 +114,8 @@ export function Navigation({ collapsed = false, onCollapse }: NavigationProps): 
   const user = useUser();
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [_showSearch, setShowSearch] = useState(false);
 
   /**
    * 检查用户是否有权限查看菜单项
@@ -162,6 +168,45 @@ export function Navigation({ collapsed = false, onCollapse }: NavigationProps): 
   };
 
   /**
+   * 搜索菜单项(递归)
+   */
+  const searchMenuItems = (items: NavItem[], query: string): NavItem[] => {
+    if (!query.trim()) return items;
+
+    const lowerQuery = query.toLowerCase();
+    const results: NavItem[] = [];
+
+    for (const item of items) {
+      // 检查当前项是否匹配
+      const matchesCurrent = item.label.toLowerCase().includes(lowerQuery);
+
+      // 检查子项是否匹配
+      let matchingChildren: NavItem[] | undefined;
+      if (item.children) {
+        matchingChildren = searchMenuItems(item.children, query);
+      }
+
+      // 如果当前项或子项匹配,添加到结果
+      if (matchesCurrent || (matchingChildren && matchingChildren.length > 0)) {
+        results.push({
+          ...item,
+          children: matchingChildren,
+        });
+      }
+    }
+
+    return results;
+  };
+
+  /**
+   * 过滤后的菜单项
+   */
+  const filteredAndSearchedItems = useMemo((): NavItem[] => {
+    const filtered = filterItems(NAV_ITEMS);
+    return searchMenuItems(filtered, searchQuery);
+  }, [searchQuery]);
+
+  /**
    * 渲染菜单项图标
    */
   const renderIcon = (iconName?: string): React.JSX.Element | null => {
@@ -176,26 +221,41 @@ export function Navigation({ collapsed = false, onCollapse }: NavigationProps): 
     const isExpanded = expandedItems.has(item.id);
     const active = isActive(item);
     const hasChildren = item.children && item.children.length > 0;
+    const hasBadge = item.badge !== undefined && item.badge > 0;
+
+    // 菜单内容
+    const menuContent = (
+      <>
+        {renderIcon(item.icon)}
+        {!collapsed && (
+          <>
+            <span className={styles.label}>{item.label}</span>
+            {hasBadge && (
+              <Badge count={item.badge} variant={item.badgeVariant || 'danger'} />
+            )}
+          </>
+        )}
+      </>
+    );
 
     if (hasChildren) {
       return (
         <div key={item.id} className={styles.navGroup}>
-          <button
-            className={`${styles.navLink} ${active ? styles.active : ''} ${styles.expandable}`}
-            onClick={() => { toggleExpanded(item.id); }}
-            aria-expanded={isExpanded}
-          >
-            {renderIcon(item.icon)}
-            {!collapsed && (
-              <>
-                <span className={styles.label}>{item.label}</span>
+          <Tooltip content={item.label} placement="right" disabled={!collapsed}>
+            <button
+              className={`${styles.navLink} ${active ? styles.active : ''} ${styles.expandable}`}
+              onClick={() => { toggleExpanded(item.id); }}
+              aria-expanded={isExpanded}
+            >
+              {menuContent}
+              {!collapsed && (
                 <i
                   data-lucide={isExpanded ? 'chevron-down' : 'chevron-right'}
                   className={styles.chevron}
                 />
-              </>
-            )}
-          </button>
+              )}
+            </button>
+          </Tooltip>
           {!collapsed && isExpanded && (
             <div className={styles.subMenu}>{item.children?.map(renderSubItem)}</div>
           )}
@@ -204,16 +264,16 @@ export function Navigation({ collapsed = false, onCollapse }: NavigationProps): 
     }
 
     return (
-      <NavLink
-        key={item.id}
-        to={item.path || '#'}
-        className={({ isActive }) =>
-          `${styles.navLink} ${isActive ? styles.active : ''}`
-        }
-      >
-        {renderIcon(item.icon)}
-        {!collapsed && <span className={styles.label}>{item.label}</span>}
-      </NavLink>
+      <Tooltip key={item.id} content={item.label} placement="right" disabled={!collapsed}>
+        <NavLink
+          to={item.path || '#'}
+          className={({ isActive }) =>
+            `${styles.navLink} ${isActive ? styles.active : ''}`
+          }
+        >
+          {menuContent}
+        </NavLink>
+      </Tooltip>
     );
   };
 
@@ -234,8 +294,6 @@ export function Navigation({ collapsed = false, onCollapse }: NavigationProps): 
     );
   };
 
-  const filteredItems = filterItems(NAV_ITEMS);
-
   return (
     <nav className={`${styles.navigation} ${collapsed ? styles.collapsed : ''}`}>
       <div className={styles.navHeader}>
@@ -252,8 +310,47 @@ export function Navigation({ collapsed = false, onCollapse }: NavigationProps): 
         </button>
       </div>
 
+      {/* 搜索框 (展开状态显示) */}
+      {!collapsed && (
+        <div className={styles.searchBox}>
+          <div className={styles.searchInputWrapper}>
+            <i data-lucide="search" className={styles.searchIcon} />
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="搜索菜单... (Ctrl+K)"
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); }}
+              onFocus={() => { setShowSearch(true); }}
+              onBlur={() => {
+                // 延迟关闭,允许点击搜索结果
+                setTimeout(() => { setShowSearch(false); }, 200);
+              }}
+            />
+            {searchQuery && (
+              <button
+                className={styles.searchClear}
+                onClick={() => { setSearchQuery(''); }}
+                aria-label="清除搜索"
+              >
+                <i data-lucide="x" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className={styles.navContent}>
-        <div className={styles.navItems}>{filteredItems.map(renderNavItem)}</div>
+        <div className={styles.navItems}>
+          {filteredAndSearchedItems.length > 0 ? (
+            filteredAndSearchedItems.map(renderNavItem)
+          ) : (
+            <div className={styles.emptyState}>
+              <i data-lucide="search-x" />
+              <span>未找到匹配的菜单</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {!collapsed && (

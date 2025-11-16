@@ -487,8 +487,13 @@ class Dashboard {
         setTimeout(() => {
             notification.style.animation = "slideOutRight 0.3s ease-in";
             setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
+                // 添加多重检查防止removeChild错误
+                if (notification.parentNode && document.body.contains(notification)) {
+                    try {
+                        notification.parentNode.removeChild(notification);
+                    } catch (err) {
+                        console.warn('[Dashboard] Failed to remove notification:', err);
+                    }
                 }
             }, 300);
         }, duration);
