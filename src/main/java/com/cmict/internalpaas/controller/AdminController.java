@@ -92,56 +92,58 @@ public class AdminController {
     @Autowired
     private com.cmict.internalpaas.service.PasswordEncryptionService passwordEncryptionService;
 
-    @GetMapping("/servers")
-    public String serverManagement(Model model) {
-        List<Server> servers = serverService.getAllServers();
-        model.addAttribute("servers", servers);
-        
-        // 计算统计数据 - 基于连接状态而不是active字段
-        long totalServers = servers.size();
-        long activeServers = servers.stream()
-            .filter(server -> server.getConnectionStatus() == Server.ConnectionStatus.CONNECTED || 
-                             server.getConnectionStatus() == Server.ConnectionStatus.MONITORING)
-            .count();
-        long inactiveServers = servers.stream()
-            .filter(server -> server.getConnectionStatus() == Server.ConnectionStatus.FAILED ||
-                             server.getConnectionStatus() == Server.ConnectionStatus.TIMEOUT ||
-                             server.getConnectionStatus() == Server.ConnectionStatus.AUTH_FAILED ||
-                             server.getConnectionStatus() == Server.ConnectionStatus.UNKNOWN)
-            .count();
-        long monitoringServers = servers.stream()
-            .filter(server -> server.getConnectionStatus() == Server.ConnectionStatus.MONITORING)
-            .count();
-        
-        model.addAttribute("totalServers", totalServers);
-        model.addAttribute("activeServers", activeServers);
-        model.addAttribute("inactiveServers", inactiveServers);
-        model.addAttribute("monitoringServers", monitoringServers);
-        
-        // 添加监控相关功能的标志
-        model.addAttribute("hasHistoryFeature", true);
-        model.addAttribute("hasThresholdFeature", true);
-        
-        return "admin/servers-page";
-    }
+    // 已废弃: 使用React应用 /app 代替
+    // @GetMapping("/servers")
+    // public String serverManagement(Model model) {
+    //     List<Server> servers = serverService.getAllServers();
+    //     model.addAttribute("servers", servers);
+    //
+    //     // 计算统计数据 - 基于连接状态而不是active字段
+    //     long totalServers = servers.size();
+    //     long activeServers = servers.stream()
+    //         .filter(server -> server.getConnectionStatus() == Server.ConnectionStatus.CONNECTED ||
+    //                          server.getConnectionStatus() == Server.ConnectionStatus.MONITORING)
+    //         .count();
+    //     long inactiveServers = servers.stream()
+    //         .filter(server -> server.getConnectionStatus() == Server.ConnectionStatus.FAILED ||
+    //                          server.getConnectionStatus() == Server.ConnectionStatus.TIMEOUT ||
+    //                          server.getConnectionStatus() == Server.ConnectionStatus.AUTH_FAILED ||
+    //                          server.getConnectionStatus() == Server.ConnectionStatus.UNKNOWN)
+    //         .count();
+    //     long monitoringServers = servers.stream()
+    //         .filter(server -> server.getConnectionStatus() == Server.ConnectionStatus.MONITORING)
+    //         .count();
+    //
+    //     model.addAttribute("totalServers", totalServers);
+    //     model.addAttribute("activeServers", activeServers);
+    //     model.addAttribute("inactiveServers", inactiveServers);
+    //     model.addAttribute("monitoringServers", monitoringServers);
+    //
+    //     // 添加监控相关功能的标志
+    //     model.addAttribute("hasHistoryFeature", true);
+    //     model.addAttribute("hasThresholdFeature", true);
+    //
+    //     return "admin/servers-page";
+    // }
 
 
-    @GetMapping("/servers/{id}")
-    public String serverDetail(@PathVariable Long id, Model model) {
-        Server server = serverService.findById(id)
-            .orElseThrow(() -> new RuntimeException("服务器未找到"));
-        
-        // 使用服务器当前存储的连接状态，避免同步SSH检查导致页面卡住
-        Server.ConnectionStatus currentStatus = server.getConnectionStatus() != null ? 
-            server.getConnectionStatus() : Server.ConnectionStatus.UNKNOWN;
-        String connectionDescription = serverService.getConnectionStatusDescription(currentStatus);
-        
-        model.addAttribute("server", server);
-        model.addAttribute("connectionStatus", currentStatus.name());
-        model.addAttribute("connectionDescription", connectionDescription);
-        
-        return "admin/server-detail";
-    }
+    // 已废弃: 使用React应用 /app 代替
+    // @GetMapping("/servers/{id}")
+    // public String serverDetail(@PathVariable Long id, Model model) {
+    //     Server server = serverService.findById(id)
+    //         .orElseThrow(() -> new RuntimeException("服务器未找到"));
+    //
+    //     // 使用服务器当前存储的连接状态，避免同步SSH检查导致页面卡住
+    //     Server.ConnectionStatus currentStatus = server.getConnectionStatus() != null ?
+    //         server.getConnectionStatus() : Server.ConnectionStatus.UNKNOWN;
+    //     String connectionDescription = serverService.getConnectionStatusDescription(currentStatus);
+    //
+    //     model.addAttribute("server", server);
+    //     model.addAttribute("connectionStatus", currentStatus.name());
+    //     model.addAttribute("connectionDescription", connectionDescription);
+    //
+    //     return "admin/server-detail";
+    // }
 
     @PostMapping("/servers")
     public String saveServer(@ModelAttribute Server server, RedirectAttributes redirectAttributes) {
@@ -1000,49 +1002,51 @@ public class AdminController {
     /**
      * 获取服务器日志页面
      */
-    @GetMapping("/servers/{id}/logs")
-    public String serverLogs(@PathVariable Long id, Model model) {
-        Optional<Server> serverOpt = serverService.getServerById(id);
-        if (serverOpt.isEmpty()) {
-            model.addAttribute("errorMessage", "服务器不存在");
-            return "redirect:/admin/servers";
-        }
-        
-        Server server = serverOpt.get();
-        model.addAttribute("server", server);
-        
-        return "admin/server-logs";
-    }
+    // 已废弃: 使用React应用 /app 代替
+    // @GetMapping("/servers/{id}/logs")
+    // public String serverLogs(@PathVariable Long id, Model model) {
+    //     Optional<Server> serverOpt = serverService.getServerById(id);
+    //     if (serverOpt.isEmpty()) {
+    //         model.addAttribute("errorMessage", "服务器不存在");
+    //         return "redirect:/admin/servers";
+    //     }
+    //
+    //     Server server = serverOpt.get();
+    //     model.addAttribute("server", server);
+    //
+    //     return "admin/server-logs";
+    // }
 
-    @GetMapping("/users")
-    @Transactional(readOnly = true)
-    public String userManagement(Model model) {
-        List<User> users = userService.findAllUsers();
-        model.addAttribute("users", users);
-        
-        // 计算统计数据
-        long totalUsers = users.size();
-        long adminUsers = users.stream().filter(user -> 
-            user.getRoles().contains(User.Role.ADMIN) || 
-            user.getRoles().contains(User.Role.SUPER_ADMIN)).count();
-        long regularUsers = users.stream().filter(user -> 
-            user.getRoles().contains(User.Role.USER) && 
-            !user.getRoles().contains(User.Role.ADMIN) && 
-            !user.getRoles().contains(User.Role.SUPER_ADMIN)).count();
-        long firstLoginUsers = users.stream().filter(User::getIsFirstLogin).count();
-        // 计算近期活跃用户（7天内登录）
-        long recentUsers = users.stream().filter(user -> 
-            user.getLastLoginTime() != null && 
-            user.getLastLoginTime().isAfter(java.time.LocalDateTime.now().minusDays(7))).count();
-        
-        model.addAttribute("totalUsers", totalUsers);
-        model.addAttribute("adminUsers", adminUsers);
-        model.addAttribute("regularUsers", regularUsers);
-        model.addAttribute("firstLoginUsers", firstLoginUsers);
-        model.addAttribute("recentUsers", recentUsers);
-        
-        return "admin/users";
-    }
+    // 已废弃: 使用React应用 /app 代替
+    // @GetMapping("/users")
+    // @Transactional(readOnly = true)
+    // public String userManagement(Model model) {
+    //     List<User> users = userService.findAllUsers();
+    //     model.addAttribute("users", users);
+    //
+    //     // 计算统计数据
+    //     long totalUsers = users.size();
+    //     long adminUsers = users.stream().filter(user ->
+    //         user.getRoles().contains(User.Role.ADMIN) ||
+    //         user.getRoles().contains(User.Role.SUPER_ADMIN)).count();
+    //     long regularUsers = users.stream().filter(user ->
+    //         user.getRoles().contains(User.Role.USER) &&
+    //         !user.getRoles().contains(User.Role.ADMIN) &&
+    //         !user.getRoles().contains(User.Role.SUPER_ADMIN)).count();
+    //     long firstLoginUsers = users.stream().filter(User::getIsFirstLogin).count();
+    //     // 计算近期活跃用户（7天内登录）
+    //     long recentUsers = users.stream().filter(user ->
+    //         user.getLastLoginTime() != null &&
+    //         user.getLastLoginTime().isAfter(java.time.LocalDateTime.now().minusDays(7))).count();
+    //
+    //     model.addAttribute("totalUsers", totalUsers);
+    //     model.addAttribute("adminUsers", adminUsers);
+    //     model.addAttribute("regularUsers", regularUsers);
+    //     model.addAttribute("firstLoginUsers", firstLoginUsers);
+    //     model.addAttribute("recentUsers", recentUsers);
+    //
+    //     return "admin/users";
+    // }
 
     // 仅超级管理员可以切换角色
     @PreAuthorize("hasRole('SUPER_ADMIN')")
@@ -1882,337 +1886,339 @@ public class AdminController {
     /**
      * AJAX API: 获取工作台内容片段
      */
-    @GetMapping("/api/dashboard-content")
-    @ResponseBody
-    public ResponseEntity<String> getDashboardContent(Model model) {
-        try {
-            // 获取统计数据
-            List<Server> servers = serverService.getAllServers();
-            List<User> users = userService.findAllUsers();
-            
-            long totalServers = servers.size();
-            long activeServers = servers.stream()
-                .filter(server -> server.getConnectionStatus() == Server.ConnectionStatus.CONNECTED || 
-                                 server.getConnectionStatus() == Server.ConnectionStatus.MONITORING)
-                .count();
-            long totalUsers = users.size();
-            long adminUsers = users.stream()
-                .filter(user -> user.getRoles() != null && 
-                               user.getRoles().stream().anyMatch(role -> 
-                                   role.name().contains("ADMIN") || role.name().contains("SUPER_ADMIN")))
-                .count();
-            long regularUsers = totalUsers - adminUsers;
-            
-            // 模拟系统监控数据
-            double cpuUsage = Math.random() * 50 + 20; // 20-70%
-            double memoryUsage = Math.random() * 40 + 30; // 30-70%
-            
-            StringBuilder content = new StringBuilder();
-            content.append("<div class=\"content-header\">\n");
-            content.append("    <div class=\"page-title-group\">\n");
-            content.append("        <h1 class=\"page-title\"><i class=\"fas fa-tachometer-alt\"></i> 管理员工作台</h1>\n");
-            content.append("    </div>\n");
-            content.append("</div>\n\n");
-            
-            // 统计面板
-            content.append("<section class=\"modern-stats-grid\">\n");
-            content.append("    <div class=\"modern-stat-card servers\">\n");
-            content.append("        <div class=\"stat-header\">\n");
-            content.append("            <div class=\"stat-icon-wrapper servers\"><i class=\"fas fa-server\"></i></div>\n");
-            content.append("            <div class=\"stat-trend positive\">+</div>\n");
-            content.append("        </div>\n");
-            content.append("        <div class=\"stat-body\">\n");
-            content.append("            <div class=\"stat-number\">").append(totalServers).append("</div>\n");
-            content.append("            <div class=\"stat-label\">服务器总数</div>\n");
-            content.append("            <div class=\"stat-sublabel\">活跃服务器: <span>").append(activeServers).append("</span></div>\n");
-            content.append("        </div>\n");
-            content.append("    </div>\n");
-            
-            content.append("    <div class=\"modern-stat-card users\">\n");
-            content.append("        <div class=\"stat-header\">\n");
-            content.append("            <div class=\"stat-icon-wrapper users\"><i class=\"fas fa-users\"></i></div>\n");
-            content.append("            <div class=\"stat-trend neutral\">~</div>\n");
-            content.append("        </div>\n");
-            content.append("        <div class=\"stat-body\">\n");
-            content.append("            <div class=\"stat-number\">").append(totalUsers).append("</div>\n");
-            content.append("            <div class=\"stat-label\">用户总数</div>\n");
-            content.append("            <div class=\"stat-sublabel\">管理员: <span>").append(adminUsers)
-                      .append("</span> | 普通用户: <span>").append(regularUsers).append("</span></div>\n");
-            content.append("        </div>\n");
-            content.append("    </div>\n");
-            
-            content.append("    <div class=\"modern-stat-card monitoring\">\n");
-            content.append("        <div class=\"stat-header\">\n");
-            content.append("            <div class=\"stat-icon-wrapper monitoring\"><i class=\"fas fa-microchip\"></i></div>\n");
-            content.append("            <div class=\"stat-trend neutral\">~</div>\n");
-            content.append("        </div>\n");
-            content.append("        <div class=\"stat-body\">\n");
-            content.append("            <div class=\"stat-number\">").append(String.format("%.1f", cpuUsage)).append("%</div>\n");
-            content.append("            <div class=\"stat-label\">CPU使用率</div>\n");
-            content.append("            <div class=\"stat-sublabel\">内存: <span>").append(String.format("%.1f", memoryUsage)).append("%</span></div>\n");
-            content.append("        </div>\n");
-            content.append("    </div>\n");
-            
-            content.append("    <div class=\"modern-stat-card activity\">\n");
-            content.append("        <div class=\"stat-header\">\n");
-            content.append("            <div class=\"stat-icon-wrapper activity\"><i class=\"fas fa-chart-line\"></i></div>\n");
-            content.append("            <div class=\"stat-trend positive\">↗</div>\n");
-            content.append("        </div>\n");
-            content.append("        <div class=\"stat-body\">\n");
-            content.append("            <div class=\"stat-number\">").append(totalUsers).append("</div>\n");
-            content.append("            <div class=\"stat-label\">系统活跃度</div>\n");
-            content.append("            <div class=\"stat-sublabel\">今日登录用户数</div>\n");
-            content.append("        </div>\n");
-            content.append("    </div>\n");
-            content.append("</section>\n\n");
-            
-            // 快捷操作区
-            content.append("<section class=\"modern-actions-grid\">\n");
-            content.append("    <a href=\"javascript:void(0)\" onclick=\"loadContent('servers')\" class=\"modern-action-card servers\">\n");
-            content.append("        <div class=\"action-card-content\">\n");
-            content.append("            <div class=\"action-icon-wrapper\"><i class=\"fas fa-server\"></i></div>\n");
-            content.append("            <h3 class=\"action-title\">服务器管理</h3>\n");
-            content.append("            <p class=\"action-description\">管理和监控所有服务器的状态</p>\n");
-            content.append("        </div>\n");
-            content.append("    </a>\n");
-            content.append("    <a href=\"javascript:void(0)\" onclick=\"loadContent('users')\" class=\"modern-action-card users\">\n");
-            content.append("        <div class=\"action-card-content\">\n");
-            content.append("            <div class=\"action-icon-wrapper\"><i class=\"fas fa-users\"></i></div>\n");
-            content.append("            <h3 class=\"action-title\">用户管理</h3>\n");
-            content.append("            <p class=\"action-description\">管理用户账户和权限设置</p>\n");
-            content.append("        </div>\n");
-            content.append("    </a>\n");
-            content.append("    <a href=\"javascript:void(0)\" onclick=\"loadContent('applications')\" class=\"modern-action-card servers\">\n");
-            content.append("        <div class=\"action-card-content\">\n");
-            content.append("            <div class=\"action-icon-wrapper\"><i class=\"fas fa-rocket\"></i></div>\n");
-            content.append("            <h3 class=\"action-title\">应用管理</h3>\n");
-            content.append("            <p class=\"action-description\">管理和监控应用程序</p>\n");
-            content.append("        </div>\n");
-            content.append("    </a>\n");
-            content.append("    <a href=\"javascript:void(0)\" onclick=\"loadContent('monitoring')\" class=\"modern-action-card users\">\n");
-            content.append("        <div class=\"action-card-content\">\n");
-            content.append("            <div class=\"action-icon-wrapper\"><i class=\"fas fa-chart-line\"></i></div>\n");
-            content.append("            <h3 class=\"action-title\">系统监控</h3>\n");
-            content.append("            <p class=\"action-description\">查看系统运行状态和性能指标</p>\n");
-            content.append("        </div>\n");
-            content.append("    </a>\n");
-            content.append("</section>\n");
-            
-            return ResponseEntity.ok(content.toString());
-            
-        } catch (Exception e) {
-            logger.error("获取工作台内容失败", e);
-            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载工作台内容失败: " + e.getMessage() + "</div>";
-            return ResponseEntity.status(500).body(errorContent);
-        }
-    }
+    // 已废弃: 使用React应用 /app 代替
+    // @GetMapping("/api/dashboard-content")
+    // @ResponseBody
+    // public ResponseEntity<String> getDashboardContent(Model model) {
+    //     try {
+    //         // 获取统计数据
+    //         List<Server> servers = serverService.getAllServers();
+    //         List<User> users = userService.findAllUsers();
+    //
+    //         long totalServers = servers.size();
+    //         long activeServers = servers.stream()
+    //             .filter(server -> server.getConnectionStatus() == Server.ConnectionStatus.CONNECTED ||
+    //                              server.getConnectionStatus() == Server.ConnectionStatus.MONITORING)
+    //             .count();
+    //         long totalUsers = users.size();
+    //         long adminUsers = users.stream()
+    //             .filter(user -> user.getRoles() != null &&
+    //                            user.getRoles().stream().anyMatch(role ->
+    //                                role.name().contains("ADMIN") || role.name().contains("SUPER_ADMIN")))
+    //             .count();
+    //         long regularUsers = totalUsers - adminUsers;
+    //
+    //         // 模拟系统监控数据
+    //         double cpuUsage = Math.random() * 50 + 20; // 20-70%
+    //         double memoryUsage = Math.random() * 40 + 30; // 30-70%
+    //
+    //         StringBuilder content = new StringBuilder();
+    //         content.append("<div class=\"content-header\">\n");
+    //         content.append("    <div class=\"page-title-group\">\n");
+    //         content.append("        <h1 class=\"page-title\"><i class=\"fas fa-tachometer-alt\"></i> 管理员工作台</h1>\n");
+    //         content.append("    </div>\n");
+    //         content.append("</div>\n\n");
+    //
+    //         // 统计面板
+    //         content.append("<section class=\"modern-stats-grid\">\n");
+    //         content.append("    <div class=\"modern-stat-card servers\">\n");
+    //         content.append("        <div class=\"stat-header\">\n");
+    //         content.append("            <div class=\"stat-icon-wrapper servers\"><i class=\"fas fa-server\"></i></div>\n");
+    //         content.append("            <div class=\"stat-trend positive\">+</div>\n");
+    //         content.append("        </div>\n");
+    //         content.append("        <div class=\"stat-body\">\n");
+    //         content.append("            <div class=\"stat-number\">").append(totalServers).append("</div>\n");
+    //         content.append("            <div class=\"stat-label\">服务器总数</div>\n");
+    //         content.append("            <div class=\"stat-sublabel\">活跃服务器: <span>").append(activeServers).append("</span></div>\n");
+    //         content.append("        </div>\n");
+    //         content.append("    </div>\n");
+    //
+    //         content.append("    <div class=\"modern-stat-card users\">\n");
+    //         content.append("        <div class=\"stat-header\">\n");
+    //         content.append("            <div class=\"stat-icon-wrapper users\"><i class=\"fas fa-users\"></i></div>\n");
+    //         content.append("            <div class=\"stat-trend neutral\">~</div>\n");
+    //         content.append("        </div>\n");
+    //         content.append("        <div class=\"stat-body\">\n");
+    //         content.append("            <div class=\"stat-number\">").append(totalUsers).append("</div>\n");
+    //         content.append("            <div class=\"stat-label\">用户总数</div>\n");
+    //         content.append("            <div class=\"stat-sublabel\">管理员: <span>").append(adminUsers)
+    //                   .append("</span> | 普通用户: <span>").append(regularUsers).append("</span></div>\n");
+    //         content.append("        </div>\n");
+    //         content.append("    </div>\n");
+    //
+    //         content.append("    <div class=\"modern-stat-card monitoring\">\n");
+    //         content.append("        <div class=\"stat-header\">\n");
+    //         content.append("            <div class=\"stat-icon-wrapper monitoring\"><i class=\"fas fa-microchip\"></i></div>\n");
+    //         content.append("            <div class=\"stat-trend neutral\">~</div>\n");
+    //         content.append("        </div>\n");
+    //         content.append("        <div class=\"stat-body\">\n");
+    //         content.append("            <div class=\"stat-number\">").append(String.format("%.1f", cpuUsage)).append("%</div>\n");
+    //         content.append("            <div class=\"stat-label\">CPU使用率</div>\n");
+    //         content.append("            <div class=\"stat-sublabel\">内存: <span>").append(String.format("%.1f", memoryUsage)).append("%</span></div>\n");
+    //         content.append("        </div>\n");
+    //         content.append("    </div>\n");
+    //
+    //         content.append("    <div class=\"modern-stat-card activity\">\n");
+    //         content.append("        <div class=\"stat-header\">\n");
+    //         content.append("            <div class=\"stat-icon-wrapper activity\"><i class=\"fas fa-chart-line\"></i></div>\n");
+    //         content.append("            <div class=\"stat-trend positive\">↗</div>\n");
+    //         content.append("        </div>\n");
+    //         content.append("        <div class=\"stat-body\">\n");
+    //         content.append("            <div class=\"stat-number\">").append(totalUsers).append("</div>\n");
+    //         content.append("            <div class=\"stat-label\">系统活跃度</div>\n");
+    //         content.append("            <div class=\"stat-sublabel\">今日登录用户数</div>\n");
+    //         content.append("        </div>\n");
+    //         content.append("    </div>\n");
+    //         content.append("</section>\n\n");
+    //
+    //         // 快捷操作区
+    //         content.append("<section class=\"modern-actions-grid\">\n");
+    //         content.append("    <a href=\"javascript:void(0)\" onclick=\"loadContent('servers')\" class=\"modern-action-card servers\">\n");
+    //         content.append("        <div class=\"action-card-content\">\n");
+    //         content.append("            <div class=\"action-icon-wrapper\"><i class=\"fas fa-server\"></i></div>\n");
+    //         content.append("            <h3 class=\"action-title\">服务器管理</h3>\n");
+    //         content.append("            <p class=\"action-description\">管理和监控所有服务器的状态</p>\n");
+    //         content.append("        </div>\n");
+    //         content.append("    </a>\n");
+    //         content.append("    <a href=\"javascript:void(0)\" onclick=\"loadContent('users')\" class=\"modern-action-card users\">\n");
+    //         content.append("        <div class=\"action-card-content\">\n");
+    //         content.append("            <div class=\"action-icon-wrapper\"><i class=\"fas fa-users\"></i></div>\n");
+    //         content.append("            <h3 class=\"action-title\">用户管理</h3>\n");
+    //         content.append("            <p class=\"action-description\">管理用户账户和权限设置</p>\n");
+    //         content.append("        </div>\n");
+    //         content.append("    </a>\n");
+    //         content.append("    <a href=\"javascript:void(0)\" onclick=\"loadContent('applications')\" class=\"modern-action-card servers\">\n");
+    //         content.append("        <div class=\"action-card-content\">\n");
+    //         content.append("            <div class=\"action-icon-wrapper\"><i class=\"fas fa-rocket\"></i></div>\n");
+    //         content.append("            <h3 class=\"action-title\">应用管理</h3>\n");
+    //         content.append("            <p class=\"action-description\">管理和监控应用程序</p>\n");
+    //         content.append("        </div>\n");
+    //         content.append("    </a>\n");
+    //         content.append("    <a href=\"javascript:void(0)\" onclick=\"loadContent('monitoring')\" class=\"modern-action-card users\">\n");
+    //         content.append("        <div class=\"action-card-content\">\n");
+    //         content.append("            <div class=\"action-icon-wrapper\"><i class=\"fas fa-chart-line\"></i></div>\n");
+    //         content.append("            <h3 class=\"action-title\">系统监控</h3>\n");
+    //         content.append("            <p class=\"action-description\">查看系统运行状态和性能指标</p>\n");
+    //         content.append("        </div>\n");
+    //         content.append("    </a>\n");
+    //         content.append("</section>\n");
+    //
+    //         return ResponseEntity.ok(content.toString());
+    //
+    //     } catch (Exception e) {
+    //         logger.error("获取工作台内容失败", e);
+    //         String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载工作台内容失败: " + e.getMessage() + "</div>";
+    //         return ResponseEntity.status(500).body(errorContent);
+    //     }
+    // }
     
 
     /**
      * AJAX API: 获取服务器管理内容片段 - 现代化版本
      */
-    @GetMapping("/api/servers-content")
-    @ResponseBody
-    public ResponseEntity<String> getServersContent() {
-        try {
-            List<Server> servers = serverService.getAllServers();
-            
-            StringBuilder htmlBuilder = new StringBuilder();
-            
-            // 页面标题
-            htmlBuilder.append("<div class=\"content-header\">");
-            htmlBuilder.append("<div class=\"page-title-group\">");
-            htmlBuilder.append("<h1 class=\"page-title\">服务器管理与监控</h1>");
-            htmlBuilder.append("</div></div>");
-            
-            // 统计服务器状态
-            long activeCount = servers.stream()
-                .filter(server -> server.getConnectionStatus() != null && 
-                        (server.getConnectionStatus() == Server.ConnectionStatus.CONNECTED || 
-                         server.getConnectionStatus() == Server.ConnectionStatus.MONITORING))
-                .count();
-            long inactiveCount = servers.size() - activeCount;
-            long totalCount = servers.size();
-            
-            // 现代化统计面板
-            htmlBuilder.append("<section class=\"modern-stats-container\">");
-            htmlBuilder.append("<div class=\"stats-grid\">");
-            
-            // 在线服务器卡片
-            htmlBuilder.append("<div class=\"modern-stats-card running\" onclick=\"filterServers('online')\">");
-            htmlBuilder.append("<div class=\"stats-card-content\">");
-            htmlBuilder.append("<div class=\"stats-info\">");
-            htmlBuilder.append("<div class=\"stats-label\">在线服务器</div>");
-            htmlBuilder.append("<div class=\"stats-value\">");
-            htmlBuilder.append("<span class=\"stats-value-main\">").append(activeCount).append("</span>");
-            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-up\">↗</span>连接正常</div>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-icon-container\">");
-            htmlBuilder.append("<i class=\"stats-icon fas fa-server icon-pulse\"></i>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("</div>");
-            
-            // 离线服务器卡片
-            htmlBuilder.append("<div class=\"modern-stats-card stopped\" onclick=\"filterServers('offline')\">");
-            htmlBuilder.append("<div class=\"stats-card-content\">");
-            htmlBuilder.append("<div class=\"stats-info\">");
-            htmlBuilder.append("<div class=\"stats-label\">离线服务器</div>");
-            htmlBuilder.append("<div class=\"stats-value\">");
-            htmlBuilder.append("<span class=\"stats-value-main\">").append(inactiveCount).append("</span>");
-            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-down\">↓</span>需要检查</div>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-icon-container\">");
-            htmlBuilder.append("<i class=\"stats-icon fas fa-exclamation-triangle\"></i>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("</div>");
-            
-            // 监控中服务器卡片
-            htmlBuilder.append("<div class=\"modern-stats-card starting\" onclick=\"filterServers('monitoring')\">");
-            htmlBuilder.append("<div class=\"stats-card-content\">");
-            htmlBuilder.append("<div class=\"stats-info\">");
-            htmlBuilder.append("<div class=\"stats-label\">监控中</div>");
-            htmlBuilder.append("<div class=\"stats-value\">");
-            htmlBuilder.append("<span class=\"stats-value-main\">").append(activeCount).append("</span>");
-            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>数据采集中</div>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-icon-container\">");
-            htmlBuilder.append("<i class=\"stats-icon fas fa-chart-line icon-bounce\"></i>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("</div>");
-            
-            // 总服务器数卡片
-            htmlBuilder.append("<div class=\"modern-stats-card total\" onclick=\"filterServers('all')\">");
-            htmlBuilder.append("<div class=\"stats-card-content\">");
-            htmlBuilder.append("<div class=\"stats-info\">");
-            htmlBuilder.append("<div class=\"stats-label\">服务器总数</div>");
-            htmlBuilder.append("<div class=\"stats-value\">");
-            htmlBuilder.append("<span class=\"stats-value-main\">").append(totalCount).append("</span>");
-            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>服务器概览</div>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("<div class=\"stats-icon-container\">");
-            htmlBuilder.append("<i class=\"stats-icon fas fa-database\"></i>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("</div>");
-            
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("</section>");
-            
-            // 服务器卡片网格
-            htmlBuilder.append("<section class=\"modern-apps-section\">");
-            htmlBuilder.append("<div class=\"section-header\">");
-            htmlBuilder.append("<h2 class=\"section-title\">服务器列表</h2>");
-            htmlBuilder.append("<div class=\"section-actions\">");
-            htmlBuilder.append("<button class=\"action-btn secondary\" onclick=\"refreshAllData()\">");
-            htmlBuilder.append("<i class=\"fas fa-sync-alt\"></i>");
-            htmlBuilder.append("<span>刷新数据</span>");
-            htmlBuilder.append("</button>");
-            htmlBuilder.append("<button class=\"action-btn primary\" onclick=\"addServer()\">");
-            htmlBuilder.append("<i class=\"fas fa-plus\"></i>");
-            htmlBuilder.append("<span>添加服务器</span>");
-            htmlBuilder.append("</button>");
-            htmlBuilder.append("</div>");
-            htmlBuilder.append("</div>");
-            
-            if (servers.isEmpty()) {
-                // 空状态
-                htmlBuilder.append("<div class=\"empty-state\">");
-                htmlBuilder.append("<div class=\"empty-icon\">");
-                htmlBuilder.append("<i class=\"fas fa-server\"></i>");
-                htmlBuilder.append("</div>");
-                htmlBuilder.append("<h3 class=\"empty-title\">还没有服务器</h3>");
-                htmlBuilder.append("<p class=\"empty-description\">添加您的第一个服务器开始管理和监控基础设施</p>");
-                htmlBuilder.append("<div class=\"empty-actions\">");
-                htmlBuilder.append("<button class=\"modern-action-btn primary\" onclick=\"addServer()\">");
-                htmlBuilder.append("<i class=\"fas fa-plus\"></i>");
-                htmlBuilder.append("<span>添加服务器</span>");
-                htmlBuilder.append("</button>");
-                htmlBuilder.append("</div>");
-                htmlBuilder.append("</div>");
-            } else {
-                // 服务器卡片网格
-                htmlBuilder.append("<div class=\"modern-apps-grid\">");
-                for (Server server : servers) {
-                    String statusClass = getServerStatusClass(server);
-                    String statusText = getServerStatusText(server);
-                    String statusIcon = getServerStatusIcon(server);
-                    
-                    htmlBuilder.append("<div class=\"modern-app-card ").append(statusClass).append("\">");
-                    
-                    // 卡片头部
-                    htmlBuilder.append("<div class=\"app-header\">");
-                    htmlBuilder.append("<div class=\"app-info\">");
-                    htmlBuilder.append("<div class=\"app-name\">").append(escapeHtml(server.getName())).append("</div>");
-                    htmlBuilder.append("<div class=\"app-meta\">");
-                    htmlBuilder.append("<span class=\"app-id\">ID: ").append(server.getId()).append("</span>");
-                    if (server.getLastConnectionCheck() != null) {
-                        htmlBuilder.append("<span class=\"app-time\">").append(formatRelativeTime(server.getLastConnectionCheck())).append("</span>");
-                    }
-                    htmlBuilder.append("</div>");
-                    htmlBuilder.append("</div>");
-                    htmlBuilder.append("<div class=\"status-indicator ").append(statusClass).append("\">");
-                    htmlBuilder.append("<i class=\"").append(statusIcon).append("\"></i>");
-                    htmlBuilder.append("<span>").append(statusText).append("</span>");
-                    htmlBuilder.append("</div>");
-                    htmlBuilder.append("</div>");
-                    
-                    // 服务器指标
-                    htmlBuilder.append("<div class=\"app-metrics\">");
-                    htmlBuilder.append("<div class=\"metrics-grid\">");
-                    htmlBuilder.append("<div class=\"metric-item\">");
-                    htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-network-wired\"></i></div>");
-                    htmlBuilder.append("<div class=\"metric-info\">");
-                    htmlBuilder.append("<div class=\"metric-label\">主机</div>");
-                    htmlBuilder.append("<div class=\"metric-value\">").append(server.getHostname()).append("</div>");
-                    htmlBuilder.append("</div>");
-                    htmlBuilder.append("</div>");
-                    htmlBuilder.append("<div class=\"metric-item\">");
-                    htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-plug\"></i></div>");
-                    htmlBuilder.append("<div class=\"metric-info\">");
-                    htmlBuilder.append("<div class=\"metric-label\">端口</div>");
-                    htmlBuilder.append("<div class=\"metric-value\">").append(server.getPort()).append("</div>");
-                    htmlBuilder.append("</div>");
-                    htmlBuilder.append("</div>");
-                    htmlBuilder.append("</div>");
-                    htmlBuilder.append("</div>");
-                    
-                    // 操作按钮
-                    htmlBuilder.append("<div class=\"app-actions\">");
-                    htmlBuilder.append("<button class=\"app-action-btn primary\" onclick=\"editServer(this)\" data-id=\"").append(server.getId()).append("\">");
-                    htmlBuilder.append("<i class=\"fas fa-edit\"></i>");
-                    htmlBuilder.append("<span>编辑</span>");
-                    htmlBuilder.append("</button>");
-                    htmlBuilder.append("<button class=\"app-action-btn secondary\" onclick=\"refreshServer(this)\" data-id=\"").append(server.getId()).append("\">");
-                    htmlBuilder.append("<i class=\"fas fa-sync-alt\"></i>");
-                    htmlBuilder.append("<span>刷新</span>");
-                    htmlBuilder.append("</button>");
-                    htmlBuilder.append("</div>");
-                    
-                    htmlBuilder.append("</div>");
-                }
-                htmlBuilder.append("</div>");
-            }
-            
-            htmlBuilder.append("</section>");
-            
-            return ResponseEntity.ok(htmlBuilder.toString());
-            
-        } catch (Exception e) {
-            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载服务器内容失败: " + e.getMessage() + "</div>";
-            return ResponseEntity.status(500).body(errorContent);
-        }
-    }
+    // 已废弃: 使用React应用 /app 代替
+    // @GetMapping("/api/servers-content")
+    // @ResponseBody
+    // public ResponseEntity<String> getServersContent() {
+    //     try {
+    //         List<Server> servers = serverService.getAllServers();
+    //            
+    //            StringBuilder htmlBuilder = new StringBuilder();
+    //            
+    //            // 页面标题
+    //            htmlBuilder.append("<div class=\"content-header\">");
+    //            htmlBuilder.append("<div class=\"page-title-group\">");
+    //            htmlBuilder.append("<h1 class=\"page-title\">服务器管理与监控</h1>");
+    //            htmlBuilder.append("</div></div>");
+    //            
+    //            // 统计服务器状态
+    //            long activeCount = servers.stream()
+    //                .filter(server -> server.getConnectionStatus() != null && 
+    //                        (server.getConnectionStatus() == Server.ConnectionStatus.CONNECTED || 
+    //                         server.getConnectionStatus() == Server.ConnectionStatus.MONITORING))
+    //                .count();
+    //            long inactiveCount = servers.size() - activeCount;
+    //            long totalCount = servers.size();
+    //            
+    //            // 现代化统计面板
+    //            htmlBuilder.append("<section class=\"modern-stats-container\">");
+    //            htmlBuilder.append("<div class=\"stats-grid\">");
+    //            
+    //            // 在线服务器卡片
+    //            htmlBuilder.append("<div class=\"modern-stats-card running\" onclick=\"filterServers('online')\">");
+    //            htmlBuilder.append("<div class=\"stats-card-content\">");
+    //            htmlBuilder.append("<div class=\"stats-info\">");
+    //            htmlBuilder.append("<div class=\"stats-label\">在线服务器</div>");
+    //            htmlBuilder.append("<div class=\"stats-value\">");
+    //            htmlBuilder.append("<span class=\"stats-value-main\">").append(activeCount).append("</span>");
+    //            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-up\">↗</span>连接正常</div>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("<div class=\"stats-icon-container\">");
+    //            htmlBuilder.append("<i class=\"stats-icon fas fa-server icon-pulse\"></i>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("</div>");
+    //            
+    //            // 离线服务器卡片
+    //            htmlBuilder.append("<div class=\"modern-stats-card stopped\" onclick=\"filterServers('offline')\">");
+    //            htmlBuilder.append("<div class=\"stats-card-content\">");
+    //            htmlBuilder.append("<div class=\"stats-info\">");
+    //            htmlBuilder.append("<div class=\"stats-label\">离线服务器</div>");
+    //            htmlBuilder.append("<div class=\"stats-value\">");
+    //            htmlBuilder.append("<span class=\"stats-value-main\">").append(inactiveCount).append("</span>");
+    //            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-down\">↓</span>需要检查</div>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("<div class=\"stats-icon-container\">");
+    //            htmlBuilder.append("<i class=\"stats-icon fas fa-exclamation-triangle\"></i>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("</div>");
+    //            
+    //            // 监控中服务器卡片
+    //            htmlBuilder.append("<div class=\"modern-stats-card starting\" onclick=\"filterServers('monitoring')\">");
+    //            htmlBuilder.append("<div class=\"stats-card-content\">");
+    //            htmlBuilder.append("<div class=\"stats-info\">");
+    //            htmlBuilder.append("<div class=\"stats-label\">监控中</div>");
+    //            htmlBuilder.append("<div class=\"stats-value\">");
+    //            htmlBuilder.append("<span class=\"stats-value-main\">").append(activeCount).append("</span>");
+    //            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>数据采集中</div>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("<div class=\"stats-icon-container\">");
+    //            htmlBuilder.append("<i class=\"stats-icon fas fa-chart-line icon-bounce\"></i>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("</div>");
+    //            
+    //            // 总服务器数卡片
+    //            htmlBuilder.append("<div class=\"modern-stats-card total\" onclick=\"filterServers('all')\">");
+    //            htmlBuilder.append("<div class=\"stats-card-content\">");
+    //            htmlBuilder.append("<div class=\"stats-info\">");
+    //            htmlBuilder.append("<div class=\"stats-label\">服务器总数</div>");
+    //            htmlBuilder.append("<div class=\"stats-value\">");
+    //            htmlBuilder.append("<span class=\"stats-value-main\">").append(totalCount).append("</span>");
+    //            htmlBuilder.append("<span class=\"stats-value-unit\">台</span>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("<div class=\"stats-trend\"><span class=\"trend-icon trend-stable\">~</span>服务器概览</div>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("<div class=\"stats-icon-container\">");
+    //            htmlBuilder.append("<i class=\"stats-icon fas fa-database\"></i>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("</div>");
+    //            
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("</section>");
+    //            
+    //            // 服务器卡片网格
+    //            htmlBuilder.append("<section class=\"modern-apps-section\">");
+    //            htmlBuilder.append("<div class=\"section-header\">");
+    //            htmlBuilder.append("<h2 class=\"section-title\">服务器列表</h2>");
+    //            htmlBuilder.append("<div class=\"section-actions\">");
+    //            htmlBuilder.append("<button class=\"action-btn secondary\" onclick=\"refreshAllData()\">");
+    //            htmlBuilder.append("<i class=\"fas fa-sync-alt\"></i>");
+    //            htmlBuilder.append("<span>刷新数据</span>");
+    //            htmlBuilder.append("</button>");
+    //            htmlBuilder.append("<button class=\"action-btn primary\" onclick=\"addServer()\">");
+    //            htmlBuilder.append("<i class=\"fas fa-plus\"></i>");
+    //            htmlBuilder.append("<span>添加服务器</span>");
+    //            htmlBuilder.append("</button>");
+    //            htmlBuilder.append("</div>");
+    //            htmlBuilder.append("</div>");
+    //            
+    //            if (servers.isEmpty()) {
+    //                // 空状态
+    //                htmlBuilder.append("<div class=\"empty-state\">");
+    //                htmlBuilder.append("<div class=\"empty-icon\">");
+    //                htmlBuilder.append("<i class=\"fas fa-server\"></i>");
+    //                htmlBuilder.append("</div>");
+    //                htmlBuilder.append("<h3 class=\"empty-title\">还没有服务器</h3>");
+    //                htmlBuilder.append("<p class=\"empty-description\">添加您的第一个服务器开始管理和监控基础设施</p>");
+    //                htmlBuilder.append("<div class=\"empty-actions\">");
+    //                htmlBuilder.append("<button class=\"modern-action-btn primary\" onclick=\"addServer()\">");
+    //                htmlBuilder.append("<i class=\"fas fa-plus\"></i>");
+    //                htmlBuilder.append("<span>添加服务器</span>");
+    //                htmlBuilder.append("</button>");
+    //                htmlBuilder.append("</div>");
+    //                htmlBuilder.append("</div>");
+    //            } else {
+    //                // 服务器卡片网格
+    //                htmlBuilder.append("<div class=\"modern-apps-grid\">");
+    //                for (Server server : servers) {
+    //                    String statusClass = getServerStatusClass(server);
+    //                    String statusText = getServerStatusText(server);
+    //                    String statusIcon = getServerStatusIcon(server);
+    //                    
+    //                    htmlBuilder.append("<div class=\"modern-app-card ").append(statusClass).append("\">");
+    //                    
+    //                    // 卡片头部
+    //                    htmlBuilder.append("<div class=\"app-header\">");
+    //                    htmlBuilder.append("<div class=\"app-info\">");
+    //                    htmlBuilder.append("<div class=\"app-name\">").append(escapeHtml(server.getName())).append("</div>");
+    //                    htmlBuilder.append("<div class=\"app-meta\">");
+    //                    htmlBuilder.append("<span class=\"app-id\">ID: ").append(server.getId()).append("</span>");
+    //                    if (server.getLastConnectionCheck() != null) {
+    //                        htmlBuilder.append("<span class=\"app-time\">").append(formatRelativeTime(server.getLastConnectionCheck())).append("</span>");
+    //                    }
+    //                    htmlBuilder.append("</div>");
+    //                    htmlBuilder.append("</div>");
+    //                    htmlBuilder.append("<div class=\"status-indicator ").append(statusClass).append("\">");
+    //                    htmlBuilder.append("<i class=\"").append(statusIcon).append("\"></i>");
+    //                    htmlBuilder.append("<span>").append(statusText).append("</span>");
+    //                    htmlBuilder.append("</div>");
+    //                    htmlBuilder.append("</div>");
+    //                    
+    //                    // 服务器指标
+    //                    htmlBuilder.append("<div class=\"app-metrics\">");
+    //                    htmlBuilder.append("<div class=\"metrics-grid\">");
+    //                    htmlBuilder.append("<div class=\"metric-item\">");
+    //                    htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-network-wired\"></i></div>");
+    //                    htmlBuilder.append("<div class=\"metric-info\">");
+    //                    htmlBuilder.append("<div class=\"metric-label\">主机</div>");
+    //                    htmlBuilder.append("<div class=\"metric-value\">").append(server.getHostname()).append("</div>");
+    //                    htmlBuilder.append("</div>");
+    //                    htmlBuilder.append("</div>");
+    //                    htmlBuilder.append("<div class=\"metric-item\">");
+    //                    htmlBuilder.append("<div class=\"metric-icon\"><i class=\"fas fa-plug\"></i></div>");
+    //                    htmlBuilder.append("<div class=\"metric-info\">");
+    //                    htmlBuilder.append("<div class=\"metric-label\">端口</div>");
+    //                    htmlBuilder.append("<div class=\"metric-value\">").append(server.getPort()).append("</div>");
+    //                    htmlBuilder.append("</div>");
+    //                    htmlBuilder.append("</div>");
+    //                    htmlBuilder.append("</div>");
+    //                    htmlBuilder.append("</div>");
+    //                    
+    //                    // 操作按钮
+    //                    htmlBuilder.append("<div class=\"app-actions\">");
+    //                    htmlBuilder.append("<button class=\"app-action-btn primary\" onclick=\"editServer(this)\" data-id=\"").append(server.getId()).append("\">");
+    //                    htmlBuilder.append("<i class=\"fas fa-edit\"></i>");
+    //                    htmlBuilder.append("<span>编辑</span>");
+    //                    htmlBuilder.append("</button>");
+    //                    htmlBuilder.append("<button class=\"app-action-btn secondary\" onclick=\"refreshServer(this)\" data-id=\"").append(server.getId()).append("\">");
+    //                    htmlBuilder.append("<i class=\"fas fa-sync-alt\"></i>");
+    //                    htmlBuilder.append("<span>刷新</span>");
+    //                    htmlBuilder.append("</button>");
+    //                    htmlBuilder.append("</div>");
+    //                    
+    //                    htmlBuilder.append("</div>");
+    //                }
+    //                htmlBuilder.append("</div>");
+    //            }
+    //            
+    //            htmlBuilder.append("</section>");
+    //            
+    //            return ResponseEntity.ok(htmlBuilder.toString());
+    //            
+    //        } catch (Exception e) {
+    //            String errorContent = "<div class=\"alert alert-danger\"><i class=\"fas fa-exclamation-triangle\"></i> 加载服务器内容失败: " + e.getMessage() + "</div>";
+    //            return ResponseEntity.status(500).body(errorContent);
+    //        }
+    // }
     
     // 服务器状态辅助方法
     private String getServerStatusClass(Server server) {
@@ -2297,11 +2303,12 @@ public class AdminController {
     /**
      * 获取用户权限管理内容片段
      */
-    @GetMapping("/api/users-content")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public String getUsersContent() {
-        return "admin/user-permission-content :: user-permission-content";
-    }
+    // 已废弃: 使用React应用 /app 代替
+    // @GetMapping("/api/users-content")
+    // @PreAuthorize("hasRole('SUPER_ADMIN')")
+    // public String getUsersContent() {
+    //     return "admin/user-permission-content :: user-permission-content";
+    // }
 
     /**
      * 获取活跃用户TOP5

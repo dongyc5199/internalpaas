@@ -14,7 +14,8 @@ import { TOKEN_REFRESH_BEFORE_MS, AUTH_CHANNEL_NAME } from '../config/constants'
 import type { Token } from '../types/auth';
 
 // Check if BroadcastChannel is supported (Safari 15.4+, Chrome 54+, Firefox 38+)
-const HAS_BROADCAST_CHANNEL = typeof BroadcastChannel !== 'undefined';
+// Note: This is a function to allow dynamic checking in tests
+const hasBroadcastChannel = (): boolean => typeof BroadcastChannel !== 'undefined';
 
 /**
  * Message sent via BroadcastChannel when token is refreshed
@@ -114,7 +115,7 @@ export function useTokenRefresh(): void {
    * Broadcast token refresh to other tabs
    */
   const broadcastTokenRefresh = useCallback((newToken: Token) => {
-    if (HAS_BROADCAST_CHANNEL && channelRef.current) {
+    if (hasBroadcastChannel() && channelRef.current) {
       const message: TokenRefreshMessage = {
         type: 'TOKEN_REFRESHED',
         payload: newToken,
@@ -166,7 +167,7 @@ export function useTokenRefresh(): void {
    */
   useEffect(() => {
     // Initialize BroadcastChannel if supported
-    if (HAS_BROADCAST_CHANNEL) {
+    if (hasBroadcastChannel()) {
       channelRef.current = new BroadcastChannel(AUTH_CHANNEL_NAME);
       channelRef.current.addEventListener('message', handleTokenRefreshMessage);
       console.log('[useTokenRefresh] BroadcastChannel initialized');

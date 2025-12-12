@@ -26,8 +26,8 @@ public class UserController {
 
     @GetMapping("/register")
     public String showRegistrationForm(Model model) {
-        model.addAttribute("user", new UserRegistrationDto());
-        return "register"; // 返回 register.html 模板
+        // 重定向到React注册页面
+        return "redirect:/app/register";
     }
 
     @PostMapping("/register")

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import FocusTrap from 'focus-trap-react';
 import styles from './Modal.module.css';
 
 export interface ModalProps {
@@ -66,6 +67,8 @@ export function Modal({
   className,
 }: ModalProps): React.JSX.Element | null {
   const overlayRef = useRef<HTMLDivElement>(null);
+  const lastActiveElementRef = useRef<HTMLElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   // ESC 键处理
   useEffect(() => {
@@ -81,16 +84,25 @@ export function Modal({
     return () => { document.removeEventListener('keydown', handleEscape); };
   }, [open, closeOnEscape, onClose]);
 
-  // 防止滚动穿透
+  // 防止滚动穿透，并保存焦点
   useEffect(() => {
     if (!open) return;
 
+    lastActiveElementRef.current = document.activeElement as HTMLElement | null;
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
     return () => {
       document.body.style.overflow = originalOverflow;
+      lastActiveElementRef.current?.focus?.();
     };
+  }, [open]);
+
+  // 打开时将焦点移动到关闭按钮，方便键盘操作
+  useEffect(() => {
+    if (open) {
+      closeButtonRef.current?.focus();
+    }
   }, [open]);
 
   // 背景点击处理
@@ -105,37 +117,38 @@ export function Modal({
   const modalClassName = [styles.modal, styles[size], className].filter(Boolean).join(' ');
 
   return createPortal(
-    <div
-      ref={overlayRef}
-      className={styles.overlay}
-      onClick={handleOverlayClick}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={title ? 'modal-title' : undefined}
-    >
-      <div className={modalClassName}>
-        {title && (
-          <div className={styles.header}>
-            <h2 id="modal-title" className={styles.title}>
-              {title}
-            </h2>
-            <button
-              type="button"
-              className={styles.closeButton}
-              onClick={onClose}
-              aria-label="关闭"
-            >
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M6 6l8 8M14 6l-8 8" />
-              </svg>
-            </button>
-          </div>
-        )}
+    <div ref={overlayRef} className={styles.overlay} onClick={handleOverlayClick}>
+      <FocusTrap active={open} focusTrapOptions={{ allowOutsideClick: true }}>
+        <div
+          className={modalClassName}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={title ? 'modal-title' : undefined}
+        >
+          {title && (
+            <div className={styles.header}>
+              <h2 id="modal-title" className={styles.title}>
+                {title}
+              </h2>
+              <button
+                type="button"
+                className={styles.closeButton}
+                onClick={onClose}
+                aria-label="关闭"
+                ref={closeButtonRef}
+              >
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M6 6l8 8M14 6l-8 8" />
+                </svg>
+              </button>
+            </div>
+          )}
 
-        <div className={styles.body}>{children}</div>
+          <div className={styles.body}>{children}</div>
 
-        {footer && <div className={styles.footer}>{footer}</div>}
-      </div>
+          {footer && <div className={styles.footer}>{footer}</div>}
+        </div>
+      </FocusTrap>
     </div>,
     document.body
   );

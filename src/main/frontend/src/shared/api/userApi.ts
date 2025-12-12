@@ -13,6 +13,16 @@ export interface UserFormData {
 }
 
 /**
+ * 用户注册 DTO
+ */
+export interface UserRegistrationData {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+/**
  * 用户列表查询参数
  */
 export interface UserListParams {
@@ -194,5 +204,41 @@ export const userApi = {
    */
   resetPassword: async (id: number, newPassword: string): Promise<void> => {
     await apiClient.post(`/admin/users/${id}/reset-password`, { newPassword });
+  },
+
+  /**
+   * 用户注册
+   *
+   * @param data - 注册表单数据
+   * @returns 注册成功消息
+   *
+   * @example
+   * ```ts
+   * await userApi.register({
+   *   username: 'john',
+   *   email: 'john@example.com',
+   *   password: 'password123456',
+   *   confirmPassword: 'password123456'
+   * });
+   * ```
+   */
+  register: async (data: UserRegistrationData): Promise<{ message: string }> => {
+    return await apiClient.post<{ message: string }>('/register', data);
+  },
+
+  /**
+   * 检查用户名是否可用
+   *
+   * @param username - 待检查的用户名
+   * @returns 是否可用
+   *
+   * @example
+   * ```ts
+   * const available = await userApi.checkUsernameAvailable('john');
+   * ```
+   */
+  checkUsernameAvailable: async (username: string): Promise<boolean> => {
+    const response = await apiClient.get<{ available: boolean }>(`/api/auth/check-username?username=${encodeURIComponent(username)}`);
+    return response.available;
   },
 };

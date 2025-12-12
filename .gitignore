@@ -64,3 +64,4 @@ infra/perf/otlp_load_gen.sh
 
 *storybook.log
 storybook-static
+.jdks/

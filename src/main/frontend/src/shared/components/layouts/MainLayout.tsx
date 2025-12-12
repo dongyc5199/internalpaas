@@ -1,7 +1,7 @@
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { Navigation } from '../Navigation/Navigation';
 import { Header } from '../Header/Header';
-import { useUserPreferences } from '../../stores/authStore';
+import { useUIStore } from '../../stores/uiStore';
 import styles from './MainLayout.module.css';
 
 interface MainLayoutProps {
@@ -29,8 +29,8 @@ interface MainLayoutProps {
  * ```
  */
 export function MainLayout({ children }: MainLayoutProps): React.JSX.Element {
-  const preferences = useUserPreferences();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(preferences.sidebarCollapsed);
+  const sidebarCollapsed = useUIStore((state) => state.sidebarCollapsed);
+  const setSidebarCollapsed = useUIStore((state) => state.setSidebarCollapsed);
   const [isMobile, setIsMobile] = useState(false);
 
   /**
@@ -48,23 +48,6 @@ export function MainLayout({ children }: MainLayoutProps): React.JSX.Element {
       window.removeEventListener('resize', checkMobile);
     };
   }, []);
-
-  /**
-   * 同步侧边栏状态到用户偏好
-   */
-  useEffect(() => {
-    if (sidebarCollapsed === preferences.sidebarCollapsed) {
-      return;
-    }
-
-    // 更新用户偏好 (通过 authStore)
-    // 这里可以添加防抖以避免频繁更新
-    const timer = setTimeout(() => {
-      // updatePreferences({ sidebarCollapsed });
-    }, 300);
-
-    return () => { clearTimeout(timer); };
-  }, [sidebarCollapsed, preferences.sidebarCollapsed]);
 
   /**
    * 初始化 Lucide 图标

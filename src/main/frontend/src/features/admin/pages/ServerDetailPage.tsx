@@ -7,6 +7,7 @@ import { ServerStatus } from '../../../shared/types/server';
 import { ServerForm } from '../components/ServerForm';
 import { ServerDetailSkeleton } from '../components/ServerDetailSkeleton';
 import { useState } from 'react';
+import { useServerStatus } from '../servers/hooks/useServerStatus';
 import styles from './ServerDetailPage.module.css';
 
 /**
@@ -27,6 +28,7 @@ export function ServerDetailPage(): React.JSX.Element {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const serverId = Number(id);
+  useServerStatus(serverId);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);

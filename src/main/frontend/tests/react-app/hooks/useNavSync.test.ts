@@ -22,6 +22,17 @@ describe('useNavSync', () => {
       key: 'default'
     } as Location;
 
+    // Mock embed mode detection - set to embedded mode for testing
+    // Create the deploy-platform-root element with data attributes
+    const container = document.createElement('div');
+    container.id = 'deploy-platform-root';
+    container.setAttribute('data-embedded', 'true');
+    container.setAttribute('data-spring-context', 'true');
+    document.body.appendChild(container);
+
+    // Also set window flag as backup
+    (window as any).__DEPLOY_PLATFORM_EMBEDDED__ = true;
+
     // Track event listeners
     eventListeners = new Map();
 
@@ -52,6 +63,13 @@ describe('useNavSync', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     eventListeners.clear();
+
+    // Cleanup embed mode mock
+    const container = document.getElementById('deploy-platform-root');
+    if (container) {
+      document.body.removeChild(container);
+    }
+    delete (window as any).__DEPLOY_PLATFORM_EMBEDDED__;
   });
 
   describe('Event Listening', () => {

@@ -14,9 +14,18 @@ export interface Column<T> {
   width?: string | number;
 }
 
+export interface RowSelection<T> {
+  /** 已选中的行键列表 */
+  selectedRowKeys: (string | number)[];
+  /** 选中状态改变的回调 */
+  onChange: (selectedRowKeys: (string | number)[], selectedRows: T[]) => void;
+  /** 选择类型 */
+  type?: 'checkbox' | 'radio';
+}
+
 export interface TableProps<T> {
   /** 数据源 */
-  data: T[];
+  data?: T[];
   /** 列配置 */
   columns: Column<T>[];
   /** 行键提取函数 */
@@ -31,6 +40,8 @@ export interface TableProps<T> {
   loading?: boolean;
   /** 自定义类名 */
   className?: string;
+  /** 行选择配置 */
+  rowSelection?: RowSelection<T>;
 }
 
 type SortOrder = 'asc' | 'desc' | null;
@@ -70,6 +81,7 @@ export function Table<T extends Record<string, unknown>>({
   emptyText = '暂无数据',
   loading = false,
   className,
+  rowSelection,
 }: TableProps<T>): JSX.Element {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -89,8 +101,8 @@ export function Table<T extends Record<string, unknown>>({
     }
   };
 
-  // 应用排序
-  const sortedData = [...data];
+  // 应用排序 (防御性检查: 确保data不为undefined)
+  const sortedData = [...(data ?? [])];
   if (sortKey && sortOrder) {
     sortedData.sort((a, b) => {
       const aValue = a[sortKey] as string | number;
@@ -113,6 +125,49 @@ export function Table<T extends Record<string, unknown>>({
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
+  // 行选择逻辑
+  const handleRowSelect = (record: T, checked: boolean): void => {
+    if (!rowSelection) return;
+
+    const key = rowKey(record);
+    const newSelectedKeys = checked
+      ? [...rowSelection.selectedRowKeys, key]
+      : rowSelection.selectedRowKeys.filter((k) => k !== key);
+
+    const selectedRows = sortedData.filter((row) =>
+      newSelectedKeys.includes(rowKey(row))
+    );
+
+    rowSelection.onChange(newSelectedKeys, selectedRows);
+  };
+
+  const handleSelectAll = (checked: boolean): void => {
+    if (!rowSelection) return;
+
+    const newSelectedKeys = checked
+      ? paginatedData.map((record) => rowKey(record))
+      : [];
+
+    const selectedRows = checked ? paginatedData : [];
+    rowSelection.onChange(newSelectedKeys, selectedRows);
+  };
+
+  const isRowSelected = (record: T): boolean => {
+    if (!rowSelection) return false;
+    return rowSelection.selectedRowKeys.includes(rowKey(record));
+  };
+
+  const isAllSelected = (): boolean => {
+    if (!rowSelection || paginatedData.length === 0) return false;
+    return paginatedData.every((record) => isRowSelected(record));
+  };
+
+  const isIndeterminate = (): boolean => {
+    if (!rowSelection || paginatedData.length === 0) return false;
+    const selectedCount = paginatedData.filter((record) => isRowSelected(record)).length;
+    return selectedCount > 0 && selectedCount < paginatedData.length;
+  };
+
   const wrapperClassName = [styles.wrapper, className].filter(Boolean).join(' ');
 
   return (
@@ -120,6 +175,22 @@ export function Table<T extends Record<string, unknown>>({
       <table className={styles.table}>
         <thead className={styles.thead}>
           <tr>
+            {rowSelection && (
+              <th className={`${styles.th} ${styles.checkboxColumn}`}>
+                <input
+                  type="checkbox"
+                  checked={isAllSelected()}
+                  ref={(input) => {
+                    if (input) {
+                      input.indeterminate = isIndeterminate();
+                    }
+                  }}
+                  onChange={(e) => { handleSelectAll(e.target.checked); }}
+                  className={styles.checkbox}
+                  aria-label="全选"
+                />
+              </th>
+            )}
             {columns.map((column) => (
               <th
                 key={column.key}
@@ -140,19 +211,30 @@ export function Table<T extends Record<string, unknown>>({
         <tbody className={styles.tbody}>
           {loading ? (
             <tr>
-              <td colSpan={columns.length} className={styles.empty}>
+              <td colSpan={columns.length + (rowSelection ? 1 : 0)} className={styles.empty}>
                 加载中...
               </td>
             </tr>
           ) : paginatedData.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className={styles.empty}>
+              <td colSpan={columns.length + (rowSelection ? 1 : 0)} className={styles.empty}>
                 {emptyText}
               </td>
             </tr>
           ) : (
             paginatedData.map((record, index) => (
               <tr key={rowKey(record)} className={styles.tr}>
+                {rowSelection && (
+                  <td className={`${styles.td} ${styles.checkboxColumn}`}>
+                    <input
+                      type="checkbox"
+                      checked={isRowSelected(record)}
+                      onChange={(e) => { handleRowSelect(record, e.target.checked); }}
+                      className={styles.checkbox}
+                      aria-label={`选择第${index + 1}行`}
+                    />
+                  </td>
+                )}
                 {columns.map((column) => (
                   <td key={column.key} className={styles.td}>
                     {column.render

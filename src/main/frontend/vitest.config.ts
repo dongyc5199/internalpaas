@@ -9,7 +9,11 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './tests/setup.ts',
-    css: true,
+    css: {
+      modules: {
+        classNameStrategy: 'non-scoped',
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -31,7 +35,9 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(__dirname, '.'),
+      '@/utils': path.resolve(__dirname, './utils'),
+      '@/modules': path.resolve(__dirname, './modules'),
       '@shared': path.resolve(__dirname, './src/shared'),
       '@features': path.resolve(__dirname, './src/features'),
       '@layouts': path.resolve(__dirname, './src/layouts'),

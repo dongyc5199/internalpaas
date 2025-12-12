@@ -27,6 +27,16 @@
 @REM   MVNW_VERBOSE - true: enable verbose log; others: silence the output
 @REM ----------------------------------------------------------------------------
 
+@REM Project-specific Java 17 configuration
+@SET PROJECT_JAVA_HOME=%~dp0.jdks\jdk-17.0.9
+@IF EXIST "%PROJECT_JAVA_HOME%\bin\java.exe" (
+  @echo Using project-specific Java 17: %PROJECT_JAVA_HOME%
+  @SET JAVA_HOME=%PROJECT_JAVA_HOME%
+  @SET PATH=%PROJECT_JAVA_HOME%\bin;%PATH%
+) ELSE (
+  @echo Warning: Project Java not found, using system Java
+)
+
 @IF "%__MVNW_ARG0_NAME__%"=="" (SET __MVNW_ARG0_NAME__=%~nx0)
 @SET __MVNW_CMD__=
 @SET __MVNW_ERROR__=
@@ -48,6 +58,16 @@
 $ErrorActionPreference = "Stop"
 if ($env:MVNW_VERBOSE -eq "true") {
   $VerbosePreference = "Continue"
+}
+
+# Project-specific Java 17 configuration
+$PROJECT_JAVA_HOME = "$scriptDir\.jdks\jdk-17.0.9"
+if (Test-Path "$PROJECT_JAVA_HOME\bin\java.exe") {
+  Write-Verbose "Using project-specific Java 17: $PROJECT_JAVA_HOME"
+  $env:JAVA_HOME = $PROJECT_JAVA_HOME
+  $env:PATH = "$PROJECT_JAVA_HOME\bin;$env:PATH"
+} else {
+  Write-Warning "Project Java not found at $PROJECT_JAVA_HOME, using system Java"
 }
 
 # calculate distributionUrl, requires .mvn/wrapper/maven-wrapper.properties

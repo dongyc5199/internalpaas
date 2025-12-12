@@ -124,7 +124,9 @@ export function ServersPage(): React.JSX.Element {
    */
   const handleBatchDelete = (): void => {
     if (selectedIds.size > 0) {
-      batchDeleteMutation.mutate(Array.from(selectedIds));
+      // 将字符串ID转换为数字
+      const numericIds = Array.from(selectedIds).map((id) => Number(id));
+      batchDeleteMutation.mutate(numericIds);
     }
   };
 
@@ -288,12 +290,20 @@ export function ServersPage(): React.JSX.Element {
           </div>
         ) : (
           <Table
-            data={data?.content as unknown as Record<string, unknown>[]}
+            data={(data?.content ?? []) as unknown as Record<string, unknown>[]}
             columns={columns}
             loading={isLoading}
             rowKey={(record) => String((record as unknown as Server).id)}
             pagination={true}
             pageSize={params.size ?? 20}
+            emptyText="暂无服务器"
+            rowSelection={{
+              selectedRowKeys: Array.from(selectedIds),
+              onChange: (keys) => {
+                setSelectedIds(new Set(keys as number[]));
+              },
+              type: 'checkbox',
+            }}
           />
         )}
       </div>

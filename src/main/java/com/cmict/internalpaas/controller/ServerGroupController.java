@@ -27,11 +27,12 @@ public class ServerGroupController {
     /**
      * Return HTML fragment page
      */
-    @GetMapping("/content")
-    public String content() {
-        logger.info("Loading server group content page");
-        return "admin/server-group-content";
-    }
+    // 已废弃: 使用React应用 /app 代替
+    // @GetMapping("/content")
+    // public String content() {
+    //     logger.info("Loading server group content page");
+    //     return "admin/server-group-content";
+    // }
 
     /**
      * Get enhanced server list with monitoring data

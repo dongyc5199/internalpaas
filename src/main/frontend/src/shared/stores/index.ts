@@ -4,3 +4,4 @@
  */
 
 export { useAuthStore, useUser, useIsAuthenticated, useUserPreferences } from './authStore';
+export { useUIStore } from './uiStore';

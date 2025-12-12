@@ -1,0 +1,17 @@
+.editorContainer {
+  border: 1px solid var(--shell-border, #e5e7eb);
+  border-radius: var(--shell-radius-md, 0.375rem);
+  overflow: hidden;
+  background: var(--shell-surface, #ffffff);
+}
+
+.editorContainer:focus-within {
+  outline: 2px solid var(--shell-primary, #3b82f6);
+  outline-offset: 2px;
+}
+
+/* 深色主题样式 */
+[data-theme='dark'] .editorContainer {
+  background: var(--shell-surface-dark, #1f2937);
+  border-color: var(--shell-border-dark, #374151);
+}

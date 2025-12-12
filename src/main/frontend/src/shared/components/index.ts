@@ -20,6 +20,8 @@ export type { TableProps, Column } from './Table';
 
 export { StatCard } from './StatCard';
 export type { StatCardProps } from './StatCard';
+export { Card } from './Card';
+export type { CardProps } from './Card';
 
 export { ActivityList } from './ActivityList';
 export type { ActivityListProps } from './ActivityList';
@@ -53,3 +55,15 @@ export type { LoadingProps } from './Loading';
 
 export { Markdown } from './Markdown';
 export type { MarkdownProps } from './Markdown';
+
+export { ErrorBoundary } from './ErrorBoundary';
+export { WebSocketStatus } from './WebSocketStatus';
+export { Toast } from './Toast/Toast';
+export type { ToastProps } from './Toast/Toast';
+export { ToastContainer } from './Toast/ToastContainer';
+export type { ToastContainerProps } from './Toast/ToastContainer';
+export { LanguageSwitcher } from './LanguageSwitcher';
+export type { LanguageSwitcherProps } from './LanguageSwitcher';
+
+export { Stepper } from './Stepper';
+export type { Step, StepperProps } from './Stepper';

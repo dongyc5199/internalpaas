@@ -12,21 +12,18 @@ public class PageController {
 
     @GetMapping("/login")
     public String login() {
-        return "login";
+        // 重定向到React登录页面
+        return "redirect:/app/login";
     }
 
     @GetMapping("/")
     public String index(Authentication authentication, Model model) {
         if (isAuthenticated(authentication)) {
-            if (hasAnyAuthority(authentication, "ROLE_SUPER_ADMIN", "ROLE_ADMIN")) {
-                return "redirect:/admin/workspace#dashboard";
-            }
-            if (hasAnyAuthority(authentication, "ROLE_DEVELOPER", "ROLE_USER")) {
-                return "redirect:/developer/workspace";
-            }
-            model.addAttribute("username", authentication.getName());
+            // 重定向到React应用
+            return "redirect:/app";
         }
-        return "index";
+        // 未登录用户显示登录页
+        return "redirect:/login";
     }
 
     private boolean isAuthenticated(Authentication authentication) {

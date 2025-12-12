@@ -29,22 +29,22 @@ public class InitialConfigController {
         if (authentication == null) {
             return "redirect:/login";
         }
-        
+
         User user = userService.findByUsername(authentication.getName())
             .orElseThrow(() -> new RuntimeException("User not found"));
-            
+
         // 如果是超级管理员，重定向到服务器管理
         if (user.getRoles().contains(User.Role.SUPER_ADMIN)) {
             return "redirect:/admin/servers";
         }
-        
+
         // 如果用户已有工作目录且不是首次登录，重定向到首页
         if (!user.getIsFirstLogin() && user.getWorkDirectory() != null) {
             return "redirect:/";
         }
-        
-        model.addAttribute("isFirstTime", user.getIsFirstLogin());
-        return "initial-config";
+
+        // 重定向到React初始配置页面
+        return "redirect:/app/initial-config";
     }
     
     @PostMapping("/initial-config")

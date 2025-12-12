@@ -23,19 +23,19 @@ describe('Select', () => {
 
     it('应该渲染默认size为md', () => {
       const { container } = render(<Select options={testOptions} />);
-      const wrapper = container.querySelector(`.${styles['selectWrapper']}`);
-      expect(wrapper?.className).toContain(styles['size-md']);
+      const wrapper = container.querySelector('[class*=\"selectWrapper\"]');
+      expect(wrapper?.className).toMatch(/size-md/);
     });
 
     it('应该渲染默认variant为default', () => {
       const { container } = render(<Select options={testOptions} />);
-      const wrapper = container.querySelector(`.${styles['selectWrapper']}`);
-      expect(wrapper?.className).toContain(styles['variant-default']);
+      const wrapper = container.querySelector('[class*=\"selectWrapper\"]');
+      expect(wrapper?.className).toMatch(/variant-default/);
     });
 
     it('应该渲染chevron图标', () => {
       const { container } = render(<Select options={testOptions} />);
-      const chevron = container.querySelector(`.${styles['chevronIcon']}`);
+      const chevron = container.querySelector('[class*=\"chevronIcon\"]');
       expect(chevron).toBeInTheDocument();
     });
   });
@@ -65,60 +65,60 @@ describe('Select', () => {
   describe('Sizes', () => {
     it('应该渲染small size', () => {
       const { container } = render(<Select size="sm" options={testOptions} />);
-      const wrapper = container.querySelector(`.${styles['selectWrapper']}`);
-      expect(wrapper?.className).toContain(styles['size-sm']);
+      const wrapper = container.querySelector('[class*=\"selectWrapper\"]');
+      expect(wrapper?.className).toMatch(/size-sm/);
     });
 
     it('应该渲染medium size', () => {
       const { container } = render(<Select size="md" options={testOptions} />);
-      const wrapper = container.querySelector(`.${styles['selectWrapper']}`);
-      expect(wrapper?.className).toContain(styles['size-md']);
+      const wrapper = container.querySelector('[class*=\"selectWrapper\"]');
+      expect(wrapper?.className).toMatch(/size-md/);
     });
 
     it('应该渲染large size', () => {
       const { container } = render(<Select size="lg" options={testOptions} />);
-      const wrapper = container.querySelector(`.${styles['selectWrapper']}`);
-      expect(wrapper?.className).toContain(styles['size-lg']);
+      const wrapper = container.querySelector('[class*=\"selectWrapper\"]');
+      expect(wrapper?.className).toMatch(/size-lg/);
     });
   });
 
   describe('Variants', () => {
     it('应该渲染default variant', () => {
       const { container } = render(<Select variant="default" options={testOptions} />);
-      const wrapper = container.querySelector(`.${styles['selectWrapper']}`);
-      expect(wrapper?.className).toContain(styles['variant-default']);
+      const wrapper = container.querySelector('[class*=\"selectWrapper\"]');
+      expect(wrapper?.className).toMatch(/variant-default/);
     });
 
     it('应该渲染error variant', () => {
       const { container } = render(<Select variant="error" options={testOptions} />);
-      const wrapper = container.querySelector(`.${styles['selectWrapper']}`);
-      expect(wrapper?.className).toContain(styles['variant-error']);
+      const wrapper = container.querySelector('[class*=\"selectWrapper\"]');
+      expect(wrapper?.className).toMatch(/variant-error/);
     });
 
     it('应该渲染success variant', () => {
       const { container } = render(<Select variant="success" options={testOptions} />);
-      const wrapper = container.querySelector(`.${styles['selectWrapper']}`);
-      expect(wrapper?.className).toContain(styles['variant-success']);
+      const wrapper = container.querySelector('[class*=\"selectWrapper\"]');
+      expect(wrapper?.className).toMatch(/variant-success/);
     });
 
     it('应该渲染warning variant', () => {
       const { container } = render(<Select variant="warning" options={testOptions} />);
-      const wrapper = container.querySelector(`.${styles['selectWrapper']}`);
-      expect(wrapper?.className).toContain(styles['variant-warning']);
+      const wrapper = container.querySelector('[class*=\"selectWrapper\"]');
+      expect(wrapper?.className).toMatch(/variant-warning/);
     });
   });
 
   describe('Full Width', () => {
     it('应该渲染fullWidth样式', () => {
       const { container } = render(<Select fullWidth options={testOptions} />);
-      const containerElem = container.querySelector(`.${styles['container']}`);
-      expect(containerElem?.className).toContain(styles['fullWidth']);
+      const containerElem = container.querySelector('[class*=\"container\"]');
+      expect(containerElem?.className).toMatch(/fullWidth/);
     });
 
     it('应该不渲染fullWidth样式当prop为false', () => {
       const { container } = render(<Select fullWidth={false} options={testOptions} />);
-      const containerElem = container.querySelector(`.${styles['container']}`);
-      expect(containerElem?.className).not.toContain(styles['fullWidth']);
+      const containerElem = container.querySelector('[class*=\"container\"]');
+      expect(containerElem?.className).not.toMatch(/fullWidth/);
     });
   });
 
@@ -140,8 +140,8 @@ describe('Select', () => {
 
     it('应该添加disabled样式到wrapper', () => {
       const { container } = render(<Select disabled options={testOptions} />);
-      const wrapper = container.querySelector(`.${styles['selectWrapper']}`);
-      expect(wrapper?.className).toContain(styles['disabled']);
+      const wrapper = container.querySelector('[class*=\"selectWrapper\"]');
+      expect(wrapper?.className).toMatch(/disabled/);
     });
   });
 
@@ -151,20 +151,23 @@ describe('Select', () => {
         <Select leftIcon={<span data-testid="left-icon">📍</span>} options={testOptions} />
       );
       expect(screen.getByTestId('left-icon')).toBeInTheDocument();
-      expect(container.querySelector(`.${styles['leftIcon']}`)).not.toBeNull();
+      expect(container.querySelector('[class*=\"leftIcon\"]')).not.toBeNull();
     });
 
     it('应该在图标上设置aria-hidden', () => {
       const { container } = render(
-        <Select leftIcon={<span>Icon</span>} options={testOptions} />
+        <Select leftIcon={<span data-testid="test-icon">Icon</span>} options={testOptions} />
       );
-      const leftIcon = container.querySelector(`.${styles['leftIcon']}`) as HTMLElement;
-      expect(leftIcon).toHaveAttribute('aria-hidden', 'true');
+      // The icon wrapper span should have aria-hidden
+      const iconWrapper = container.querySelector('span[aria-hidden="true"]');
+      expect(iconWrapper).toBeInTheDocument();
+      // Verify it contains the icon
+      expect(iconWrapper?.textContent).toBe('Icon');
     });
 
     it('应该在chevron图标上设置aria-hidden', () => {
       const { container } = render(<Select options={testOptions} />);
-      const chevron = container.querySelector(`.${styles['chevronIcon']}`) as HTMLElement;
+      const chevron = container.querySelector('[class*=\"chevronIcon\"]') as HTMLElement;
       expect(chevron).toHaveAttribute('aria-hidden', 'true');
     });
   });
@@ -237,8 +240,8 @@ describe('Select', () => {
 
     it('应该设置variant为error当有error prop', () => {
       const { container } = render(<Select variant="success" error="Error message" options={testOptions} />);
-      const wrapper = container.querySelector(`.${styles['selectWrapper']}`);
-      expect(wrapper?.className).toContain(styles['variant-error']);
+      const wrapper = container.querySelector('[class*=\"selectWrapper\"]');
+      expect(wrapper?.className).toMatch(/variant-error/);
     });
 
     it('应该设置aria-invalid为true当有error', () => {
@@ -304,7 +307,7 @@ describe('Select', () => {
 
     it('应该传递自定义containerClassName', () => {
       const { container } = render(<Select containerClassName="custom-container" options={testOptions} />);
-      const containerElem = container.querySelector(`.${styles['container']}`);
+      const containerElem = container.querySelector('[class*=\"container\"]');
       expect(containerElem?.className).toContain('custom-container');
     });
 
@@ -375,16 +378,16 @@ describe('Select', () => {
 
     it('应该在装饰性图标上设置aria-hidden', () => {
       const { container } = render(<Select leftIcon={<span>Icon</span>} options={testOptions} />);
-      const leftIcon = container.querySelector(`.${styles['leftIcon']}`) as HTMLElement;
-      const chevron = container.querySelector(`.${styles['chevronIcon']}`) as HTMLElement;
-      expect(leftIcon).toHaveAttribute('aria-hidden', 'true');
-      expect(chevron).toHaveAttribute('aria-hidden', 'true');
+      // Find all spans with aria-hidden="true"
+      const ariaHiddenSpans = container.querySelectorAll('span[aria-hidden="true"]');
+      // Should have 2: leftIcon wrapper and chevron wrapper
+      expect(ariaHiddenSpans.length).toBeGreaterThanOrEqual(2);
     });
 
     it('应该为disabled label设置正确的样式', () => {
       const { container } = render(<Select label="Test" disabled options={testOptions} />);
       const label = container.querySelector('label');
-      expect(label?.className).toContain(styles['labelDisabled']);
+      expect(label?.className).toMatch(/labelDisabled/);
     });
   });
 });

@@ -1,7 +1,8 @@
 // Application-wide constants
+import { env } from '../config/env';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-export const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8080/ws';
+export const API_BASE_URL = env.apiBaseUrl;
+export const WS_BASE_URL = env.wsBaseUrl;
 
 // Query keys for React Query
 export const QUERY_KEYS = {
@@ -45,6 +46,7 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   REGISTER: '/register',
+  INITIAL_CONFIG: '/initial-config',
   ADMIN: {
     BASE: '/admin',
     SERVERS: '/admin/servers',
@@ -64,6 +66,7 @@ export const ROUTES = {
   APPLICATIONS: {
     BASE: '/applications',
     DETAIL: (id: number): string => `/applications/${String(id)}`,
+    CONFIG: (id: number | string): string => `/applications/${String(id)}/config`,
   },
   PROFILE: '/profile',
 } as const;

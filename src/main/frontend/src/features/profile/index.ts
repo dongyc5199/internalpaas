@@ -1,1 +1,1 @@
-// Export all profile module exports
+export { ProfilePage } from './pages/ProfilePage';

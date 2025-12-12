@@ -6,3 +6,4 @@ export { UsersPage } from './pages/UsersPage';
 export { UserDetailPage } from './pages/UserDetailPage';
 export { ServerForm } from './components/ServerForm';
 export { UserForm } from './components/UserForm';
+export { SSHImportWizard } from './components/SSHImportWizard';

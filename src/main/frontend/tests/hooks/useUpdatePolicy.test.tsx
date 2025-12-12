@@ -80,7 +80,8 @@ describe('useUpdatePolicy', () => {
       defaultOptions: {
         queries: {
           retry: false,
-          gcTime: 0,
+          staleTime: 10000, // Keep data fresh for optimistic update tests
+          gcTime: 30000, // Keep cache for optimistic update tests
         },
         mutations: {
           retry: false,
@@ -116,9 +117,9 @@ describe('useUpdatePolicy', () => {
         wrapper: createWrapper(),
       });
 
-      // Initially should not be loading
-      expect(result.current.isIdle).toBe(true);
-      expect(result.current.isLoading).toBe(false);
+      // Initially should not be pending
+      expect(result.current.status).toBe('idle');
+      expect(result.current.isPending).toBe(false);
 
       // Trigger mutation
       await act(async () => {
@@ -140,7 +141,7 @@ describe('useUpdatePolicy', () => {
 
       // Verify mutation result
       expect(result.current.data).toEqual(updatedPolicy);
-      expect(result.current.isLoading).toBe(false);
+      expect(result.current.isPending).toBe(false);
       expect(result.current.error).toBeNull();
     });
 
@@ -191,14 +192,14 @@ describe('useUpdatePolicy', () => {
         });
       });
 
-      // Should be loading
-      await waitFor(() => expect(result.current.isLoading).toBe(true));
+      // Should be pending
+      await waitFor(() => expect(result.current.isPending).toBe(true));
 
       // Resolve the promise
       resolvePromise!(mockPolicy);
 
-      // Wait for loading to finish
-      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      // Wait for pending to finish
+      await waitFor(() => expect(result.current.isPending).toBe(false));
     });
   });
 
@@ -224,7 +225,7 @@ describe('useUpdatePolicy', () => {
       expect(result.current.error).toBeDefined();
       expect(result.current.error?.message).toBe(errorMessage);
       expect(result.current.data).toBeUndefined();
-      expect(result.current.isLoading).toBe(false);
+      expect(result.current.isPending).toBe(false);
     });
 
     it('should call onError callback when mutation fails', async () => {

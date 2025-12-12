@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore, useUser, useUserPreferences } from '../../stores/authStore';
+import { useAuthStore, useUser } from '../../stores/authStore';
+import { useTheme } from '../../hooks/useTheme';
+import { useUIStore } from '../../stores/uiStore';
 import { ROUTES } from '../../constants';
 import { Badge } from '../Badge';
 import { Tooltip } from '../Tooltip';
@@ -47,8 +49,9 @@ export function Header({
 }: HeaderProps): React.JSX.Element {
   const navigate = useNavigate();
   const user = useUser();
-  const preferences = useUserPreferences();
-  const { logout, updatePreferences } = useAuthStore();
+  const { logout } = useAuthStore();
+  const { theme, resolvedTheme, setTheme } = useTheme();
+  const setSidebarCollapsed = useUIStore((state) => state.setSidebarCollapsed);
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
@@ -94,11 +97,11 @@ export function Header({
    * 切换主题
    */
   const toggleTheme = (): void => {
-    const newTheme = preferences.theme === 'light' ? 'dark' : 'light';
-    updatePreferences({ theme: newTheme });
-
-    // 更新文档根元素的主题属性
-    document.documentElement.setAttribute('data-theme', newTheme);
+    if (theme === 'auto') {
+      setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+      return;
+    }
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
   /**
@@ -212,7 +215,10 @@ export function Header({
           {showMenuButton && (
             <button
               className={styles.menuButton}
-              onClick={onMenuToggle}
+              onClick={() => {
+                onMenuToggle?.();
+                setSidebarCollapsed(false);
+              }}
               aria-label="切换菜单"
             >
               <i data-lucide="menu" />
@@ -338,11 +344,13 @@ export function Header({
 
           {/* 主题切换按钮 */}
           <Tooltip
-            content={preferences.theme === 'light' ? '切换到暗黑模式' : '切换到明亮模式'}
+            content={
+              resolvedTheme === 'light' ? '切换到暗黑模式' : '切换到明亮模式'
+            }
             placement="bottom"
           >
             <button className={styles.iconButton} onClick={toggleTheme} aria-label="切换主题">
-              <i data-lucide={preferences.theme === 'light' ? 'moon' : 'sun'} />
+              <i data-lucide={resolvedTheme === 'light' ? 'moon' : 'sun'} />
             </button>
           </Tooltip>
 

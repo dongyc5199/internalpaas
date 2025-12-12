@@ -1,0 +1,291 @@
+.container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* 页面头部 */
+.header {
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+}
+
+.header i {
+  color: var(--primary-color, #3b82f6);
+}
+
+/* 加载状态 */
+.loading {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--text-secondary, #6b7280);
+  font-size: 14px;
+}
+
+.loading i {
+  margin-right: 8px;
+}
+
+/* 统计卡片网格 */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  background: var(--surface-color, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.statBody {
+  padding: 20px;
+  text-align: center;
+}
+
+.statBody h5 {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary, #1f2937);
+  margin: 0 0 8px 0;
+}
+
+.statBody small {
+  font-size: 13px;
+  color: var(--text-secondary, #6b7280);
+}
+
+/* 服务器列表区域 */
+.serversSection,
+.featuresSection {
+  background: var(--surface-color, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.sectionHeader {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.sectionHeader h5 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.sectionBody {
+  padding: 20px;
+}
+
+/* 空状态 */
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.emptyState i {
+  color: var(--text-tertiary, #9ca3af);
+  margin-bottom: 16px;
+}
+
+.emptyState p {
+  color: var(--text-secondary, #6b7280);
+  font-size: 14px;
+  margin: 0;
+}
+
+/* 服务器卡片网格 */
+.serverGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.serverCard {
+  background: var(--surface-color, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s;
+}
+
+.serverCard:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.serverCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.serverCardHeader h6 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  margin: 0;
+}
+
+.statusBadge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.statusConnected {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.statusMonitoring {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.statusFailed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.statusUnknown {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+.serverHostname {
+  font-size: 13px;
+  color: var(--text-secondary, #6b7280);
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.serverCardActions {
+  display: flex;
+  gap: 8px;
+}
+
+.btnPrimary,
+.btnSecondary {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.btnPrimary {
+  background: var(--primary-color, #3b82f6);
+  color: #ffffff;
+}
+
+.btnPrimary:hover {
+  background: var(--primary-dark, #2563eb);
+}
+
+.btnSecondary {
+  background: var(--surface-color, #ffffff);
+  color: var(--text-primary, #1f2937);
+  border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.btnSecondary:hover {
+  background: var(--hover-color, #f9fafb);
+  border-color: var(--primary-color, #3b82f6);
+}
+
+/* 功能说明网格 */
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.featureItem h6 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.featureItem h6 i {
+  font-size: 16px;
+}
+
+.featureItem h6 i.fa-bell {
+  color: #f59e0b;
+}
+
+.featureItem h6 i.fa-envelope {
+  color: #3b82f6;
+}
+
+.featureItem h6 i.fa-copy {
+  color: #10b981;
+}
+
+.featureItem p {
+  font-size: 13px;
+  color: var(--text-secondary, #6b7280);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .serverGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .featuresGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .serverCardActions {
+    flex-direction: column;
+  }
+
+  .btnPrimary,
+  .btnSecondary {
+    width: 100%;
+  }
+}

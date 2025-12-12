@@ -50,27 +50,12 @@ public class MonitoringHistoryController {
     private MetricsHubClient metricsHubClient;
     
     /**
-     * 历史监控主页面
+     * 历史监控主页面 - 重定向到React应用
      */
     @GetMapping("/dashboard")
     public String historyDashboard(Model model) {
-        try {
-            List<Server> servers = serverService.getActiveServers();
-            model.addAttribute("servers", servers);
-            
-            // 添加默认时间范围（最近24小时）
-            LocalDateTime endTime = LocalDateTime.now();
-            LocalDateTime startTime = endTime.minusHours(24);
-            
-            model.addAttribute("defaultStartTime", startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")));
-            model.addAttribute("defaultEndTime", endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")));
-            
-            return "monitoring/history-dashboard";
-        } catch (Exception e) {
-            logger.error("加载历史监控页面失败", e);
-            model.addAttribute("error", "加载页面失败: " + e.getMessage());
-            return "monitoring/history-dashboard";
-        }
+        logger.info("重定向到React历史监控页面");
+        return "redirect:/app/monitoring/history/dashboard";
     }
     
     /**

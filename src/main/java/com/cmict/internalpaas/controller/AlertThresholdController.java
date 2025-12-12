@@ -35,25 +35,13 @@ public class AlertThresholdController {
     private ServerService serverService;
     
     /**
-     * 阈值管理主页面
+     * 阈值管理主页面 - 重定向到React应用
      */
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('ADMIN') or hasRole('DEVELOPER')")
     public String thresholdDashboard(Model model) {
-        try {
-            List<Server> servers = serverService.getActiveServers();
-            Map<String, Object> statistics = thresholdService.getThresholdStatistics();
-            
-            model.addAttribute("servers", servers);
-            model.addAttribute("statistics", statistics);
-            model.addAttribute("metricTypes", AlertThreshold.MetricType.values());
-            
-            return "monitoring/threshold-dashboard";
-        } catch (Exception e) {
-            logger.error("加载阈值管理页面失败", e);
-            model.addAttribute("error", "加载页面失败: " + e.getMessage());
-            return "monitoring/threshold-dashboard";
-        }
+        logger.info("重定向到React告警阈值管理页面");
+        return "redirect:/app/monitoring/thresholds/dashboard";
     }
     
     /**

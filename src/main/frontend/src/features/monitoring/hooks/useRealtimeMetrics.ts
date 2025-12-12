@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useWebSocket } from '../../../shared/hooks/useWebSocket';
-import { QUERY_KEYS } from '../../../shared/constants';
+import { QUERY_KEYS, WS_TOPICS } from '../../../shared/constants';
 import type { RealtimeMetrics } from '../../../shared/types';
 
 /**
@@ -19,11 +19,6 @@ export interface UseRealtimeMetricsOptions {
    */
   enabled?: boolean;
 
-  /**
-   * WebSocket 基础 URL
-   * @default 'ws://localhost:8080'
-   */
-  wsBaseUrl?: string;
 }
 
 /**
@@ -40,11 +35,7 @@ export interface UseRealtimeMetricsOptions {
  * ```
  */
 export function useRealtimeMetrics(options: UseRealtimeMetricsOptions = {}) {
-  const {
-    serverId,
-    enabled = true,
-    wsBaseUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8080',
-  } = options;
+  const { serverId, enabled = true } = options;
 
   const queryClient = useQueryClient();
 
@@ -89,28 +80,13 @@ export function useRealtimeMetrics(options: UseRealtimeMetricsOptions = {}) {
   );
 
   /**
-   * 构建 WebSocket URL
-   */
-  const wsUrl = serverId
-    ? `${wsBaseUrl}/ws/monitoring/servers/${serverId}`
-    : `${wsBaseUrl}/ws/monitoring/servers`;
-
-  /**
    * WebSocket 连接
    */
+  const topic = serverId ? WS_TOPICS.SERVER_STATUS(serverId) : WS_TOPICS.SERVERS_GLOBAL;
   const { status, reconnectCount, disconnect } = useWebSocket<RealtimeMetrics>({
-    url: wsUrl,
+    topic,
     autoConnect: enabled,
     onMessage: handleRealtimeData,
-    onOpen: () => {
-      console.log(`[WebSocket] Connected to ${wsUrl}`);
-    },
-    onClose: () => {
-      console.log(`[WebSocket] Disconnected from ${wsUrl}`);
-    },
-    onError: (error) => {
-      console.error('[WebSocket] Error:', error);
-    },
   });
 
   /**

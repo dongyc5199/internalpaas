@@ -51,13 +51,13 @@ describe('Table', () => {
     it('应该渲染默认size为md', () => {
       const { container } = render(<Table columns={testColumns} data={testData} />);
       const table = container.querySelector('table');
-      expect(table?.className).toContain(styles['size-md']);
+      expect(table?.className).toMatch(/size-md/);
     });
 
     it('应该渲染默认variant为default', () => {
       const { container } = render(<Table columns={testColumns} data={testData} />);
       const table = container.querySelector('table');
-      expect(table?.className).toContain(styles['variant-default']);
+      expect(table?.className).toMatch(/variant-default/);
     });
   });
 
@@ -77,19 +77,19 @@ describe('Table', () => {
     it('应该渲染small size', () => {
       const { container } = render(<Table columns={testColumns} data={testData} size="sm" />);
       const table = container.querySelector('table');
-      expect(table?.className).toContain(styles['size-sm']);
+      expect(table?.className).toMatch(/size-sm/);
     });
 
     it('应该渲染medium size', () => {
       const { container } = render(<Table columns={testColumns} data={testData} size="md" />);
       const table = container.querySelector('table');
-      expect(table?.className).toContain(styles['size-md']);
+      expect(table?.className).toMatch(/size-md/);
     });
 
     it('应该渲染large size', () => {
       const { container } = render(<Table columns={testColumns} data={testData} size="lg" />);
       const table = container.querySelector('table');
-      expect(table?.className).toContain(styles['size-lg']);
+      expect(table?.className).toMatch(/size-lg/);
     });
   });
 
@@ -97,19 +97,19 @@ describe('Table', () => {
     it('应该渲染default variant', () => {
       const { container } = render(<Table columns={testColumns} data={testData} variant="default" />);
       const table = container.querySelector('table');
-      expect(table?.className).toContain(styles['variant-default']);
+      expect(table?.className).toMatch(/variant-default/);
     });
 
     it('应该渲染striped variant', () => {
       const { container } = render(<Table columns={testColumns} data={testData} variant="striped" />);
       const table = container.querySelector('table');
-      expect(table?.className).toContain(styles['variant-striped']);
+      expect(table?.className).toMatch(/variant-striped/);
     });
 
     it('应该渲染bordered variant', () => {
       const { container } = render(<Table columns={testColumns} data={testData} variant="bordered" />);
       const table = container.querySelector('table');
-      expect(table?.className).toContain(styles['variant-bordered']);
+      expect(table?.className).toMatch(/variant-bordered/);
     });
   });
 
@@ -117,13 +117,13 @@ describe('Table', () => {
     it('应该默认启用hover效果', () => {
       const { container } = render(<Table columns={testColumns} data={testData} />);
       const table = container.querySelector('table');
-      expect(table?.className).toContain(styles['hover']);
+      expect(table?.className).toMatch(/hover/);
     });
 
     it('应该禁用hover效果当hover为false', () => {
       const { container } = render(<Table columns={testColumns} data={testData} hover={false} />);
       const table = container.querySelector('table');
-      expect(table?.className).not.toContain(styles['hover']);
+      expect(table?.className).not.toMatch(/hover/);
     });
   });
 
@@ -161,7 +161,7 @@ describe('Table', () => {
       ];
       const { container } = render(<Table columns={columns} data={testData} />);
       const th = container.querySelector('th') as HTMLElement;
-      expect(th.className).toContain(styles['align-right']);
+      expect(th.className).toMatch(/align-right/);
     });
   });
 
@@ -172,7 +172,7 @@ describe('Table', () => {
       ];
       const { container } = render(<Table columns={columns} data={testData} />);
       const th = container.querySelector('th') as HTMLElement;
-      expect(th.className).toContain(styles['sortable']);
+      expect(th.className).toMatch(/sortable/);
     });
 
     it('应该在点击sortable列时调用onSortChange', async () => {
@@ -268,7 +268,7 @@ describe('Table', () => {
       );
       const tbody = container.querySelector('tbody');
       const rows = tbody?.querySelectorAll('tr');
-      expect(rows?.[0].className).toContain(styles['selected']);
+      expect(rows?.[0].className).toMatch(/selected/);
     });
   });
 
@@ -298,7 +298,7 @@ describe('Table', () => {
       );
       const tbody = container.querySelector('tbody');
       const row = tbody?.querySelector('tr') as HTMLElement;
-      expect(row.className).toContain(styles['clickable']);
+      expect(row.className).toMatch(/clickable/);
     });
   });
 
@@ -336,13 +336,13 @@ describe('Table', () => {
     it('应该默认使用fullWidth', () => {
       const { container } = render(<Table columns={testColumns} data={testData} />);
       const containerElem = container.querySelector(`.${styles.container}`);
-      expect(containerElem?.className).toContain(styles['fullWidth']);
+      expect(containerElem?.className).toMatch(/fullWidth/);
     });
 
     it('应该不使用fullWidth当prop为false', () => {
       const { container } = render(<Table columns={testColumns} data={testData} fullWidth={false} />);
       const containerElem = container.querySelector(`.${styles.container}`);
-      expect(containerElem?.className).not.toContain(styles['fullWidth']);
+      expect(containerElem?.className).not.toMatch(/fullWidth/);
     });
   });
 
@@ -350,13 +350,13 @@ describe('Table', () => {
     it('应该支持sticky header', () => {
       const { container } = render(<Table columns={testColumns} data={testData} stickyHeader />);
       const table = container.querySelector('table');
-      expect(table?.className).toContain(styles['stickyHeader']);
+      expect(table?.className).toMatch(/stickyHeader/);
     });
 
     it('应该默认不使用sticky header', () => {
       const { container } = render(<Table columns={testColumns} data={testData} />);
       const table = container.querySelector('table');
-      expect(table?.className).not.toContain(styles['stickyHeader']);
+      expect(table?.className).not.toMatch(/stickyHeader/);
     });
   });
 

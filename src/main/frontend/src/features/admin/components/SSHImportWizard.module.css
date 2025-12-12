@@ -1,0 +1,526 @@
+/* Wizard Container */
+.wizard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-background, #ffffff);
+  border-radius: var(--radius-lg, 0.75rem);
+  overflow: hidden;
+}
+
+/* Stepper Container */
+.stepperContainer {
+  padding: var(--spacing-6, 1.5rem) var(--spacing-8, 2rem);
+  background: var(--color-surface, #f9fafb);
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+/* Content Area */
+.content {
+  flex: 1;
+  padding: var(--spacing-8, 2rem);
+  overflow-y: auto;
+}
+
+/* Step Content */
+.stepContent {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.stepTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #111827);
+  margin-bottom: var(--spacing-2, 0.5rem);
+}
+
+.stepDescription {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin-bottom: var(--spacing-6, 1.5rem);
+}
+
+/* Method Selection Cards */
+.methodCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-4, 1rem);
+  margin-bottom: var(--spacing-6, 1.5rem);
+}
+
+.methodCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-3, 0.75rem);
+  padding: var(--spacing-6, 1.5rem);
+  background: var(--color-surface, #ffffff);
+  border: 2px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-lg, 0.75rem);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.methodCard:hover {
+  border-color: var(--color-primary-light, #93c5fd);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.methodCard.selected {
+  border-color: var(--color-primary, #3b82f6);
+  background: var(--color-primary-light, rgba(59, 130, 246, 0.05));
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.methodIcon {
+  width: 48px;
+  height: 48px;
+  color: var(--color-primary, #3b82f6);
+}
+
+.methodCard h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #111827);
+  margin: 0;
+}
+
+.methodCard p {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0;
+}
+
+/* File Upload */
+.fileUpload {
+  margin-top: var(--spacing-6, 1.5rem);
+}
+
+.fileLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2, 0.5rem);
+  padding: var(--spacing-4, 1rem);
+  background: var(--color-surface, #f9fafb);
+  border: 2px dashed var(--color-border, #d1d5db);
+  border-radius: var(--radius, 0.5rem);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.fileLabel:hover {
+  border-color: var(--color-primary, #3b82f6);
+  background: var(--color-primary-light, rgba(59, 130, 246, 0.05));
+}
+
+.fileLabel i {
+  width: 20px;
+  height: 20px;
+}
+
+.fileInput {
+  display: none;
+}
+
+.filePreview {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 0.5rem);
+  margin-top: var(--spacing-3, 0.75rem);
+  padding: var(--spacing-3, 0.75rem);
+  background: var(--color-success-light, rgba(34, 197, 94, 0.1));
+  border-radius: var(--radius, 0.5rem);
+  font-size: 0.875rem;
+  color: var(--color-success, #16a34a);
+}
+
+.filePreview i {
+  width: 18px;
+  height: 18px;
+}
+
+/* Config List */
+.configList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4, 1rem);
+}
+
+.configCard {
+  padding: var(--spacing-4, 1rem);
+  background: var(--color-surface, #f9fafb);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-lg, 0.75rem);
+}
+
+.configHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-4, 1rem);
+  padding-bottom: var(--spacing-3, 0.75rem);
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.configHeader h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #111827);
+  margin: 0;
+}
+
+.configForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4, 1rem);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-4, 1rem);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2, 0.5rem);
+}
+
+.formGroup label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-primary, #111827);
+}
+
+.addButton {
+  margin-top: var(--spacing-4, 1rem);
+  width: 100%;
+}
+
+/* Test List */
+.testList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3, 0.75rem);
+  margin-bottom: var(--spacing-6, 1.5rem);
+}
+
+.testCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-4, 1rem);
+  background: var(--color-surface, #f9fafb);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius, 0.5rem);
+}
+
+.testInfo h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #111827);
+  margin: 0 0 var(--spacing-1, 0.25rem) 0;
+}
+
+.testInfo p {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0;
+  font-family: var(--font-mono, monospace);
+}
+
+.testActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 0.5rem);
+}
+
+.testSuccess,
+.testError,
+.testPending {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2, 0.5rem);
+  padding: var(--spacing-2, 0.5rem) var(--spacing-3, 0.75rem);
+  border-radius: var(--radius, 0.5rem);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.testSuccess {
+  background: var(--color-success-light, rgba(34, 197, 94, 0.1));
+  color: var(--color-success, #16a34a);
+}
+
+.testSuccess i {
+  width: 18px;
+  height: 18px;
+}
+
+.testError {
+  background: var(--color-error-light, rgba(239, 68, 68, 0.1));
+  color: var(--color-error, #dc2626);
+}
+
+.testError i {
+  width: 18px;
+  height: 18px;
+}
+
+.testPending {
+  background: var(--color-warning-light, rgba(251, 191, 36, 0.1));
+  color: var(--color-warning, #f59e0b);
+}
+
+.testPending i {
+  width: 18px;
+  height: 18px;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.testAllButton {
+  width: 100%;
+}
+
+/* Confirm List */
+.confirmList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3, 0.75rem);
+  margin-bottom: var(--spacing-6, 1.5rem);
+}
+
+.confirmCard {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-4, 1rem);
+  padding: var(--spacing-4, 1rem);
+  background: var(--color-surface, #f9fafb);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius, 0.5rem);
+}
+
+.confirmIcon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-light, rgba(59, 130, 246, 0.1));
+  border-radius: 50%;
+}
+
+.confirmIcon i {
+  width: 24px;
+  height: 24px;
+}
+
+.successIcon {
+  color: var(--color-success, #16a34a);
+}
+
+.serverIcon {
+  color: var(--color-primary, #3b82f6);
+}
+
+.confirmInfo {
+  flex: 1;
+}
+
+.confirmInfo h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #111827);
+  margin: 0 0 var(--spacing-1, 0.25rem) 0;
+}
+
+.confirmInfo p {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0;
+  font-family: var(--font-mono, monospace);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2, 0.5rem);
+  margin-top: var(--spacing-2, 0.5rem);
+}
+
+.tag {
+  padding: var(--spacing-1, 0.25rem) var(--spacing-2, 0.5rem);
+  background: var(--color-primary-light, rgba(59, 130, 246, 0.1));
+  border-radius: var(--radius-sm, 0.375rem);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-primary, #3b82f6);
+}
+
+.confirmSummary {
+  padding: var(--spacing-4, 1rem);
+  background: var(--color-surface, #f9fafb);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius, 0.5rem);
+  margin-bottom: var(--spacing-4, 1rem);
+}
+
+.confirmSummary p {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin: var(--spacing-2, 0.5rem) 0;
+}
+
+.confirmSummary strong {
+  font-weight: 600;
+  color: var(--color-text-primary, #111827);
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-4, 1rem) var(--spacing-8, 2rem);
+  background: var(--color-surface, #f9fafb);
+  border-top: 1px solid var(--color-border, #e5e7eb);
+}
+
+.actionsLeft,
+.actionsRight {
+  display: flex;
+  gap: var(--spacing-3, 0.75rem);
+}
+
+/* Error Message */
+.error {
+  margin-top: var(--spacing-3, 0.75rem);
+  padding: var(--spacing-3, 0.75rem);
+  background: var(--color-error-light, rgba(239, 68, 68, 0.1));
+  border-radius: var(--radius, 0.5rem);
+  font-size: 0.875rem;
+  color: var(--color-error, #dc2626);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .content {
+    padding: var(--spacing-4, 1rem);
+  }
+
+  .stepperContainer {
+    padding: var(--spacing-4, 1rem);
+  }
+
+  .methodCards {
+    grid-template-columns: 1fr;
+  }
+
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    flex-direction: column;
+    gap: var(--spacing-3, 0.75rem);
+  }
+
+  .actionsLeft,
+  .actionsRight {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .actionsLeft button,
+  .actionsRight button {
+    flex: 1;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .wizard {
+    background: var(--color-background-dark, #111827);
+  }
+
+  .stepperContainer {
+    background: var(--color-surface-dark, #1f2937);
+    border-bottom-color: var(--color-border-dark, #374151);
+  }
+
+  .stepTitle {
+    color: var(--color-text-primary-dark, #f9fafb);
+  }
+
+  .stepDescription {
+    color: var(--color-text-secondary-dark, #9ca3af);
+  }
+
+  .methodCard {
+    background: var(--color-surface-dark, #1f2937);
+    border-color: var(--color-border-dark, #374151);
+  }
+
+  .methodCard h4 {
+    color: var(--color-text-primary-dark, #f9fafb);
+  }
+
+  .methodCard p {
+    color: var(--color-text-secondary-dark, #9ca3af);
+  }
+
+  .configCard,
+  .testCard,
+  .confirmCard,
+  .confirmSummary {
+    background: var(--color-surface-dark, #1f2937);
+    border-color: var(--color-border-dark, #374151);
+  }
+
+  .configHeader {
+    border-bottom-color: var(--color-border-dark, #374151);
+  }
+
+  .configHeader h4,
+  .testInfo h4,
+  .confirmInfo h4 {
+    color: var(--color-text-primary-dark, #f9fafb);
+  }
+
+  .testInfo p,
+  .confirmInfo p {
+    color: var(--color-text-secondary-dark, #9ca3af);
+  }
+
+  .actions {
+    background: var(--color-surface-dark, #1f2937);
+    border-top-color: var(--color-border-dark, #374151);
+  }
+
+  .fileLabel {
+    background: var(--color-surface-dark, #1f2937);
+    border-color: var(--color-border-dark, #4b5563);
+    color: var(--color-text-secondary-dark, #9ca3af);
+  }
+}

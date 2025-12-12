@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { monitoringApi } from '../../../shared/api/monitoringApi';
 import { QUERY_KEYS } from '../../../shared/constants';
-import { Chart, Button, Loading } from '../../../shared/components';
+import { Chart, Button, Loading, WebSocketStatus as WebSocketIndicator } from '../../../shared/components';
 import type { ChartDataPoint, TimeRange, MetricsDataPoint } from '../../../shared/types';
 import { useRealtimeMetrics } from '../hooks/useRealtimeMetrics';
 import styles from './ServerMonitoringDetail.module.css';
@@ -205,15 +205,7 @@ export function ServerMonitoringDetail(): React.JSX.Element {
           <div className={styles.headerActions}>
             {/* WebSocket 状态指示器 */}
             {autoRefresh && (
-              <div className={`${styles.wsStatus} ${styles[`wsStatus${wsStatus.charAt(0).toUpperCase()}${wsStatus.slice(1)}`] ?? ''}`}>
-                <span className={styles.wsIndicator} />
-                <span className={styles.wsText}>
-                  {wsStatus === 'connected' && 'WebSocket 已连接'}
-                  {wsStatus === 'connecting' && 'WebSocket 连接中...'}
-                  {wsStatus === 'disconnected' && '已断开连接'}
-                  {wsStatus === 'error' && `连接失败 (重试 ${reconnectCount})`}
-                </span>
-              </div>
+              <WebSocketIndicator status={wsStatus} reconnectCount={reconnectCount} />
             )}
             <button
               className={`${styles.btn} ${autoRefresh ? styles.btnActive : styles.btnSecondary}`}
