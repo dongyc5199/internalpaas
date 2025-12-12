@@ -7,6 +7,8 @@ import com.cmict.internalpaas.repository.SSHSessionRepository;
 import com.cmict.internalpaas.service.ServerService;
 import com.cmict.internalpaas.service.SSHTerminalService;
 import com.cmict.internalpaas.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,7 +23,9 @@ import java.util.Map;
 @Controller
 @RequestMapping("/terminal")
 public class SSHTerminalController {
-    
+
+    private static final Logger logger = LoggerFactory.getLogger(SSHTerminalController.class);
+
     @Autowired
     private ServerService serverService;
     
@@ -35,100 +39,58 @@ public class SSHTerminalController {
     private SSHSessionRepository sshSessionRepository;
     
     /**
-     * SSH终端主页面
+     * SSH终端主页面 - 重定向到React应用
      */
     @GetMapping
     public String terminalIndex(Model model) {
-        try {
-            List<Server> servers = serverService.getActiveServers();
-            model.addAttribute("servers", servers);
-            
-            // 获取当前用户的活跃会话
-            String username = SecurityContextHolder.getContext().getAuthentication().getName();
-            User user = userService.findByUsername(username).orElse(null);
-            
-            if (user != null) {
-                List<SSHSession> activeSessions = sshSessionRepository
-                    .findByUserIdAndIsActiveTrueOrderByStartTimeDesc(user.getId());
-                model.addAttribute("activeSessions", activeSessions);
-            }
-            
-            return "terminal/index";
-        } catch (Exception e) {
-            model.addAttribute("error", "加载终端页面失败: " + e.getMessage());
-            return "terminal/index";
-        }
+        logger.info("重定向到React SSH终端页面");
+        return "redirect:/app/terminal";
     }
     
     /**
-     * 连接到指定服务器的终端页面 - 重定向到终端管理器
+     * 连接到指定服务器的终端页面 - 重定向到React应用
      */
     @GetMapping("/connect/{serverId}")
     public String connectToServer(@PathVariable Long serverId, Model model) {
-        try {
-            serverService.findById(serverId)
-                .orElseThrow(() -> new RuntimeException("服务器不存在"));
-            
-            // 重定向到终端管理器并传递服务器ID参数
-            return "redirect:/terminal/manager?serverId=" + serverId;
-        } catch (Exception e) {
-            model.addAttribute("error", "连接服务器失败: " + e.getMessage());
-            return "terminal/index";
-        }
+        logger.info("重定向到React终端页面，服务器ID: {}", serverId);
+        // React应用会自动处理serverId参数
+        return "redirect:/app/terminal?serverId=" + serverId;
     }
     
     /**
-     * 多标签页终端管理页面
+     * 多标签页终端管理页面 - 重定向到React应用
      */
     @GetMapping("/manager")
     public String terminalManager(Model model) {
-        try {
-            List<Server> servers = serverService.getActiveServers();
-            model.addAttribute("servers", servers);
-            
-            return "terminal/manager";
-        } catch (Exception e) {
-            model.addAttribute("error", "加载终端管理器失败: " + e.getMessage());
-            return "terminal/manager";
-        }
+        logger.info("重定向到React终端管理器");
+        return "redirect:/app/terminal";
     }
     
     /**
-     * 终端 + AI 助手 Demo 页面
+     * 终端 + AI 助手 Demo 页面 - 重定向到React应用（AI功能已集成）
      */
     @GetMapping("/ai-demo")
     public String aiAssistDemo(Model model) {
-        try {
-            List<Server> servers = serverService.getActiveServers();
-            model.addAttribute("servers", servers);
-            return "terminal/ai-assist-demo";
-        } catch (Exception e) {
-            model.addAttribute("error", "加载AI演示页面失败: " + e.getMessage());
-            return "terminal/ai-assist-demo";
-        }
+        logger.info("重定向到React终端（AI功能已集成）");
+        return "redirect:/app/terminal";
     }
 
     /**
-     * AI 面板原型页面（依据线框图）
+     * AI 面板原型页面 - 重定向到React应用（AI功能已集成）
      */
     @GetMapping("/ai-panel")
     public String aiPanel(Model model) {
-        try {
-            List<Server> servers = serverService.getActiveServers();
-            model.addAttribute("servers", servers);
-            return "terminal/ai-panel";
-        } catch (Exception e) {
-            model.addAttribute("error", "加载 AI 面板原型失败: " + e.getMessage());
-            return "terminal/ai-panel";
-        }
+        logger.info("重定向到React终端（AI功能已集成）");
+        return "redirect:/app/terminal";
     }
 
     /**
-     * AI 功能管理（模型配置）页面
+     * AI 功能管理（模型配置）页面 - 重定向到React应用（AI功能已集成）
      */
     @GetMapping("/ai-models")
     public String aiModels(Model model) {
-        return "terminal/ai-models";
+        logger.info("重定向到React终端（AI功能已集成）");
+        return "redirect:/app/terminal";
     }
     
     /**
