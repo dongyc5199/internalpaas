@@ -2,7 +2,25 @@ import api from './api';
 import { BuildRecord, TriggerBuildRequest, PaginatedResponse } from '@/types';
 
 export const buildService = {
-  // 获取构建列表
+  // 获取所有构建列表（跨仓库）
+  async listAll(
+    page = 1,
+    pageSize = 20,
+    status?: string,
+    repoId?: number
+  ): Promise<PaginatedResponse<BuildRecord>> {
+    const params: any = { page, page_size: pageSize };
+    if (status) params.status = status;
+    if (repoId) params.repository_id = repoId;
+
+    const response = await api.get<PaginatedResponse<BuildRecord>>(
+      '/builds',
+      { params }
+    );
+    return response.data;
+  },
+
+  // 获取构建列表（特定仓库）
   async list(
     repoId: number,
     page = 1,
