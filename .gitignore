@@ -1,67 +1,108 @@
-HELP.md
-target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
-
-undefined/
-
-
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
+# ========================================
+# Go
+# ========================================
+# 编译产物
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/bin/
 /dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
-.vscode/
+# 依赖
+/vendor/
 
-### Node.js ###
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-# Vite build artifacts
-src/main/resources/static/dist/
+# Go工作空间
+go.work
+go.work.sum
 
-### E2E Testing ###
-# Playwright
-playwright-report/
-test-results/
-e2e/.auth/
-screenshots/
-.env.e2e
-# Playwright browsers cache (optional, comment out if you want to cache browsers)
-# .cache/ms-playwright/
-/.eslintrc.cjs
-/.prettierrc.json
-/.stylelintrc.cjs
-/.windsurfrules
-nul
-infra/perf/otlp_load_gen.sh
+# 测试覆盖率
+*.coverprofile
+coverage.txt
+coverage.html
+
+# ========================================
+# 应用程序
+# ========================================
+# 编译后的二进制文件
+/codehub-server
+/codehub-agent
+/codehub-cli
+
+# 临时文件
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# 日志文件
+*.log
+/logs/
+/data/logs/
+
+# ========================================
+# 配置文件（含敏感信息）
+# ========================================
+# 本地配置
+/config/local.yaml
+/config/local.yml
+/config/*.local.*
 .env
+.env.local
+.env.production
 
-*storybook.log
-storybook-static
-.jdks/
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# ========================================
+# Docker数据卷
+# ========================================
+/data/postgres/
+/data/redis/
+/data/minio/
+/data/gitea/
+/data/drone/
+/data/nexus/
+/data/sonarqube/
+
+# ========================================
+# IDE & 编辑器
+# ========================================
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+
+# ========================================
+# 操作系统
+# ========================================
+.DS_Store
+Thumbs.db
+
+# ========================================
+# 备份文件
+# ========================================
+*.backup
+*.tar.gz
+*.zip
+backup/
+
+# ========================================
+# 证书和密钥
+# ========================================
+*.pem
+*.key
+*.crt
+/certs/
+
+# ========================================
+# Claude Code
+# ========================================
+.claude/settings.local.json

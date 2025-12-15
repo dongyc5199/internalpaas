@@ -1,8 +1,0 @@
-src/main/frontend/modules/ServerDetailOverlay.ts:35:    private charts: any[] = [];
-src/main/frontend/modules/ServerDetailOverlay.ts:38:    private timeFormatter: any = null;
-src/main/frontend/modules/ServerDetailOverlay.ts:44:    private currentDetail: any = null;
-src/main/frontend/modules/ServerDetailOverlay.ts:45:    private chartSeriesData: any[] = [];
-src/main/frontend/types/server-management.ts:186:    Chart: any;
-src/main/frontend/utils/chart.ts:230:export function destroyChart(chart: any): void {
-src/main/frontend/utils/chart.ts:240:export function destroyCharts(charts: any[]): void {
-src/main/frontend/utils/chart.ts:252:    chart: any,
