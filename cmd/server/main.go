@@ -17,6 +17,7 @@ import (
 	"github.com/yourorg/codehub/internal/middleware"
 	"github.com/yourorg/codehub/internal/pkg/database"
 	"github.com/yourorg/codehub/internal/service"
+	"github.com/yourorg/codehub/internal/websocket"
 )
 
 var (
@@ -77,6 +78,11 @@ func main() {
 		logger.Warn("Failed to initialize Nexus service", zap.Error(err))
 	}
 
+	// 初始化WebSocket Hub
+	wsHub := websocket.NewHub(logger)
+	go wsHub.Run()
+	logger.Info("WebSocket hub started")
+
 	// 设置Gin模式
 	mode := viper.GetString("server.mode")
 	if mode == "" {
@@ -103,10 +109,11 @@ func main() {
 	authHandler := v1.NewAuthHandler(database.DB, logger)
 	projectHandler := v1.NewProjectHandler(database.DB, logger, giteaService)
 	repositoryHandler := v1.NewRepositoryHandler(database.DB, logger, giteaService, droneService)
-	buildHandler := v1.NewBuildHandler(database.DB, logger, droneService, giteaService)
-	webhookHandler := v1.NewWebhookHandler(database.DB, logger)
+	buildHandler := v1.NewBuildHandler(database.DB, logger, droneService, giteaService, wsHub)
+	webhookHandler := v1.NewWebhookHandler(database.DB, logger, wsHub)
 	qualityHandler := v1.NewQualityHandler(database.DB, logger, sonarQubeService)
 	artifactHandler := v1.NewArtifactHandler(database.DB, logger, nexusService)
+	wsHandler := websocket.NewHandler(wsHub, logger)
 
 	// API v1路由组
 	apiV1 := router.Group("/api/v1")
@@ -198,6 +205,10 @@ func main() {
 				artifacts.DELETE("/:id", artifactHandler.DeleteArtifact)
 				artifacts.GET("/assets/:id/download", artifactHandler.DownloadArtifact)
 			}
+
+			// WebSocket实时通信
+			authenticated.GET("/ws", wsHandler.HandleConnection)
+			authenticated.GET("/ws/stats", wsHandler.GetStats)
 		}
 	}
 

@@ -17,19 +17,22 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/yourorg/codehub/internal/model"
+	"github.com/yourorg/codehub/internal/websocket"
 )
 
 // WebhookHandler Webhook处理器
 type WebhookHandler struct {
 	db     *gorm.DB
 	logger *zap.Logger
+	wsHub  *websocket.Hub
 }
 
 // NewWebhookHandler 创建Webhook处理器
-func NewWebhookHandler(db *gorm.DB, logger *zap.Logger) *WebhookHandler {
+func NewWebhookHandler(db *gorm.DB, logger *zap.Logger, wsHub *websocket.Hub) *WebhookHandler {
 	return &WebhookHandler{
 		db:     db,
 		logger: logger,
+		wsHub:  wsHub,
 	}
 }
 
@@ -422,6 +425,19 @@ func (h *WebhookHandler) updateBuildRecord(build *model.BuildRecord, payload *Dr
 
 	if err := h.db.Save(build).Error; err != nil {
 		h.logger.Error("Failed to update build record", zap.Error(err))
+		return
+	}
+
+	// 通过WebSocket推送构建状态更新
+	if h.wsHub != nil {
+		h.wsHub.BroadcastBuildStatus(build.ID, string(build.Status), map[string]interface{}{
+			"build_id":      build.ID,
+			"repository_id": build.RepositoryID,
+			"status":        string(build.Status),
+			"duration":      build.Duration,
+			"started_at":    build.StartedAt,
+			"finished_at":   build.FinishedAt,
+		})
 	}
 }
 

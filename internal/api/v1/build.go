@@ -11,6 +11,7 @@ import (
 
 	"github.com/yourorg/codehub/internal/model"
 	"github.com/yourorg/codehub/internal/service"
+	"github.com/yourorg/codehub/internal/websocket"
 )
 
 // BuildHandler 构建管理处理器
@@ -19,15 +20,17 @@ type BuildHandler struct {
 	logger        *zap.Logger
 	droneService  *service.DroneService
 	giteaService  *service.GiteaService
+	wsHub         *websocket.Hub
 }
 
 // NewBuildHandler 创建构建处理器
-func NewBuildHandler(db *gorm.DB, logger *zap.Logger, droneService *service.DroneService, giteaService *service.GiteaService) *BuildHandler {
+func NewBuildHandler(db *gorm.DB, logger *zap.Logger, droneService *service.DroneService, giteaService *service.GiteaService, wsHub *websocket.Hub) *BuildHandler {
 	return &BuildHandler{
 		db:           db,
 		logger:       logger,
 		droneService: droneService,
 		giteaService: giteaService,
+		wsHub:        wsHub,
 	}
 }
 
@@ -269,6 +272,17 @@ func (h *BuildHandler) TriggerBuild(c *gin.Context) {
 		zap.String("branch", req.Branch),
 		zap.String("commit", commitSHA),
 	)
+
+	// 通过WebSocket推送构建状态
+	if h.wsHub != nil {
+		h.wsHub.BroadcastBuildStatus(build.ID, string(build.Status), map[string]interface{}{
+			"build_id":     build.ID,
+			"repository_id": build.RepositoryID,
+			"branch":       build.Branch,
+			"commit":       build.Commit,
+			"trigger":      string(build.Trigger),
+		})
+	}
 
 	c.JSON(http.StatusCreated, build)
 }

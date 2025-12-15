@@ -34,7 +34,8 @@
       "Bash(tree:*)",
       "Bash(go mod tidy:*)",
       "Bash(make build:*)",
-      "Bash(go build:*)"
+      "Bash(go build:*)",
+      "Bash(go get:*)"
     ],
     "deny": [],
     "ask": []
