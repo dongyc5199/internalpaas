@@ -53,9 +53,9 @@ function App() {
             <Route path="projects/:id" element={<ProjectDetailPage />} />
             <Route path="repositories" element={<RepositoryListPage />} />
             <Route path="repositories/:id" element={<RepositoryDetailPage />} />
-            <Route path="repositories/:repoId/builds" element={<BuildListPage />} />
+            <Route path="builds" element={<BuildListPage />} />
             <Route path="builds/:id" element={<BuildDetailPage />} />
-            <Route path="repositories/:repoId/quality" element={<QualityReportListPage />} />
+            <Route path="quality" element={<QualityReportListPage />} />
             <Route path="quality-reports/:id" element={<QualityReportDetailPage />} />
           </Route>
         </Routes>

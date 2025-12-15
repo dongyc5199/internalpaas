@@ -1,12 +1,10 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { projectService } from '@/services/project';
-import { Plus, FolderGit2, Trash2, Edit } from 'lucide-react';
-import { Project, CreateProjectRequest } from '@/types';
+import { Plus, FolderGit2 } from 'lucide-react';
 
 export default function ProjectListPage() {
-  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [showCreateModal, setShowCreateModal] = useState(false);
 

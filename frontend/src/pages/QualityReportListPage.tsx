@@ -7,9 +7,6 @@ import {
   FileSearch,
   Search,
   Filter,
-  Calendar,
-  TrendingUp,
-  TrendingDown,
   CheckCircle,
   XCircle,
   AlertTriangle,
@@ -18,11 +15,10 @@ import {
   Bug,
   Shield,
   Code,
-  AlertCircle as AlertCircleIcon,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { QualityGate, QualityReport } from '@/types';
+import { QualityGate } from '@/types';
 
 const qualityGateConfig: Record<QualityGate, { icon: any; color: string; text: string; bgColor: string }> = {
   PASSED: { icon: CheckCircle, color: 'text-green-500', text: '通过', bgColor: 'bg-green-100 text-green-700' },

@@ -27,7 +27,6 @@ export default function RepositoryListPage() {
   const { data: reposData, isLoading } = useQuery({
     queryKey: ['repositories', page, search, filterActive, filterPrivate],
     queryFn: () => repositoryService.list(page, pageSize),
-    keepPreviousData: true,
   });
 
   // Apply client-side filtering (in production, this should be server-side)
@@ -186,12 +185,12 @@ export default function RepositoryListPage() {
                   </div>
                   <div className="flex items-center space-x-2 ml-2">
                     {repo.is_private ? (
-                      <Lock className="w-4 h-4 text-yellow-600" title="私有仓库" />
+                      <Lock className="w-4 h-4 text-yellow-600" />
                     ) : (
-                      <Unlock className="w-4 h-4 text-blue-600" title="公开仓库" />
+                      <Unlock className="w-4 h-4 text-blue-600" />
                     )}
                     {repo.drone_active && (
-                      <Activity className="w-4 h-4 text-green-600 animate-pulse" title="CI已启用" />
+                      <Activity className="w-4 h-4 text-green-600 animate-pulse" />
                     )}
                   </div>
                 </div>

@@ -13,7 +13,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const { buildId, onMessage, onOpen, onClose, onError } = options;
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<number>();
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
 
