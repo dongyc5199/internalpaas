@@ -1,0 +1,86 @@
+# ========================================
+# CodeHub CI/CD Platform Configuration
+# ========================================
+
+# 服务器配置
+server:
+  port: 8880
+  mode: debug  # debug, release, test
+
+# 日志配置
+log:
+  level: info  # debug, info, warn, error
+  format: json # json, console
+  output: stdout # stdout, file
+  file: logs/codehub.log
+
+# 数据库配置（PostgreSQL）
+database:
+  host: localhost
+  port: 5432
+  username: codehub
+  password: ${DB_PASSWORD}  # 从环境变量读取
+  database: codehub
+  sslmode: disable
+  max_open_conns: 100
+  max_idle_conns: 10
+  conn_max_lifetime: 3600  # 秒
+
+# Redis配置
+redis:
+  host: localhost
+  port: 6379
+  password: ${REDIS_PASSWORD}
+  db: 0
+  pool_size: 10
+
+# Gitea配置
+gitea:
+  url: http://localhost:3000
+  admin_token: ${GITEA_ADMIN_TOKEN}
+  webhook_secret: ${GITEA_WEBHOOK_SECRET}
+
+# Drone CI配置
+drone:
+  server_url: http://localhost:8000
+  rpc_secret: ${DRONE_RPC_SECRET}
+  admin_token: ${DRONE_ADMIN_TOKEN}
+
+# SonarQube配置
+sonarqube:
+  url: http://localhost:9000
+  admin_token: ${SONAR_ADMIN_TOKEN}
+
+# Nexus配置
+nexus:
+  url: http://localhost:8081
+  admin_username: admin
+  admin_password: ${NEXUS_ADMIN_PASSWORD}
+
+# JWT认证配置
+jwt:
+  secret: ${JWT_SECRET}
+  expire_hours: 24
+  issuer: codehub
+
+# CORS配置
+cors:
+  allowed_origins:
+    - http://localhost:3000
+    - http://localhost:8880
+  allowed_methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+  allowed_headers:
+    - Authorization
+    - Content-Type
+  max_age: 86400
+
+# 限流配置
+rate_limit:
+  enabled: true
+  requests_per_second: 100
+  burst: 200
