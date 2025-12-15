@@ -67,6 +67,11 @@ func main() {
 		logger.Warn("Failed to initialize Drone service", zap.Error(err))
 	}
 
+	sonarQubeService, err := service.NewSonarQubeService(logger)
+	if err != nil {
+		logger.Warn("Failed to initialize SonarQube service", zap.Error(err))
+	}
+
 	// 设置Gin模式
 	mode := viper.GetString("server.mode")
 	if mode == "" {
@@ -95,6 +100,7 @@ func main() {
 	repositoryHandler := v1.NewRepositoryHandler(database.DB, logger, giteaService, droneService)
 	buildHandler := v1.NewBuildHandler(database.DB, logger, droneService, giteaService)
 	webhookHandler := v1.NewWebhookHandler(database.DB, logger)
+	qualityHandler := v1.NewQualityHandler(database.DB, logger, sonarQubeService)
 
 	// API v1路由组
 	apiV1 := router.Group("/api/v1")
@@ -154,6 +160,11 @@ func main() {
 				repositories.GET("/:repo_id/builds", buildHandler.ListBuilds)
 				repositories.POST("/:repo_id/builds", buildHandler.TriggerBuild)
 				repositories.GET("/:repo_id/builds/stats", buildHandler.GetBuildStats)
+
+				// 仓库下的质量报告
+				repositories.GET("/:repo_id/quality-reports", qualityHandler.ListQualityReports)
+				repositories.GET("/:repo_id/quality-trend", qualityHandler.GetRepositoryQualityTrend)
+				repositories.GET("/:repo_id/quality-statistics", qualityHandler.GetQualityStatistics)
 			}
 
 			// 构建管理
@@ -163,6 +174,13 @@ func main() {
 				builds.POST("/:id/restart", buildHandler.RestartBuild)
 				builds.POST("/:id/cancel", buildHandler.CancelBuild)
 				builds.GET("/:id/logs", buildHandler.GetBuildLogs)
+			}
+
+			// 质量报告管理
+			qualityReports := authenticated.Group("/quality-reports")
+			{
+				qualityReports.GET("/:id", qualityHandler.GetQualityReport)
+				qualityReports.POST("", qualityHandler.CreateQualityReport)
 			}
 		}
 	}
