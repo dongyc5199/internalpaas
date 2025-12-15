@@ -72,6 +72,11 @@ func main() {
 		logger.Warn("Failed to initialize SonarQube service", zap.Error(err))
 	}
 
+	nexusService, err := service.NewNexusService(logger)
+	if err != nil {
+		logger.Warn("Failed to initialize Nexus service", zap.Error(err))
+	}
+
 	// 设置Gin模式
 	mode := viper.GetString("server.mode")
 	if mode == "" {
@@ -101,6 +106,7 @@ func main() {
 	buildHandler := v1.NewBuildHandler(database.DB, logger, droneService, giteaService)
 	webhookHandler := v1.NewWebhookHandler(database.DB, logger)
 	qualityHandler := v1.NewQualityHandler(database.DB, logger, sonarQubeService)
+	artifactHandler := v1.NewArtifactHandler(database.DB, logger, nexusService)
 
 	// API v1路由组
 	apiV1 := router.Group("/api/v1")
@@ -181,6 +187,16 @@ func main() {
 			{
 				qualityReports.GET("/:id", qualityHandler.GetQualityReport)
 				qualityReports.POST("", qualityHandler.CreateQualityReport)
+			}
+
+			// 制品管理
+			artifacts := authenticated.Group("/artifacts")
+			{
+				artifacts.GET("/repositories", artifactHandler.ListRepositories)
+				artifacts.GET("/search", artifactHandler.SearchArtifacts)
+				artifacts.GET("/:id", artifactHandler.GetArtifact)
+				artifacts.DELETE("/:id", artifactHandler.DeleteArtifact)
+				artifacts.GET("/assets/:id/download", artifactHandler.DownloadArtifact)
 			}
 		}
 	}
