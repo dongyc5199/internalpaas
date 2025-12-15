@@ -62,7 +62,7 @@ func main() {
 		logger.Warn("Failed to initialize Gitea service", zap.Error(err))
 	}
 
-	_, err = service.NewDroneService(logger)
+	droneService, err := service.NewDroneService(logger)
 	if err != nil {
 		logger.Warn("Failed to initialize Drone service", zap.Error(err))
 	}
@@ -92,6 +92,9 @@ func main() {
 	// 初始化API处理器
 	authHandler := v1.NewAuthHandler(database.DB, logger)
 	projectHandler := v1.NewProjectHandler(database.DB, logger, giteaService)
+	repositoryHandler := v1.NewRepositoryHandler(database.DB, logger, giteaService, droneService)
+	buildHandler := v1.NewBuildHandler(database.DB, logger, droneService, giteaService)
+	webhookHandler := v1.NewWebhookHandler(database.DB, logger)
 
 	// API v1路由组
 	apiV1 := router.Group("/api/v1")
@@ -103,6 +106,13 @@ func main() {
 				"version": Version,
 			})
 		})
+
+		// Webhook路由（公开，由外部服务调用）
+		webhooks := apiV1.Group("/webhooks")
+		{
+			webhooks.POST("/gitea", webhookHandler.GiteaWebhook)
+			webhooks.POST("/drone", webhookHandler.DroneWebhook)
+		}
 
 		// 认证路由
 		auth := apiV1.Group("/auth")
@@ -125,6 +135,34 @@ func main() {
 				projects.POST("", projectHandler.CreateProject)
 				projects.PUT("/:id", projectHandler.UpdateProject)
 				projects.DELETE("/:id", projectHandler.DeleteProject)
+
+				// 在项目下创建仓库
+				projects.POST("/:project_id/repositories", repositoryHandler.CreateRepository)
+			}
+
+			// 仓库管理
+			repositories := authenticated.Group("/repositories")
+			{
+				repositories.GET("", repositoryHandler.ListRepositories)
+				repositories.GET("/:id", repositoryHandler.GetRepository)
+				repositories.PUT("/:id/ci", repositoryHandler.UpdateCI)
+				repositories.GET("/:id/branches", repositoryHandler.GetBranches)
+				repositories.GET("/:id/commits", repositoryHandler.GetCommits)
+				repositories.POST("/:id/webhooks", webhookHandler.ConfigureRepositoryWebhook)
+
+				// 仓库下的构建管理
+				repositories.GET("/:repo_id/builds", buildHandler.ListBuilds)
+				repositories.POST("/:repo_id/builds", buildHandler.TriggerBuild)
+				repositories.GET("/:repo_id/builds/stats", buildHandler.GetBuildStats)
+			}
+
+			// 构建管理
+			builds := authenticated.Group("/builds")
+			{
+				builds.GET("/:id", buildHandler.GetBuild)
+				builds.POST("/:id/restart", buildHandler.RestartBuild)
+				builds.POST("/:id/cancel", buildHandler.CancelBuild)
+				builds.GET("/:id/logs", buildHandler.GetBuildLogs)
 			}
 		}
 	}

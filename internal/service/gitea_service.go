@@ -135,6 +135,21 @@ func (s *GiteaService) CreateRepository(orgName string, opts gitea.CreateRepoOpt
 	return repo, nil
 }
 
+// CreateRepositoryInOrg 在组织中创建仓库（简化版）
+func (s *GiteaService) CreateRepositoryInOrg(orgName, name, description string, private, autoInit bool, gitignore, license string) (*gitea.Repository, error) {
+	opts := gitea.CreateRepoOption{
+		Name:          name,
+		Description:   description,
+		Private:       private,
+		AutoInit:      autoInit,
+		Gitignores:    gitignore,
+		License:       license,
+		DefaultBranch: "main",
+	}
+
+	return s.CreateRepository(orgName, opts)
+}
+
 // GetRepository 获取仓库信息
 func (s *GiteaService) GetRepository(owner, repo string) (*gitea.Repository, error) {
 	repository, _, err := s.client.GetRepo(owner, repo)
@@ -233,6 +248,23 @@ func (s *GiteaService) GetCommit(owner, repo, sha string) (*gitea.Commit, error)
 		return nil, fmt.Errorf("failed to get commit: %w", err)
 	}
 	return commit, nil
+}
+
+// ListCommits 列出仓库的提交历史
+func (s *GiteaService) ListCommits(owner, repo, branch string, page, pageSize int) ([]*gitea.Commit, error) {
+	opts := gitea.ListCommitOptions{
+		ListOptions: gitea.ListOptions{
+			Page:     page,
+			PageSize: pageSize,
+		},
+		SHA: branch,
+	}
+
+	commits, _, err := s.client.ListRepoCommits(owner, repo, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list commits: %w", err)
+	}
+	return commits, nil
 }
 
 // ============================================

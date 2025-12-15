@@ -20,8 +20,9 @@ type Repository struct {
 	Language    string `gorm:"size:50" json:"language"`
 
 	// 所属关系
-	ProjectID uint `gorm:"index;not null" json:"project_id"`
-	OwnerID   uint `gorm:"index;not null" json:"owner_id"`
+	ProjectID uint    `gorm:"index;not null" json:"project_id"`
+	Project   Project `gorm:"foreignKey:ProjectID" json:"project,omitempty"`
+	OwnerID   uint    `gorm:"index;not null" json:"owner_id"`
 
 	// Gitea集成
 	GiteaRepoID int64  `gorm:"uniqueIndex" json:"gitea_repo_id"`

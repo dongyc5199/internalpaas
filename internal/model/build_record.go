@@ -25,11 +25,12 @@ const (
 type BuildTrigger string
 
 const (
-	TriggerPush   BuildTrigger = "push"
-	TriggerPR     BuildTrigger = "pull_request"
-	TriggerTag    BuildTrigger = "tag"
-	TriggerManual BuildTrigger = "manual"
-	TriggerCron   BuildTrigger = "cron"
+	TriggerPush    BuildTrigger = "push"
+	TriggerPR      BuildTrigger = "pull_request"
+	TriggerTag     BuildTrigger = "tag"
+	TriggerManual  BuildTrigger = "manual"
+	TriggerCron    BuildTrigger = "cron"
+	TriggerRestart BuildTrigger = "restart"
 )
 
 // JSONMap 用于存储JSON类型字段
@@ -64,8 +65,10 @@ type BuildRecord struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// 关联关系
-	RepositoryID  uint `gorm:"index;not null" json:"repository_id"`
-	TriggerUserID uint `gorm:"index" json:"trigger_user_id"`
+	RepositoryID  uint       `gorm:"index;not null" json:"repository_id"`
+	Repository    Repository `gorm:"foreignKey:RepositoryID" json:"repository,omitempty"`
+	TriggerUserID uint       `gorm:"index" json:"trigger_user_id"`
+	TriggerUser   User       `gorm:"foreignKey:TriggerUserID" json:"trigger_user,omitempty"`
 
 	// Drone CI集成
 	DroneBuildID     int64  `gorm:"uniqueIndex" json:"drone_build_id"`
@@ -76,6 +79,7 @@ type BuildRecord struct {
 	BuildNumber int          `gorm:"index" json:"build_number"` // 仓库内的构建编号
 	Status      BuildStatus  `gorm:"size:20;index" json:"status"`
 	Trigger     BuildTrigger `gorm:"size:20" json:"trigger"`
+	Event       string       `gorm:"size:50" json:"event"` // push, pull_request, tag, promote, rollback
 
 	// Git信息
 	Branch string `gorm:"size:100;index" json:"branch"`
@@ -112,7 +116,8 @@ type BuildRecord struct {
 	Coverage         float64 `json:"coverage"`
 
 	// 质量关联
-	QualityReportID *uint `gorm:"index" json:"quality_report_id"`
+	QualityReportID *uint          `gorm:"index" json:"quality_report_id"`
+	QualityReport   *QualityReport `gorm:"foreignKey:QualityReportID" json:"quality_report,omitempty"`
 }
 
 // TableName 指定表名
