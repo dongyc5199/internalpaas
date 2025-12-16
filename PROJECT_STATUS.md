@@ -1,8 +1,16 @@
-# CodeHub项目状态报告
+﻿# CodeHub项目状态报告
 
 **生成时间**: 2025-12-15
 **项目阶段**: Phase 1 - 基础架构完成
 **完成度**: 核心功能框架 ✅
+
+---
+
+## 当前更新（2025-12-16）
+- 服务配置：Compose 内部地址对齐（Gitea/Drone/SonarQube/Nexus），健康检查 `/health` 支持 HEAD/ANY；Dockerfile 复制默认配置到镜像。
+- 认证绑定：SonarQube token 绑定 `sonarqube.token`，Nexus 支持 `NEXUS_USERNAME/PASSWORD` 环境变量；配置与环境变量同步。
+- 用户：创建 Gitea 管理员 `admin2`（密码 51151989），CodeHub 用户 `dongyc` 密码重置为 12345678。
+- 前端：新增 Windows 启动脚本 `scripts/start-frontend.ps1` / `.bat`（默认 host=localhost，可传自定义 host），自动 npm install。
 
 ---
 
@@ -495,7 +503,7 @@ DELETE /api/v1/projects/:id      # 删除项目 ✅
 
 #### Day 1-2: 代码质量
 - [ ] SonarQubeService实现
-- [ ] 质量���告API
+- [ ] 质量报告API
 - [ ] 质量趋势分析
 
 #### Day 3-5: 前端开发
@@ -596,5 +604,5 @@ Go代码: ~3000行
 
 ---
 
-**最后更新**: 2025-12-15
+**最后更新**: 2025-12-16  
 **下次审查**: 需要时更新
