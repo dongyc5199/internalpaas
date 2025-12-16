@@ -334,13 +334,13 @@ DELETE /api/v1/projects/:id      # 删除项目 ✅
 **优先级**: P0
 
 需要实现:
-- [ ] 仓库列表接口
-- [ ] 仓库详情接口
-- [ ] 创建仓库（同步到Gitea）
-- [ ] 启用/禁用CI（同步到Drone）
-- [ ] Webhook自动配置
-- [ ] 分支列表接口
-- [ ] 提交历史接口
+- [x] 仓库列表接口
+- [x] 仓库详情接口
+- [x] 创建仓库（同步到Gitea）
+- [x] 启用/禁用CI（同步到Drone）
+- [x] Webhook自动配置
+- [x] 分支列表接口
+- [x] 提交历史接口
 
 **文件**: `internal/api/v1/repository.go` (待创建)
 
@@ -348,13 +348,13 @@ DELETE /api/v1/projects/:id      # 删除项目 ✅
 **优先级**: P0
 
 需要实现:
-- [ ] 构建记录列表
-- [ ] 构建详情查询
-- [ ] 触发新构建
-- [ ] 重启构建
-- [ ] 取消构建
-- [ ] 构建日志查看
-- [ ] 构建统计数据
+- [x] 构建记录列表
+- [x] 构建详情查询
+- [x] 触发新构建
+- [x] 重启构建
+- [x] 取消构建
+- [x] 构建日志查看
+- [x] 构建统计数据
 
 **文件**: `internal/api/v1/build.go` (待创建)
 
@@ -362,11 +362,11 @@ DELETE /api/v1/projects/:id      # 删除项目 ✅
 **优先级**: P0
 
 需要实现:
-- [ ] Gitea Webhook接收
-- [ ] Drone Webhook接收
-- [ ] 构建状态同步
-- [ ] 构建记录创建
-- [ ] WebSocket实时推送
+- [x] Gitea Webhook接收
+- [x] Drone Webhook接收
+- [x] 构建状态同步
+- [x] 构建记录创建
+- [x] WebSocket实时推送
 
 **文件**: `internal/api/v1/webhook.go` (待创建)
 
