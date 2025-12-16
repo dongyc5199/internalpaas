@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { authService } from '@/services/auth';
@@ -47,7 +47,7 @@ export default function LoginPage() {
             <LogIn className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">CodeHub</h1>
-          <p className="text-gray-600">持续集成与代码质量管理平台</p>
+          <p className="text-gray-600">聚合代码托管、构建与质量管理的一体化平台</p>
         </div>
 
         {/* Login form */}
@@ -94,11 +94,7 @@ export default function LoginPage() {
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="btn btn-primary w-full"
-            >
+            <button type="submit" disabled={isLoading} className="btn btn-primary w-full">
               {isLoading ? '登录中...' : '登录'}
             </button>
           </form>
@@ -114,9 +110,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-sm text-gray-500 mt-8">
-          © 2024 CodeHub. All rights reserved.
-        </p>
+        <p className="text-center text-sm text-gray-500 mt-8">© 2024 CodeHub. All rights reserved.</p>
       </div>
     </div>
   );

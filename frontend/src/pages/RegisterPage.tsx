@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { authService } from '@/services/auth';
@@ -21,14 +21,13 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
 
-    // 验证密码
     if (formData.password !== formData.confirmPassword) {
       setError('两次输入的密码不一致');
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('密码长度不能少于6位');
+      setError('密码长度不能少于 6 位');
       return;
     }
 
@@ -65,7 +64,7 @@ export default function RegisterPage() {
             <UserPlus className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">CodeHub</h1>
-          <p className="text-gray-600">创建您的账号</p>
+          <p className="text-gray-600">创建您的账号，开启一体化研发体验</p>
         </div>
 
         {/* Register form */}
@@ -144,11 +143,7 @@ export default function RegisterPage() {
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="btn btn-primary w-full"
-            >
+            <button type="submit" disabled={isLoading} className="btn btn-primary w-full">
               {isLoading ? '注册中...' : '注册'}
             </button>
           </form>
@@ -164,9 +159,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-sm text-gray-500 mt-8">
-          © 2024 CodeHub. All rights reserved.
-        </p>
+        <p className="text-center text-sm text-gray-500 mt-8">© 2024 CodeHub. All rights reserved.</p>
       </div>
     </div>
   );
