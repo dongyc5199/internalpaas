@@ -6,6 +6,7 @@
 server:
   port: 8880
   mode: debug  # debug, release, test
+  webhook_base_url: http://localhost:8880  # Base URL used when registering webhooks
 
 # 日志配置
 log:
@@ -16,7 +17,7 @@ log:
 
 # 数据库配置（PostgreSQL）
 database:
-  host: localhost
+  host: postgres   # container hostname
   port: 5432
   username: codehub
   password: ${DB_PASSWORD}  # 从环境变量读取
@@ -25,10 +26,9 @@ database:
   max_open_conns: 100
   max_idle_conns: 10
   conn_max_lifetime: 3600  # 秒
-
 # Redis配置
 redis:
-  host: localhost
+  host: redis      # container hostname
   port: 6379
   password: ${REDIS_PASSWORD}
   db: 0
@@ -36,24 +36,26 @@ redis:
 
 # Gitea配置
 gitea:
-  url: http://localhost:3000
+  url: http://gitea:3000
   admin_token: ${GITEA_ADMIN_TOKEN}
   webhook_secret: ${GITEA_WEBHOOK_SECRET}
 
 # Drone CI配置
 drone:
-  server_url: http://localhost:8000
+  server_url: http://drone-server:80
   rpc_secret: ${DRONE_RPC_SECRET}
   admin_token: ${DRONE_ADMIN_TOKEN}
 
 # SonarQube配置
 sonarqube:
-  url: http://localhost:9000
-  admin_token: ${SONAR_ADMIN_TOKEN}
+  url: http://sonarqube:9000/sonarqube
+  token: ${SONARQUBE_ADMIN_TOKEN}
 
 # Nexus配置
 nexus:
-  url: http://localhost:8081
+  url: http://nexus:8081
+  username: admin
+  password: ${NEXUS_ADMIN_PASSWORD}
   admin_username: admin
   admin_password: ${NEXUS_ADMIN_PASSWORD}
 
@@ -66,8 +68,8 @@ jwt:
 # CORS配置
 cors:
   allowed_origins:
-    - http://localhost:3000
-    - http://localhost:8880
+    - http://localhost:13000
+    - http://localhost:18880
   allowed_methods:
     - GET
     - POST

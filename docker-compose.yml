@@ -5,7 +5,7 @@ services:
   # 数据库服务
   # ========================================
   postgres:
-    image: postgres:15-alpine
+    image: timescale/timescaledb:latest-pg14
     container_name: codehub-postgres
     restart: unless-stopped
     environment:
@@ -16,11 +16,11 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     ports:
-      - "5432:5432"
+      - "5433:5432"
     networks:
       - codehub-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U codehub"]
+      test: [ "CMD-SHELL", "pg_isready -U codehub" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -36,11 +36,11 @@ services:
     volumes:
       - redis-data:/data
     ports:
-      - "6379:6379"
+      - "6380:6379"
     networks:
       - codehub-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -72,15 +72,15 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     ports:
-      - "3000:3000"
-      - "2222:2222"
+      - "13000:3000" # host web
+      - "12222:2222" # host ssh
     networks:
       - codehub-network
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/healthz"]
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/api/healthz" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -97,7 +97,7 @@ services:
       - DRONE_GITEA_CLIENT_ID=${GITEA_OAUTH_CLIENT_ID}
       - DRONE_GITEA_CLIENT_SECRET=${GITEA_OAUTH_CLIENT_SECRET}
       - DRONE_RPC_SECRET=${DRONE_RPC_SECRET:-drone_rpc_secret_12345}
-      - DRONE_SERVER_HOST=localhost:8000
+      - DRONE_SERVER_HOST=localhost:18000
       - DRONE_SERVER_PROTO=http
       - DRONE_USER_CREATE=username:admin,admin:true
       - DRONE_DATABASE_DRIVER=postgres
@@ -105,7 +105,7 @@ services:
     volumes:
       - drone-data:/data
     ports:
-      - "8000:80"
+      - "18000:80"
     networks:
       - codehub-network
     depends_on:
@@ -151,7 +151,7 @@ services:
       - sonarqube-extensions:/opt/sonarqube/extensions
       - sonarqube-logs:/opt/sonarqube/logs
     ports:
-      - "9000:9000"
+      - "19000:9000" # host port adjusted to avoid conflict
     networks:
       - codehub-network
     depends_on:
@@ -174,13 +174,13 @@ services:
     volumes:
       - nexus-data:/nexus-data
     ports:
-      - "8081:8081"  # Web UI
-      - "8082:8082"  # Docker Registry
-      - "8083:8083"  # Docker Registry (group)
+      - "18081:8081" # Web UI (host -> container) changed to avoid host port conflict
+      - "8082:8082" # Docker Registry
+      - "8083:8083" # Docker Registry (group)
     networks:
       - codehub-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/service/rest/v1/status"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8081/service/rest/v1/status" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -200,12 +200,12 @@ services:
     volumes:
       - minio-data:/data
     ports:
-      - "9000:9000"  # API
-      - "9001:9001"  # Console
+      - "19010:9000" # API (host port adjusted)
+      - "19011:9001" # Console (host port adjusted)
     networks:
       - codehub-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -222,7 +222,7 @@ services:
     container_name: codehub-server
     restart: unless-stopped
     environment:
-      - SERVER_PORT=8880
+      - SERVER_PORT=18880
       - SERVER_MODE=release
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -233,16 +233,16 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-redis123}
       - GITEA_URL=http://gitea:3000
-      - GITEA_ADMIN_TOKEN=${GITEA_ADMIN_TOKEN}
+      - GITEA_ADMIN_TOKEN=57257d7afe7f7a2f796ecdd7e66694dd12b5b051
       - DRONE_SERVER_URL=http://drone-server:80
       - DRONE_ADMIN_TOKEN=${DRONE_ADMIN_TOKEN}
-      - SONARQUBE_URL=http://sonarqube:9000
-      - SONARQUBE_ADMIN_TOKEN=${SONARQUBE_ADMIN_TOKEN}
+      - SONARQUBE_URL=http://sonarqube:9000/sonarqube
+      - SONARQUBE_ADMIN_TOKEN=squ_b4d3924c5ff32d249836f2d2c418597f1540c9eb
       - NEXUS_URL=http://nexus:8081
-      - NEXUS_ADMIN_PASSWORD=${NEXUS_ADMIN_PASSWORD}
+      - NEXUS_ADMIN_PASSWORD=76e82ba4-0f2b-416e-9126-e088bfb56e82
       - JWT_SECRET=${JWT_SECRET:-jwt_secret_key_change_in_production}
     ports:
-      - "8880:8880"
+      - "18880:18880"
     networks:
       - codehub-network
     depends_on:
@@ -253,7 +253,7 @@ services:
       gitea:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8880/health"]
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:18880/health" ]
       interval: 30s
       timeout: 10s
       retries: 3

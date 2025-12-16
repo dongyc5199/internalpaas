@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 
@@ -97,7 +99,7 @@ func main() {
 	router.Use(middleware.CORSMiddleware())
 
 	// 健康检查端点
-	router.GET("/health", func(c *gin.Context) {
+	router.Any("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":     "ok",
 			"version":    Version,
@@ -110,7 +112,7 @@ func main() {
 	projectHandler := v1.NewProjectHandler(database.DB, logger, giteaService)
 	repositoryHandler := v1.NewRepositoryHandler(database.DB, logger, giteaService, droneService)
 	buildHandler := v1.NewBuildHandler(database.DB, logger, droneService, giteaService, wsHub)
-	webhookHandler := v1.NewWebhookHandler(database.DB, logger, wsHub)
+	webhookHandler := v1.NewWebhookHandler(database.DB, logger, wsHub, giteaService)
 	qualityHandler := v1.NewQualityHandler(database.DB, logger, sonarQubeService)
 	artifactHandler := v1.NewArtifactHandler(database.DB, logger, nexusService)
 	wsHandler := websocket.NewHandler(wsHub, logger)
@@ -170,14 +172,14 @@ func main() {
 				repositories.POST("/:id/webhooks", webhookHandler.ConfigureRepositoryWebhook)
 
 				// 仓库下的构建管理
-				repositories.GET("/:repo_id/builds", buildHandler.ListBuilds)
-				repositories.POST("/:repo_id/builds", buildHandler.TriggerBuild)
-				repositories.GET("/:repo_id/builds/stats", buildHandler.GetBuildStats)
+				repositories.GET("/:id/builds", buildHandler.ListBuilds)
+				repositories.POST("/:id/builds", buildHandler.TriggerBuild)
+				repositories.GET("/:id/builds/stats", buildHandler.GetBuildStats)
 
 				// 仓库下的质量报告
-				repositories.GET("/:repo_id/quality-reports", qualityHandler.ListQualityReports)
-				repositories.GET("/:repo_id/quality-trend", qualityHandler.GetRepositoryQualityTrend)
-				repositories.GET("/:repo_id/quality-statistics", qualityHandler.GetQualityStatistics)
+				repositories.GET("/:id/quality-reports", qualityHandler.ListQualityReports)
+				repositories.GET("/:id/quality-trend", qualityHandler.GetRepositoryQualityTrend)
+				repositories.GET("/:id/quality-statistics", qualityHandler.GetQualityStatistics)
 			}
 
 			// 构建管理
@@ -254,26 +256,59 @@ func main() {
 
 // loadConfig 加载配置文件
 func loadConfig() error {
+	// 加载.env文件
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found or error loading .env file, using environment variables")
+	}
+
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath("./config")
 	viper.AddConfigPath(".")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	// 设置默认值
 	viper.SetDefault("server.port", "8880")
 	viper.SetDefault("log.level", "info")
 
-	// 读取环境变量
-	viper.AutomaticEnv()
+	// 绑定环境变量到配置键
+	viper.BindEnv("server.port", "SERVER_PORT")
+	viper.BindEnv("server.mode", "SERVER_MODE")
+
+	viper.BindEnv("database.host", "DB_HOST")
+	viper.BindEnv("database.port", "DB_PORT")
+	viper.BindEnv("database.username", "DB_USERNAME")
+	viper.BindEnv("database.password", "DB_PASSWORD")
+	viper.BindEnv("database.database", "DB_DATABASE")
+	viper.BindEnv("redis.password", "REDIS_PASSWORD")
+	viper.BindEnv("redis.host", "REDIS_HOST")
+	viper.BindEnv("redis.port", "REDIS_PORT")
+	viper.BindEnv("jwt.secret", "JWT_SECRET")
+	viper.BindEnv("gitea.admin_token", "GITEA_ADMIN_TOKEN")
+	viper.BindEnv("gitea.webhook_secret", "GITEA_WEBHOOK_SECRET")
+	viper.BindEnv("drone.rpc_secret", "DRONE_RPC_SECRET")
+	viper.BindEnv("drone.admin_token", "DRONE_ADMIN_TOKEN")
+	viper.BindEnv("sonarqube.token", "SONARQUBE_ADMIN_TOKEN")
+	viper.BindEnv("sonarqube.token", "SONAR_ADMIN_TOKEN")
+	viper.BindEnv("sonarqube.admin_token", "SONARQUBE_ADMIN_TOKEN")
+	viper.BindEnv("sonarqube.admin_token", "SONAR_ADMIN_TOKEN")
+	viper.BindEnv("nexus.username", "NEXUS_USERNAME")
+	viper.BindEnv("nexus.username", "NEXUS_ADMIN_USERNAME")
+	viper.BindEnv("nexus.password", "NEXUS_PASSWORD")
+	viper.BindEnv("nexus.password", "NEXUS_ADMIN_PASSWORD")
+	viper.BindEnv("nexus.admin_password", "NEXUS_ADMIN_PASSWORD")
 
 	// 读取配置文件（如果不存在则使用默认值）
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// 配置文件不存在，使用默认值
-			return nil
+		} else {
+			return err
 		}
-		return err
 	}
+
+	// 环境变量优先级最高，放在读取配置文件之后
+	viper.AutomaticEnv()
 
 	return nil
 }

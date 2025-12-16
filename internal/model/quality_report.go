@@ -27,7 +27,7 @@ type QualityReport struct {
 	RepositoryID uint       `gorm:"index;not null" json:"repository_id"`
 	Repository   Repository `gorm:"foreignKey:RepositoryID" json:"repository,omitempty"`
 	BuildID      *uint      `gorm:"index" json:"build_id"`
-	BuildRecord  *BuildRecord `gorm:"foreignKey:BuildID" json:"build_record,omitempty"`
+	BuildRecord  *BuildRecord `gorm:"foreignKey:BuildID;constraint:-" json:"build_record,omitempty"`
 
 	// SonarQube集成
 	SonarProjectKey string `gorm:"size:200;index" json:"sonar_project_key"`

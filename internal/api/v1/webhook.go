@@ -5,34 +5,39 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"code.gitea.io/sdk/gitea"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/yourorg/codehub/internal/model"
+	"github.com/yourorg/codehub/internal/service"
 	"github.com/yourorg/codehub/internal/websocket"
 )
 
-// WebhookHandler Webhook处理器
+// WebhookHandler handles webhook endpoints.
 type WebhookHandler struct {
-	db     *gorm.DB
-	logger *zap.Logger
-	wsHub  *websocket.Hub
+	db           *gorm.DB
+	logger       *zap.Logger
+	wsHub        *websocket.Hub
+	giteaService *service.GiteaService
 }
 
-// NewWebhookHandler 创建Webhook处理器
-func NewWebhookHandler(db *gorm.DB, logger *zap.Logger, wsHub *websocket.Hub) *WebhookHandler {
+// NewWebhookHandler creates a webhook handler.
+func NewWebhookHandler(db *gorm.DB, logger *zap.Logger, wsHub *websocket.Hub, giteaService *service.GiteaService) *WebhookHandler {
 	return &WebhookHandler{
-		db:     db,
-		logger: logger,
-		wsHub:  wsHub,
+		db:           db,
+		logger:       logger,
+		wsHub:        wsHub,
+		giteaService: giteaService,
 	}
 }
 
@@ -213,10 +218,10 @@ func (h *WebhookHandler) verifyGiteaSignature(c *gin.Context) bool {
 type DroneBuildPayload struct {
 	Action string `json:"action"` // created, updated, finished
 	Repo   struct {
-		ID       int64  `json:"id"`
-		Name     string `json:"name"`
-		Slug     string `json:"slug"`
-		Owner    string `json:"namespace"`
+		ID    int64  `json:"id"`
+		Name  string `json:"name"`
+		Slug  string `json:"slug"`
+		Owner string `json:"namespace"`
 	} `json:"repo"`
 	Build struct {
 		ID           int64     `json:"id"`
@@ -546,16 +551,90 @@ func (h *WebhookHandler) ConfigureRepositoryWebhook(c *gin.Context) {
 		return
 	}
 
-	// TODO: 调用GiteaService创建webhook
-	// 这需要在GiteaService中实现CreateWebhook方法
+	if h.giteaService == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Gitea服务不可用"})
+		return
+	}
 
-	h.logger.Info("Webhook configuration requested",
+	if len(req.Events) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "至少选择一个事件"})
+		return
+	}
+
+	if repository.Project.GiteaOrgName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "项目缺少Gitea组织信息"})
+		return
+	}
+
+	webhookURL := h.buildGiteaWebhookURL(c)
+	secret := viper.GetString("gitea.webhook_secret")
+
+	hookOption := gitea.CreateHookOption{
+		Type: "gitea",
+		Config: map[string]string{
+			"url":          webhookURL,
+			"content_type": "json",
+		},
+		Events: req.Events,
+		Active: true,
+	}
+
+	if secret != "" {
+		hookOption.Config["secret"] = secret
+	}
+
+	if hooks, err := h.giteaService.ListWebhooks(repository.Project.GiteaOrgName, repository.Name); err == nil {
+		for _, hook := range hooks {
+			if hook.Config["url"] == webhookURL {
+				c.JSON(http.StatusOK, gin.H{
+					"message": "Webhook已存在",
+					"hook_id": hook.ID,
+					"url":     webhookURL,
+					"events":  hook.Events,
+				})
+				return
+			}
+		}
+	}
+
+	hook, err := h.giteaService.CreateWebhook(repository.Project.GiteaOrgName, repository.Name, hookOption)
+	if err != nil {
+		h.logger.Error("Failed to create webhook in Gitea",
+			zap.Error(err),
+			zap.String("owner", repository.Project.GiteaOrgName),
+			zap.String("repo", repository.Name),
+		)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建Gitea Webhook失败: " + err.Error()})
+		return
+	}
+
+	h.logger.Info("Webhook configured in Gitea",
 		zap.Uint("repository_id", repository.ID),
+		zap.Int64("hook_id", hook.ID),
 		zap.Strings("events", req.Events),
 	)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Webhook配置功能待实现",
+		"message": "Webhook已配置",
+		"hook_id": hook.ID,
+		"url":     webhookURL,
 		"events":  req.Events,
 	})
+}
+
+func (h *WebhookHandler) buildGiteaWebhookURL(c *gin.Context) string {
+	base := viper.GetString("server.webhook_base_url")
+	if base == "" {
+		scheme := "http"
+		if c.Request.TLS != nil {
+			scheme = "https"
+		}
+		if host := c.Request.Host; host != "" {
+			base = fmt.Sprintf("%s://%s", scheme, host)
+		} else {
+			base = "http://localhost:8880"
+		}
+	}
+	base = strings.TrimSuffix(base, "/")
+	return base + "/api/v1/webhooks/gitea"
 }
